@@ -1,5 +1,7 @@
 module JuChrom
 
-# Write your package code here.
+include("base.jl")
+
+export foo
 
 end
