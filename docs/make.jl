@@ -1,5 +1,6 @@
-using Documenter
-using JuChrom
+using Documenter, JuChrom
+
+DocMeta.setdocmeta!(JuChrom, :DocTestSetup, :(using JuChrom); recursive=true)
 
 makedocs(
     sitename = "JuChrom",
