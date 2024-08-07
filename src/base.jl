@@ -40,14 +40,14 @@ struct GCMS{
             T2<:AbstractVector{<:Real},
             T3<:AbstractMatrix{<:Real},
             T4<:Union{Nothing, AbstractString}}
-        issorted(scantimes) || error("scan times not in ascending order")
-        issorted(ions) || error("ions not in ascending order")
-        size(intensities, 1) == length(scantimes) || error(
-            "intensity matrix row count does not match scan count")
-        size(intensities, 2) == length(ions) || error(
-            "intensity matrix column count does not match ion count")
-        count(i -> i < 0, intensities) == 0 || error(
-            "intensity matrix contains at least one value less than zero")
+        issorted(scantimes) || throw(ArgumentError("scan times not in ascending order"))
+        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
+        size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
+            "intensity matrix row count does not match scan count"))
+        size(intensities, 2) == length(ions) || throw(DimensionMismatch(
+            "intensity matrix column count does not match ion count"))
+        count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
+            "intensity matrix contains at least one value less than zero"))
         new(scantimes, ions, intensities, source)
     end
 end
@@ -126,6 +126,8 @@ returned  `scantimes`. All time  units defined in the package [Unitful.jl](https
 (e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` 
 allows  you to specify whether the unit is stripped from the returned values. 
 
+See also [`AbstractChromatogram`](@ref).
+
 In the following example, the element type of the `scantime` vector passed to the object 
 constructor is explicitly annotated to illustrate that the GCMS object preserves the type.
 
@@ -151,8 +153,6 @@ julia> scantimes(gcms, timeunit=u"minute", ustripped=true)
  0.033333335
  0.050000004
 ```
-
-See also [`AbstractChromatogram`](@ref).
 """
 function scantimes(chrom::AbstractChromatogram; 
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
@@ -165,6 +165,8 @@ end
 
 Return the intensities of an `AbstractChromatogram` subtype object.
 
+See also [`AbstractChromatogram`](@ref).
+
 # Example
 ```jldoctest
 julia> gcms = GCMS([1u"s", 2u"s", 3u"s"], [85, 100], Int64[0 12; 34 956; 23 1]);
@@ -175,8 +177,6 @@ julia> intensities(gcms)
  34  956
  23    1
 ```
-
-See also [`AbstractChromatogram`](@ref).
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
 

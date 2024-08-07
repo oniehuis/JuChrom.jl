@@ -1,6 +1,3 @@
-using JuChrom
-using Test
+using SafeTestsets
 
-@testset "JuChrom.jl" begin
-    # Write your tests here.
-end
+@safetestset "base_tests" begin include("base_tests.jl") end
