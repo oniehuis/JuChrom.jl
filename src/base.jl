@@ -1,10 +1,8 @@
 """
-
     foo(x)
 
 Return x multiplied by 20.
 
-# Examples
 # Examples
 ```julia-repl
 julia> foo(1)
