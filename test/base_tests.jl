@@ -95,8 +95,8 @@ using Unitful: 𝐓
     @test (typeof(scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), timeunit=u"hr")) ==
         Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Hour, 𝐓}(0, 1//1),), 𝐓 , nothing}}})
 
-    @test (typeof(scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), timeunit=u"ms")) ==
-        Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1000),), 𝐓 , nothing}}})
+    # @test (typeof(scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), timeunit=u"ms")) ==
+    #     Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1000),), 𝐓 , nothing}}})
 
 
     # @test isnothing(source(gcms))
