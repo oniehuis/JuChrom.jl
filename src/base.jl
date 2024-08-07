@@ -6,7 +6,7 @@ Return x multiplied by 20.
 # Examples
 ```julia-repl
 julia> foo(1)
-20
+21
 ```
 """
 foo(x) = x * 20
