@@ -2,37 +2,48 @@ using JuChrom
 using Test
 using Unitful: 𝐓
 
-@testset "gcms" begin
+@testset "GCMS" begin
+    # Verify object construction and field types depending on constructor arguments
+    # Scantimes
+    @test [1, 2, 3]u"s" == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).scantimes
+    @test Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]).scantimes)
+    @test Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(GCMS(Float64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]).scantimes)
+
+    # Ions
+    @test [85, 100] == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).ions
+    @test [85] == GCMS([1, 2, 3]u"s", [85], reshape([0, 956, 1], (:,1))).ions
+    @test Vector{Int64} == typeof(GCMS([1, 2, 3]u"s", Int64[85, 100], 
+        [0 12; 34 956; 23 1]).ions)
+    @test Vector{Float64} == typeof(GCMS([1, 2, 3]u"s", Float64[85, 100], 
+        [0 12; 34 956; 23 1]).ions)
+    @test Vector{Int64} == typeof(GCMS([1, 2, 3]u"s", Int64[85], reshape([0, 956, 1], 
+        (:,1))).ions)
+
+    # Intensities
+    @test [0 12; 34 956; 23 1] == GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]).intensities
+    @test reshape([0, 956, 1], (:,1)) == GCMS([1, 2, 3]u"s", [85],
+        reshape([0, 956, 1], (:,1))).intensities
+    @test Matrix{Int64} == typeof(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int64[0 12; 34 956; 23 1]).intensities)
+    @test Matrix{Float64} == typeof(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]).intensities)
+    @test Matrix{Int64} == typeof(GCMS([1, 2, 3]u"s", [85], reshape([0, 956, 1],
+         (:,1))).intensities)
+
+    # Source
+    @test isnothing(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).source)
+    @test "sample" == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample").source
+    @test String == typeof(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"
+        ).source)
 
     # Check the associated supertypes
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractGCMS)
-
-    # Preserve the provided argument types
-    @test (typeof(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])) ==
-        GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
-        1//1),), 𝐓 , nothing}}}, Vector{Int64}, Matrix{Int64}, Nothing})
-    @test (typeof(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])) ==
-        GCMS{Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
-        1//1),), 𝐓 , nothing}}}, Vector{Int64}, Matrix{Int64}, Nothing})
-    @test (typeof(GCMS([1, 2, 3]u"s", [85.0, 100.0], [0 12; 34 956; 23 1])) ==
-        GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
-        1//1),), 𝐓 , nothing}}}, Vector{Float64}, Matrix{Int64}, Nothing})
-    @test (typeof(GCMS([1, 2, 3]u"s", [85, 100], [0.0 12.0; 34.0 956.0; 23.0 1.0])) ==
-        GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
-        1//1),), 𝐓 , nothing}}}, Vector{Int64}, Matrix{Float64}, Nothing})
-    @test (typeof(GCMS([1, 2, 3]u"s", [85, 100], [0.0 12.0; 34.0 956.0; 23.0 1.0], 
-        nothing)) == GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{
-        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓 , nothing}}}, Vector{Int64}, 
-        Matrix{Float64}, Nothing})
-    @test (typeof(GCMS([1, 2, 3]u"s", [85, 100], [0.0 12.0; 34.0 956.0; 23.0 1.0], 
-        "sample name")) == GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{
-        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓 , nothing}}}, Vector{Int64}, 
-        Matrix{Float64}, String})
-    @test (typeof(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], 
-        SubString("sample name"))) == GCMS{Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{
-        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓 , nothing}}}, Vector{Int64}, Matrix{Int64}, 
-        SubString{String}})
 
     # Scan time vector accepts only time values
     @test_throws MethodError GCMS([1, 2, 3], [85, 100], [0 12; 34 956; 23 1])
@@ -50,10 +61,9 @@ using Unitful: 𝐓
     @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
         [0.0 12.0; 34.0 956.0; 23.0 1.0], 1)
     @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
-        [0.0 12.0; 34.0 956.0; 23.0 1.0], 1.0)
-    @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
         [0.0 12.0; 34.0 956.0; 23.0 1.0], 'S')
 
+    # Check size compatibility of intensities, scantimes, and ions
     # Too many scan times in comparison to intensity matrix
     @test_throws DimensionMismatch GCMS([1, 2, 3, 4]u"s", [85, 100], [0 12; 34 956; 23 1])
     # Too few scan times in comparison to intensity matrix
@@ -63,21 +73,13 @@ using Unitful: 𝐓
         [0 12; 34 956; 23 1])
     # Too few ions in comparison to intensity matrix
     @test_throws DimensionMismatch GCMS([1, 2, 3]u"s", [85], [0 12; 34 956; 23 1])
-    # Too many intensities in comparison to intensity matrix
-    @test_throws DimensionMismatch GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12 43; 34 956 65; 23 1 73])
-    # Too few intensities in comparison to intensity matrix
-    @test_throws DimensionMismatch GCMS([1, 2, 3]u"s", [85, 100, 200], 
-        [0 12; 34 956; 23 1])
-    # Too many intensities in comparison to scan times
-    @test_throws DimensionMismatch GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1; 40 98])
-    # Too few intensities in comparison to scan times
-    @test_throws DimensionMismatch GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956])
+
     # Scan times must be in ascending order
     @test_throws ArgumentError GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+
     # Ions must be in ascending order
     @test_throws ArgumentError GCMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
+
     # Intensity values cannot be less than zero
     @test_throws ArgumentError GCMS([1, 2, 3]u"s", [85, 100], [-1 12; 34 956; 23 1])
 
@@ -160,4 +162,100 @@ using Unitful: 𝐓
     @test isnothing(source(TIC([1, 2, 3]u"s", [12, 956, 23])))
     @test "sample" == source(TIC([1, 2, 3]u"s", [12, 956, 23], "sample"))
 
+end
+
+@testset "FID" begin
+    # Verify object construction and field types depending on constructor arguments
+    # Scantimes
+    @test [1, 2, 3]u"s" == FID([1, 2, 3]u"s", [12, 956, 23]).scantimes
+    @test Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(FID(Int64[1, 2, 3]u"s", [12, 956, 23]).scantimes)
+    @test Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(FID(Float64[1, 2, 3]u"s", 
+            [12, 956, 23]).scantimes)
+
+    # Intensities
+    @test [12, 956, 23] == FID([1, 2, 3]u"s", [12, 956, 23]).intensities
+    @test Vector{Int64} == typeof(FID([1, 2, 3]u"s", Int64[12, 956, 23]).intensities)
+    @test Vector{Float64} == typeof(FID([1, 2, 3]u"s",  Float64[12, 956, 23]).intensities)
+
+    # Source
+    @test isnothing(FID([1, 2, 3]u"s", [12, 956, 23]).source)
+    @test "sample" == FID([1, 2, 3]u"s", [12, 956, 23], "sample").source
+    @test String == typeof(FID([1, 2, 3]u"s", [12, 956, 23], "sample").source)
+
+    # Check the associated supertypes
+    @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
+    @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractGC)
+    @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractFID)
+
+    # Scan time vector accepts only time values
+    @test_throws MethodError FID([1, 2, 3], [12, 956, 23])
+    @test_throws MethodError FID([1, 2, 3]u"m", [12, 956, 23])
+    
+    # Intensity vector must not accept a unit
+    @test_throws MethodError FID([1, 2, 3], [12, 956, 23]u"s")
+
+    # Source cannot be anything other than an AbstractString subtype object or nothing.
+    @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], :sample_name)
+    @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 1)
+    @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 'S')
+
+    # Number of scantimes and intensities must be identical
+    @test_throws DimensionMismatch FID([1, 2, 3, 4]u"s", [12, 956, 23])
+    @test_throws DimensionMismatch FID([1, 2]u"s", [12, 956, 23])
+
+    # Scan times must be in ascending order
+    @test_throws ArgumentError FID([2, 1, 3]u"s", [12, 956, 23])
+
+    # Intensity values cannot be less than zero
+    @test_throws ArgumentError FID([1, 2, 3]u"s", [-1, 956, 23])
+end
+
+@testset "TIC" begin
+    # Verify object construction and field types depending on constructor arguments
+    # Scantimes
+    @test [1, 2, 3]u"s" == TIC([1, 2, 3]u"s", [12, 956, 23]).scantimes
+    @test Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]).scantimes)
+    @test Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓 , nothing}}} == typeof(TIC(Float64[1, 2, 3]u"s", 
+            [12, 956, 23]).scantimes)
+
+    # Intensities
+    @test [12, 956, 23] == TIC([1, 2, 3]u"s", [12, 956, 23]).intensities
+    @test Vector{Int64} == typeof(TIC([1, 2, 3]u"s", Int64[12, 956, 23]).intensities)
+    @test Vector{Float64} == typeof(TIC([1, 2, 3]u"s",  Float64[12, 956, 23]).intensities)
+
+    # Source
+    @test isnothing(TIC([1, 2, 3]u"s", [12, 956, 23]).source)
+    @test "sample" == TIC([1, 2, 3]u"s", [12, 956, 23], "sample").source
+    @test String == typeof(TIC([1, 2, 3]u"s", [12, 956, 23], "sample").source)
+
+    # Check the associated supertypes
+    @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
+    @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractGC)
+    @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractTIC)
+
+    # Scan time vector accepts only time values
+    @test_throws MethodError TIC([1, 2, 3], [12, 956, 23])
+    @test_throws MethodError TIC([1, 2, 3]u"m", [12, 956, 23])
+    
+    # Intensity vector must not accept a unit
+    @test_throws MethodError TIC([1, 2, 3], [12, 956, 23]u"s")
+
+    # Source cannot be anything other than an AbstractString subtype object or nothing.
+    @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], :sample_name)
+    @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], 1)
+    @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], 'S')
+
+    # Number of scantimes and intensities must be identical
+    @test_throws DimensionMismatch TIC([1, 2, 3, 4]u"s", [12, 956, 23])
+    @test_throws DimensionMismatch TIC([1, 2]u"s", [12, 956, 23])
+
+    # Scan times must be in ascending order
+    @test_throws ArgumentError TIC([2, 1, 3]u"s", [12, 956, 23])
+
+    # Intensity values cannot be less than zero
+    @test_throws ArgumentError TIC([1, 2, 3]u"s", [-1, 956, 23])
 end
