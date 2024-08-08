@@ -96,11 +96,11 @@ end
 """
     ions(gcms::AbstractGCMS)
 
-Return the `ions` of an `AbstractGCMS` subtype object (e.g., `GCMS``).
+Return the `ions` of an `AbstractGCMS` subtype object (e.g., `GCMS`).
 
 See also [`AbstractGCMS`](@ref).
 
-In the following example, the number type of `ions` passed to the object  constructor 
+In the following example, the number type of `ions` passed to the object constructor 
 is explicitly annotated to illustrate that the GCMS object preserves the type.
 
 # Example
@@ -121,10 +121,11 @@ ions(gcms::AbstractGCMS) = gcms.ions
     ustripped::Bool=false)
 
 Return the `scantimes` of an `AbstractChromatogram` subtype object (e.g., `FID`, `GCMS`, 
-`TIC`). The  optional keyword  argument `timeunit` allows you to change the unit of the 
-returned  `scantimes`. All time  units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) 
-(e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` 
-allows  you to specify whether the unit is stripped from the returned values. 
+`TIC`). The optional keyword argument `timeunit` allows you to change the unit of the 
+returned `scantimes`. All time units defined in the package [Unitful.jl]
+(https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are supported. 
+The optional keyword argument `ustripped` allows you to specify whether the unit is 
+stripped from the returned values. 
 
 See also [`AbstractChromatogram`](@ref).
 
@@ -220,12 +221,16 @@ source(chrom::AbstractChromatogram) = chrom.source
 
 scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
 
-function minscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, first(chrom.scantimes)) : uconvert(timeunit, first(chrom.scantimes))
+function minscantime(chrom::AbstractChromatogram;
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, first(chrom.scantimes)) : uconvert(timeunit, 
+        first(chrom.scantimes))
 end
 
-function maxscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, last(chrom.scantimes)) : uconvert(timeunit, last(chrom.scantimes))
+function maxscantime(chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, last(chrom.scantimes)) : uconvert(timeunit, 
+    last(chrom.scantimes))
 end
 
 ioncount(gcms::AbstractGCMS) = length(ions(gcms))
@@ -236,9 +241,11 @@ minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
 maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 function Base.show(io::IO, gcms::GCMS)
-    println(io, "GCMS {scantimes: ", eltype(ustrip.(scantimes(gcms))), ", ions: ", eltype(ions(gcms)), ", intensities: ", eltype(intensities(gcms)), "}")
+    println(io, "GCMS {scantimes: ", eltype(ustrip.(scantimes(gcms))), ", ions: ", 
+        eltype(ions(gcms)), ", intensities: ", eltype(intensities(gcms)), "}")
     println(io, "Source: ", source(gcms))
-    println(io, scancount(gcms), " scans; time range: ", minscantime(gcms), " - ", maxscantime(gcms))
+    println(io, scancount(gcms), " scans; time range: ", minscantime(gcms), " - ", 
+        maxscantime(gcms))
     println(io, ioncount(gcms), " ions; range: m/z ", minion(gcms), " - ", maxion(gcms))
     print(io, "intensity range: ", minintensity(gcms), " - ", maxintensity(gcms))
 end

@@ -3,7 +3,7 @@ using Documenter, JuChrom
 DocMeta.setdocmeta!(JuChrom, :DocTestSetup, :(using JuChrom); recursive=true)
 
 makedocs(
-    sitename = "JuChrom",
+    sitename = "JuChrom.jl",
     format = Documenter.HTML(),
     modules = [JuChrom]
 )
