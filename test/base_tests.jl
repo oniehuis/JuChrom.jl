@@ -90,16 +90,16 @@ using Unitful: 𝐓
     @test [1, 2, 3]u"s" == scantimes(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
     @test [1000, 2000, 3000]u"ms" == scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"ms")
-    @test [1//60, 1//30, 1//20]u"minute" ≈ scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
+    @test [1/60, 1/30, 1/20]u"minute" ≈ scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute")
-    @test [ 1//3600, 1//1800, 1//1200]u"hr" == scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
+    @test [1/3600, 1/1800, 1/1200]u"hr" ≈ scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"hr")
 
     @test [1000.0, 2000.0, 3000.0]u"ms" == scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"ms")
-    @test [1//60, 1//30, 1//20]u"minute" == scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test [1/60, 1/30, 1/20]u"minute" ≈ scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute")
-    @test [1//3600, 1//1800, 1//1200]u"hr" == scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test [1/3600, 1/1800, 1/1200]u"hr" ≈ scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"hr")
     @test [1, 2, 3] == scantimes(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
         ustripped=true)
@@ -133,12 +133,31 @@ using Unitful: 𝐓
     #     Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1000),), 𝐓 , nothing}}})
 
     # Ions
-    @test [85, 100] = ions(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
-    @test_throws [85, 100] = ions(TIC([1, 2, 3]u"s", [0, 34, 956]))
+    @test Int64[85, 100] == ions(GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]))
+    @test Float64[85, 100] == ions(GCMS([1, 2, 3]u"s", Float64[85.0, 100.0], 
+        [0 12; 34 956; 23 1]))
+    @test_throws MethodError ions(TIC([1, 2, 3]u"s", [0, 34, 956]))
 
     # Intensities
-
+    @test Int64[12, 956, 23] == intensities(FID([1, 2, 3]u"s",
+        Int64[12, 956, 23]))
+    @test Float64[12.0, 956.0, 23.0] == intensities(FID([1, 2, 3]u"s",
+        Float64[12.0, 956.0, 23.0]))
+    @test Int64[12, 956, 23] == intensities(TIC([1, 2, 3]u"s",
+        Int64[12, 956, 23]))
+    @test Float64[12.0, 956.0, 23.0] == intensities(TIC([1, 2, 3]u"s",
+        Float64[12.0, 956.0, 23.0]))
+    @test Int64[0 12; 34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100],
+        Int64[0 12; 34 956; 23 1]))
+    @test Float64[0 12; 34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100],
+        Float64[0 12; 34 956; 23 1]))
+        
     # Scource
-    # @test isnothing(source(gcms))
+    @test isnothing(source(FID([1, 2, 3]u"s", [12, 956, 23])))
+    @test "sample" == source(FID([1, 2, 3]u"s", [12, 956, 23], "sample"))
+    @test isnothing(source(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])))
+    @test "sample" == source(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"))
+    @test isnothing(source(TIC([1, 2, 3]u"s", [12, 956, 23])))
+    @test "sample" == source(TIC([1, 2, 3]u"s", [12, 956, 23], "sample"))
 
 end
