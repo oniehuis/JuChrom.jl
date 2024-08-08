@@ -259,3 +259,25 @@ end
     # Intensity values cannot be less than zero
     @test_throws ArgumentError TIC([1, 2, 3]u"s", [-1, 956, 23])
 end
+
+@testset "showGCMS" begin
+    io = IOBuffer()
+    show(io, GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"))
+    @test String(take!(io)) == string("GCMS {scantimes: Int64, ions: Int64, intensities:",
+        " Int64}\nSource: sample\n3 scans; time range: 1 s - 3 s\n2 ions; range: m/z 85",
+        " - 100\nintensity range: 0 - 956")
+end
+
+@testset "showFID" begin
+    io = IOBuffer()
+    show(io, FID([1, 2, 3]u"s", [12, 956, 23], "sample"))
+    @test String(take!(io)) == string("FID {scantimes: Int64, intensities: Int64}\n", 
+        "Source: sample\n3 scans; time range: 1 s - 3 s\nintensity range: 12", " - 956")
+end
+
+@testset "showTIC" begin
+    io = IOBuffer()
+    show(io, TIC([1, 2, 3]u"s", [12, 956, 23], "sample"))
+    @test String(take!(io)) == string("TIC {scantimes: Int64, intensities: Int64}\n", 
+        "Source: sample\n3 scans; time range: 1 s - 3 s\nintensity range: 12", " - 956")
+end
