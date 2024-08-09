@@ -12,7 +12,14 @@ export GCMS
 export TIC
 
 export intensities
+export ioncount
 export ions
+export maxintensity
+export maxion
+export maxscantime
+export minintensity
+export minion
+export minscantime
 export scancount
 export scantimes
 export source

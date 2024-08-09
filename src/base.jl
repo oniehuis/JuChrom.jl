@@ -76,7 +76,7 @@ information.
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`source`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor
+In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `FID` object preserves the types.
 
 # Example
@@ -109,7 +109,7 @@ The `AbstractGCMS` type is the supertype of all chromatogram implementations tha
 mass-charge ratio (m/z) data (= `ions`) and associated abundance values (= `intensities`) 
 and thus can have one or more ion intensity values associated with a given scan time in 
 JuChrom (e.g., `GCMS`). The `intensities` are stored in a matrix where the row index 
-corresponds to that of the associated `scantime` and where the column index corresponds
+corresponds to that of the associated `scantime` and where the column index corresponds 
 to that of the associated `ion`.
 
 See also [`AbstractChromatogram`](@ref), [`GCMS`](@ref), [`intensities`](@ref), 
@@ -158,7 +158,7 @@ Return a GCMS object consisting of `scantimes`, `ions`, `intensities`, and optio
 See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`intensities`](@ref), 
 [`ions`](@ref), [`scantimes`](@ref), [`source`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor
+In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `GCMS` object preserves the types.
 
 # Example
@@ -234,7 +234,7 @@ information.
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`source`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor
+In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `TIC` object preserves the types.
 
 # Example
@@ -263,9 +263,10 @@ end
 """
     ions(gcms::AbstractGCMS)
 
-Return the `ions` of an `AbstractGCMS` subtype object (e.g., `GCMS`).
+Return the `ions` of the `AbstractGCMS` subtype object.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+[`ioncount`](@ref).
 
 In the following example, the number type of `ions` passed to the object constructor 
 is explicitly annotated to illustrate that the GCMS object preserves the type.
@@ -287,14 +288,14 @@ ions(gcms::AbstractGCMS) = gcms.ions
     scantimes(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
     ustripped::Bool=false)
 
-Return the `scantimes` of an `AbstractChromatogram` subtype object (e.g., `FID`, `GCMS`, 
-`TIC`). The optional keyword argument `timeunit` allows you to change the unit of the 
-returned `scantimes`. All time units defined in the package [Unitful.jl]
-(https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are supported. 
-The optional keyword argument `ustripped` allows you to specify whether the unit is 
-stripped from the returned values. 
+Return the `scantimes` of the `AbstractChromatogram` subtype object. The optional keyword 
+argument `timeunit` allows you to change the unit of the returned `scantimes`. All time 
+units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) 
+(e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` 
+allows you to specify whether the unit is stripped from the returned values.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref).
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
 
 In the following example, the element type of the `scantime` vector passed to the object 
 constructor is explicitly annotated to illustrate that the GCMS object preserves the type.
@@ -331,10 +332,10 @@ end
 """
     intensities(chrom::AbstractChromatogram)
 
-Return the intensities of an `AbstractChromatogram` subtype object.
+Return the intensities of the `AbstractChromatogram` subtype object.
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref),
-[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref).
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`minintensity`](@ref), [`maxintensity`](@ref).
 
 # Example
 ```jldoctest
@@ -402,23 +403,166 @@ julia> scancount(fid)
 scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
 
 
+"""
+    minscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool=false)
+
+Return the time of the first scan from the AbstractChromatogram subtype object. The 
+optional keyword argument `timeunit` allows you to change the unit of the returned scan 
+time. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`maxscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> minscantime(gcms)
+1.0 s
+
+julia> minscantime(gcms, timeunit=u"minute")
+0.016666666666666666 minute
+
+julia> minscantime(gcms, timeunit=u"minute", ustripped=true)
+0.016666666666666666
+```
+"""
 function minscantime(chrom::AbstractChromatogram;
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
     ustripped ? ustrip(timeunit, first(chrom.scantimes)) : uconvert(timeunit, 
         first(chrom.scantimes))
 end
 
+
+"""
+    maxscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool)
+
+Return the time of the last scan from the AbstractChromatogram subtype object. The optional 
+keyword argument `timeunit` allows you to change the unit of the returned scan time. All 
+time units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) 
+(e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` allows 
+you to specify whether the unit is stripped from the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`minscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> maxscantime(gcms)
+3.0 s
+
+julia> maxscantime(gcms, timeunit=u"minute")
+0.05 minute
+
+julia> maxscantime(gcms, timeunit=u"minute", ustripped=true)
+0.05
+```
+"""
 function maxscantime(chrom::AbstractChromatogram; 
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
     ustripped ? ustrip(timeunit, last(chrom.scantimes)) : uconvert(timeunit, 
     last(chrom.scantimes))
 end
 
+
+"""
+    ioncount(gcms::AbstractGCMS) -> Int
+
+Return the number of ions in the AbstractGCMS subtype object.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> ioncount(gcms)
+2
+```
+"""
 ioncount(gcms::AbstractGCMS) = length(ions(gcms))
 
+
+"""
+    minion(gcms::AbstractGCMS)
+
+Return the smallest ion in the AbstractGCMS subtype object.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+
+julia> minion(gcms)
+85
+```
+
+"""
 minion(gcms::AbstractGCMS) = first(ions(gcms))
+
+
+"""
+    maxion(gcms::AbstractGCMS)
+
+Return the largest ion in the AbstractGCMS subtype object.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+
+julia> maxion(gcms)
+100
+```
+"""
 maxion(gcms::AbstractGCMS) = last(ions(gcms))
+
+
+"""
+    minintensity(chrom::AbstractChromatogram)
+
+Return the minimum intensity in the AbstractChromatogram subtype object.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`maxintensity`](@ref), [`intensities`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
+
+julia> minintensity(gcms)
+0
+```
+"""
 minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
+
+
+"""
+    maxintensity(chrom::AbstractChromatogram)
+
+Return the maximum intensity in the AbstractChromatogram subtype object.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`minintensity`](@ref), [`intensities`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
+
+julia> maxintensity(gcms)
+956
+```
+"""
 maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 
