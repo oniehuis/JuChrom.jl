@@ -83,7 +83,9 @@ using Unitful: 𝐓
     # Intensity values cannot be less than zero
     @test_throws ArgumentError GCMS([1, 2, 3]u"s", [85, 100], [-1 12; 34 956; 23 1])
 
-    # Test that it is broadcastable?
+    # GCMS is broadcastable
+    @test [1, 2]u"s" == ((gcms, i) -> gcms.scantimes[i]).(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), [1, 2])
 
     # Testing getters
     # Scantimes
@@ -210,6 +212,11 @@ end
 
     # Intensity values cannot be less than zero
     @test_throws ArgumentError FID([1, 2, 3]u"s", [-1, 956, 23])
+
+    # FID is broadcastable
+    @test [1, 2]u"s" == ((fid, i) -> fid.scantimes[i]).(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        [1, 2])
+
 end
 
 @testset "TIC" begin
@@ -258,6 +265,10 @@ end
 
     # Intensity values cannot be less than zero
     @test_throws ArgumentError TIC([1, 2, 3]u"s", [-1, 956, 23])
+
+    # FID is broadcastable
+    @test [1, 2]u"s" == ((tic, i) -> tic.scantimes[i]).(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        [1, 2])
 end
 
 @testset "showGCMS" begin
