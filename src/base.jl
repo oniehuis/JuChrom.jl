@@ -164,12 +164,12 @@ GCMS {scantimes: Int32, ions: Int64, intensities: Int32}
 intensity range: 0 - 956
 metadata: 
 
-julia> GCMS([1.1f0, 2.1f0]u"s", Float32[35.1, 76.2], Int64[0 12; 34 956], Dict(:id => 1, :name => "sample"))
+julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 1))
 GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
 2 scans; time range: 1.1f0 s - 2.1f0 s
 2 ions; range: m/z 35.1 - 76.2
 intensity range: 0 - 956
-metadata: :id, :name
+metadata: :id
 ```
 """
 function GCMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any, Any}()
@@ -358,24 +358,23 @@ See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](
 
 # Example
 ```jldoctest
-julia> gcms₁ = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample"))
+julia> gcms₁ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956], Dict(:id => 1))
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-3 scans; time range: 1 s - 3 s
+2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: :id, :name
+metadata: :id
 
 julia> metadata(gcms₁)
-Dict{Any, Any} with 2 entries:
-  :id   => 1
-  :name => "sample"
+Dict{Any, Any} with 1 entry:
+  :id => 1
 
-julia> gcms₂ = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+julia> gcms₂ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956])
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-3 scans; time range: 1 s - 3 s
+2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 
+metadata:
 
 julia> metadata(gcms₂)
 Dict{Any, Any}()
