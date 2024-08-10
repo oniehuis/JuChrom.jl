@@ -17,11 +17,11 @@ export ions
 export maxintensity
 export maxion
 export maxscantime
+export metadata
 export minintensity
 export minion
 export minscantime
 export scancount
 export scantimes
-export source
 
 end

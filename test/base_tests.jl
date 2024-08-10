@@ -35,11 +35,12 @@ using Unitful: 𝐓
     @test Matrix{Int64} == typeof(GCMS([1, 2, 3]u"s", [85], reshape([0, 956, 1],
          (:,1))).intensities)
 
-    # Source
-    @test isnothing(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).source)
-    @test "sample" == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample").source
-    @test String == typeof(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"
-        ).source)
+    # Metadata
+    @test Dict{Any, Any} == typeof(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]).metadata)
+    @test Dict() == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).metadata
+    @test Dict(:id => 1, :name => "sample") == GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)
@@ -55,7 +56,7 @@ using Unitful: 𝐓
     # Intensity matrix must not accept a unit
     @test_throws MethodError GCMS([1, 2, 3], [85, 100], [0 12; 34 956; 23 1]u"s")
 
-    # Source cannot be anything other than an AbstractString subtype object or nothing.
+    # Metadata cannot be anything other than dictionary
     @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
         [0.0 12.0; 34.0 956.0; 23.0 1.0], :sample_name)
     @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
@@ -133,9 +134,6 @@ using Unitful: 𝐓
         timeunit=u"hr")) == Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{
         (Unitful.Unit{:Hour, 𝐓}(0, 1//1),), 𝐓 , nothing}}})
 
-    # @test (typeof(scantimes(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), timeunit=u"ms")) ==
-    #     Vector{Quantity{Float64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1000),), 𝐓 , nothing}}})
-
     # Ions
     @test Int64[85, 100] == ions(GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]))
     @test Float64[85, 100] == ions(GCMS([1, 2, 3]u"s", Float64[85.0, 100.0], 
@@ -156,13 +154,15 @@ using Unitful: 𝐓
     @test Float64[0 12; 34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100],
         Float64[0 12; 34 956; 23 1]))
         
-    # Scource
-    @test isnothing(source(FID([1, 2, 3]u"s", [12, 956, 23])))
-    @test "sample" == source(FID([1, 2, 3]u"s", [12, 956, 23], "sample"))
-    @test isnothing(source(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])))
-    @test "sample" == source(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"))
-    @test isnothing(source(TIC([1, 2, 3]u"s", [12, 956, 23])))
-    @test "sample" == source(TIC([1, 2, 3]u"s", [12, 956, 23], "sample"))
+    @test Dict() == metadata(FID([1, 2, 3]u"s", [12, 956, 23]))
+    @test Dict(:id => 1, :name => "sample") == metadata(FID([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 1, :name => "sample")))
+    @test Dict() == metadata(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
+    @test Dict(:id => 1, :name => "sample") == metadata(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample")))
+    @test Dict() == metadata(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test Dict(:id => 1, :name => "sample") == metadata(TIC([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 1, :name => "sample")))
 
 end
 
@@ -181,10 +181,11 @@ end
     @test Vector{Int64} == typeof(FID([1, 2, 3]u"s", Int64[12, 956, 23]).intensities)
     @test Vector{Float64} == typeof(FID([1, 2, 3]u"s",  Float64[12, 956, 23]).intensities)
 
-    # Source
-    @test isnothing(FID([1, 2, 3]u"s", [12, 956, 23]).source)
-    @test "sample" == FID([1, 2, 3]u"s", [12, 956, 23], "sample").source
-    @test String == typeof(FID([1, 2, 3]u"s", [12, 956, 23], "sample").source)
+    # Metadata
+    @test Dict{Any, Any} == typeof(FID([1, 2, 3]u"s", [12, 956, 23]).metadata)
+    @test Dict() == FID([1, 2, 3]u"s", [12, 956, 23]).metadata
+    @test Dict(:id => 1, :name => "sample") == FID([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 1, :name => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
@@ -198,7 +199,7 @@ end
     # Intensity vector must not accept a unit
     @test_throws MethodError FID([1, 2, 3], [12, 956, 23]u"s")
 
-    # Source cannot be anything other than an AbstractString subtype object or nothing.
+    # Metadata cannot be anything other than a dictionary
     @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], :sample_name)
     @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 1)
     @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 'S')
@@ -234,10 +235,11 @@ end
     @test Vector{Int64} == typeof(TIC([1, 2, 3]u"s", Int64[12, 956, 23]).intensities)
     @test Vector{Float64} == typeof(TIC([1, 2, 3]u"s",  Float64[12, 956, 23]).intensities)
 
-    # Source
-    @test isnothing(TIC([1, 2, 3]u"s", [12, 956, 23]).source)
-    @test "sample" == TIC([1, 2, 3]u"s", [12, 956, 23], "sample").source
-    @test String == typeof(TIC([1, 2, 3]u"s", [12, 956, 23], "sample").source)
+     # Metadata
+     @test Dict{Any, Any} == typeof(TIC([1, 2, 3]u"s", [12, 956, 23]).metadata)
+     @test Dict() == TIC([1, 2, 3]u"s", [12, 956, 23]).metadata
+     @test Dict(:id => 1, :name => "sample") == TIC([1, 2, 3]u"s", [12, 956, 23], 
+         Dict(:id => 1, :name => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
@@ -251,7 +253,7 @@ end
     # Intensity vector must not accept a unit
     @test_throws MethodError TIC([1, 2, 3], [12, 956, 23]u"s")
 
-    # Source cannot be anything other than an AbstractString subtype object or nothing.
+    # Metadata cannot be anything other than a dictionary.
     @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], :sample_name)
     @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], 1)
     @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], 'S')
@@ -273,22 +275,32 @@ end
 
 @testset "showGCMS" begin
     io = IOBuffer()
-    show(io, GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], "sample"))
-    @test String(take!(io)) == string("GCMS {scantimes: Int64, ions: Int64, intensities:",
-        " Int64}\nSource: sample\n3 scans; time range: 1 s - 3 s\n2 ions; range: m/z 85",
-        " - 100\nintensity range: 0 - 956")
+    show(io, GCMS(Int64[1, 2, 3]u"s", Int64[85, 100], Int64[0 12; 34 956; 23 1], Dict(:id => 1, 
+        :name => "sample")))
+    @test String(take!(io)) == string(
+        "GCMS {scantimes: Int64, ions: Int64, intensities: Int64}\n", 
+        "3 scans; time range: 1 s - 3 s\n",
+        "2 ions; range: m/z 85 - 100\n",
+        "intensity range: 0 - 956\n", 
+        "metadata: :id, :name")
 end
 
 @testset "showFID" begin
     io = IOBuffer()
-    show(io, FID([1, 2, 3]u"s", [12, 956, 23], "sample"))
-    @test String(take!(io)) == string("FID {scantimes: Int64, intensities: Int64}\n", 
-        "Source: sample\n3 scans; time range: 1 s - 3 s\nintensity range: 12", " - 956")
+    show(io, FID(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 1, :name => "sample")))
+    @test String(take!(io)) == string(
+        "FID {scantimes: Int64, intensities: Int64}\n",
+        "3 scans; time range: 1 s - 3 s\n",
+        "intensity range: 12 - 956\n",
+        "metadata: :id, :name")
 end
 
 @testset "showTIC" begin
     io = IOBuffer()
-    show(io, TIC([1, 2, 3]u"s", [12, 956, 23], "sample"))
-    @test String(take!(io)) == string("TIC {scantimes: Int64, intensities: Int64}\n", 
-        "Source: sample\n3 scans; time range: 1 s - 3 s\nintensity range: 12", " - 956")
+    show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 1, :name => "sample")))
+    @test String(take!(io)) == string(
+        "TIC {scantimes: Int64, intensities: Int64}\n",
+        "3 scans; time range: 1 s - 3 s\n",
+        "intensity range: 12 - 956\n",
+        "metadata: :id, :name")
 end
