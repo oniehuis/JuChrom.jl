@@ -409,6 +409,30 @@ metadata:
 
 julia> metadata(gcms₂)
 Dict{Any, Any}()
+
+julia> metadata(gcms₂)[:name] = "sample"
+"sample"
+
+julia> metadata(gcms₂)
+Dict{Any, Any} with 1 entry:
+  :name => "sample"
+
+julia> gcms₂
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; time range: 1 s - 2 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: :name
+
+julia> delete!(metadata(gcms₂), :name)
+Dict{Any, Any}()
+
+julia> gcms₂
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; time range: 1 s - 2 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata:
 ```
 """
 metadata(chrom::AbstractChromatogram) = chrom.metadata
