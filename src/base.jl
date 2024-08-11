@@ -4,9 +4,8 @@ using Reexport
 """
     AbstractChromatogram
 
-The `AbstractChromatogram` type is the supertype of all chromatogram implementations in 
-JuChrom. All subtypes of `AbstractChromatogram` (e.g., `FID`, `GCMS`, `TIC`) contain 
-`scantimes`, `intensities`, and `metadata`.
+Supertype of all chromatogram implementations. All subtypes (e.g., `FID`, `GCMS`, `TIC`) 
+contain `scantimes`, `intensities`, and `metadata`.
 
 See also [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), [`AbstractFID`](@ref), 
 [`AbstractTIC`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`intensities`](@ref), 
@@ -18,10 +17,10 @@ abstract type AbstractChromatogram end
 """
     AbstractGC <: AbstractChromatogram
 
-The `AbstractGC` type is the supertype of all chromatogram implementations that have no 
-mass-charge ratio (*m*/*z*) data (= `ions`) and therefore have a single intensity value 
-associated with a given `scantime` in JuChrom (e.g., `FID`, `TIC`). The `intensities` are 
-stored in a vector whose index corresponds to the index of the associated `scantime`.
+Supertype of all chromatogram implementations that have no mass-charge ratio (*m*/*z*) data 
+(= `ions`) and therefore have a single intensity value associated with a given `scantime` 
+(e.g., `FID`, `TIC`). The `intensities` are stored in a vector whose index corresponds to 
+the index of the associated `scantime`.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractTIC`](@ref), 
 [`FID`](@ref), [`TIC`](@ref), [`intensities`](@ref), [`scantimes`](@ref), 
@@ -33,8 +32,8 @@ abstract type AbstractGC <: AbstractChromatogram end
 """
     AbstractFID <: AbstractGC
 
-The `AbstractFID` type is the supertype of all flame ionization detector chromatogram 
-implementations in JuMS (e.g., `FID`).
+Supertype of all flame ionization detector chromatogram implementations in JuMS (e.g., 
+`FID`).
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`FID`](@ref), 
 [`intensities`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
@@ -52,7 +51,7 @@ struct FID{
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
         issorted(scantimes) || throw(
-            ArgumentError("scan times not in ascending order"))
+            ArgumentError("scantimes not in ascending order"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan count"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -69,7 +68,9 @@ Base.broadcastable(fid::FID) = Ref(fid)
     FID(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Return a FID object consisting of scan times, intensities, and metadata.
+Construct a FID object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
+the `scantimes` must be in ascending order and the `intensities` must not contain values 
+less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -85,11 +86,19 @@ FID {scantimes: Int64, intensities: Int32}
 intensity range: 1 - 956
 metadata: 
 
-julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:id => 1, :name => "sample"))
+julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
 FID {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: :id, :name
+metadata: :name
+
+julia> FID([2, 1, 3]u"s", [12.0, 956.0, 1.0])
+ERROR: ArgumentError: scantimes not in ascending order
+[...]
+
+julia> FID([1, 2, 3]u"s", [-12.0, 956.0, 1.0])
+ERROR: ArgumentError: intensity values contain values less than zero
+[...]
 ```
 """
 function FID(scantimes::T1, intensities::T2, metadata::Dict=Dict{Any, Any}()) where {
@@ -102,12 +111,11 @@ end
 """
     AbstractGCMS <: AbstractChromatogram
 
-The `AbstractGCMS` type is the supertype of all chromatogram implementations that contain 
-mass-charge ratio (m/z) data (= `ions`) and associated abundance values (= `intensities`) 
-and thus can have one or more ion intensity values associated with a given scan time in 
-JuChrom (e.g., `GCMS`). The `intensities` are stored in a matrix where the row index 
-corresponds to that of the associated `scantime` and where the column index corresponds 
-to that of the associated `ion`.
+Supertype of all chromatogram implementations that contain mass-charge ratio (*m*/*z*) data 
+(= `ions`) and associated abundance values (= `intensities`) and thus can have one or more 
+ion intensity values associated with a given scan time (e.g., `GCMS`). The `intensities` 
+are stored in a matrix where the row index corresponds to that of the associated `scantime` 
+and where the column index corresponds to that of the associated `ion`.
 
 See also [`AbstractChromatogram`](@ref), [`GCMS`](@ref), [`intensities`](@ref), 
 [`ions`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
@@ -128,14 +136,14 @@ struct GCMS{
             T1<:AbstractVector{<:Unitful.Time},
             T2<:AbstractVector{<:Real},
             T3<:AbstractMatrix{<:Real}}
-        issorted(scantimes) || throw(ArgumentError("scan times not in ascending order"))
+        issorted(scantimes) || throw(ArgumentError("scantimes not in ascending order"))
         issorted(ions) || throw(ArgumentError("ions not in ascending order"))
         size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
             "intensity matrix row count does not match scan count"))
         size(intensities, 2) == length(ions) || throw(DimensionMismatch(
             "intensity matrix column count does not match ion count"))
         count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
-            "intensity matrix contains at least one value less than zero"))
+            "intensity values contain at least one value less than zero"))
         new(scantimes, ions, intensities, metadata)
     end
 end
@@ -145,9 +153,11 @@ Base.broadcastable(gcms::GCMS) = Ref(gcms)
 
 """
     GCMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
-    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict()) 
+    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
 
-Return a GCMS object consisting of `scantimes`, `ions`, `intensities`, and  `metadata`.
+Construct a GCMS object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
+Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
+must not contain values less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`intensities`](@ref), 
 [`ions`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
@@ -170,6 +180,18 @@ GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
 2 ions; range: m/z 35.1 - 76.2
 intensity range: 0 - 956
 metadata: :id
+
+julia> GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+ERROR: ArgumentError: scantimes not in ascending order
+[...]
+
+julia> GCMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
+ERROR: ArgumentError: ions not in ascending order
+[...]
+
+julia> GCMS([1, 2, 3]u"s", [85, 100], [0 -12; 34 956; 23 1])
+ERROR: ArgumentError: intensity values contain at least one value less than zero
+[...]
 ```
 """
 function GCMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any, Any}()
@@ -184,8 +206,7 @@ end
 """
     AbstractTIC <: AbstractGC
 
-The `AbstractTIC` type is the supertype of all total ion chromatogram implementations in 
-JuChrom (e.g., `TIC`).
+Supertype of all total ion chromatogram implementations (e.g., `TIC`).
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`TIC`](@ref), 
 [`intensities`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
@@ -203,11 +224,11 @@ struct TIC{
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
         issorted(scantimes) || throw(
-            ArgumentError("scan times not in ascending order"))
+            ArgumentError("scantimes not in ascending order"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan count"))
         count(i -> i < 0, intensities) == 0 || throw(
-            ArgumentError("intensity values contain values less than zero"))
+            ArgumentError("intensity values contain at least one value less than zero"))
         new(scantimes, intensities, metadata)
     end
 end
@@ -220,7 +241,9 @@ Base.broadcastable(tic::TIC) = Ref(tic)
     TIC(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any}())
 
-Return a TIC object consisting of scan times, intensities, and metadata.
+Construct a TIC object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
+the `scantimes` must be in ascending order and the `intensities` must not contain values 
+less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -241,6 +264,14 @@ TIC {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
 metadata: :id, :name
+
+julia> TIC([2, 1, 3]u"s", [12.0, 956.0, 1.0])
+ERROR: ArgumentError: scantimes not in ascending order
+[...]
+
+julia> TIC([1, 2, 3]u"s", [-12.0, 956.0, 1.0])
+ERROR: ArgumentError: intensity values contain at least one value less than zero
+[...]
 ```
 """
 function TIC(scantimes::T1, intensities::T2, metadata::Dict=Dict{Any, Any}()) where {
@@ -253,7 +284,7 @@ end
 """
     ions(gcms::AbstractGCMS)
 
-Return the `ions` of the `AbstractGCMS` subtype object.
+Return the `ions`.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`maxion`](@ref), 
 [`ioncount`](@ref).
@@ -278,11 +309,11 @@ ions(gcms::AbstractGCMS) = gcms.ions
     scantimes(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
     ustripped::Bool=false)
 
-Return the `scantimes` of the `AbstractChromatogram` subtype object. The optional keyword 
-argument `timeunit` allows you to change the unit of the returned `scantimes`. All time 
-units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) 
-(e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` 
-allows you to specify whether the unit is stripped from the returned values.
+Return the `scantimes`. The optional keyword argument `timeunit` allows you to change the 
+unit of the returned `scantimes`. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned values.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
@@ -322,7 +353,7 @@ end
 """
     intensities(chrom::AbstractChromatogram)
 
-Return the intensities of the `AbstractChromatogram` subtype object.
+Return the intensities.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`minintensity`](@ref), [`maxintensity`](@ref).
@@ -386,7 +417,7 @@ metadata(chrom::AbstractChromatogram) = chrom.metadata
 """
     scancount(chrom::AbstractChromatogram) -> Int
 
-Return the number of scans from the AbstractChromatogram subtype object.
+Return the number of scans.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`scantimes`](@ref).
@@ -406,9 +437,8 @@ scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
     minscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
     ustripped::Bool=false)
 
-Return the time of the first scan from the AbstractChromatogram subtype object. The 
-optional keyword argument `timeunit` allows you to change the unit of the returned scan 
-time. All time units defined in the package 
+Return the time of the first scan. The optional keyword argument `timeunit` allows you to 
+change the unit of the returned scan time. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
 is stripped from the returned value.
@@ -441,11 +471,11 @@ end
     maxscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
     ustripped::Bool)
 
-Return the time of the last scan from the AbstractChromatogram subtype object. The optional 
-keyword argument `timeunit` allows you to change the unit of the returned scan time. All 
-time units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) 
-(e.g., `u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` allows 
-you to specify whether the unit is stripped from the returned value.
+Return the time of the last scan. The optional keyword argument `timeunit` allows you to 
+change the unit of the returned scan time. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned value.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`minscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
@@ -474,7 +504,7 @@ end
 """
     ioncount(gcms::AbstractGCMS) -> Int
 
-Return the number of ions in the AbstractGCMS subtype object.
+Return the number of ions.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref).
 
@@ -492,7 +522,7 @@ ioncount(gcms::AbstractGCMS) = length(ions(gcms))
 """
     minion(gcms::AbstractGCMS)
 
-Return the smallest ion in the AbstractGCMS subtype object.
+Return the smallest ion.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ioncount`](@ref).
 
@@ -511,7 +541,7 @@ minion(gcms::AbstractGCMS) = first(ions(gcms))
 """
     maxion(gcms::AbstractGCMS)
 
-Return the largest ion in the AbstractGCMS subtype object.
+Return the largest ion.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref), 
 [`ioncount`](@ref).
@@ -530,7 +560,7 @@ maxion(gcms::AbstractGCMS) = last(ions(gcms))
 """
     minintensity(chrom::AbstractChromatogram)
 
-Return the minimum intensity in the AbstractChromatogram subtype object.
+Return the minimum intensity.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`maxintensity`](@ref), [`intensities`](@ref).
@@ -549,7 +579,7 @@ minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
 """
     maxintensity(chrom::AbstractChromatogram)
 
-Return the maximum intensity in the AbstractChromatogram subtype object.
+Return the maximum intensity.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`minintensity`](@ref), [`intensities`](@ref).
