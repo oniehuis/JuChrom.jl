@@ -448,7 +448,7 @@ See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](
 
 # Example
 ```jldoctest
-julia> gcms = GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> minscantime(gcms)
 1.0 s
@@ -482,7 +482,7 @@ See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](
 
 # Example
 ```jldoctest
-julia> gcms = GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> maxscantime(gcms)
 3.0 s
@@ -528,7 +528,7 @@ See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ioncount`](@r
 
 # Example
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> minion(gcms)
 85
@@ -548,7 +548,7 @@ See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref
 
 # Example
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> maxion(gcms)
 100
@@ -567,7 +567,7 @@ See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](
 
 # Example
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> minintensity(gcms)
 0
@@ -586,7 +586,7 @@ See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](
 
 # Example
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> maxintensity(gcms)
 956
