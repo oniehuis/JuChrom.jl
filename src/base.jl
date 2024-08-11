@@ -259,11 +259,11 @@ TIC {scantimes: Int64, intensities: Int32}
 intensity range: 1 - 956
 metadata: 
 
-julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:id => 1, :name => "sample"))
+julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
 TIC {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: :id, :name
+metadata: :name
 
 julia> TIC([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scantimes not in ascending order
