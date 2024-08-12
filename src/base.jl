@@ -7,9 +7,9 @@ using Reexport
 Supertype of all chromatogram implementations. All subtypes (e.g., `FID`, `GCMS`, `TIC`) 
 contain `scantimes`, `intensities`, and `metadata`.
 
-See also [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), [`AbstractFID`](@ref), 
-[`AbstractTIC`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`intensities`](@ref), 
-[`scantimes`](@ref), [`metadata`](@ref).
+See also [`AbstractGC`](@ref), [`AbstractFID`](@ref), [`AbstractGCMS`](@ref), 
+[`AbstractTIC`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`scantimes`](@ref), 
+[`intensities`](@ref), [`metadata`](@ref).
 """
 abstract type AbstractChromatogram end
 
@@ -23,7 +23,7 @@ Supertype of all chromatogram implementations that have no mass-charge ratio (*m
 the index of the associated `scantime`.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractTIC`](@ref), 
-[`FID`](@ref), [`TIC`](@ref), [`intensities`](@ref), [`scantimes`](@ref), 
+[`FID`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
 [`metadata`](@ref).
 """
 abstract type AbstractGC <: AbstractChromatogram end
@@ -35,8 +35,8 @@ abstract type AbstractGC <: AbstractChromatogram end
 Supertype of all flame ionization detector chromatogram implementations in JuMS (e.g., 
 `FID`).
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`FID`](@ref), 
-[`intensities`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractGC`](@ref), 
+[`FID`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 """
 abstract type AbstractFID <: AbstractGC end
 
@@ -117,8 +117,8 @@ ion intensity values associated with a given scan time (e.g., `GCMS`). The `inte
 are stored in a matrix where the row index corresponds to that of the associated `scantime` 
 and where the column index corresponds to that of the associated `ion`.
 
-See also [`AbstractChromatogram`](@ref), [`GCMS`](@ref), [`intensities`](@ref), 
-[`ions`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`GCMS`](@ref), 
+[`scantimes`](@ref), [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 """
 abstract type AbstractGCMS <: AbstractChromatogram end
 
@@ -159,8 +159,8 @@ Construct a GCMS object consisting of `scantimes`, `ions`, `intensities`, and `m
 Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
 must not contain values less than zero.
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`intensities`](@ref), 
-[`ions`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
+[`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 
 In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `GCMS` object preserves the types.
@@ -208,8 +208,8 @@ end
 
 Supertype of all total ion chromatogram implementations (e.g., `TIC`).
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`TIC`](@ref), 
-[`intensities`](@ref), [`scantimes`](@ref), [`metadata`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
+[`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 """
 abstract type AbstractTIC <: AbstractGC end
 
@@ -316,7 +316,7 @@ supported. The optional keyword argument `ustripped` allows you to specify wheth
 is stripped from the returned values.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`minscantime`](@ref), [`maxscantime`](@ref).
+[`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
 
 In the following example, the element type of the `scantime` vector passed to the object 
 constructor is explicitly annotated to illustrate that the GCMS object preserves the type.
@@ -355,8 +355,10 @@ end
 
 Return the intensities.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`minintensity`](@ref), [`maxintensity`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
+[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
+[`maxintensity`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
 
 # Example
 ```jldoctest
@@ -444,7 +446,7 @@ metadata(chrom::AbstractChromatogram) = chrom.metadata
 Return the number of scans.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantimes`](@ref).
+[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```jldoctest
@@ -530,7 +532,8 @@ end
 
 Return the number of ions.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`maxion`](@ref).
 
 # Example
 ```jldoctest
@@ -548,7 +551,8 @@ ioncount(gcms::AbstractGCMS) = length(ions(gcms))
 
 Return the smallest ion.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ioncount`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`maxion`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
 
 # Example
 ```jldoctest
@@ -586,8 +590,10 @@ maxion(gcms::AbstractGCMS) = last(ions(gcms))
 
 Return the minimum intensity.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`maxintensity`](@ref), [`intensities`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
+[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`maxintensity`](@ref), 
+[`intensities`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
 
 # Example
 ```jldoctest
@@ -605,8 +611,10 @@ minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
 
 Return the maximum intensity.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`minintensity`](@ref), [`intensities`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
+[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
+[`intensities`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
 
 # Example
 ```jldoctest
