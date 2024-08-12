@@ -78,3 +78,32 @@ end
     @test_throws MethodError minion(FID([1, 2, 3]u"s", [12, 956, 23]))
     @test_throws MethodError minion(TIC([1, 2, 3]u"s", [12, 956, 23]))
 end
+
+
+############################################################################################
+# totalionchromatogram(gcms::AbstractGCMS)
+############################################################################################
+@testset "totalionchromatogram GCMS" begin
+    # Check the returned type and associated supertypes
+    @test isa(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])), 
+        TIC)
+    @test isa(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])), 
+        AbstractTIC)
+    @test isa(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])), 
+        AbstractChromatogram)
+
+    # Check the contents of the TIC for plausibility
+    @test [1, 2, 3]u"s" == scantimes(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100],
+        [0 12; 34 956; 23 1])))
+    @test [12, 990, 24] == intensities(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100],
+        [0 12; 34 956; 23 1])))
+    @test Dict(:id => 1, "name" => "sample") == metadata(totalionchromatogram(GCMS(
+        [1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], Dict(:id => 1, "name" => "sample")
+        )))
+    
+    # Verify that the element type of the TIC intensities is the same as the GCMS
+    @test Vector{Int} == typeof(intensities(totalionchromatogram(GCMS([1, 2, 3]u"s", 
+        [85, 100], Int[0 12; 34 956; 23 1]))))
+    @test Vector{Float64} == typeof(intensities(totalionchromatogram(GCMS([1, 2, 3]u"s", 
+        [85, 100], Float64[0 12; 34 956; 23 1]))))
+end

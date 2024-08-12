@@ -686,6 +686,52 @@ julia> maxintensity(gcms)
 maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 
+"""
+    totalionchromatogram(gcms::AbstractGCMS)
+
+Compute the total ion chromatrogram.
+
+See also [`AbstractGCMS`](@ref), [`AbstractGCMS`](@ref), [`TIC`](@ref), [`scantimes`](@ref), 
+[`intensities`](@ref), [`metadata`](@ref).
+
+In the following example, the element type of `intensities` passed to the object constructor 
+is explicitly annotated to show that the TIC object has the same type.
+
+# Example
+```jldoctest
+julia> gcms = GCMS((1.1:3.1)u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
+
+julia> tic = totalionchromatogram(gcms)
+TIC {scantimes: Float64, intensities: Int64}
+3 scans; time range: 1.1 s - 3.1 s
+intensity range: 12 - 990
+metadata: 0
+
+julia> intensities(tic)
+3-element Vector{Int64}:
+  12
+ 990
+  24
+
+julia> gcms = GCMS((1.1:3.1)u"s", [85, 100], Float64[0 12; 34 956; 23 1]);
+
+julia> tic = totalionchromatogram(gcms)
+TIC {scantimes: Float64, intensities: Float64}
+3 scans; time range: 1.1 s - 3.1 s
+intensity range: 12.0 - 990.0
+metadata: 0
+
+julia> intensities(tic)
+3-element Vector{Float64}:
+  12.0
+ 990.0
+  24.0
+```
+"""
+totalionchromatogram(gcms::AbstractGCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
+    dims=2)), metadata(gcms))
+
+
 function Base.show(io::IO, fid::FID)
     println(io, "FID {scantimes: ", eltype(ustrip.(scantimes(fid))), ", intensities: ", 
         eltype(intensities(fid)), "}")

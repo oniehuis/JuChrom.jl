@@ -24,5 +24,6 @@ export minscantime
 export scancount
 export scantime
 export scantimes
+export totalionchromatogram
 
 end
