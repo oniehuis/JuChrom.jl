@@ -644,7 +644,7 @@ ioncount(gcms::AbstractGCMS) = length(ions(gcms))
 """
     ionindex(gcms::AbstractGCMS, ion::Real) -> Int
 
-Return the index of the `ion`. If the ion does not exist, an error is thrown.
+Return the index of the `ion`. If the `ion` does not exist, an error is thrown.
 
 See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ion`](@ref), [`minion`](@ref), 
 [`maxion`](@ref), [`ioncount`](@ref).
@@ -751,16 +751,16 @@ maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 
 """
-    totalionchromatogram(gcms::AbstractGCMS)
+    totalionchromatogram(gcms::GCMS)
 
 Compute the total ion chromatrogram.
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`GCMS`](@ref), 
 [`AbstractTIC`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
 [`metadata`](@ref).
 
-In the following example, the element type of `intensities` passed to the object constructor 
-is explicitly annotated to show that the TIC object has the same type.
+In the following example, the element type of `intensities` passed to the object 
+constructor  is explicitly annotated to show that the TIC object has the same type.
 
 # Example
 ```jldoctest
@@ -793,7 +793,7 @@ julia> intensities(tic)
   24.0
 ```
 """
-totalionchromatogram(gcms::AbstractGCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
+totalionchromatogram(gcms::GCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
     dims=2)), metadata(gcms))
 
 
