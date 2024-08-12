@@ -1,6 +1,8 @@
 using Reexport
 @reexport using Unitful
 
+include("utilities.jl")
+
 """
     AbstractChromatogram
 
@@ -160,7 +162,7 @@ Note that the `scantimes` and the `ions` must be in ascending order and the `int
 must not contain values less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
-[`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+[`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref), [`totalionchromatogram`](@ref).
 
 In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `GCMS` object preserves the types.
@@ -246,7 +248,8 @@ the `scantimes` must be in ascending order and the `intensities` must not contai
 less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
-[`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+[`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref), 
+[`totalionchromatogram`](@ref).
 
 In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `TIC` object preserves the types.
@@ -286,8 +289,8 @@ end
 
 Return the `ions`.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-[`ioncount`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ion`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ionindex`](@ref), [`ioncount`](@ref).
 
 In the following example, the number type of `ions` passed to the object constructor 
 is explicitly annotated to illustrate that the GCMS object preserves the type.
@@ -330,12 +333,15 @@ julia> scantime(gcms, 2, timeunit=u"minute")
 
 julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
 1//30
+
+julia> scantime(gcms, 5, timeunit=u"minute", ustripped=true)
+ERROR: BoundsError: attempt to access 3-element Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}} at index [5]
 ```
 """
 function scantime(chrom::AbstractChromatogram, index::Integer; 
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
     firstindex(scantimes(chrom)) ≤ index ≤ lastindex(scantimes(chrom)) || throw(
-        BoundsError("index $index outside of scan index range"))
+        BoundsError(scantimes(chrom)[index]))
     ustripped ? ustrip(timeunit, scantimes(chrom)[index]) : uconvert(timeunit, 
         scantimes(chrom)[index])
 end
@@ -587,12 +593,42 @@ end
 
 
 """
+    ion(gcms::AbstractGCMS, index::Integer)
+
+Return the `ion` at the specified `index`.
+
+See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS((1:3)u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> ion(gcms, 1)
+85
+
+julia> ion(gcms, 2)
+100
+
+julia> ion(gcms, 3)
+ERROR: BoundsError: attempt to access 2-element Vector{Int64} at index [3]
+[...]
+```
+"""
+function ion(gcms::AbstractGCMS, index::Integer)
+    firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
+        BoundsError(ions(gcms)[index]))
+    ions(gcms)[index]
+end
+
+
+"""
     ioncount(gcms::AbstractGCMS) -> Int
 
 Return the number of ions.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ion`](@ref), 
+[`minion`](@ref), [`maxion`](@ref).
 
 # Example
 ```jldoctest
@@ -606,12 +642,40 @@ ioncount(gcms::AbstractGCMS) = length(ions(gcms))
 
 
 """
+    ionindex(gcms::AbstractGCMS, ion::Real) -> Int
+
+Return the index of the `ion`. If the ion does not exist, an error is thrown.
+
+See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ion`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS((1:3)u"s", [85.2f0, 100.1f0], [0 12; 34 956; 23 1]);
+
+julia> ionindex(gcms, 100.1)
+2
+
+julia> ionindex(gcms, 201.1)
+ERROR: ArgumentError: ion 201.1 does not exist
+[...]
+```
+"""
+function ionindex(gcms::AbstractGCMS, ion::Real)
+    for (index, element) in enumerate(ions(gcms))
+        element ≈ ion && return index
+    end
+    throw(ArgumentError("ion $ion does not exist"))
+end
+
+
+"""
     minion(gcms::AbstractGCMS)
 
 Return the smallest ion.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`maxion`](@ref), [`ions`](@ref), 
-[`ioncount`](@ref).
+[`ion`](@ref), [`ioncount`](@ref).
 
 # Example
 ```jldoctest
@@ -631,7 +695,7 @@ minion(gcms::AbstractGCMS) = first(ions(gcms))
 Return the largest ion.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref), 
-[`ioncount`](@ref).
+[`ion`](@ref), [`ioncount`](@ref).
 
 # Example
 ```jldoctest

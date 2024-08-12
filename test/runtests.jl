@@ -7,3 +7,5 @@ using SafeTestsets
 
 @safetestset "AbstractGCMS" begin include("base/AbstractGCMS.jl") end
 @safetestset "AbstractChromatogram" begin include("base/AbstractChromatogram.jl") end
+
+@safetestset "Utilities" begin include("utilities/utilities.jl") end

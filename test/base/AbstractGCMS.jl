@@ -4,6 +4,35 @@ using Unitful: 𝐓
 
 
 ############################################################################################
+# ion(gcms::AbstractGCMS, index::Integer)
+############################################################################################
+@testset "ion GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 85 == ion(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1)
+    @test 100 == ion(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2)
+    
+    # Provoke a BoundsError by specifying an index that does not exist
+    @test_throws BoundsError ion(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 3)
+
+    # Same return container and element type as used to construct the object
+    @test Int64 == typeof(ion(GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]), 1))
+    @test Float64 == typeof(ion(GCMS([1, 2, 3]u"s", Float64[85, 100], 
+        [0 12; 34 956; 23 1]), 1))
+    @test Int64 == typeof(ion(GCMS([1, 2, 3]u"s", 85:86, [0 12; 34 956; 23 1]), 1))
+    @test Int64 == typeof(ion(GCMS([1, 2, 3]u"s", 85:85, reshape([0, 956, 1], (:,1))), 1))
+    @test Int64 == typeof(ion(GCMS([1, 2, 3]u"s", 85:15:100, [0 12; 34 956; 23 1]), 1))
+    @test Float64 == typeof(ion(GCMS([1, 2, 3]u"s", 85.0:15:100.0, [0 12; 34 956; 23 1]), 
+        1))
+    @test Float64 == typeof(ion(GCMS([1, 2, 3]u"s", 85.0:1.0:85.0, reshape([0, 956, 1], 
+        (:,1))), 1))
+
+    # Function does not work with objects that are not subtypes of AbstractGCMS
+    @test_throws MethodError ion(FID([1, 2, 3]u"s", [12, 956, 23]), 1)
+    @test_throws MethodError ion(TIC([1, 2, 3]u"s", [12, 956, 23]), 1)
+end
+
+
+############################################################################################
 # ioncount(gcms::AbstractGCMS) -> Int
 ############################################################################################
 @testset "ioncount GCMS" begin
@@ -17,6 +46,33 @@ using Unitful: 𝐓
     # Function does not work with objects that are not subtypes of AbstractGCMS
     @test_throws MethodError ioncount(FID([1, 2, 3]u"s", [12, 956, 23]))
     @test_throws MethodError ioncount(TIC([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+############################################################################################
+# ionindex(gcms::AbstractGCMS, ion::Real) -> Int
+############################################################################################
+@testset "ionindex GCMS" begin
+    # Validate the returned value
+    @test 1 == ionindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 85)
+    @test 2 == ionindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 100)
+    @test_throws ArgumentError ionindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 200)
+    @test 1 == ionindex(GCMS([1, 2, 3]u"s", Float32[85, 100], [0 12; 34 956; 23 1]), 85)
+    @test 2 == ionindex(GCMS([1, 2, 3]u"s", Float64[85, 100], [0 12; 34 956; 23 1]), 100)
+    @test 1 == ionindex(GCMS([1, 2, 3]u"s", Float32[85.5, 100.1], [0 12; 34 956; 23 1]), 
+        85.5)
+    @test 2 == ionindex(GCMS([1, 2, 3]u"s", Float32[85.5, 100.1], [0 12; 34 956; 23 1]), 
+        100.1)
+
+    # Return value must be an integer
+    @test Int == typeof(ionindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 85))
+    @test Int == typeof(ionindex(GCMS([1, 2, 3]u"s", Float32[85.5, 100.1], 
+        [0 12; 34 956; 23 1]), 100.1))
+
+    # Function does not work with objects that are not subtypes of AbstractGCMS
+    @test_throws MethodError ionindex(FID([1, 2, 3]u"s", [12, 956, 23]), 85)
+    @test_throws MethodError ionindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 85)
 end
 
 

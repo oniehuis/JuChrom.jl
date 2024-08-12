@@ -12,7 +12,9 @@ export GCMS
 export TIC
 
 export intensities
+export ion
 export ioncount
+export ionindex
 export ions
 export maxintensity
 export maxion
