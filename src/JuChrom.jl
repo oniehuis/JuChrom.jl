@@ -22,6 +22,7 @@ export minintensity
 export minion
 export minscantime
 export scancount
+export scantime
 export scantimes
 
 end

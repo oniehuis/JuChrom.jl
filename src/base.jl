@@ -86,7 +86,7 @@ FID {scantimes: Int64, intensities: Int32}
 intensity range: 1 - 956
 metadata: 0
 
-julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
+julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict("name" => "sample"))
 FID {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
@@ -259,7 +259,7 @@ TIC {scantimes: Int64, intensities: Int32}
 intensity range: 1 - 956
 metadata: 0
 
-julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
+julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict("name" => "sample"))
 TIC {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
@@ -306,6 +306,42 @@ ions(gcms::AbstractGCMS) = gcms.ions
 
 
 """
+    scantime(chrom::AbstractChromatogram, index::Integer; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool=false)
+
+Return the `scantime` by specifying the scan `index`. The optional parameter 
+`timeunit` allows you to change the unit of the returned time value. All time units defined 
+in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
+`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
+whether the unit is stripped from the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> scantime(gcms, 2)
+2 s
+
+julia> scantime(gcms, 2, timeunit=u"minute")
+1//30 minute
+
+julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
+1//30
+```
+"""
+function scantime(chrom::AbstractChromatogram, index::Integer; 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    firstindex(scantimes(chrom)) ≤ index ≤ lastindex(scantimes(chrom)) || throw(
+        BoundsError("index $index outside of scan index range"))
+    ustripped ? ustrip(timeunit, scantimes(chrom)[index]) : uconvert(timeunit, 
+        scantimes(chrom)[index])
+end
+
+
+"""
     scantimes(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
     ustripped::Bool=false)
 
@@ -316,9 +352,9 @@ supported. The optional keyword argument `ustripped` allows you to specify wheth
 is stripped from the returned values.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
+[`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
 
-In the following example, the element type of the `scantime` vector passed to the object 
+In the following example, the element type of the `scantimes` vector passed to the object 
 constructor is explicitly annotated to illustrate that the GCMS object preserves the type.
 
 # Example
@@ -370,6 +406,21 @@ julia> intensities(gcms)
  34  956
  23    1
 
+
+julia> intensities(gcms)[3, :]  # all intensites of 3rd scan
+2-element Vector{Int64}:
+ 23
+  1
+
+julia> intensities(gcms)[:, 1]  # all intensites of 1st ion
+3-element Vector{Int64}:
+  0
+ 34
+ 23
+
+julia> intensities(gcms)[2, 1]  # intensity of 2nd scan, 1st ion
+34
+
 julia> fid = FID([1, 2, 3]u"s", Float32[12.0, 956.0, 23.0]);
 
 julia> intensities(fid)
@@ -377,6 +428,9 @@ julia> intensities(fid)
   12.0
  956.0
   23.0
+
+julia> intensities(fid)[2]  # intensity of 2nd scan
+956.0f0
 ```
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
