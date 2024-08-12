@@ -691,8 +691,9 @@ maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 Compute the total ion chromatrogram.
 
-See also [`AbstractGCMS`](@ref), [`AbstractGCMS`](@ref), [`TIC`](@ref), [`scantimes`](@ref), 
-[`intensities`](@ref), [`metadata`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
+[`AbstractTIC`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
+[`metadata`](@ref).
 
 In the following example, the element type of `intensities` passed to the object constructor 
 is explicitly annotated to show that the TIC object has the same type.
