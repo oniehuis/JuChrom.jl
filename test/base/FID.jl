@@ -20,8 +20,8 @@ using Unitful: 𝐓
     # Metadata
     @test Dict{Any, Any} == typeof(FID([1, 2, 3]u"s", [12, 956, 23]).metadata)
     @test Dict() == FID([1, 2, 3]u"s", [12, 956, 23]).metadata
-    @test Dict(:id => 1, :name => "sample") == FID([1, 2, 3]u"s", [12, 956, 23], 
-        Dict(:id => 1, :name => "sample")).metadata
+    @test Dict(:id => 1, "name" => "sample") == FID([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 1, "name" => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
@@ -59,10 +59,10 @@ end
 
 @testset "show FID" begin
     io = IOBuffer()
-    show(io, FID(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 1, :name => "sample")))
+    show(io, FID(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 1, "name" => "sample")))
     @test String(take!(io)) == string(
         "FID {scantimes: Int64, intensities: Int64}\n",
         "3 scans; time range: 1 s - 3 s\n",
         "intensity range: 12 - 956\n",
-        "metadata: :id, :name")
+        "metadata: 2")
 end

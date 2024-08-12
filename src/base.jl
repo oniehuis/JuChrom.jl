@@ -84,13 +84,13 @@ julia> FID(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 FID {scantimes: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 intensity range: 1 - 956
-metadata: 
+metadata: 0
 
 julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
 FID {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: :name
+metadata: 1
 
 julia> FID([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -172,14 +172,14 @@ GCMS {scantimes: Int32, ions: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 
+metadata: 0
 
 julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 1))
 GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
 2 scans; time range: 1.1f0 s - 2.1f0 s
 2 ions; range: m/z 35.1 - 76.2
 intensity range: 0 - 956
-metadata: :id
+metadata: 1
 
 julia> GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -257,13 +257,13 @@ julia> TIC(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 TIC {scantimes: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 intensity range: 1 - 956
-metadata: 
+metadata: 0
 
 julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict(:name => "sample"))
 TIC {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: :name
+metadata: 1
 
 julia> TIC([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -396,7 +396,7 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: :id
+metadata: 1
 
 julia> metadata(gcms₁)
 Dict{Any, Any} with 1 entry:
@@ -407,34 +407,39 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata:
+metadata: 0
 
 julia> metadata(gcms₂)
 Dict{Any, Any}()
 
-julia> metadata(gcms₂)[:name] = "sample"
+julia> metadata(gcms₂)["name"] = "sample"
 "sample"
 
+julia> metadata(gcms₂)[:id] = 123
+123
+
 julia> metadata(gcms₂)
+Dict{Any, Any} with 2 entries:
+  "name" => "sample"
+  :id    => 123
+
+julia> gcms₂
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; time range: 1 s - 2 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: 2
+
+julia> delete!(metadata(gcms₂), "name")
 Dict{Any, Any} with 1 entry:
-  :name => "sample"
+  :id => 123
 
 julia> gcms₂
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: :name
-
-julia> delete!(metadata(gcms₂), :name)
-Dict{Any, Any}()
-
-julia> gcms₂
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-2 scans; time range: 1 s - 2 s
-2 ions; range: m/z 85 - 100
-intensity range: 0 - 956
-metadata:
+metadata: 1
 ```
 """
 metadata(chrom::AbstractChromatogram) = chrom.metadata
@@ -633,33 +638,7 @@ function Base.show(io::IO, fid::FID)
     println(io, scancount(fid), " scans; time range: ", minscantime(fid), " - ", 
         maxscantime(fid))
     println(io, "intensity range: ", minintensity(fid), " - ", maxintensity(fid))
-    print(io, "metadata: ")
-    first = true
-    n = 0
-    for key in sort(collect(keys(metadata(fid))))
-        first ? (first = false) : print(io, ", ")
-        show(io, key)
-        n += 1
-        n ≥ 10 && (print(io, " …"); break)
-    end
-end
-
-
-function Base.show(io::IO, tic::TIC)
-    println(io, "TIC {scantimes: ", eltype(ustrip.(scantimes(tic))), ", intensities: ", 
-        eltype(intensities(tic)), "}")
-    println(io, scancount(tic), " scans; time range: ", minscantime(tic), " - ", 
-        maxscantime(tic))
-    println(io, "intensity range: ", minintensity(tic), " - ", maxintensity(tic))
-    print(io, "metadata: ")
-    first = true
-    n = 0
-    for key in sort(collect(keys(metadata(tic))))
-        first ? (first = false) : print(io, ", ")
-        show(io, key)
-        n += 1
-        n ≥ 10 && (print(io, " …"); break)
-    end
+    print(io, "metadata: ", length(metadata(fid)))
 end
 
 
@@ -670,13 +649,15 @@ function Base.show(io::IO, gcms::GCMS)
         maxscantime(gcms))
     println(io, ioncount(gcms), " ions; range: m/z ", minion(gcms), " - ", maxion(gcms))
     println(io, "intensity range: ", minintensity(gcms), " - ", maxintensity(gcms))
-    print(io, "metadata: ")
-    first = true
-    n = 0
-    for key in sort(collect(keys(metadata(gcms))))
-        first ? (first = false) : print(io, ", ")
-        show(io, key)
-        n += 1
-        n ≥ 10 && (print(io, " …"); break)
-    end
+    print(io, "metadata: ", length(metadata(gcms)))
+end
+
+
+function Base.show(io::IO, tic::TIC)
+    println(io, "TIC {scantimes: ", eltype(ustrip.(scantimes(tic))), ", intensities: ", 
+        eltype(intensities(tic)), "}")
+    println(io, scancount(tic), " scans; time range: ", minscantime(tic), " - ", 
+        maxscantime(tic))
+    println(io, "intensity range: ", minintensity(tic), " - ", maxintensity(tic))
+    print(io, "metadata: ", length(metadata(tic)))
 end

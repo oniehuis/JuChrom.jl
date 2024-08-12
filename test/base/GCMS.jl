@@ -50,8 +50,8 @@ using Unitful: 𝐓
     @test Dict{Any, Any} == typeof(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]).metadata)
     @test Dict() == GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).metadata
-    @test Dict(:id => 1, :name => "sample") == GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample")).metadata
+    @test Dict(:id => 1, "name" => "sample") == GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1], Dict(:id => 1, "name" => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)
@@ -104,11 +104,11 @@ end
 @testset "show GCMS" begin
     io = IOBuffer()
     show(io, GCMS(Int64[1, 2, 3]u"s", Int64[85, 100], Int64[0 12; 34 956; 23 1], Dict(:id => 1, 
-        :name => "sample")))
+        "name" => "sample")))
     @test String(take!(io)) == string(
         "GCMS {scantimes: Int64, ions: Int64, intensities: Int64}\n", 
         "3 scans; time range: 1 s - 3 s\n",
         "2 ions; range: m/z 85 - 100\n",
         "intensity range: 0 - 956\n", 
-        "metadata: :id, :name")
+        "metadata: 2")
 end
