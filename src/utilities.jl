@@ -54,6 +54,9 @@ julia> cosine([100, 500, 250], [10, 50, 25])
 function cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
     length(x) == length(y) || throw(
         DimensionMismatch("vectors x and y have different lengths"))
+    length(x) == 0 && throw(ArgumentError("vectors x and y are empty"))
+    iszero(x) && throw(ArgumentError("vector x contains only zeros"))
+    iszero(y) && throw(ArgumentError("vector y contains only zeros"))
     s = sum(x .* y) / (sqrt(sum(x.^2)) * sqrt(sum(y.^2)))
     0 ≤ s ≤ 1 && return s
     (s < 0 || isnan(s)) ? zero(typeof(s)) : one(typeof(s))

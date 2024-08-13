@@ -24,14 +24,15 @@ end
 ############################################################################################
 @testset "cosine" begin
     @test 0.8978872704229618 ≈ cosine([100, 500, 250], [200, 1000, 0])
-    @test 0 ≈ cosine(Int[], Int[])
     @test 1 ≈ cosine([1, 1, 1], [1, 1, 1])
     @test 0 ≈ cosine([10.5, 10.5, 10.5], [-10.5, -10.5, -10.5])
     @test Float64 == typeof(cosine([100, 500, 250], [200, 1000, 0]))
-    @test Float64 == typeof(cosine(Int[], Int[]))
     @test Float64 == typeof(cosine([1, 1, 1], [1, 1, 1]))
     @test Float64 == typeof(cosine([10.5, 10.5, 10.5], [-10.5, -10.5, -10.5]))
     @test_throws DimensionMismatch cosine([100, 500, 250], [200, 1000, 0, 10])
+    @test_throws ArgumentError cosine(Int[], Int[])
+    @test_throws ArgumentError cosine([0, 0, 0], [200, 1000, 0])
+    @test_throws ArgumentError cosine([100, 500, 250], [0, 0, 0])
  end
 
 
