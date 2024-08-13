@@ -286,8 +286,8 @@ end
 """
     binions(gcms::AbstractGCMS; ionbin::Function=integerion)
 
-Return a GCMS object in which the ions are binned according to the ionbin function (default 
-function is integer) and the intensity values of the binned ions are summed.
+Return a `GCMS` object in which the `ions` are binned according to the `ionbin` function 
+(default function is `integer`) and the `intensities` of the binned `ions` are summed.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`integer`](@ref), [`intensities`](@ref), 
 [`ions`](@ref), [`ioncount`](@ref).
