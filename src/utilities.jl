@@ -70,6 +70,9 @@ end
 Return the integer for the given `value` that satisfies the following condition: 
 ``integer - 1 + start ≤ value < integer + start``, where ``0 ≤ start < 1``.
 
+``$\frac{x}{y}$``
+
+
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`binions`](@ref), [`ions`](@ref).
 
 # Example
