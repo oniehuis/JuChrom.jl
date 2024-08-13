@@ -29,7 +29,4 @@ export scantimeindex
 export scantimes
 export totalionchromatogram
 
-# export copy_with_eltype
-# export findclosest
-
 end
