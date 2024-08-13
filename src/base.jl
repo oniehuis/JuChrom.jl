@@ -1,6 +1,5 @@
 using Reexport
 @reexport using Unitful
-
 include("utilities.jl")
 
 """
@@ -344,6 +343,54 @@ function scantime(chrom::AbstractChromatogram, index::Integer;
         BoundsError(scantimes(chrom)[index]))
     ustripped ? ustrip(timeunit, scantimes(chrom)[index]) : uconvert(timeunit, 
         scantimes(chrom)[index])
+end
+
+
+"""
+    scantimeindex(gcms::AbstractGCMS, time::Unitful.Time; precisetime::Bool=false) -> Int
+
+Return the index of the scantime in the `scantimes` that is closest to the given `time`. 
+All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl)
+(e.g., `u"s"`, `u"minute") are supported. If there is a tie, the larger scan time is used. 
+If the optional parameter `precisetime` is set to `true`, the specified time must exist in 
+`scantimes`, otherwise an error is thrown.
+
+See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
+[`scantimes`](@ref), [`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), 
+[`scancount`](@ref), [`ionindex`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1.1f0, 2.1f0, 3.1f0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float32, ions: Int64, intensities: Int64}
+3 scans; time range: 1.1f0 s - 3.1f0 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: 0
+
+julia> scantimeindex(gcms, 1.1f0u"s", precisetime=true)
+1
+
+julia> scantimeindex(gcms, 2.1u"s", precisetime=true)
+2
+
+julia> scantimeindex(gcms, 2.2u"s", precisetime=true)
+ERROR: ArgumentError: scantime 2.2 s does not exist
+[...]
+
+julia> scantimeindex(gcms, 2.2u"s")
+2
+```
+"""
+function scantimeindex(chrom::AbstractChromatogram, time::Unitful.Time; 
+    precisetime::Bool=false)
+    precisetime || return findclosest(scantimes(chrom), time)
+    t = ustrip(uconvert(unit(eltype(scantimes(chrom))), time))
+    for (index, element) in enumerate(scantimes(chrom, ustripped=true))
+        element ≈ t && return index
+    end
+    throw(ArgumentError("scantime $time does not exist"))
 end
 
 

@@ -4,6 +4,6 @@ Documentation for JuChrom.jl
 
 ```@autodocs
 Modules = [JuChrom]
-Private = false
+Private = true
 Order   = [:type, :function]
 ```

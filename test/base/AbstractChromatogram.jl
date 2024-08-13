@@ -486,6 +486,235 @@ end
 
 
 ############################################################################################
+# scantimeindex(gcms::AbstractGCMS, chrom::AbstractChromatogram, time::Unitful.Time; 
+# precisetime::Bool=false) -> Int
+############################################################################################
+@testset "scantimeindex FID" begin
+    # Validate the returned value
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s")
+    @test 2 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 2u"s")
+    @test 3 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 3u"s")
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=true)
+    @test 2 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 2u"s", precisetime=true)
+    @test 3 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 3u"s", precisetime=true)
+    @test 1 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s")
+    @test 2 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s")
+    @test 3 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s")
+    @test 1 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s", 
+        precisetime=true)
+    @test 2 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s", 
+        precisetime=true)
+    @test 3 == scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s")
+    @test 2 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s")
+    @test 3 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s")
+    @test 1 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s", 
+        precisetime=true)
+    @test 2 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s", 
+        precisetime=true)
+    @test 3 == scantimeindex(FID(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 0u"s")
+    @test 3 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 4u"s")
+    
+    # Function throws ArgumentError if precisetime is set to true and the specified time 
+    # does not does not exist
+    @test_throws ArgumentError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 0u"s", 
+        precisetime=true)
+    @test_throws ArgumentError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 4u"s", 
+        precisetime=true)
+    @test_throws ArgumentError scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]),
+        2.1001u"s", precisetime=true)
+    @test_throws ArgumentError scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]),
+        1.9999u"s", precisetime=true)
+
+    # Return value must be an integer
+    @test Int == typeof(scantimeindex(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 1u"s"))
+    @test Int == typeof(scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 
+        1.1u"s"))
+    @test Int == typeof(scantimeindex(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=true))
+    @test Int == typeof(scantimeindex(FID(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 
+        1.1u"s", precisetime=true))
+
+    # The function argument time must be a quantity with a valid time unit
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"ms")
+    @test 3 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"minute")
+    @test_throws MethodError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"m")
+    @test_throws MethodError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"m", 
+        precisetime=true)
+
+    # The function argument precisetime must be a Boolean value
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=true)
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=false)
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=:true)
+    @test 1 == scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=:false)
+    @test_throws TypeError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=:truly)
+    @test_throws TypeError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime="true")
+    @test_throws TypeError scantimeindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=1)
+end
+
+
+@testset "scantimeindex GCMS" begin
+    # Validate the returned value
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s")
+    @test 2 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2u"s")
+    @test 3 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 3u"s")
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s", 
+        precisetime=true)
+    @test 2 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2u"s", 
+        precisetime=true)
+    @test 3 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 3u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s")
+    @test 2 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2.1u"s")
+    @test 3 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 3.1u"s")
+    @test 1 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s", precisetime=true)
+    @test 2 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2.1u"s", precisetime=true)
+    @test 3 == scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 3.1u"s", precisetime=true)
+    @test 1 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s")
+    @test 2 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2.1u"s")
+    @test 3 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 3.1u"s")
+    @test 1 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s", precisetime=true)
+    @test 2 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2.1u"s", precisetime=true)
+    @test 3 == scantimeindex(GCMS(Float32[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 3.1u"s", precisetime=true)
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 0u"s")
+    @test 3 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 4u"s")
+    
+    # Function throws ArgumentError if precisetime is set to true and the specified time 
+    # does not does not exist
+    @test_throws ArgumentError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0u"s", precisetime=true)
+    @test_throws ArgumentError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 4u"s", precisetime=true)
+    @test_throws ArgumentError scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2.1001u"s", precisetime=true)
+    @test_throws ArgumentError scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.9999u"s", precisetime=true)
+
+    # Return value must be an integer
+    @test Int == typeof(scantimeindex(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"s"))
+    @test Int == typeof(scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s"))
+    @test Int == typeof(scantimeindex(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"s", precisetime=true))
+    @test Int == typeof(scantimeindex(GCMS(Float64[1.1, 2.1, 3.1]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.1u"s", precisetime=true))
+
+    # The function argument time must be a quantity with a valid time unit
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"ms")
+    @test 3 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        1u"minute")
+    @test_throws MethodError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"m")
+    @test_throws MethodError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"m", precisetime=true)
+
+    # The function argument precisetime must be a Boolean value
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s", 
+        precisetime=false)
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s", 
+        precisetime=:true)
+    @test 1 == scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1u"s", 
+        precisetime=:false)
+    @test_throws TypeError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"s", precisetime=:truly)
+    @test_throws TypeError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"s", precisetime="true")
+    @test_throws TypeError scantimeindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1u"s", precisetime=1)
+end
+
+
+@testset "scantimeindex TIC" begin
+    # Validate the returned value
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s")
+    @test 2 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 2u"s")
+    @test 3 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 3u"s")
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=true)
+    @test 2 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 2u"s", precisetime=true)
+    @test 3 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 3u"s", precisetime=true)
+    @test 1 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s")
+    @test 2 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s")
+    @test 3 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s")
+    @test 1 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s", 
+        precisetime=true)
+    @test 2 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s", 
+        precisetime=true)
+    @test 3 == scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s")
+    @test 2 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s")
+    @test 3 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s")
+    @test 1 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 1.1u"s", 
+        precisetime=true)
+    @test 2 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 2.1u"s", 
+        precisetime=true)
+    @test 3 == scantimeindex(TIC(Float32[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 3.1u"s", 
+        precisetime=true)
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 0u"s")
+    @test 3 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 4u"s")
+    
+    # Function throws ArgumentError if precisetime is set to true and the specified time 
+    # does not does not exist
+    @test_throws ArgumentError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 0u"s", 
+        precisetime=true)
+    @test_throws ArgumentError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 4u"s", 
+        precisetime=true)
+    @test_throws ArgumentError scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]),
+        2.1001u"s", precisetime=true)
+    @test_throws ArgumentError scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]),
+        1.9999u"s", precisetime=true)
+
+    # Return value must be an integer
+    @test Int == typeof(scantimeindex(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 1u"s"))
+    @test Int == typeof(scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 
+        1.1u"s"))
+    @test Int == typeof(scantimeindex(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=true))
+    @test Int == typeof(scantimeindex(TIC(Float64[1.1, 2.1, 3.1]u"s", [12, 956, 23]), 
+        1.1u"s", precisetime=true))
+
+    # The function argument time must be a quantity with a valid time unit
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"ms")
+    @test 3 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"minute")
+    @test_throws MethodError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"m")
+    @test_throws MethodError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"m", 
+        precisetime=true)
+
+    # The function argument precisetime must be a Boolean value
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=true)
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=false)
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=:true)
+    @test 1 == scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", precisetime=:false)
+    @test_throws TypeError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=:truly)
+    @test_throws TypeError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime="true")
+    @test_throws TypeError scantimeindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=1)
+end
+
+############################################################################################
 # scantimes(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "scantimes FID" begin

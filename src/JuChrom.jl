@@ -25,6 +25,7 @@ export minion
 export minscantime
 export scancount
 export scantime
+export scantimeindex
 export scantimes
 export totalionchromatogram
 
