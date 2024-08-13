@@ -1,5 +1,5 @@
 """
-    JuChrom.findclosest(A::AbstractArray{<:Number}, x::Number)
+    JuChrom.findclosest(A::AbstractVector{<:Number}, x::Number) -> Int
 
 Return the index of the number closest to number x in a list of numbers sorted in ascending 
 order. If there is a tie, the index of the larger number is returned.
@@ -16,7 +16,7 @@ julia> JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], -1.5)
 2
 ```
 """
-function findclosest(A::AbstractArray{<:Number}, x::Number)
+function findclosest(A::AbstractVector{<:Number}, x::Number)
     length(A) ≤ 1 && return firstindex(A)
     i = searchsortedfirst(A, x)
     if i == firstindex(A)
