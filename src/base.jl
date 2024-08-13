@@ -284,6 +284,77 @@ end
 
 
 """
+    binions(gcms::AbstractGCMS; ionbin::Function=integerion)
+
+Return a GCMS object in which the ions are binned according to the ionbin function (default 
+function is integer) and the intensity values of the binned ions are summed.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`integer`](@ref), [`intensities`](@ref), 
+[`ions`](@ref), [`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS((1:3)u"s", [84.8, 85.2, 100.9], [0 24 12; 0 0 956; 23 0 1])
+GCMS {scantimes: Int64, ions: Float64, intensities: Int64}
+3 scans; time range: 1 s - 3 s
+3 ions; range: m/z 84.8 - 100.9
+intensity range: 0 - 956
+metadata: 0
+
+julia> intensities(gcms)
+3×3 Matrix{Int64}:
+  0  24   12
+  0   0  956
+ 23   0    1
+
+julia> gcmsᵢ = binions(gcms)
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; time range: 1 s - 3 s
+2 ions; range: m/z 85 - 101
+intensity range: 0 - 956
+metadata: 0
+
+julia> ions(gcmsᵢ)
+2-element Vector{Int64}:
+  85
+ 101
+
+julia> intensities(gcmsᵢ)
+3×2 Matrix{Int64}:
+ 24   12
+  0  956
+ 23    1
+
+
+julia> custom_ionbin(ion) = integer(ion, start=0.9);
+
+julia> gcmsᵢ = binions(gcms, ionbin=custom_ionbin)
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; time range: 1 s - 3 s
+3 ions; range: m/z 84 - 101
+intensity range: 0 - 956
+metadata: 0
+
+julia> ions(gcmsᵢ)
+3-element Vector{Int64}:
+  84
+  85
+ 101
+```
+"""
+function binions(gcms::AbstractGCMS; ionbin::Function=integer)
+    binnedions = sort(unique(ionbin.(ions(gcms))))
+    imₙ = zeros(eltype(intensities(gcms)), (size(intensities(gcms), 1), length(binnedions)))
+    for (i, ion) in enumerate(ions(gcms))
+        binnedion = ionbin(ion)
+        imₙ[:, searchsortedlast(binnedions, binnedion)] .+= @view intensities(gcms)[:, i]
+    end
+    imₙ
+    GCMS(scantimes(gcms), binnedions, imₙ, metadata(gcms))
+end
+
+
+"""
     ions(gcms::AbstractGCMS)
 
 Return the `ions`.

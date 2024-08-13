@@ -4,6 +4,54 @@ using Unitful: 𝐓
 
 
 ############################################################################################
+# binions(gcms::AbstractGCMS; ionbin::Function=integerion)
+############################################################################################
+@testset "ion GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test (1:3)u"s" == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1])).scantimes
+    @test [85, 101] == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1])).ions
+    @test [24 12; 0 956; 23 1] == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1])).intensities
+    @test [24.1 12.2; 1.0 956.7; 23.9 1.5] ≈ binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5])).intensities
+    @test Dict(:id => 1) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 1))).metadata
+    @test (1:3)u"s" == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1]), ionbin=ion->integer(ion, start=0.9)).scantimes
+    @test [84, 85, 101] == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1]), ionbin=ion->integer(ion, start=0.9)).ions
+    @test [0 24 12; 0 0 956; 23 0 1] == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1]), ionbin=ion->integer(ion, start=0.9)).intensities
+    @test [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5] ≈ binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5]), 
+        ionbin=ion->integer(ion, start=0.9)).intensities
+    @test Dict(:id => 1) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 1)), 
+        ionbin=ion->integer(ion, start=0.9)).metadata
+
+    # Check the returned type and supertypes
+    @test isa(binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], [0 24 12; 0 0 956; 23 0 1])), 
+        GCMS)
+    @test isa(binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], [0 24 12; 0 0 956; 23 0 1])), 
+        AbstractGCMS)
+    @test isa(binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], [0 24 12; 0 0 956; 23 0 1])), 
+        AbstractChromatogram)
+
+    # Binned intensities have the same type as used to construct the object
+    @test Matrix{Int64} == typeof(binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1])).intensities)
+    @test Matrix{Float64} == typeof(binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5])).intensities)
+
+    # Function does not work with objects that are not subtypes of AbstractGCMS
+    @test_throws MethodError binions(FID([1, 2, 3]u"s", [12, 956, 23]), 1)
+    @test_throws MethodError binions(TIC([1, 2, 3]u"s", [12, 956, 23]), 1)
+end
+
+
+############################################################################################
 # ion(gcms::AbstractGCMS, index::Integer)
 ############################################################################################
 @testset "ion GCMS" begin

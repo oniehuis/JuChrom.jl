@@ -11,6 +11,7 @@ export FID
 export GCMS
 export TIC
 
+export binions
 export integer
 export intensities
 export ion

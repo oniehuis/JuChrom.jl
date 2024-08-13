@@ -9,6 +9,7 @@ AbstractTIC
 FID
 GCMS
 TIC
+binions
 integer
 intensities
 ion
