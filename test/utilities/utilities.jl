@@ -1,6 +1,40 @@
 using JuChrom
 using Test
 
+
+
+############################################################################################
+# JuChrom.copy_with_eltype(array::AbstractArray, elementtype::Type)
+############################################################################################
+@testset "copy_with_eltype" begin
+   @test [1, 2, 3, 4, 5, 6] == JuChrom.copy_with_eltype(Int[1, 2, 3, 4, 5, 6], Float64)
+   @test [1, 2, 3, 4, 5, 6] == JuChrom.copy_with_eltype(Float64[1, 2, 3, 4, 5, 6], Int)
+   @test Vector{Float64} == typeof(JuChrom.copy_with_eltype(Int[1, 2, 3, 4, 5, 6], Float64))
+   @test Vector{Float64} == typeof(JuChrom.copy_with_eltype(1:6, Float64))
+   @test Vector{Int} == typeof(JuChrom.copy_with_eltype(1.0:6.0, Int))
+   @test Vector{Int} == typeof(JuChrom.copy_with_eltype(Float64[1, 2, 3, 4, 5, 6], Int))
+   @test Matrix{Int} == typeof(JuChrom.copy_with_eltype(Float64[1 2; 3 4; 5 6], Int))
+   @test Matrix{Float64} == typeof(JuChrom.copy_with_eltype(Int[1 2; 3 4; 5 6], Float64))
+   @test_throws InexactError JuChrom.copy_with_eltype(Float64[1.1, 2, 3, 4, 5, 6], Int)
+end
+
+
+############################################################################################
+# cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
+############################################################################################
+@testset "cosine" begin
+    @test 0.8978872704229618 ≈ cosine([100, 500, 250], [200, 1000, 0])
+    @test 0 ≈ cosine(Int[], Int[])
+    @test 1 ≈ cosine([1, 1, 1], [1, 1, 1])
+    @test 0 ≈ cosine([10.5, 10.5, 10.5], [-10.5, -10.5, -10.5])
+    @test Float64 == typeof(cosine([100, 500, 250], [200, 1000, 0]))
+    @test Float64 == typeof(cosine(Int[], Int[]))
+    @test Float64 == typeof(cosine([1, 1, 1], [1, 1, 1]))
+    @test Float64 == typeof(cosine([10.5, 10.5, 10.5], [-10.5, -10.5, -10.5]))
+    @test_throws DimensionMismatch cosine([100, 500, 250], [200, 1000, 0, 10])
+ end
+
+
 ############################################################################################
 # JuChrom.findclosest(A::AbstractArray{<:Number}, x::Number) -> Int
 ############################################################################################
@@ -23,22 +57,6 @@ using Test
     @test_throws MethodError JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], :a)
     @test 4 == JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], true)
  end
-
-
-############################################################################################
-# JuChrom.copy_with_eltype(array::AbstractArray, elementtype::Type)
-############################################################################################
-@testset "copy_with_eltype" begin
-   @test [1, 2, 3, 4, 5, 6] == JuChrom.copy_with_eltype(Int[1, 2, 3, 4, 5, 6], Float64)
-   @test [1, 2, 3, 4, 5, 6] == JuChrom.copy_with_eltype(Float64[1, 2, 3, 4, 5, 6], Int)
-   @test Vector{Float64} == typeof(JuChrom.copy_with_eltype(Int[1, 2, 3, 4, 5, 6], Float64))
-   @test Vector{Float64} == typeof(JuChrom.copy_with_eltype(1:6, Float64))
-   @test Vector{Int} == typeof(JuChrom.copy_with_eltype(1.0:6.0, Int))
-   @test Vector{Int} == typeof(JuChrom.copy_with_eltype(Float64[1, 2, 3, 4, 5, 6], Int))
-   @test Matrix{Int} == typeof(JuChrom.copy_with_eltype(Float64[1 2; 3 4; 5 6], Int))
-   @test Matrix{Float64} == typeof(JuChrom.copy_with_eltype(Int[1 2; 3 4; 5 6], Float64))
-   @test_throws InexactError JuChrom.copy_with_eltype(Float64[1.1, 2, 3, 4, 5, 6], Int)
-end
 
 
 ############################################################################################

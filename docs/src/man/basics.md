@@ -10,6 +10,7 @@ FID
 GCMS
 TIC
 binions
+cosine
 integer
 intensities
 ion

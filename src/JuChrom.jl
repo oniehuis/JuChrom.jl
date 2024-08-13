@@ -12,6 +12,7 @@ export GCMS
 export TIC
 
 export binions
+export cosine
 export integer
 export intensities
 export ion

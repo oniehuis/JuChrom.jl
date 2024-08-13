@@ -34,6 +34,34 @@ copy_with_eltype(array::AbstractArray, elementtype::Type) = copyto!(similar(arra
 
 
 """
+    cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
+
+Return the angle between two non-zero vectors, which can be considered a measure of the
+similarity (i.e., cosine similarity) between the two vectors.
+
+# Example
+```jldoctest
+julia> cosine([100, 500, 250], [200, 1000, 0])
+0.8978872704229618
+
+julia> cosine([100, 0, 50], [0, 20, 0])
+0.0
+
+julia> cosine([100, 500, 250], [10, 50, 25])
+1.0
+```
+"""
+function cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
+    length(x) == length(y) || throw(
+        DimensionMismatch("vectors x and y have different lengths"))
+    s = sum(x .* y) / (sqrt(sum(x.^2)) * sqrt(sum(y.^2)))
+    0 ≤ s ≤ 1 && return s
+    (s < 0 || isnan(s)) ? zero(typeof(s)) : one(typeof(s))
+end
+## See also [`similarity`](@ref).
+
+
+"""
     JuChrom.findclosest(A::AbstractVector{<:Number}, x::Number) -> Int
 
 Return the index of the number closest to number x in a list of numbers sorted in ascending 
