@@ -15,6 +15,7 @@ makedocs(
             "man/export.md",
             "man/explorer.md",
             "man/deconvolution.md"],
+        "Developers" => Any["man/internals.md"],
         "Index" => "man/register.md"
     ]
 )
