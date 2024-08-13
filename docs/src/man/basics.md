@@ -21,6 +21,7 @@ metadata
 minintensity
 minion
 minscantime
+runduration
 scancount
 scantime
 scantimeindex

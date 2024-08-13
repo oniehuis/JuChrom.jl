@@ -798,6 +798,44 @@ maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 
 """
+    runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool=false)
+
+Return the `runduration`. The optional keyword argument `timeunit` allows you to change the 
+unit of the returned time interval. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned value. 
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref).
+
+# Example
+```jldoctest
+julia> fid = FID([30.1u"minute", 40.8u"minute", 51.5u"minute"], [12, 956, 23])
+FID {scantimes: Float64, intensities: Int64}
+3 scans; time range: 30.1 minute - 51.5 minute
+intensity range: 12 - 956
+metadata: 0
+
+julia> runduration(fid)
+21.4 minute
+
+julia> runduration(fid, timeunit=u"s")
+1284.0 s
+
+julia> runduration(fid, timeunit=u"s", ustripped=true)
+1284.0
+```
+"""
+function runduration(chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    Δt = maxscantime(chrom) - minscantime(chrom)
+    ustripped ? ustrip(timeunit, Δt) : uconvert(timeunit, Δt)
+end
+
+
+"""
     totalionchromatogram(gcms::GCMS)
 
 Compute the total ion chromatrogram.

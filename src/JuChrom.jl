@@ -23,6 +23,7 @@ export metadata
 export minintensity
 export minion
 export minscantime
+export runduration
 export scancount
 export scantime
 export scantimeindex
