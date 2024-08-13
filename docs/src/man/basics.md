@@ -9,6 +9,7 @@ AbstractTIC
 FID
 GCMS
 TIC
+integer
 intensities
 ion
 ioncount

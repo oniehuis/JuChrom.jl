@@ -39,3 +39,35 @@ using Test
    @test Matrix{Float64} == typeof(JuChrom.copy_with_eltype(Int[1 2; 3 4; 5 6], Float64))
    @test_throws InexactError JuChrom.copy_with_eltype(Float64[1.1, 2, 3, 4, 5, 6], Int)
 end
+
+
+############################################################################################
+# integer(value:::Real; start::Real=0.7) -> Int
+############################################################################################
+@testset "integer" begin
+    @test 29 == integer(29)
+    @test 30 == integer(29.7)
+    @test 29 == integer(prevfloat(29.7))
+    @test 30 == integer(29.7f0)
+    @test 29 == integer(prevfloat(29.7f0))
+    @test 29 == integer(29, start=0.8)
+    @test 30 == integer(29.8, start=0.8)
+    @test 29 == integer(prevfloat(29.8), start=0.8)
+    @test 29 == integer(29, start=0)
+    @test 29 == integer(29.0, start=0)
+    @test 28 == integer(prevfloat(29.0), start=0)
+
+    @test Int == typeof(integer(29))
+    @test Int == typeof(integer(29.7))
+    @test Int == typeof(integer(29.7f0))
+    @test Int == typeof(integer(29, start=0.8))
+    @test Int == typeof(integer(29.7, start=0.8))
+    @test Int == typeof(integer(29.7f0, start=0.8))
+    @test Int == typeof(integer(29, start=0))
+    @test Int == typeof(integer(29.7, start=0))
+    @test Int == typeof(integer(29.7f0, start=0))
+
+    @test_throws ArgumentError integer(30.79, start=-0.1)
+    @test_throws ArgumentError integer(30.0, start=1)
+    @test_throws ArgumentError integer(30.0, start=1.1)
+ end
