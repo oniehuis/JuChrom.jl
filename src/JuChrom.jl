@@ -10,6 +10,9 @@ export AbstractTIC
 export FID
 export GCMS
 export TIC
+export IonScanOrder
+export LinearAscending
+export LinearDescending
 
 export binions
 export cosine

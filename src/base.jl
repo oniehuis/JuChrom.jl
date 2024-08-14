@@ -985,3 +985,185 @@ function Base.show(io::IO, tic::TIC)
     n = length(metadata(tic))
     print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end
+
+
+############################################################################################
+# Functions related to ion scan time shifts
+############################################################################################
+
+"""
+    IonScanOrder
+
+Supertype of all IonScanOrder implementations in JuMS.
+
+See also [`LinearAscending`](@ref), [`LinearDescending`](@ref).
+"""
+abstract type IonScanOrder end
+# , [`timeshift`](@ref)
+
+struct LinearAscending{T1<:Real, T2<:Real} <: IonScanOrder
+    start::T1
+    stop::T2
+    function LinearAscending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
+        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
+            " not satisfy condition 0 ≤ start < stop ≤ 1")))
+        new(start, stop)
+    end
+end
+
+
+"""
+    LinearAscending(; start::Real=0, stop::Real=1) <: IonScanOrder
+
+Construct a `LinearAscending` ion scan order object. It specifies that the ions were scanned 
+in linear ascending order (i.e., smallest ion first, last ion last) during each scan. The 
+time to scan each ion is assumed to be equal and is the result of dividing the total scan 
+interval time equally among the ions. The optional `start` and `stop` parameters allow you 
+to limit the interval time during which the ions were scanned in each scan. They specify 
+relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
+`start`=0 and `stop`=1, which means that the scan of the smallest ion started at the 
+beginning of the scan interval and the scan of the largest ion ended at the end of the 
+scan interval. In contrast, setting the start value to 0.5 would indicate that the ions 
+were only scanned during the second half of the scan interval (e.g. because the instrument 
+switched between SIM mode and Scan mode during each scan interval).
+
+# Example
+```jldoctest
+julia> LinearAscending()
+LinearAscending{Int64, Int64}(0, 1)
+
+julia> LinearAscending(start=0.5)
+LinearAscending{Float64, Int64}(0.5, 1)
+
+julia> LinearAscending(start=0.1, stop=0.5)
+LinearAscending{Float64, Float64}(0.1, 0.5)
+
+julia> LinearAscending(start=0.5, stop=0.5)
+ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
+[...]
+```
+"""
+function LinearAscending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
+    LinearAscending{T1, T2}(start, stop)
+end
+
+# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
+# [`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+# [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+# [`maxscantime`](@ref).
+
+
+struct LinearDescending{T1<:Real, T2<:Real} <: IonScanOrder
+    start::T1
+    stop::T2
+    function LinearDescending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
+        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
+            " not satisfy condition 0 ≤ start < stop ≤ 1")))
+        new(start, stop)
+    end
+end
+
+
+"""
+    LinearDescending(; start::Real=0, stop::Real=1) <: IonScanOrder
+
+Construct a `LinearDescending` ion scan order object. It specifies that the ions were 
+scanned in linear descending order (i.e., largest ion first, smallest ion last) during each 
+scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
+total scan interval time equally among the ions. The optional `start` and `stop` parameters 
+allow you to limit the interval time during which the ions were scanned in each scan. They 
+specify relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
+`start`=0 and `stop`=1, which means that the scan of the largest ion started at the 
+beginning of the scan interval and the scan of the smallest ion ended at the end of the 
+scan interval. In contrast, setting the start value to 0.5 would indicate that the ions 
+were only scanned during the second half of the scan interval (e.g. because the instrument 
+switched between SIM mode and Scan mode during each scan interval).
+
+# Example
+```jldoctest
+julia> LinearDescending()
+LinearDescending{Int64, Int64}(0, 1)
+
+julia> LinearDescending(start=0.5)
+LinearDescending{Float64, Int64}(0.5, 1)
+
+julia> LinearDescending(start=0.1, stop=0.5)
+LinearDescending{Float64, Float64}(0.1, 0.5)
+
+julia> LinearDescending(start=0.5, stop=0.5)
+ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
+[...]
+```
+"""
+function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
+    LinearDescending{T1, T2}(start, stop)
+end
+
+# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
+# [`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+# [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+# [`maxscantime`](@ref).
+
+
+# function timeshift(::LinearAscending, gcms::AbstractGCMS)
+#     index::Integer -> begin
+#         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || error("index $index outside of ion index range")
+#         (index - ioncount(gcms)) * meanscantime(gcms) / ioncount(gcms)
+#     end
+# end
+# # TYPE STABLE August 3, 2024
+
+
+# function timeshift(::LinearDescending, gcms::AbstractGCMS)
+#     index::Integer -> begin
+#         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || error("index $index outside of ion index range")
+#         (1 - index) * meanscantime(gcms) / ioncount(gcms)
+#     end
+# end
+# # TYPE STABLE August 3, 2024
+
+
+# """
+#     timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+
+# Return a function that returns the time shift of an ion relative to the scan timestamp if the ion index is provided
+# and the `scanindex` and `ionindex` are specified. The function returned is determined by the ionscanorder type. If the
+# ionscanorder is LinearAscending(), it is assumed that the ions are scanned in ascending order over the entire scan time
+# interval. This means that the time shift relative to the timestamp is greatest for the smallest ion and zero for the largest
+# ion. If the ionscanorder is LinearDescending(), it is assumed that the ions are scanned in descending order over the entire
+# scan time interval. This means that the time shift relative to the scan timestamp is greatest for the largest ion and zero
+# for the smallest ion. Both functions assume that the time for scanning each ion is evenly distributed over the average scan
+# time of a scan in the AbstractGCMS object and that the timestamp is the time at which the scanning of the last ion was completed..
+
+# # Example
+# ```julia-repl
+# julia> gcms = GCMS([1.0u"s", 2.0u"s", 3.0u"s"], [85, 100], [0 12; 34 956; 23 1])
+# GCMS {scantimes: Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}, ions: Int64, intensities: Int64}
+# Source: nothing
+# 3 scans; time range: 1.0 s - 3.0 s
+# 2 ions; range: m/z 85 - 100
+# intensity range: 0 - 956
+
+# julia> δt = timeshift(gcms, LinearAscending())
+# #60 (generic function with 1 method)
+
+# julia> δt(1)
+# -0.5 s
+
+# julia> δt(2)
+# 0.0 s
+
+# julia> δt = timeshift(gcms, LinearDescending())
+# #62 (generic function with 1 method)
+
+# julia> δt(1)
+# 0.0 s
+
+# julia> δt(2)
+# -0.5 s
+# ```
+
+# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimeindex`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), [`IonScanOrder`](@ref), [`AscendingIons`](@ref), [`DescendingIons`](@ref).
+# """
+# timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = timeshift(ionscanorder, gcms)
+# # TYPE STABLE August 3, 2024

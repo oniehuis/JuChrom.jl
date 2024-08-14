@@ -8,6 +8,9 @@ AbstractGCMS
 AbstractTIC
 FID
 GCMS
+IonScanOrder
+LinearAscending
+LinearDescending
 TIC
 binions
 cosine
