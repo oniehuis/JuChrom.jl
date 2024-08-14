@@ -16,8 +16,8 @@ using Unitful: 𝐓
         [0 24 12; 0 0 956; 23 0 1])).intensities
     @test [24.1 12.2; 1.0 956.7; 23.9 1.5] ≈ binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
         [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5])).intensities
-    @test Dict(:id => 1) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
-        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 1))).metadata
+    @test Dict(:id => 4) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 4))).metadata
     @test (1:3)u"s" == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
         [0 24 12; 0 0 956; 23 0 1]), ionbin=ion->integer(ion, start=0.9)).scantimes
     @test [84, 85, 101] == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
@@ -27,8 +27,8 @@ using Unitful: 𝐓
     @test [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5] ≈ binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
         [0.0 24.1 12.2; 0.1 0.9 956.7; 23.1 0.8 1.5]), 
         ionbin=ion->integer(ion, start=0.9)).intensities
-    @test Dict(:id => 1) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
-        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 1)), 
+    @test Dict(:id => 4) == binions(GCMS((1:3)u"s", [84.8, 85.2, 100.9], 
+        [0 24 12; 0 0 956; 23 0 1], Dict(:id => 4)), 
         ionbin=ion->integer(ion, start=0.9)).metadata
 
     # Check the returned type and supertypes
@@ -201,8 +201,8 @@ end
         [0 12; 34 956; 23 1])))
     @test [12, 990, 24] == intensities(totalionchromatogram(GCMS([1, 2, 3]u"s", [85, 100],
         [0 12; 34 956; 23 1])))
-    @test Dict(:id => 1, "name" => "sample") == metadata(totalionchromatogram(GCMS(
-        [1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], Dict(:id => 1, "name" => "sample")
+    @test Dict(:id => 4, "name" => "sample") == metadata(totalionchromatogram(GCMS(
+        [1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], Dict(:id => 4, "name" => "sample")
         )))
     
     # Verify that the element type of the TIC intensities is the same as the GCMS

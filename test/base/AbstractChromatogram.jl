@@ -181,24 +181,24 @@ end
 @testset "metadata FID" begin
     # Same return values as those provided as arguments to construct the object
     @test Dict() == metadata(FID([1, 2, 3]u"s", [12, 956, 23]))
-    @test Dict(:id => 1, :name => "sample") == metadata(FID([1, 2, 3]u"s", [12, 956, 23], 
-        Dict(:id => 1, :name => "sample")))
+    @test Dict(:id => 4, :name => "sample") == metadata(FID([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 4, :name => "sample")))
     
     # Same return container and element type as used to construct the object
     @test Dict{Any, Any} == typeof(metadata(FID([1, 2, 3]u"s", [12, 956, 23], 
-        Dict(:id => 1, :name => "sample"))))
+        Dict(:id => 4, :name => "sample"))))
 end
 
 
 @testset "metadata GCMS" begin
     # Same return values as those provided as arguments to construct the object
     @test Dict() == metadata(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
-    @test Dict(:id => 1, :name => "sample") == metadata(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample")))
+    @test Dict(:id => 4, :name => "sample") == metadata(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1], Dict(:id => 4, :name => "sample")))
 
     # Same return container and element type as used to construct the object
     @test Dict{Any, Any} == typeof(metadata(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1], Dict(:id => 1, :name => "sample"))))   
+        [0 12; 34 956; 23 1], Dict(:id => 4, :name => "sample"))))   
 end
 
 
@@ -207,10 +207,10 @@ end
     @test Dict() == metadata(TIC([1, 2, 3]u"s", [12, 956, 23]))
 
     # Same return container and element type as used to construct the object
-    @test Dict(:id => 1, :name => "sample") == metadata(TIC([1, 2, 3]u"s", [12, 956, 23], 
-        Dict(:id => 1, :name => "sample")))
+    @test Dict(:id => 4, :name => "sample") == metadata(TIC([1, 2, 3]u"s", [12, 956, 23], 
+        Dict(:id => 4, :name => "sample")))
     @test Dict{Any, Any} == typeof(metadata(TIC([1, 2, 3]u"s", [12, 956, 23], 
-        Dict(:id => 1, :name => "sample"))))
+        Dict(:id => 4, :name => "sample"))))
 end
 
 

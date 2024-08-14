@@ -69,7 +69,7 @@ Base.broadcastable(fid::FID) = Ref(fid)
     FID(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Construct a FID object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
+Construct a `FID` object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
 the `scantimes` must be in ascending order and the `intensities` must not contain values 
 less than zero.
 
@@ -85,13 +85,13 @@ julia> FID(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 FID {scantimes: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 intensity range: 1 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> FID(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict("name" => "sample"))
 FID {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: 1
+metadata: 1 entry
 
 julia> FID([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -156,7 +156,7 @@ Base.broadcastable(gcms::GCMS) = Ref(gcms)
     GCMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
     intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
 
-Construct a GCMS object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
+Construct a `GCMS` object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
 Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
 must not contain values less than zero.
 
@@ -173,14 +173,14 @@ GCMS {scantimes: Int32, ions: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
-julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 1))
+julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 4))
 GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
 2 scans; time range: 1.1f0 s - 2.1f0 s
 2 ions; range: m/z 35.1 - 76.2
 intensity range: 0 - 956
-metadata: 1
+metadata: 1 entry
 
 julia> GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -242,9 +242,9 @@ Base.broadcastable(tic::TIC) = Ref(tic)
     TIC(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any}())
 
-Construct a TIC object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
-the `scantimes` must be in ascending order and the `intensities` must not contain values 
-less than zero.
+Construct a `TIC` object consisting of `scantimes`, `intensities`, and `metadata`. Note 
+that the `scantimes` must be in ascending order and the `intensities` must not contain 
+values less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref), 
@@ -259,13 +259,13 @@ julia> TIC(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 TIC {scantimes: Int64, intensities: Int32}
 3 scans; time range: 1 s - 3 s
 intensity range: 1 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> TIC(Int32[1, 2, 3]u"s", Float64[12.0, 956.0, 1.0], Dict("name" => "sample"))
 TIC {scantimes: Int32, intensities: Float64}
 3 scans; time range: 1 s - 3 s
 intensity range: 1.0 - 956.0
-metadata: 1
+metadata: 1 entry
 
 julia> TIC([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scantimes not in ascending order
@@ -299,7 +299,7 @@ GCMS {scantimes: Int64, ions: Float64, intensities: Int64}
 3 scans; time range: 1 s - 3 s
 3 ions; range: m/z 84.8 - 100.9
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> intensities(gcms)
 3×3 Matrix{Int64}:
@@ -312,7 +312,7 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 3 scans; time range: 1 s - 3 s
 2 ions; range: m/z 85 - 101
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> ions(gcmsᵢ)
 2-element Vector{Int64}:
@@ -333,7 +333,7 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 3 scans; time range: 1 s - 3 s
 3 ions; range: m/z 84 - 101
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> ions(gcmsᵢ)
 3-element Vector{Int64}:
@@ -375,7 +375,7 @@ julia> ions(gcms)
  100
 ```
 """
-ions(gcms::AbstractGCMS) = gcms.ions
+ions(gcms::GCMS) = gcms.ions
 
 
 """
@@ -383,7 +383,7 @@ ions(gcms::AbstractGCMS) = gcms.ions
     ustripped::Bool=false)
 
 Return the `scantime` by specifying the scan `index`. The optional parameter 
-`timeunit` allows you to change the unit of the returned time value. All time units defined 
+`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
 in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
 `u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
 whether the unit is stripped from the returned value.
@@ -420,12 +420,12 @@ end
 """
     scantimeindex(gcms::AbstractGCMS, time::Unitful.Time; precisetime::Bool=false) -> Int
 
-Return the index of the scantime in the `scantimes` that is closest to the given `time`. 
+Return the index of the `scantime` closest to `time` in the `scantimes`. 
 All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl)
-(e.g., `u"s"`, `u"minute") are supported. If there is a tie, the larger scan time is used. 
-If the optional parameter `precisetime` is set to `true`, the specified time must exist in 
-`scantimes`, otherwise an error is thrown.
+(e.g., `u"s"`, `u"minute"`) are supported. If there is a tie, the larger `scantime` is 
+returned. If the optional parameter `precisetime` is set to `true`, the specified time 
+must exist in the `scantimes`, otherwise an error is thrown.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`scantimes`](@ref), [`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), 
@@ -438,7 +438,7 @@ GCMS {scantimes: Float32, ions: Int64, intensities: Int64}
 3 scans; time range: 1.1f0 s - 3.1f0 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> scantimeindex(gcms, 1.1f0u"s", precisetime=true)
 1
@@ -513,7 +513,7 @@ end
 """
     intensities(chrom::AbstractChromatogram)
 
-Return the intensities.
+Return the `intensities`.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
 [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
@@ -563,29 +563,29 @@ intensities(chrom::AbstractChromatogram) = chrom.intensities
 """
     metadata(chrom::AbstractChromatogram) -> Dict{Any, Any}
 
-Return the metadata.
+Return the `metadata`.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref).
 
 # Example
 ```jldoctest
-julia> gcms₁ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956], Dict(:id => 1))
+julia> gcms₁ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956], Dict(:id => 4))
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 1
+metadata: 1 entry
 
 julia> metadata(gcms₁)
 Dict{Any, Any} with 1 entry:
-  :id => 1
+  :id => 4
 
 julia> gcms₂ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956])
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> metadata(gcms₂)
 Dict{Any, Any}()
@@ -606,7 +606,7 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 2
+metadata: 2 entries
 
 julia> delete!(metadata(gcms₂), "name")
 Dict{Any, Any} with 1 entry:
@@ -617,7 +617,7 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 2 scans; time range: 1 s - 2 s
 2 ions; range: m/z 85 - 100
 intensity range: 0 - 956
-metadata: 1
+metadata: 1 entry
 ```
 """
 metadata(chrom::AbstractChromatogram) = chrom.metadata
@@ -647,7 +647,7 @@ scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
     ustripped::Bool=false)
 
 Return the time of the first scan. The optional keyword argument `timeunit` allows you to 
-change the unit of the returned scan time. All time units defined in the package 
+change the unit of the returned `scantime`. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
 is stripped from the returned value.
@@ -681,7 +681,7 @@ end
     ustripped::Bool)
 
 Return the time of the last scan. The optional keyword argument `timeunit` allows you to 
-change the unit of the returned scan time. All time units defined in the package 
+change the unit of the returned `scantime`. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
 is stripped from the returned value.
@@ -743,7 +743,7 @@ end
 """
     ioncount(gcms::AbstractGCMS) -> Int
 
-Return the number of ions.
+Return the number of `ions`.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ion`](@ref), 
 [`minion`](@ref), [`maxion`](@ref).
@@ -790,7 +790,7 @@ end
 """
     minion(gcms::AbstractGCMS)
 
-Return the smallest ion.
+Return the smallest `ion`.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`maxion`](@ref), [`ions`](@ref), 
 [`ion`](@ref), [`ioncount`](@ref).
@@ -810,7 +810,7 @@ minion(gcms::AbstractGCMS) = first(ions(gcms))
 """
     maxion(gcms::AbstractGCMS)
 
-Return the largest ion.
+Return the largest `ion`.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref), 
 [`ion`](@ref), [`ioncount`](@ref).
@@ -829,7 +829,7 @@ maxion(gcms::AbstractGCMS) = last(ions(gcms))
 """
     minintensity(chrom::AbstractChromatogram)
 
-Return the minimum intensity.
+Return the minimum `intensity`.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
 [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`maxintensity`](@ref), 
@@ -850,7 +850,7 @@ minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
 """
     maxintensity(chrom::AbstractChromatogram)
 
-Return the maximum intensity.
+Return the maximum `intensity`.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
 [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
@@ -887,7 +887,7 @@ julia> fid = FID([30.1u"minute", 40.8u"minute", 51.5u"minute"], [12, 956, 23])
 FID {scantimes: Float64, intensities: Int64}
 3 scans; time range: 30.1 minute - 51.5 minute
 intensity range: 12 - 956
-metadata: 0
+metadata: 0 entries
 
 julia> runduration(fid)
 21.4 minute
@@ -916,7 +916,7 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`GCMS`](@ref),
 [`metadata`](@ref).
 
 In the following example, the element type of `intensities` passed to the object 
-constructor  is explicitly annotated to show that the TIC object has the same type.
+constructor  is explicitly annotated to show that the `TIC` object has the same type.
 
 # Example
 ```jldoctest
@@ -926,7 +926,7 @@ julia> tic = totalionchromatogram(gcms)
 TIC {scantimes: Float64, intensities: Int64}
 3 scans; time range: 1.1 s - 3.1 s
 intensity range: 12 - 990
-metadata: 0
+metadata: 0 entries
 
 julia> intensities(tic)
 3-element Vector{Int64}:
@@ -940,7 +940,7 @@ julia> tic = totalionchromatogram(gcms)
 TIC {scantimes: Float64, intensities: Float64}
 3 scans; time range: 1.1 s - 3.1 s
 intensity range: 12.0 - 990.0
-metadata: 0
+metadata: 0 entries
 
 julia> intensities(tic)
 3-element Vector{Float64}:
@@ -959,7 +959,8 @@ function Base.show(io::IO, fid::FID)
     println(io, scancount(fid), " scans; time range: ", minscantime(fid), " - ", 
         maxscantime(fid))
     println(io, "intensity range: ", minintensity(fid), " - ", maxintensity(fid))
-    print(io, "metadata: ", length(metadata(fid)))
+    n = length(metadata(fid))
+    print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end
 
 
@@ -970,7 +971,8 @@ function Base.show(io::IO, gcms::GCMS)
         maxscantime(gcms))
     println(io, ioncount(gcms), " ions; range: m/z ", minion(gcms), " - ", maxion(gcms))
     println(io, "intensity range: ", minintensity(gcms), " - ", maxintensity(gcms))
-    print(io, "metadata: ", length(metadata(gcms)))
+    n = length(metadata(gcms))
+    print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end
 
 
@@ -980,5 +982,6 @@ function Base.show(io::IO, tic::TIC)
     println(io, scancount(tic), " scans; time range: ", minscantime(tic), " - ", 
         maxscantime(tic))
     println(io, "intensity range: ", minintensity(tic), " - ", maxintensity(tic))
-    print(io, "metadata: ", length(metadata(tic)))
+    n = length(metadata(tic))
+    print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end

@@ -20,8 +20,8 @@ using Unitful: 𝐓
      # Metadata
      @test Dict{Any, Any} == typeof(TIC([1, 2, 3]u"s", [12, 956, 23]).metadata)
      @test Dict() == TIC([1, 2, 3]u"s", [12, 956, 23]).metadata
-     @test Dict(:id => 1, "name" => "sample") == TIC([1, 2, 3]u"s", [12, 956, 23], 
-         Dict(:id => 1, "name" => "sample")).metadata
+     @test Dict(:id => 4, "name" => "sample") == TIC([1, 2, 3]u"s", [12, 956, 23], 
+         Dict(:id => 4, "name" => "sample")).metadata
 
     # Check the associated supertypes
     @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)
@@ -58,10 +58,23 @@ end
 
 @testset "show TIC" begin
     io = IOBuffer()
-    show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 1, "name" => "sample")))
+    show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23]))
     @test String(take!(io)) == string(
         "TIC {scantimes: Int64, intensities: Int64}\n",
         "3 scans; time range: 1 s - 3 s\n",
         "intensity range: 12 - 956\n",
-        "metadata: 2")
+        "metadata: 0 entries")
+    show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4)))
+    @test String(take!(io)) == string(
+        "TIC {scantimes: Int64, intensities: Int64}\n",
+        "3 scans; time range: 1 s - 3 s\n",
+        "intensity range: 12 - 956\n",
+        "metadata: 1 entry")
+    show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4, 
+        "name" => "sample")))
+    @test String(take!(io)) == string(
+        "TIC {scantimes: Int64, intensities: Int64}\n",
+        "3 scans; time range: 1 s - 3 s\n",
+        "intensity range: 12 - 956\n",
+        "metadata: 2 entries")
 end

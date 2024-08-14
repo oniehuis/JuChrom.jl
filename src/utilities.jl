@@ -37,7 +37,7 @@ copy_with_eltype(array::AbstractArray, elementtype::Type) = copyto!(similar(arra
     cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
 
 Return the angle between two non-zero vectors, which can be considered a measure of the
-similarity (i.e., cosine similarity) between the two vectors.
+`similarity` (i.e., `cosine` similarity) between the two vectors.
 
 # Example
 ```jldoctest
@@ -98,8 +98,8 @@ end
 """
     integer(value:::Real; start::Real=0.7) -> Int
 
-Return the integer for the given `value` that satisfies the following condition: 
-integer - 1 + start ≤ value < integer + start, where 0 ≤ start < 1.
+Return the `integer` for the given `value` that satisfies the following condition: 
+`integer` - 1 + `start` ≤ `value` < `integer` + `start`, where 0 ≤ `start` < 1.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`binions`](@ref), [`ions`](@ref).
 
