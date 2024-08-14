@@ -907,6 +907,44 @@ end
 
 
 """
+    meanscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+        ustripped::Bool=false)
+
+Compute the mean scan time duration. The optional keyword argument `timeunit` allows you to 
+change the unit of the return value. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned value. 
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref), [`runduration`](@ref).
+
+# Example
+```jldoctest
+julia> fid = FID([1.0, 2.0, 3.0]u"s", [12, 956, 1])
+FID {scantimes: Float64, intensities: Int64}
+3 scans; time range: 1.0 s - 3.0 s
+intensity range: 1 - 956
+metadata: 0 entries
+
+julia> meanscantime(fid)
+1.0 s
+
+julia> meanscantime(fid, timeunit=u"minute")
+0.016666666666666666 minute
+
+julia> meanscantime(fid, timeunit=u"minute", ustripped=true)
+0.016666666666666666
+```
+"""
+function meanscantime(chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    scantime_avg = runduration(chrom) / (scancount(chrom) - 1)
+    ustripped ? ustrip.(timeunit, scantime_avg) : uconvert.(timeunit, scantime_avg)
+end
+
+
+"""
     totalionchromatogram(gcms::GCMS)
 
 Compute the total ion chromatrogram.
@@ -996,10 +1034,10 @@ end
 
 Supertype of all ion scan order implementations in JuMS.
 
-See also [`LinearAscending`](@ref), [`LinearDescending`](@ref).
+See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`timeshift`](@ref).
 """
 abstract type IonScanOrder end
-# , [`timeshift`](@ref)
+
 
 struct LinearAscending{T1<:Real, T2<:Real} <: IonScanOrder
     start::T1
@@ -1028,6 +1066,11 @@ only scanned during the second half of the scan interval (e.g., because the inst
 switched between SIM mode and Scan mode during each scan interval and operated only in the 
 second half of the scan interval in Scan mode).
 
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
+[`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+[`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref).
+
 # Example
 ```jldoctest
 julia> LinearAscending()
@@ -1047,11 +1090,6 @@ ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ star
 function LinearAscending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
     LinearAscending{T1, T2}(start, stop)
 end
-
-# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
-# [`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-# [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-# [`maxscantime`](@ref).
 
 
 struct LinearDescending{T1<:Real, T2<:Real} <: IonScanOrder
@@ -1081,6 +1119,11 @@ were only scanned during the second half of the scan interval (e.g., because the
 switched between SIM mode and Scan mode during each scan interval and operated only in the 
 second half of the scan interval in Scan mode).
 
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
+[`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+[`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref).
+
 # Example
 ```jldoctest
 julia> LinearDescending()
@@ -1101,71 +1144,64 @@ function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
     LinearDescending{T1, T2}(start, stop)
 end
 
-# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
-# [`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-# [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-# [`maxscantime`](@ref).
+
+function timeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
+    index::Integer -> begin
+        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
+            BoundsError(ions(gcms), index))
+        meanscantime(gcms) * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
+            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
+    end
+end
 
 
-# function timeshift(::LinearAscending, gcms::AbstractGCMS)
-#     index::Integer -> begin
-#         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || error("index $index outside of ion index range")
-#         (index - ioncount(gcms)) * meanscantime(gcms) / ioncount(gcms)
-#     end
-# end
-# # TYPE STABLE August 3, 2024
+function timeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS)
+    index::Integer -> begin
+        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
+            BoundsError(ions(gcms), index))
+        meanscantime(gcms) * ((ionscanorder.stop - 1) + ((1 - index) 
+            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
+    end
+end
 
 
-# function timeshift(::LinearDescending, gcms::AbstractGCMS)
-#     index::Integer -> begin
-#         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || error("index $index outside of ion index range")
-#         (1 - index) * meanscantime(gcms) / ioncount(gcms)
-#     end
-# end
-# # TYPE STABLE August 3, 2024
+"""
+    timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
 
+Return a function that calculates the time difference between the timestamp of a scan and 
+the time when an ion was actually scanned, given the index of the ion as an argument. The 
+time difference will be a negative value or zero, since the timestamp of a scan is 
+considered to be the time at which the scanning of the last ion was completed.
 
-# """
-#     timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`IonScanOrder`](@ref), 
+[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
 
-# Return a function that returns the time shift of an ion relative to the scan timestamp if the ion index is provided
-# and the `scanindex` and `ionindex` are specified. The function returned is determined by the ionscanorder type. If the
-# ionscanorder is LinearAscending(), it is assumed that the ions are scanned in ascending order over the entire scan time
-# interval. This means that the time shift relative to the timestamp is greatest for the smallest ion and zero for the largest
-# ion. If the ionscanorder is LinearDescending(), it is assumed that the ions are scanned in descending order over the entire
-# scan time interval. This means that the time shift relative to the scan timestamp is greatest for the largest ion and zero
-# for the smallest ion. Both functions assume that the time for scanning each ion is evenly distributed over the average scan
-# time of a scan in the AbstractGCMS object and that the timestamp is the time at which the scanning of the last ion was completed..
+# Example
+```julia-repl
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; time range: 1.0 s - 3.0 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: 0 entries
 
-# # Example
-# ```julia-repl
-# julia> gcms = GCMS([1.0u"s", 2.0u"s", 3.0u"s"], [85, 100], [0 12; 34 956; 23 1])
-# GCMS {scantimes: Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}, ions: Int64, intensities: Int64}
-# Source: nothing
-# 3 scans; time range: 1.0 s - 3.0 s
-# 2 ions; range: m/z 85 - 100
-# intensity range: 0 - 956
+julia> δt = timeshift(gcms, LinearAscending());
 
-# julia> δt = timeshift(gcms, LinearAscending())
-# #60 (generic function with 1 method)
+julia> δt(1)
+-0.5 s
 
-# julia> δt(1)
-# -0.5 s
+julia> δt(2)
+0.0 s
 
-# julia> δt(2)
-# 0.0 s
+julia> δt = timeshift(gcms, LinearDescending());
 
-# julia> δt = timeshift(gcms, LinearDescending())
-# #62 (generic function with 1 method)
+julia> δt(1)
+0.0 s
 
-# julia> δt(1)
-# 0.0 s
-
-# julia> δt(2)
-# -0.5 s
-# ```
-
-# See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimeindex`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), [`IonScanOrder`](@ref), [`AscendingIons`](@ref), [`DescendingIons`](@ref).
-# """
-# timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = timeshift(ionscanorder, gcms)
-# # TYPE STABLE August 3, 2024
+julia> δt(2)
+-0.5 s
+```
+"""
+timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = timeshift(ionscanorder, gcms)

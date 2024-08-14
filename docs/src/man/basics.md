@@ -23,6 +23,7 @@ ions
 maxintensity
 maxion
 maxscantime
+meanscantime
 metadata
 minintensity
 minion
@@ -32,5 +33,6 @@ scancount
 scantime
 scantimeindex
 scantimes
+timeshift
 totalionchromatogram
 ```

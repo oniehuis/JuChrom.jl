@@ -25,6 +25,7 @@ export ions
 export maxintensity
 export maxion
 export maxscantime
+export meanscantime
 export metadata
 export minintensity
 export minion
@@ -34,6 +35,7 @@ export scancount
 export scantime
 export scantimeindex
 export scantimes
+export timeshift
 export totalionchromatogram
 
 end
