@@ -994,7 +994,7 @@ end
 """
     IonScanOrder
 
-Supertype of all IonScanOrder implementations in JuMS.
+Supertype of all ion scan order implementations in JuMS.
 
 See also [`LinearAscending`](@ref), [`LinearDescending`](@ref).
 """
@@ -1015,17 +1015,18 @@ end
 """
     LinearAscending(; start::Real=0, stop::Real=1) <: IonScanOrder
 
-Construct a `LinearAscending` ion scan order object. It specifies that the ions were scanned 
-in linear ascending order (i.e., smallest ion first, last ion last) during each scan. The 
-time to scan each ion is assumed to be equal and is the result of dividing the total scan 
-interval time equally among the ions. The optional `start` and `stop` parameters allow you 
-to limit the interval time during which the ions were scanned in each scan. They specify 
-relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
+Construct a `LinearAscending` ion scan order object. It specifies that the ions were 
+scanned in linear ascending order (i.e., smallest ion first, last ion last) during each 
+scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
+total scan interval time equally among the ions. The optional `start` and `stop` parameters 
+allow you to limit the interval time during which the ions were scanned in each scan. They 
+specify relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
 `start`=0 and `stop`=1, which means that the scan of the smallest ion started at the 
-beginning of the scan interval and the scan of the largest ion ended at the end of the 
-scan interval. In contrast, setting the start value to 0.5 would indicate that the ions 
-were only scanned during the second half of the scan interval (e.g. because the instrument 
-switched between SIM mode and Scan mode during each scan interval).
+beginning of the scan interval and the scan of the largest ion ended at the end of the scan 
+interval. In contrast, setting the start value to 0.5 would indicate that the ions were 
+only scanned during the second half of the scan interval (e.g., because the instrument 
+switched between SIM mode and Scan mode during each scan interval and operated only in the 
+second half of the scan interval in Scan mode).
 
 # Example
 ```jldoctest
@@ -1076,8 +1077,9 @@ specify relative points in the scan interval: 0 ≤ start < stop ≤ 1. The defa
 `start`=0 and `stop`=1, which means that the scan of the largest ion started at the 
 beginning of the scan interval and the scan of the smallest ion ended at the end of the 
 scan interval. In contrast, setting the start value to 0.5 would indicate that the ions 
-were only scanned during the second half of the scan interval (e.g. because the instrument 
-switched between SIM mode and Scan mode during each scan interval).
+were only scanned during the second half of the scan interval (e.g., because the instrument 
+switched between SIM mode and Scan mode during each scan interval and operated only in the 
+second half of the scan interval in Scan mode).
 
 # Example
 ```jldoctest
