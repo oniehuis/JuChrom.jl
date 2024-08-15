@@ -426,11 +426,11 @@ end
 
 
 """
-    ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
+    ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the time at which an ion was actually scanned, given the `ionindex` and the 
-`scanindex` and a function `δt` that computes the time difference between the timestamp of 
+`scanindex` and a function `δtᵢ` that computes the time difference between the timestamp of 
 a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
 allows you to change the unit of the returned scantime. All time units defined in the 
 package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
@@ -440,7 +440,7 @@ assumed to be the time at which scanning of the ion intensities associated with 
 was complete.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
-[`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
+[`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`ionscantimeshift`](@ref), 
 [`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
 
 # Example
@@ -452,39 +452,39 @@ GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> δt = timeshift(gcms, LinearDescending());
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
 
-julia> ionscantime(δt, gcms, 1, 2)
+julia> ionscantime(δtᵢ, gcms, 1, 2)
 2.0 s
 
-julia> ionscantime(δt, gcms, 2, 2)
+julia> ionscantime(δtᵢ, gcms, 2, 2)
 1.5 s
 
-julia> ionscantime(δt, gcms, 2, 2; timeunit=u"minute")
+julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute")
 0.025 minute
 
-julia> ionscantime(δt, gcms, 2, 2; timeunit=u"minute", ustripped=true)
+julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 0.025
 ```
 """
-function ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
     scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
     ustripped::Bool=false)
     firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
         BoundsError(ions(gcms), ionindex))
     firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
         BoundsError(scantimes(gcms), scanindex))
-    t = scantime(gcms, scanindex) + δt(ionindex)
+    t = scantime(gcms, scanindex) + δtᵢ(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
 
 """
-    ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+    ionscantimeindex(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
     time::Unitful.Time; precisetime::Bool=false) -> Int
 
 Return the index of the scan where the scan time for the ion is closest to the specified 
-`time`, given the `ionindex` and a function `δt` that computes the time difference between 
+`time`, given the `ionindex` and a function `δtᵢ` that computes the time difference between 
 the timestamp of a scan and the scantime of the ion from the `ionindex`. All time units 
 defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
 `u"s"`, `u"minute"`) are supported. If there is a tie, the larger `scanindex` is returned. 
@@ -492,7 +492,7 @@ If the optional parameter `precisetime` is set to `true`, the ion must have been
 exactly at the specified time, otherwise an error is thrown.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimeindex`](@ref), 
-[`ionscantime`](@ref), [`timeshift`](@ref), [`IonScanOrder`](@ref), 
+[`ionscantime`](@ref), [`ionscantimeshift`](@ref), [`IonScanOrder`](@ref), 
 [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`scantimes`](@ref), 
 [`scantime`](@ref), [`ions`](@ref), [`ion`](@ref), [`ionindex`](@ref).
 
@@ -505,36 +505,36 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> δt = timeshift(gcms, LinearDescending());
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
 
-julia> ionscantime(δt, gcms, 2, 2)
+julia> ionscantime(δtᵢ, gcms, 2, 2)
 1.5 s
 
-julia> ionscantimeindex(δt, gcms, 2, 1.5u"s")
+julia> ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s")
 2
 
-julia> ionscantimeindex(δt, gcms, 2, 1.6u"s")
+julia> ionscantimeindex(δtᵢ, gcms, 2, 1.6u"s")
 2
 
-julia> ionscantimeindex(δt, gcms, 2, 1.6u"s", precisetime=true)
+julia> ionscantimeindex(δtᵢ, gcms, 2, 1.6u"s", precisetime=true)
 ERROR: ArgumentError: ion has not been scanned at the time 1.6 s
 [...]
 
-julia> ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true)
+julia> ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s", precisetime=true)
 2
 
-julia> ionscantimeindex(δt, gcms, 1, 1.4u"s")
+julia> ionscantimeindex(δtᵢ, gcms, 1, 1.4u"s")
 1
 
-julia> ionscantime(δt, gcms, 1, 1)
+julia> ionscantime(δtᵢ, gcms, 1, 1)
 1.0 s
 ```
 """
-function ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+function ionscantimeindex(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
     time::Unitful.Time; precisetime::Bool=false)
-    precisetime || return findclosest(ionscantimes(δt, gcms, ionindex), time)
+    precisetime || return findclosest(ionscantimes(δtᵢ, gcms, ionindex), time)
     t = ustrip(uconvert(unit(eltype(scantimes(gcms))), time))
-    for (index, element) in enumerate(ionscantimes(δt, gcms, ionindex, ustripped=true))
+    for (index, element) in enumerate(ionscantimes(δtᵢ, gcms, ionindex, ustripped=true))
         element ≈ t && return index
     end
     throw(ArgumentError("ion has not been scanned at the time $time"))
@@ -542,11 +542,11 @@ end
 
 
 """
-    ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer; 
+    ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the times at which an ion was actually scanned, given the `ionindex` and a function 
-`δt` that computes the time difference between the timestamp of a scan and the scantime of 
+`δtᵢ` that computes the time difference between the timestamp of a scan and the scantime of 
 the ion from the `ionindex`. The optional parameter `timeunit` allows you to change the 
 unit of the returned scantimes. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
@@ -556,7 +556,7 @@ be the time at which scanning of the ion intensities associated with that scan w
 complete.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ionscantime`](@ref), 
-[`timeshift`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
+[`ionscantimeshift`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
 [`LinearDescending`](@ref), [`scantimes`](@ref), [`scantimeindex`](@ref), 
 [`ions`](@ref), [`ionindex`](@ref).
 
@@ -569,38 +569,38 @@ GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> δt = timeshift(gcms, LinearDescending());
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
 
-julia> ionscantimes(δt, gcms, 1)
+julia> ionscantimes(δtᵢ, gcms, 1)
 3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  1.0 s
  2.0 s
  3.0 s
 
-julia> ionscantimes(δt, gcms, 2)
+julia> ionscantimes(δtᵢ, gcms, 2)
 3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  0.5 s
  1.5 s
  2.5 s
 
-julia> ionscantimes(δt, gcms, 2; timeunit=u"minute")
+julia> ionscantimes(δtᵢ, gcms, 2; timeunit=u"minute")
 3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
  0.008333333333333333 minute
                 0.025 minute
  0.041666666666666664 minute
 
-julia> ionscantimes(δt, gcms, 2; timeunit=u"minute", ustripped=true)
+julia> ionscantimes(δtᵢ, gcms, 2; timeunit=u"minute", ustripped=true)
 3-element Vector{Float64}:
  0.008333333333333333
  0.025
  0.041666666666666664
 ```
 """
-function ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer; 
+function ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
     timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)), ustripped::Bool=false)
     firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
         BoundsError(ions(gcms), ionindex))
-    ts = scantimes(gcms) .+ δt(ionindex)
+    ts = scantimes(gcms) .+ δtᵢ(ionindex)
     ustripped ? ustrip.(timeunit, ts) : uconvert.(timeunit, ts)
 end
 
@@ -1311,7 +1311,7 @@ end
 
 Supertype of all ion scan order implementations in JuMS.
 
-See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`timeshift`](@ref), 
+See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantimeshift`](@ref), 
 [`ionscantime`](@ref).
 """
 abstract type IonScanOrder end
@@ -1345,7 +1345,7 @@ switched between SIM mode and Scan mode during each scan interval and operated o
 second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
-[`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
 [`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
@@ -1398,7 +1398,7 @@ switched between SIM mode and Scan mode during each scan interval and operated o
 second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
-[`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
 [`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
@@ -1423,7 +1423,7 @@ function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
 end
 
 
-function timeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
+function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
@@ -1433,7 +1433,7 @@ function timeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
 end
 
 
-function timeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS)
+function ionscantimeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
@@ -1444,7 +1444,7 @@ end
 
 
 """
-    timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+    ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
 
 Return a function that calculates the time difference between the timestamp of a scan and 
 the time when an ion was actually scanned, given the index of the ion as an argument. The 
@@ -1465,46 +1465,47 @@ GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> δt = timeshift(gcms, LinearAscending());
+julia> δtᵢ = ionscantimeshift(gcms, LinearAscending());
 
-julia> δt(1)
+julia> δtᵢ(1)
 -0.5 s
 
-julia> δt(2)
+julia> δtᵢ(2)
 0.0 s
 
-julia> δt = timeshift(gcms, LinearDescending());
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
 
-julia> δt(1)
+julia> δtᵢ(1)
 0.0 s
 
-julia> δt(2)
+julia> δtᵢ(2)
 -0.5 s
 
-julia> δt = timeshift(gcms, LinearDescending(start=0.5));
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.5));
 
-julia> δt(1)
+julia> δtᵢ(1)
 0.0 s
 
-julia> δt(2)
+julia> δtᵢ(2)
 -0.25 s
 
-julia> δt = timeshift(gcms, LinearDescending(stop=0.5));
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(stop=0.5));
 
-julia> δt(1)
+julia> δtᵢ(1)
 -0.5 s
 
-julia> δt(2)
+julia> δtᵢ(2)
 -0.75 s
 
-julia> δt = timeshift(gcms, LinearDescending(start=0.25, stop=0.75));
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.25, stop=0.75));
 
-julia> δt(1)
+julia> δtᵢ(1)
 -0.25 s
 
-julia> δt(2)
+julia> δtᵢ(2)
 -0.5 s
 ```
 """
-timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = timeshift(ionscanorder, gcms)
+ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = ionscantimeshift(
+    ionscanorder, gcms)
 

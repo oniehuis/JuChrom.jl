@@ -39,7 +39,7 @@ export ionscantime
 export ionscantimeindex
 export scantimeindex
 export scantimes
-export timeshift
+export ionscantimeshift
 export totalionchromatogram
 
 end

@@ -185,101 +185,102 @@ end
 
 
 ############################################################################################
-# ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
-# ionindex::Integer; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+# ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer;
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "ionscantime" begin
     # Same return values as those provided as arguments to construct the object
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-    δt = timeshift(gcms, LinearDescending())
-    @test 2u"s" ≈ ionscantime(δt, gcms, 1, 2)
-    @test 1.5u"s" ≈ ionscantime(δt, gcms, 2, 2)
-    @test 0.03333333333333333u"minute" ≈ ionscantime(δt, gcms, 1, 2, timeunit=u"minute")
-    @test 0.025u"minute" ≈ ionscantime(δt, gcms, 2, 2, timeunit=u"minute")
-    @test 2 ≈ ionscantime(δt, gcms, 1, 2, ustripped=true)
-    @test 1.5 ≈ ionscantime(δt, gcms, 2, 2, ustripped=true)
-    @test 0.03333333333333333 ≈ ionscantime(δt, gcms, 1, 2, timeunit=u"minute", ustripped=true)
-    @test 0.025 ≈ ionscantime(δt, gcms, 2, 2, timeunit=u"minute", ustripped=true)
+    δtᵢ = ionscantimeshift(gcms, LinearDescending())
+    @test 2u"s" ≈ ionscantime(δtᵢ, gcms, 1, 2)
+    @test 1.5u"s" ≈ ionscantime(δtᵢ, gcms, 2, 2)
+    @test 0.03333333333333333u"minute" ≈ ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute")
+    @test 0.025u"minute" ≈ ionscantime(δtᵢ, gcms, 2, 2, timeunit=u"minute")
+    @test 2 ≈ ionscantime(δtᵢ, gcms, 1, 2, ustripped=true)
+    @test 1.5 ≈ ionscantime(δtᵢ, gcms, 2, 2, ustripped=true)
+    @test 0.03333333333333333 ≈ ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute", 
+        ustripped=true)
+    @test 0.025 ≈ ionscantime(δtᵢ, gcms, 2, 2, timeunit=u"minute", ustripped=true)
 
     # Returned element type is always Float64
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(ionscantime(δt, gcms, 1, 2))
-    @test Float64 == typeof(ionscantime(δt, gcms, 1, 2, ustripped=true))
+        nothing}} == typeof(ionscantime(δtᵢ, gcms, 1, 2))
+    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 1, 2, ustripped=true))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(ionscantime(δt, gcms, 1, 2, timeunit=u"minute"))
-    @test Float64 == typeof(ionscantime(δt, gcms, 1, 2, timeunit=u"minute", ustripped=true))
+        nothing}} == typeof(ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute"))
+    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute", ustripped=true))
 
     # Check BoundsErrors for scanindex and ionindex
-    @test_throws BoundsError ionscantime(δt, gcms, 0, 2)
-    @test_throws BoundsError ionscantime(δt, gcms, 3, 2)
-    @test_throws BoundsError ionscantime(δt, gcms, 2, 0)
-    @test_throws BoundsError ionscantime(δt, gcms, 2, 4)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 0, 2)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 3, 2)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 2, 0)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 2, 4)
 end
 
 
 ############################################################################################
-# ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
-# ionindex::Integer; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+# ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "ionscantimes" begin
     # Same return values as those provided as arguments to construct the object
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-    δt = timeshift(gcms, LinearDescending())
-    @test [1, 2, 3]u"s" ≈ ionscantimes(δt, gcms, 1)
-    @test [0.5, 1.5, 2.5]u"s" ≈ ionscantimes(δt, gcms, 2)
-    @test [0.016666666666666666, 0.03333333333333333, 0.05]u"minute" ≈ ionscantimes(δt, 
+    δtᵢ = ionscantimeshift(gcms, LinearDescending())
+    @test [1, 2, 3]u"s" ≈ ionscantimes(δtᵢ, gcms, 1)
+    @test [0.5, 1.5, 2.5]u"s" ≈ ionscantimes(δtᵢ, gcms, 2)
+    @test [0.016666666666666666, 0.03333333333333333, 0.05]u"minute" ≈ ionscantimes(δtᵢ, 
         gcms, 1, timeunit=u"minute")
-    @test [0.008333333333333333, 0.025, 0.041666666666666664]u"minute" ≈ ionscantimes(δt, 
+    @test [0.008333333333333333, 0.025, 0.041666666666666664]u"minute" ≈ ionscantimes(δtᵢ, 
         gcms, 2, timeunit=u"minute")
-    @test [1, 2, 3] ≈ ionscantimes(δt, gcms, 1, ustripped=true)
-    @test [0.5, 1.5, 2.5] ≈ ionscantimes(δt, gcms, 2, ustripped=true)
-    @test [0.016666666666666666, 0.03333333333333333, 0.05] ≈ ionscantimes(δt, gcms, 1, 
+    @test [1, 2, 3] ≈ ionscantimes(δtᵢ, gcms, 1, ustripped=true)
+    @test [0.5, 1.5, 2.5] ≈ ionscantimes(δtᵢ, gcms, 2, ustripped=true)
+    @test [0.016666666666666666, 0.03333333333333333, 0.05] ≈ ionscantimes(δtᵢ, gcms, 1, 
         timeunit=u"minute", ustripped=true)
-    @test [0.008333333333333333, 0.025, 0.041666666666666664] ≈ ionscantimes(δt, gcms, 2, 
+    @test [0.008333333333333333, 0.025, 0.041666666666666664] ≈ ionscantimes(δtᵢ, gcms, 2, 
         timeunit=u"minute", ustripped=true)
 
     # Same return element type includes always Float64
     @test Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
-        1//1),), 𝐓, nothing}}} == typeof(ionscantimes(δt, gcms, 1))
-    @test Vector{Float64} == typeof(ionscantimes(δt, gcms, 1, ustripped=true))
+        1//1),), 𝐓, nothing}}} == typeof(ionscantimes(δtᵢ, gcms, 1))
+    @test Vector{Float64} == typeof(ionscantimes(δtᵢ, gcms, 1, ustripped=true))
     @test Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
-        1//1),), 𝐓, nothing}}} == typeof(ionscantimes(δt, gcms, 1, timeunit=u"minute"))
-    @test Vector{Float64} == typeof(ionscantimes(δt, gcms, 1, timeunit=u"minute", 
+        1//1),), 𝐓, nothing}}} == typeof(ionscantimes(δtᵢ, gcms, 1, timeunit=u"minute"))
+    @test Vector{Float64} == typeof(ionscantimes(δtᵢ, gcms, 1, timeunit=u"minute", 
         ustripped=true))
 
     # Check BoundsErrors for scanindex and ionindex
-    @test_throws BoundsError ionscantimes(δt, gcms, 0)
-    @test_throws BoundsError ionscantimes(δt, gcms, 3)
+    @test_throws BoundsError ionscantimes(δtᵢ, gcms, 0)
+    @test_throws BoundsError ionscantimes(δtᵢ, gcms, 3)
 end
 
 
 ############################################################################################
-# ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+# ionscantimeindex(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
 # time::Unitful.Time; precisetime::Bool=false) -> Int
 ############################################################################################
 @testset "ionscantimeindex" begin
     # Same return values as those provided as arguments to construct the object
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-    δt = timeshift(gcms, LinearDescending())
-    @test 2 == ionscantimeindex(δt, gcms, 2, 1.5u"s")
-    @test 2 == ionscantimeindex(δt, gcms, 2, 0.025u"minute")
-    @test 2 == ionscantimeindex(δt, gcms, 2, 1.6u"s")
-    @test 2 == ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true)
-    @test 2 == ionscantimeindex(δt, gcms, 2, 0.025u"minute", precisetime=true)
-    @test 1 == ionscantimeindex(δt, gcms, 1, 1.4u"s")
-    @test 1 == ionscantimeindex(δt, gcms, 1, 1u"s")
-    @test 2 == ionscantimeindex(δt, gcms, 2, 1.0u"s")
-    @test 1 == ionscantimeindex(δt, gcms, 2, prevfloat(1.0)*u"s")
+    δtᵢ = ionscantimeshift(gcms, LinearDescending())
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s")
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 0.025u"minute")
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 1.6u"s")
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s", precisetime=true)
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 0.025u"minute", precisetime=true)
+    @test 1 == ionscantimeindex(δtᵢ, gcms, 1, 1.4u"s")
+    @test 1 == ionscantimeindex(δtᵢ, gcms, 1, 1u"s")
+    @test 2 == ionscantimeindex(δtᵢ, gcms, 2, 1.0u"s")
+    @test 1 == ionscantimeindex(δtᵢ, gcms, 2, prevfloat(1.0)*u"s")
 
     # Same return element type includes always Int
-    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 1.5u"s"))
-    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true))
-    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 0.025u"minute", precisetime=true))
+    @test Int == typeof(ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s"))
+    @test Int == typeof(ionscantimeindex(δtᵢ, gcms, 2, 1.5u"s", precisetime=true))
+    @test Int == typeof(ionscantimeindex(δtᵢ, gcms, 2, 0.025u"minute", precisetime=true))
 
     # Check BoundsErrors for scanindex and ionindex
-    @test_throws ArgumentError ionscantimeindex(δt, gcms, 2, 1.6u"s", precisetime=true)
-    @test_throws BoundsError ionscantimeindex(δt, gcms, 3, 1.5u"s")
-    @test_throws BoundsError ionscantimeindex(δt, gcms, 0, 1.5u"s")
+    @test_throws ArgumentError ionscantimeindex(δtᵢ, gcms, 2, 1.6u"s", precisetime=true)
+    @test_throws BoundsError ionscantimeindex(δtᵢ, gcms, 3, 1.5u"s")
+    @test_throws BoundsError ionscantimeindex(δtᵢ, gcms, 0, 1.5u"s")
 end
 
 
