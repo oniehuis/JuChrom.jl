@@ -426,8 +426,8 @@ end
 
 
 """
-    ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
-    ionindex::Integer; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+    ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the time at which an ion was actually scanned, given the `scanindex` and the 
 `ionindex` and a function `δt` that computes the time difference between the timestamp of 
@@ -454,7 +454,7 @@ metadata: 0 entries
 
 julia> δt = timeshift(gcms, LinearDescending());
 
-julia> ionscantime(δt, gcms, 2, 1)
+julia> ionscantime(δt, gcms, 1, 2)
 2.0 s
 
 julia> ionscantime(δt, gcms, 2, 2)
@@ -467,14 +467,14 @@ julia> ionscantime(δt, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 0.025
 ```
 """
-function ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
-    ionindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
+function ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
     ustripped::Bool=false)
-    firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
-        BoundsError(scantimes(gcms), scanindex))
     firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
         BoundsError(ions(gcms), ionindex))
-    t = gcms.scantimes[scanindex] + timeshift(ionindex)
+    firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
+        BoundsError(scantimes(gcms), scanindex))
+    t = gcms.scantimes[scanindex] + δt(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
