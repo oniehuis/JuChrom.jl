@@ -19,6 +19,7 @@ intensities
 ion
 ioncount
 ionindex
+ionscantime
 ions
 maxintensity
 maxion
@@ -30,8 +31,7 @@ minion
 minscantime
 runduration
 scancount
-scantime(::Function, ::AbstractGCMS, ::Integer, ::Integer)
-scantime(::AbstractChromatogram, ::Integer)
+scantime
 scantimeindex
 scantimes
 timeshift

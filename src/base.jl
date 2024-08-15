@@ -396,7 +396,8 @@ in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `
 whether the unit is stripped from the returned value.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
+[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref), 
+[`ionscantime`](@ref).
 
 # Example
 ```jldoctest
@@ -425,11 +426,11 @@ end
 
 
 """
-    scantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
+    ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
     ionindex::Integer; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the time at which an ion was actually scanned, given the `scanindex` and the 
-`ionindex` and a function `δt`` that computes the time difference between the timestamp of 
+`ionindex` and a function `δt` that computes the time difference between the timestamp of 
 a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
 allows you to change the unit of the returned scantime. All time units defined in the 
 package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
@@ -438,7 +439,7 @@ unit is stripped from the returned value. Note that the timestamp of a scan is a
 be the time at which scanning of the ion intensities associated with that scan was 
 complete.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), 
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
 [`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
 [`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
 
@@ -453,20 +454,20 @@ metadata: 0 entries
 
 julia> δt = timeshift(gcms, LinearDescending());
 
-julia> scantime(δt, gcms, 2, 1)
+julia> ionscantime(δt, gcms, 2, 1)
 2.0 s
 
-julia> scantime(δt, gcms, 2, 2)
+julia> ionscantime(δt, gcms, 2, 2)
 1.5 s
 
-julia> scantime(δt, gcms, 2, 2; timeunit=u"minute")
+julia> ionscantime(δt, gcms, 2, 2; timeunit=u"minute")
 0.025 minute
 
-julia> scantime(δt, gcms, 2, 2; timeunit=u"minute", ustripped=true)
+julia> ionscantime(δt, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 0.025
 ```
 """
-function scantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
+function ionscantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
     ionindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
     ustripped::Bool=false)
     firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
@@ -1097,7 +1098,8 @@ end
 
 Supertype of all ion scan order implementations in JuMS.
 
-See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`timeshift`](@ref).
+See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`timeshift`](@ref), 
+[`ionscantime`](@ref).
 """
 abstract type IonScanOrder end
 
@@ -1130,9 +1132,9 @@ switched between SIM mode and Scan mode during each scan interval and operated o
 second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
-[`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-[`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref).
+[`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```jldoctest
@@ -1183,9 +1185,9 @@ switched between SIM mode and Scan mode during each scan interval and operated o
 second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
-[`timeshift`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-[`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref).
+[`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```jldoctest
@@ -1237,9 +1239,9 @@ time difference will be a negative value or zero, since the timestamp of a scan 
 considered to be the time at which the scanning of the last ion was completed.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`IonScanOrder`](@ref), 
-[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
-[`minscantime`](@ref), [`maxscantime`](@ref).
+[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantime`](@ref), 
+[`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), 
+[`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```julia-repl
