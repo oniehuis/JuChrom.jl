@@ -36,6 +36,7 @@ export runduration
 export scancount
 export scantime
 export ionscantime
+export ionscantimeindex
 export scantimeindex
 export scantimes
 export timeshift

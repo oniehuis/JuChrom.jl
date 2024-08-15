@@ -433,11 +433,11 @@ Return the time at which an ion was actually scanned, given the `ionindex` and t
 `scanindex` and a function `δt` that computes the time difference between the timestamp of 
 a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
 allows you to change the unit of the returned scantime. All time units defined in the 
-package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
-are supported. The optional keyword argument `ustripped` allows you to specify whether the 
-unit is stripped from the returned value. Note that the timestamp of a scan is assumed to 
-be the time at which scanning of the ion intensities associated with that scan was 
-complete.
+package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
+`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
+whether the unit is stripped from the returned value. Note that the timestamp of a scan is 
+assumed to be the time at which scanning of the ion intensities associated with that scan 
+was complete.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
 [`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
@@ -480,6 +480,68 @@ end
 
 
 """
+    ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+    time::Unitful.Time; precisetime::Bool=false) -> Int
+
+Return the index of the scan where the scan time for the ion is closest to the specified 
+`time`, given the `ionindex` and a function `δt` that computes the time difference between 
+the timestamp of a scan and the scantime of the ion from the `ionindex`. All time units 
+defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
+`u"s"`, `u"minute"`) are supported. If there is a tie, the larger `scanindex` is returned. 
+If the optional parameter `precisetime` is set to `true`, the ion must have been scanned 
+exactly at the specified time, otherwise an error is thrown.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimeindex`](@ref), 
+[`ionscantime`](@ref), [`timeshift`](@ref), [`IonScanOrder`](@ref), 
+[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`scantimes`](@ref), 
+[`scantime`](@ref), [`ions`](@ref), [`ion`](@ref), [`ionindex`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> δt = timeshift(gcms, LinearDescending());
+
+julia> ionscantime(δt, gcms, 2, 2)
+1.5 s
+
+julia> ionscantimeindex(δt, gcms, 2, 1.5u"s")
+2
+
+julia> ionscantimeindex(δt, gcms, 2, 1.6u"s")
+2
+
+julia> ionscantimeindex(δt, gcms, 2, 1.6u"s", precisetime=true)
+ERROR: ArgumentError: ion has not been scanned at the time 1.6 s
+[...]
+
+julia> ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true)
+2
+
+julia> ionscantimeindex(δt, gcms, 1, 1.4u"s")
+1
+
+julia> ionscantime(δt, gcms, 1, 1)
+1.0 s
+```
+"""
+function ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+    time::Unitful.Time; precisetime::Bool=false)
+    precisetime || return findclosest(ionscantimes(δt, gcms, ionindex), time)
+    t = ustrip(uconvert(unit(eltype(scantimes(gcms))), time))
+    for (index, element) in enumerate(ionscantimes(δt, gcms, ionindex, ustripped=true))
+        element ≈ t && return index
+    end
+    throw(ArgumentError("ion has not been scanned at the time $time"))
+end
+
+
+"""
     ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
@@ -487,7 +549,7 @@ Return the times at which an ion was actually scanned, given the `ionindex` and 
 `δt` that computes the time difference between the timestamp of a scan and the scantime of 
 the ion from the `ionindex`. The optional parameter `timeunit` allows you to change the 
 unit of the returned scantimes. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) are 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the 
 unit is stripped from the returned value. Note that the timestamp of a scan is assumed to 
 be the time at which scanning of the ion intensities associated with that scan was 
@@ -1000,7 +1062,7 @@ maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
 
 Return the `runduration`. The optional keyword argument `timeunit` allows you to change the 
 unit of the returned time interval. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) are 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
 is stripped from the returned value. 
 

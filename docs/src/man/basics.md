@@ -20,6 +20,7 @@ ion
 ioncount
 ionindex
 ionscantime
+ionscantimeindex
 ionscantimes
 ions
 maxintensity

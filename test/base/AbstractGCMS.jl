@@ -254,6 +254,36 @@ end
 
 
 ############################################################################################
+# ionscantimeindex(δt::Function, gcms::AbstractGCMS, ionindex::Integer, 
+# time::Unitful.Time; precisetime::Bool=false) -> Int
+############################################################################################
+@testset "ionscantimeindex" begin
+    # Same return values as those provided as arguments to construct the object
+    gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+    δt = timeshift(gcms, LinearDescending())
+    @test 2 == ionscantimeindex(δt, gcms, 2, 1.5u"s")
+    @test 2 == ionscantimeindex(δt, gcms, 2, 0.025u"minute")
+    @test 2 == ionscantimeindex(δt, gcms, 2, 1.6u"s")
+    @test 2 == ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true)
+    @test 2 == ionscantimeindex(δt, gcms, 2, 0.025u"minute", precisetime=true)
+    @test 1 == ionscantimeindex(δt, gcms, 1, 1.4u"s")
+    @test 1 == ionscantimeindex(δt, gcms, 1, 1u"s")
+    @test 2 == ionscantimeindex(δt, gcms, 2, 1.0u"s")
+    @test 1 == ionscantimeindex(δt, gcms, 2, prevfloat(1.0)*u"s")
+
+    # Same return element type includes always Int
+    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 1.5u"s"))
+    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 1.5u"s", precisetime=true))
+    @test Int == typeof(ionscantimeindex(δt, gcms, 2, 0.025u"minute", precisetime=true))
+
+    # Check BoundsErrors for scanindex and ionindex
+    @test_throws ArgumentError ionscantimeindex(δt, gcms, 2, 1.6u"s", precisetime=true)
+    @test_throws BoundsError ionscantimeindex(δt, gcms, 3, 1.5u"s")
+    @test_throws BoundsError ionscantimeindex(δt, gcms, 0, 1.5u"s")
+end
+
+
+############################################################################################
 # totalionchromatogram(gcms::AbstractGCMS)
 ############################################################################################
 @testset "totalionchromatogram GCMS" begin
