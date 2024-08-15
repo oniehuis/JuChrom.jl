@@ -40,6 +40,14 @@ using Unitful: 𝐓
     @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 1)
     @test_throws MethodError FID([1, 2, 3]u"s", [12, 956, 23], 'S')
 
+    # Must provide at least on scantime
+    @test_throws ArgumentError FID(Int[]u"s", Int[])
+    @test_throws ArgumentError FID(Int[]u"s", [12])
+    @test [1]u"s" == FID([1]u"s", [12]).scantimes
+
+    # Must provide at least on intensity
+    @test_throws ArgumentError FID([1]u"s", Int[])
+
     # Number of scantimes and intensities must be identical
     @test_throws DimensionMismatch FID([1, 2, 3, 4]u"s", [12, 956, 23])
     @test_throws DimensionMismatch FID([1, 2]u"s", [12, 956, 23])

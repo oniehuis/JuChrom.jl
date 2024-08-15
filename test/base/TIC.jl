@@ -35,6 +35,14 @@ using Unitful: 𝐓
     # Intensity vector must not accept a unit
     @test_throws MethodError TIC([1, 2, 3], [12, 956, 23]u"s")
 
+    # Must provide at least on scantime
+    @test_throws ArgumentError TIC(Int[]u"s", Int[])
+    @test_throws ArgumentError TIC(Int[]u"s", [12])
+    @test [1]u"s" == TIC([1]u"s", [12]).scantimes
+
+    # Must provide at least on intensity
+    @test_throws ArgumentError TIC([1]u"s", Int[])
+
     # Metadata cannot be anything other than a dictionary.
     @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], :sample_name)
     @test_throws MethodError TIC([1, 2, 3]u"s", [12, 956, 23], 1)

@@ -11,4 +11,3 @@ using SafeTestsets
 @safetestset "IonScanOrder" begin include("base/IonScanOrder.jl") end
 
 @safetestset "Utilities" begin include("utilities/utilities.jl") end
-

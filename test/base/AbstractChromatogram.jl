@@ -176,6 +176,100 @@ end
 
 
 ############################################################################################
+# meanscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+# ustripped::Bool=false)
+############################################################################################
+@testset "meanscantime FID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 1u"s" == meanscantime(FID([1, 2, 3]u"s", [12, 956, 23]))
+    @test (1/60)u"minute" ≈ meanscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        timeunit=u"minute")
+    @test 1 == meanscantime(FID([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
+    @test 1/60 ≈ meanscantime(FID([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(FID(Int64[1, 2, 3]u"s", [12, 956, 23])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 
+        timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        timeunit=u"minute"))
+    @test Float64 == typeof(meanscantime(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 
+        ustripped=true))
+    @test Float64 == typeof(meanscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        ustripped=true))
+
+    @test_throws ArgumentError meanscantime(FID([1]u"s", [12]))
+end
+
+
+@testset "meanscantime GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 1u"s" == meanscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
+    @test (1/60)u"minute" ≈ meanscantime(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), timeunit=u"minute")
+    @test 1 == meanscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        ustripped=true)
+    @test 1/60 ≈ meanscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        timeunit=u"minute", ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), timeunit=u"minute"))
+    @test Float64 == typeof(meanscantime(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ustripped=true))
+    @test Float64 == typeof(meanscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ustripped=true))
+
+    @test_throws ArgumentError meanscantime(GCMS([1]u"s", [12], reshape([0], length(1), 1)))
+end
+
+@testset "meanscantime TIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 1u"s" == meanscantime(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test (1/60)u"minute" ≈ meanscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        timeunit=u"minute")
+    @test 1 == meanscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
+    @test 1/60 ≈ meanscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 
+        timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(meanscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        timeunit=u"minute"))
+    @test Float64 == typeof(meanscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 
+        ustripped=true))
+    @test Float64 == typeof(meanscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        ustripped=true))
+
+    @test_throws ArgumentError meanscantime(TIC([1]u"s", [12]))
+end
+
+
+
+############################################################################################
 # metadata(chrom::AbstractChromatogram) -> Dict{Any, Any}
 ############################################################################################
 @testset "metadata FID" begin

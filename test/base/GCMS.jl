@@ -67,6 +67,14 @@ using Unitful: 𝐓
     # Intensity matrix must not accept a unit
     @test_throws MethodError GCMS([1, 2, 3], [85, 100], [0 12; 34 956; 23 1]u"s")
 
+    # Must provide at least on scantime
+    @test_throws ArgumentError GCMS(Int[]u"s", [85, 100], Matrix{Int}(undef, (0,0)))
+    @test_throws ArgumentError GCMS(Int[]u"s", [85, 100], [0 12])
+    @test [1]u"s" == GCMS([1]u"s", [85, 100], [0 12]).scantimes
+
+    # Must provide at least on intensity
+    @test_throws ArgumentError GCMS([1]u"s", [85, 100], Matrix{Int}(undef, (0,0)))
+
     # Metadata cannot be anything other than dictionary
     @test_throws MethodError GCMS([1, 2, 3]u"s", [85, 100], 
         [0.0 12.0; 34.0 956.0; 23.0 1.0], :sample_name)

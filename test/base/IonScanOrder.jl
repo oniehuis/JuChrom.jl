@@ -68,3 +68,49 @@ end
     @test_throws ArgumentError LinearDescending(; start=-0.1, stop=1.1)
     @test_throws ArgumentError LinearDescending(; start=0.5, stop=0.5)
 end
+
+
+
+############################################################################################
+# timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+############################################################################################
+@testset "timeshift LinearAscending" begin
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending())(1)
+    @test 0u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending())(2)
+    @test -0.25u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(start=0.5))(1)
+    @test 0u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(start=0.5))(2)
+    @test -0.75u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(stop=0.5))(1)
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(stop=0.5))(2)
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(start=0.25, stop=0.75))(1)
+    @test -0.25u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearAscending(start=0.25, stop=0.75))(2)
+end
+
+############################################################################################
+# timeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+############################################################################################
+@testset "timeshift LinearDescending" begin
+    @test -0u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending())(1)
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending())(2)
+    @test 0u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(start=0.5))(1)
+    @test -0.25u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(start=0.5))(2)
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(stop=0.5))(1)
+    @test -0.75u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(stop=0.5))(2)
+    @test -0.25u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(start=0.25, stop=0.75))(1)
+    @test -0.5u"s" == timeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        LinearDescending(start=0.25, stop=0.75))(2)
+end

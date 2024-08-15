@@ -51,10 +51,12 @@ struct FID{
     function FID{T1, T2}(scantimes::T1, intensities::T2, metadata::Dict) where {
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
+        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
+        length(intensities) == length(scantimes) || throw(
+            DimensionMismatch("intensity count does not match scantime count"))
         issorted(scantimes) || throw(
             ArgumentError("scantimes not in ascending order"))
-        length(intensities) == length(scantimes) || throw(
-            DimensionMismatch("intensity count does not match scan count"))
         count(i -> i < 0, intensities) == 0 || throw(
             ArgumentError("intensity values contain values less than zero"))
         new(scantimes, intensities, metadata)
@@ -137,12 +139,15 @@ struct GCMS{
             T1<:AbstractVector{<:Unitful.Time},
             T2<:AbstractVector{<:Real},
             T3<:AbstractMatrix{<:Real}}
-        issorted(scantimes) || throw(ArgumentError("scantimes not in ascending order"))
-        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
+        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
+        length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
         size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
             "intensity matrix row count does not match scan count"))
         size(intensities, 2) == length(ions) || throw(DimensionMismatch(
             "intensity matrix column count does not match ion count"))
+        issorted(scantimes) || throw(ArgumentError("scantimes not in ascending order"))
+        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
             "intensity values contain at least one value less than zero"))
         new(scantimes, ions, intensities, metadata)
@@ -224,10 +229,12 @@ struct TIC{
     function TIC{T1, T2}(scantimes::T1, intensities::T2, metadata::Dict) where {
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
-        issorted(scantimes) || throw(
-            ArgumentError("scantimes not in ascending order"))
+        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan count"))
+        issorted(scantimes) || throw(
+            ArgumentError("scantimes not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
             ArgumentError("intensity values contain at least one value less than zero"))
         new(scantimes, intensities, metadata)
@@ -939,6 +946,8 @@ julia> meanscantime(fid, timeunit=u"minute", ustripped=true)
 """
 function meanscantime(chrom::AbstractChromatogram; 
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    scancount(chrom) > 1 || throw(
+        ArgumentError("cannot derive meanscantime from a single one scan"))
     scantime_avg = runduration(chrom) / (scancount(chrom) - 1)
     ustripped ? ustrip.(timeunit, scantime_avg) : uconvert.(timeunit, scantime_avg)
 end
@@ -1199,6 +1208,30 @@ julia> δt = timeshift(gcms, LinearDescending());
 
 julia> δt(1)
 0.0 s
+
+julia> δt(2)
+-0.5 s
+
+julia> δt = timeshift(gcms, LinearDescending(start=0.5));
+
+julia> δt(1)
+0.0 s
+
+julia> δt(2)
+-0.25 s
+
+julia> δt = timeshift(gcms, LinearDescending(stop=0.5));
+
+julia> δt(1)
+-0.5 s
+
+julia> δt(2)
+-0.75 s
+
+julia> δt = timeshift(gcms, LinearDescending(start=0.25, stop=0.75));
+
+julia> δt(1)
+-0.25 s
 
 julia> δt(2)
 -0.5 s
