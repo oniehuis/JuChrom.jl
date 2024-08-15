@@ -480,7 +480,7 @@ end
 
 
 """
-    ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
+    ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the times at which an ion was actually scanned, given the `ionindex` and a function 
@@ -493,9 +493,10 @@ unit is stripped from the returned value. Note that the timestamp of a scan is a
 be the time at which scanning of the ion intensities associated with that scan was 
 complete.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
-[`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
-[`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ionscantime`](@ref), 
+[`timeshift`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
+[`LinearDescending`](@ref), [`scantimes`](@ref), [`scantimeindex`](@ref), 
+[`ions`](@ref), [`ionindex`](@ref).
 
 # Example
 ```julia-repl
