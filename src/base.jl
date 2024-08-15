@@ -429,8 +429,8 @@ end
     ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Return the time at which an ion was actually scanned, given the `scanindex` and the 
-`ionindex` and a function `δt` that computes the time difference between the timestamp of 
+Return the time at which an ion was actually scanned, given the `ionindex` and the 
+`scanindex` and a function `δt` that computes the time difference between the timestamp of 
 a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
 allows you to change the unit of the returned scantime. All time units defined in the 
 package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
@@ -474,8 +474,71 @@ function ionscantime(δt::Function, gcms::AbstractGCMS, ionindex::Integer,
         BoundsError(ions(gcms), ionindex))
     firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
         BoundsError(scantimes(gcms), scanindex))
-    t = gcms.scantimes[scanindex] + δt(ionindex)
+    t = scantime(gcms, scanindex) + δt(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
+end
+
+
+"""
+    ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+
+Return the times at which an ion was actually scanned, given the `ionindex` and a function 
+`δt` that computes the time difference between the timestamp of a scan and the scantime of 
+the ion from the `ionindex`. The optional parameter `timeunit` allows you to change the 
+unit of the returned scantimes. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the 
+unit is stripped from the returned value. Note that the timestamp of a scan is assumed to 
+be the time at which scanning of the ion intensities associated with that scan was 
+complete.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
+[`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
+[`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
+
+# Example
+```julia-repl
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; time range: 1.0 s - 3.0 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> δt = timeshift(gcms, LinearDescending());
+
+julia> ionscantimes(δt, gcms, 1)
+3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+ 1.0 s
+ 2.0 s
+ 3.0 s
+
+julia> ionscantimes(δt, gcms, 2)
+3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+ 0.5 s
+ 1.5 s
+ 2.5 s
+
+julia> ionscantimes(δt, gcms, 2; timeunit=u"minute")
+3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
+ 0.008333333333333333 minute
+                0.025 minute
+ 0.041666666666666664 minute
+
+julia> ionscantimes(δt, gcms, 2; timeunit=u"minute", ustripped=true)
+3-element Vector{Float64}:
+ 0.008333333333333333
+ 0.025
+ 0.041666666666666664
+```
+"""
+function ionscantimes(δt::Function, gcms::AbstractGCMS, ionindex::Integer; 
+    timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)), ustripped::Bool=false)
+    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
+        BoundsError(ions(gcms), ionindex))
+    ts = scantimes(gcms) .+ δt(ionindex)
+    ustripped ? ustrip.(timeunit, ts) : uconvert.(timeunit, ts)
 end
 
 

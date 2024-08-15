@@ -22,6 +22,8 @@ export ion
 export ioncount
 export ionindex
 export ions
+export ionscantime
+export ionscantimes
 export maxintensity
 export maxion
 export maxscantime
