@@ -149,12 +149,20 @@ end
         "2 ions: m/z 85, 100\n",
         "intensity range: 0 - 956\n",
         "metadata: 1 entry")
-    show(io, GCMS(Int64[1, 2, 3]u"s", Int64[85, 100], Int64[0 12; 34 956; 23 1], 
-        Dict(:id => 4, "name" => "sample")))
+    show(io, GCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:94), 
+        reshape(convert(Vector{Int64}, (0:29)), (3,10))))
     @test String(take!(io)) == string(
         "GCMS {scantimes: Int64, ions: Int64, intensities: Int64}\n",
         "3 scans; scantimes: 1 s, 2 s, 3 s\n",
-        "2 ions: m/z 85, 100\n",
-        "intensity range: 0 - 956\n",
-        "metadata: 2 entries")
+        "10 ions: m/z 85, 86, 87, 88, 89, 90, 91, 92, 93, 94\n",
+        "intensity range: 0 - 29\n",
+        "metadata: 0 entries")
+    show(io, GCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:95), 
+        reshape(convert(Vector{Int64}, (0:32)), (3,11))))
+    @test String(take!(io)) == string(
+        "GCMS {scantimes: Int64, ions: Int64, intensities: Int64}\n",
+        "3 scans; scantimes: 1 s, 2 s, 3 s\n",
+        "11 ions; range: m/z 85 - 95\n",
+        "intensity range: 0 - 32\n",
+        "metadata: 0 entries")
 end
