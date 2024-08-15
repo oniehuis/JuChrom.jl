@@ -30,7 +30,8 @@ minion
 minscantime
 runduration
 scancount
-scantime
+scantime(::Function, ::AbstractGCMS, ::Integer, ::Integer)
+scantime(::AbstractChromatogram, ::Integer)
 scantimeindex
 scantimes
 timeshift

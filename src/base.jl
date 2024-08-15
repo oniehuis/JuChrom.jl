@@ -1053,7 +1053,7 @@ julia> intensities(tic)
 totalionchromatogram(gcms::GCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
     dims=2)), metadata(gcms))
 
-
+# TO DO: show should change its output depending on the number of elements in scantimes and ions
 function Base.show(io::IO, fid::FID)
     println(io, "FID {scantimes: ", eltype(ustrip.(scantimes(fid))), ", intensities: ", 
         eltype(intensities(fid)), "}")
