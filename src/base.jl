@@ -425,6 +425,60 @@ end
 
 
 """
+    scantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
+    ionindex::Integer; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+
+Return the time at which an ion was actually scanned, given the `scanindex` and the 
+`ionindex` and a function `δt`` that computes the time difference between the timestamp of 
+a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
+allows you to change the unit of the returned scantime. All time units defined in the 
+package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
+are supported. The optional keyword argument `ustripped` allows you to specify whether the 
+unit is stripped from the returned value. Note that the timestamp of a scan is assumed to 
+be the time at which scanning of the ion intensities associated with that scan was 
+complete.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), 
+[`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`timeshift`](@ref), 
+[`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
+
+# Example
+```julia-repl
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; time range: 1.0 s - 3.0 s
+2 ions; range: m/z 85 - 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> δt = timeshift(gcms, LinearDescending());
+
+julia> scantime(δt, gcms, 2, 1)
+2.0 s
+
+julia> scantime(δt, gcms, 2, 2)
+1.5 s
+
+julia> scantime(δt, gcms, 2, 2; timeunit=u"minute")
+0.025 minute
+
+julia> scantime(δt, gcms, 2, 2; timeunit=u"minute", ustripped=true)
+0.025
+```
+"""
+function scantime(timeshift::Function, gcms::AbstractGCMS, scanindex::Integer, 
+    ionindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
+    ustripped::Bool=false)
+    firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
+        BoundsError(scantimes(gcms), scanindex))
+    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
+        BoundsError(ions(gcms), ionindex))
+    t = gcms.scantimes[scanindex] + timeshift(ionindex)
+    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
+end
+
+
+"""
     scantimeindex(gcms::AbstractGCMS, time::Unitful.Time; precisetime::Bool=false) -> Int
 
 Return the index of the `scantime` closest to `time` in the `scantimes`. 
