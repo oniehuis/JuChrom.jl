@@ -25,7 +25,7 @@ ions
 maxintensity
 maxion
 maxscantime
-meanscantime
+meanscanduration
 metadata
 minintensity
 minion

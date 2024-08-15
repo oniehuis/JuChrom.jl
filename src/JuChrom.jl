@@ -27,7 +27,7 @@ export ionscantimes
 export maxintensity
 export maxion
 export maxscantime
-export meanscantime
+export meanscanduration
 export metadata
 export minintensity
 export minion

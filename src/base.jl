@@ -1032,10 +1032,10 @@ end
 
 
 """
-    meanscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+    meanscanduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
         ustripped::Bool=false)
 
-Compute the mean scan time duration. The optional keyword argument `timeunit` allows you to 
+Compute the mean scan duration. The optional keyword argument `timeunit` allows you to 
 change the unit of the return value. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
@@ -1052,20 +1052,20 @@ FID {scantimes: Float64, intensities: Int64}
 intensity range: 1 - 956
 metadata: 0 entries
 
-julia> meanscantime(fid)
+julia> meanscanduration(fid)
 1.0 s
 
-julia> meanscantime(fid, timeunit=u"minute")
+julia> meanscanduration(fid, timeunit=u"minute")
 0.016666666666666666 minute
 
-julia> meanscantime(fid, timeunit=u"minute", ustripped=true)
+julia> meanscanduration(fid, timeunit=u"minute", ustripped=true)
 0.016666666666666666
 ```
 """
-function meanscantime(chrom::AbstractChromatogram; 
+function meanscanduration(chrom::AbstractChromatogram; 
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
     scancount(chrom) > 1 || throw(
-        ArgumentError("cannot derive meanscantime from a single one scan"))
+        ArgumentError("cannot derive meanscanduration from a single one scan"))
     scantime_avg = runduration(chrom) / (scancount(chrom) - 1)
     ustripped ? ustrip.(timeunit, scantime_avg) : uconvert.(timeunit, scantime_avg)
 end
@@ -1196,7 +1196,7 @@ second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
 [`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
@@ -1249,7 +1249,7 @@ second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
 [`timeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`meanscantime`](@ref), [`scantimes`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
@@ -1277,7 +1277,7 @@ function timeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
-        meanscantime(gcms) * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
+        meanscanduration(gcms) * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
             * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
     end
 end
@@ -1287,7 +1287,7 @@ function timeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
-        meanscantime(gcms) * ((ionscanorder.stop - 1) + ((1 - index) 
+        meanscanduration(gcms) * ((ionscanorder.stop - 1) + ((1 - index) 
             * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
     end
 end
@@ -1304,7 +1304,7 @@ considered to be the time at which the scanning of the last ion was completed.
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`IonScanOrder`](@ref), 
 [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantime`](@ref), 
 [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), 
-[`meanscantime`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
+[`meanscanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```julia-repl
