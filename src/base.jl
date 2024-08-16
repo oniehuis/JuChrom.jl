@@ -33,7 +33,7 @@ abstract type AbstractGC <: AbstractChromatogram end
 """
     AbstractFID <: AbstractGC
 
-Supertype of all flame ionization detector chromatogram implementations in JuMS (e.g., 
+Supertype of all flame ionization detector chromatogram implementations (e.g., 
 `FID`).
 
 See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractGC`](@ref), 
@@ -468,7 +468,7 @@ julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
-    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
+    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))),
     ustripped::Bool=false)
     firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
         BoundsError(ions(gcms), ionindex))
@@ -597,7 +597,7 @@ julia> ionscantimes(δtᵢ, gcms, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)), ustripped::Bool=false)
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))), ustripped::Bool=false)
     firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
         BoundsError(ions(gcms), ionindex))
     ts = scantimes(gcms) .+ δtᵢ(ionindex)
@@ -858,9 +858,9 @@ julia> minscantime(gcms, timeunit=u"minute", ustripped=true)
 ```
 """
 function minscantime(chrom::AbstractChromatogram;
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, first(chrom.scantimes)) : uconvert(timeunit, 
-        first(chrom.scantimes))
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, first(scantimes(chrom))) : uconvert(timeunit, 
+        first(scantimes(chrom)))
 end
 
 
@@ -892,9 +892,9 @@ julia> maxscantime(gcms, timeunit=u"minute", ustripped=true)
 ```
 """
 function maxscantime(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, last(chrom.scantimes)) : uconvert(timeunit, 
-    last(chrom.scantimes))
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, last(scantimes(chrom))) : uconvert(timeunit, 
+        last(scantimes(chrom)))
 end
 
 
@@ -1013,7 +1013,8 @@ julia> maxion(gcms)
 """
 maxion(gcms::AbstractGCMS) = last(ions(gcms))
 
-
+# TO DO: consider implementing a threshold above which the returned value must be (e.g., 
+# larger than zero)
 """
     minintensity(chrom::AbstractChromatogram)
 
@@ -1088,19 +1089,21 @@ julia> runduration(fid, timeunit=u"s", ustripped=true)
 ```
 """
 function runduration(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
     Δt = maxscantime(chrom) - minscantime(chrom)
     ustripped ? ustrip(timeunit, Δt) : uconvert(timeunit, Δt)
 end
 
 
 """
-    meanscanduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-        ustripped::Bool=false)
+    scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Calculate the average elapsed time between the time stamps of two consecutive scans. The 
-optional keyword argument `timeunit` allows you to change the unit of the return value. 
-All time units defined in the package 
+Calculate the periodicity with which the scans were recorded over time. The optional 
+keyword argument `error` allows you to specify the maximum fraction of the average scan 
+time that the time interval defined by the timestamps of two consecutive scans is allowed 
+to deviate from the average scan time duration. The optional keyword argument `timeunit` 
+allows you to change the unit of the return value. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the 
 unit is stripped from the returned value. 
@@ -1110,28 +1113,40 @@ See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@r
 
 # Example
 ```jldoctest
-julia> fid = FID([1.0, 2.0, 3.0]u"s", [12, 956, 1])
-FID {scantimes: Float64, intensities: Int64}
-3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
-intensity range: 1 - 956
-metadata: 0 entries
+julia> fid = FID([1.0, 2.0, 3.0]u"s", [12, 956, 1]);
 
-julia> meanscanduration(fid)
+julia> scanduration(fid)
 1.0 s
 
-julia> meanscanduration(fid, timeunit=u"minute")
+julia> scanduration(fid, timeunit=u"minute")
 0.016666666666666666 minute
 
-julia> meanscanduration(fid, timeunit=u"minute", ustripped=true)
+julia> scanduration(fid, timeunit=u"minute", ustripped=true)
 0.016666666666666666
+
+julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]))
+ERROR: ArgumentError: maximum scan duration variation above threshold: 0.010000000000000009 > 0.001
+[...]
+
+julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]), error=0.02)
+1.0 s
 ```
 """
-function meanscanduration(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+function scanduration(chrom::AbstractChromatogram; error::Real=0.001,
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
     scancount(chrom) > 1 || throw(
-        ArgumentError("cannot derive meanscanduration from a single one scan"))
-    scantime_avg = runduration(chrom) / (scancount(chrom) - 1)
-    ustripped ? ustrip.(timeunit, scantime_avg) : uconvert.(timeunit, scantime_avg)
+        ArgumentError("cannot calculate the scan duration from a single scan"))
+    Δts = Set{eltype(chrom.scantimes)}()
+    first = true
+    for i in eachindex(scantimes(chrom))
+        first && (first = false; continue)
+        push!(Δts, scantime(chrom, i) - scantime(chrom, i - 1))
+    end
+    mean = runduration(chrom) / (scancount(chrom) - 1)
+    error_obs = max(abs(maximum(Δts) - mean), abs(minimum(Δts) - mean)) / mean
+    error_obs > error && throw(ArgumentError(string("maximum scan duration ", 
+        "variation above threshold: $error_obs > $error")))
+    ustripped ? ustrip.(timeunit, mean) : uconvert.(timeunit, mean)
 end
 
 
@@ -1309,7 +1324,7 @@ end
 """
     IonScanOrder
 
-Supertype of all ion scan order implementations in JuMS.
+Supertype of all ion scan order implementations.
 
 See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantimeshift`](@ref), 
 [`ionscantime`](@ref).
@@ -1346,7 +1361,7 @@ second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
 [`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
@@ -1399,7 +1414,7 @@ second half of the scan interval in Scan mode).
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
 [`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`meanscanduration`](@ref), [`scantimes`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), 
 [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
@@ -1423,38 +1438,44 @@ function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
 end
 
 
-function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS)
+function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS, error::Real)
+    intervalsize = scanduration(gcms, error=error)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
-        meanscanduration(gcms) * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
+        intervalsize * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
             * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
     end
 end
 
 
-function ionscantimeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS)
+function ionscantimeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS, error::Real)
+    intervalsize = scanduration(gcms, error=error)
     index::Integer -> begin
         firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
             BoundsError(ions(gcms), index))
-        meanscanduration(gcms) * ((ionscanorder.stop - 1) + ((1 - index) 
+        intervalsize * ((ionscanorder.stop - 1) + ((1 - index) 
             * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
     end
 end
 
 
 """
-    ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+    ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder; error::Real=0.001)
 
 Return a function that calculates the time difference between the timestamp of a scan and 
 the time when an ion was actually scanned, given the index of the ion as an argument. The 
 time difference will be a negative value or zero, since the timestamp of a scan is 
-considered to be the time at which the scanning of the last ion was completed.
+considered to be the time at which the scanning of the last ion was completed. The returned 
+function relies on the assumption that the duration of each scan is the same across the 
+entire run. The optional keyword argument `error` allows you to specify the maximum 
+fraction of the average scan time that a scanduration defined by the timestamps of two 
+consecutive scans is allowed to deviate from the average scan time duration.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`IonScanOrder`](@ref), 
 [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantime`](@ref), 
 [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), 
-[`meanscanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
+[`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Example
 ```julia-repl
@@ -1506,6 +1527,5 @@ julia> δtᵢ(2)
 -0.5 s
 ```
 """
-ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder) = ionscantimeshift(
-    ionscanorder, gcms)
-
+ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder, error::Real=0.001
+    ) = ionscantimeshift(ionscanorder, gcms, error)

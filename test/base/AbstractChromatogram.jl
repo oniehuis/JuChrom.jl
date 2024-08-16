@@ -176,98 +176,101 @@ end
 
 
 ############################################################################################
-# meanscanduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-# ustripped::Bool=false)
+# scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
-@testset "meanscanduration FID" begin
+@testset "scanduration FID" begin
     # Same return values as those provided as arguments to construct the object
-    @test 1u"s" == meanscanduration(FID([1, 2, 3]u"s", [12, 956, 23]))
-    @test (1/60)u"minute" ≈ meanscanduration(FID([1, 2, 3]u"s", [12, 956, 23]), 
+    @test 1u"s" == scanduration(FID([1, 2, 3]u"s", [12, 956, 23]))
+    @test (1/60)u"minute" ≈ scanduration(FID([1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute")
-    @test 1 == meanscanduration(FID([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
-    @test 1/60 ≈ meanscanduration(FID([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+    @test 1 == scanduration(FID([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
+    @test 1/60 ≈ scanduration(FID([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
         ustripped=true)
+    @test 1u"s" ≈ scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]), error=0.02)
 
     # Same return container and element type as used to construct the object
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(FID(Int64[1, 2, 3]u"s", [12, 956, 23])))
+        nothing}} == typeof(scanduration(FID(Int64[1, 2, 3]u"s", [12, 956, 23])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(FID(Float64[1.0, 2.0, 3.0]u"s", 
+        nothing}} == typeof(scanduration(FID(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 
+        nothing}} == typeof(scanduration(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute"))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(FID(Float64[1.0, 2.0, 3.0]u"s", 
+        nothing}} == typeof(scanduration(FID(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23]), timeunit=u"minute"))
-    @test Float64 == typeof(meanscanduration(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 
+    @test Float64 == typeof(scanduration(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 
         ustripped=true))
-    @test Float64 == typeof(meanscanduration(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+    @test Float64 == typeof(scanduration(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
         ustripped=true))
 
-    @test_throws ArgumentError meanscanduration(FID([1]u"s", [12]))
+    @test_throws ArgumentError scanduration(FID([1]u"s", [12]))
+    @test_throws ArgumentError scanduration(scanduration(FID([1.0, 1.99, 3.0]u"s", 
+        [12, 956, 1])))
 end
 
 
-@testset "meanscanduration GCMS" begin
+@testset "scanduration GCMS" begin
     # Same return values as those provided as arguments to construct the object
-    @test 1u"s" == meanscanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
-    @test (1/60)u"minute" ≈ meanscanduration(GCMS([1, 2, 3]u"s", [85, 100], 
+    @test 1u"s" == scanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
+    @test (1/60)u"minute" ≈ scanduration(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute")
-    @test 1 == meanscanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+    @test 1 == scanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
         ustripped=true)
-    @test 1/60 ≈ meanscanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+    @test 1/60 ≈ scanduration(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
         timeunit=u"minute", ustripped=true)
 
     # Same return container and element type as used to construct the object
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(GCMS([1, 2, 3]u"s", [85, 100], 
+        nothing}} == typeof(scanduration(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        nothing}} == typeof(scanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        nothing}} == typeof(scanduration(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute"))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        nothing}} == typeof(scanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute"))
-    @test Float64 == typeof(meanscanduration(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+    @test Float64 == typeof(scanduration(GCMS(Int[1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), ustripped=true))
-    @test Float64 == typeof(meanscanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test Float64 == typeof(scanduration(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), ustripped=true))
 
-    @test_throws ArgumentError meanscanduration(GCMS([1]u"s", [12], reshape([0], length(1), 
+    @test_throws ArgumentError scanduration(GCMS([1]u"s", [12], reshape([0], length(1), 
         1)))
 end
 
-@testset "meanscanduration TIC" begin
+@testset "scanduration TIC" begin
     # Same return values as those provided as arguments to construct the object
-    @test 1u"s" == meanscanduration(TIC([1, 2, 3]u"s", [12, 956, 23]))
-    @test (1/60)u"minute" ≈ meanscanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+    @test 1u"s" == scanduration(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test (1/60)u"minute" ≈ scanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute")
-    @test 1 == meanscanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
-    @test 1/60 ≈ meanscanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+    @test 1 == scanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
+    @test 1/60 ≈ scanduration(TIC([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
         ustripped=true)
 
     # Same return container and element type as used to construct the object
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(TIC(Int64[1, 2, 3]u"s", [12, 956, 23])))
+        nothing}} == typeof(scanduration(TIC(Int64[1, 2, 3]u"s", [12, 956, 23])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
+        nothing}} == typeof(scanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23])))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 
+        nothing}} == typeof(scanduration(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute"))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(meanscanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
+        nothing}} == typeof(scanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23]), timeunit=u"minute"))
-    @test Float64 == typeof(meanscanduration(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 
+    @test Float64 == typeof(scanduration(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 
         ustripped=true))
-    @test Float64 == typeof(meanscanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
+    @test Float64 == typeof(scanduration(TIC(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23]), ustripped=true))
 
-    @test_throws ArgumentError meanscanduration(TIC([1]u"s", [12]))
+    @test_throws ArgumentError scanduration(TIC([1]u"s", [12]))
 end
 
 

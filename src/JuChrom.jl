@@ -27,13 +27,13 @@ export ionscantimes
 export maxintensity
 export maxion
 export maxscantime
-export meanscanduration
 export metadata
 export minintensity
 export minion
 export minscantime
 export runduration
 export scancount
+export scanduration
 export scantime
 export ionscantime
 export ionscantimeindex
