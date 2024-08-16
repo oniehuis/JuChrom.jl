@@ -4,13 +4,15 @@ authors = ["Oliver Niehuis <oliver.niehuis@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
+julia = "1.10"
+PrecompileTools = "v1.2.1"
 Reexport = "v1.2.2"
 Unitful = "v1.21.0"
-julia = "1.10"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"

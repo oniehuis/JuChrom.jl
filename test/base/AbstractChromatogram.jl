@@ -315,16 +315,20 @@ end
 
 
 ############################################################################################
-# minintensity(chrom::AbstractChromatogram)
+# minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
 ############################################################################################
 @testset "minintensity FID" begin
     # Validate the returned value
     @test 12 == minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]))
     @test 12 == minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]))
+    @test 23 == minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12)
+    @test nothing === minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23])))
     @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23])))
+    @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12))
+    @test Nothing === typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956))
 end
 
 

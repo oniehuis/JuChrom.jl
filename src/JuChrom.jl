@@ -1,5 +1,7 @@
 module JuChrom
 
+using PrecompileTools: @setup_workload, @compile_workload
+
 include("base.jl")
 
 export AbstractChromatogram

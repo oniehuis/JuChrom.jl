@@ -1013,12 +1013,13 @@ julia> maxion(gcms)
 """
 maxion(gcms::AbstractGCMS) = last(ions(gcms))
 
-# TO DO: consider implementing a threshold above which the returned value must be (e.g., 
-# larger than zero)
-"""
-    minintensity(chrom::AbstractChromatogram)
 
-Return the minimum `intensity`.
+"""
+    minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
+
+Return the minimum `intensity`. The optional argument `greatherthan` allows you to specify 
+a value greater than which the returned minimum must be. If no intensity is found above the 
+specified value, `nothing` is returned.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
 [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`maxintensity`](@ref), 
@@ -1031,9 +1032,24 @@ julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
 julia> minintensity(gcms)
 0
+
+julia> minintensity(gcms, 10)
+12
+
+julia> minintensity(gcms, 1000)
+
 ```
 """
 minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
+
+function minintensity(chrom::AbstractChromatogram, greaterthan::Real)
+    filtered_intensities = filter(num -> num > greaterthan, intensities(chrom))
+    if length(filtered_intensities) > 0
+        return minimum(filtered_intensities)
+    else
+        return nothing
+    end
+end
 
 
 """

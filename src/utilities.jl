@@ -124,3 +124,146 @@ function integer(value::Real; start::Real=0.7)
     start == 0 && return trunc(Int, value)
     trunc(Int, value + (1 - start))
 end
+
+
+"""
+    JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
+    startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
+
+Return the index range of the next local maximum. If the maximum is a single peak, the 
+range has length 1; if a plateau maximum is found, the range has length greater than 1. 
+If no maximum is found, nothing is returned. The optional keyword arguments startindex and 
+stopindex allow you to restrict the range within which the maximum is searched. Note that 
+the startindex and the stopindex must be at least two indices apart (e.g., startindex=1, 
+stopindex=3).
+
+See also [`LocalMaxima`](@ref).
+
+# Example
+```jldoctest
+julia> values = [4, 3, 5, 3, 6, 6, 6, 4, 7];
+
+julia> JuChrom.nextlocalmaximum(values)  # finds 5
+3:3
+
+julia> JuChrom.nextlocalmaximum(values, startindex=4)  # finds pleateau maximum 6, 6, 6
+5:7
+
+julia> JuChrom.nextlocalmaximum(values, startindex=4, stopindex=7)  # finds nothing
+
+julia> length(values)  
+9
+
+julia> JuChrom.nextlocalmaximum(values, startindex=8)  # implicit stopindex=9
+ERROR: ArgumentError: stopindex not greater than startindex + 1: 8 9
+[...]
+
+julia> JuChrom.nextlocalmaximum(values, startindex=1, stopindex=2)
+ERROR: ArgumentError: stopindex not greater than startindex + 1: 1 2
+[...]
+```
+"""
+function nextlocalmaximum(values::AbstractVector{<:Real}; 
+    startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
+    start = stop = 0
+    firstindex(values) ≤ startindex ≤ lastindex(values) || throw(
+        BoundsError(values, startindex))
+    firstindex(values) ≤ stopindex ≤ lastindex(values) || throw(
+        BoundsError(values, stopindex))
+    startindex + 2 ≤ stopindex || throw(ArgumentError(string("stopindex not greater than ", 
+        "startindex + 1: $startindex $stopindex")))
+    startindex + 2 ≤ stopindex ≤ lastindex(values) || return nothing
+    for i in startindex+1:stopindex
+        if values[i-1] < values[i]
+            start = stop = i
+        elseif start != 0
+            if values[i-1] > values[i]
+                return start:stop
+            elseif values[i-1] == values[i]
+                stop = i
+            end
+        end
+    end
+end
+
+
+struct LocalMaxima{T1<:AbstractVector{<:Real}, T2<:Integer, T3<:Integer, T4<:Integer}
+    values::T1
+    startindex::T2
+    stopindex::T3
+    length::T4
+    function LocalMaxima{T1, T2, T3}(values::T1, startindex::T2, stopindex::T3
+        ) where {T1<:AbstractVector{<:Real}, T2<:Integer, T3<:Integer}
+        firstindex(values) ≤ startindex ≤ lastindex(values) || throw(
+            BoundsError(values, startindex))
+        firstindex(values) ≤ stopindex ≤ lastindex(values) || throw(
+            BoundsError(values, stopindex))
+        startindex + 2 ≤ stopindex || throw(ArgumentError(string("stopindex not greater ",
+            "than startindex + 1: $startindex $stopindex")))
+        new{T1, T2, T3, typeof(length(values))}(values, startindex, stopindex, 
+            length(values))
+    end
+end
+
+
+"""
+    JuChrom.LocalMaxima(values::AbstractVector{<:Real}; 
+    startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
+
+Return an iterator that yields the index range of the next local maximum until no more 
+local maxima are found. If the maximum is a single peak, the range has length 1; if a 
+plateau maximum is found, the range has length greater than 1. The optional keyword 
+arguments startindex and stopindex allow you to restrict the range within which the 
+maximum is searched. Note that startindex and stopindex must be at least two indices 
+apart (e.g., startindex=1, stopindex=3).
+
+See also [`nextlocalmaximum`](@ref).
+
+# Example
+```jldoctest
+julia> values = [4, 3, 5, 3, 6, 6, 6, 4, 7];
+
+julia> for lm in JuChrom.LocalMaxima(values); println(lm); end
+3:3
+5:7
+
+julia> for lm in JuChrom.LocalMaxima(values, startindex=3); println(lm); end
+5:7
+
+julia> for lm in JuChrom.LocalMaxima(values, stopindex=7); println(lm); end
+3:3
+
+julia> for lm in JuChrom.LocalMaxima(values, startindex=4, stopindex=8); println(lm); end
+5:7
+
+julia> for lm in JuChrom.LocalMaxima(values, startindex=4, stopindex=5); println(lm); end
+ERROR: ArgumentError: stopindex not greater than startindex + 1: 4 5
+[...]
+
+julia> length(values)
+9
+
+julia> for lm in JuChrom.LocalMaxima(values, startindex=8); println(lm); end
+ERROR: ArgumentError: stopindex not greater than startindex + 1: 8 9
+[...]
+```
+"""
+function LocalMaxima(values::T1; startindex::T2=firstindex(values), 
+    stopindex::T3=lastindex(values)) where {
+    T1<:AbstractVector{<:Real},
+    T2<:Integer, 
+    T3<:Integer}
+    LocalMaxima{T1, T2, T3}(values, startindex, stopindex)
+end
+
+
+function Base.iterate(LM::LocalMaxima, currentindex=LM.startindex)
+    length(LM.values) == LM.length || throw(
+        AssertionError("number of elements changed since LocalMaxima construction"))
+    if currentindex ≥ LM.stopindex - 1
+        return nothing
+    else
+        lm = nextlocalmaximum(LM.values, startindex=currentindex, stopindex=LM.stopindex)
+        isnothing(lm) ? (return nothing) : (return (lm, last(lm)+1))
+    end
+end
