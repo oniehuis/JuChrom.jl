@@ -665,7 +665,7 @@ constructor is explicitly annotated to illustrate that the GCMS object preserves
 ```jldoctest
 julia> gcms = GCMS(Float32[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
-julia> a = scantimes(gcms)
+julia> scantimes(gcms)
 3-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  1.0f0 s
  2.0f0 s
@@ -684,7 +684,7 @@ julia> scantimes(gcms, timeunit=u"minute", ustripped=true)
  0.050000004
 
 julia> scantimes(gcms, 2:3)
-2-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+2-element view(::Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}, 2:3) with eltype Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}:
  2.0f0 s
  3.0f0 s
 
