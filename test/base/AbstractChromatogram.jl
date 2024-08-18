@@ -176,6 +176,126 @@ end
 
 
 ############################################################################################
+# maxscantime(chrom::AbstractChromatogram, scanindexrange::OrdinalRange; 
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+############################################################################################
+@testset "maxscantime scanindexrange FID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == maxscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 1:2)
+    @test (1/30)u"minute" ≈ maxscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 1:2, 
+        timeunit=u"minute")
+    @test 2 == maxscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 1:2, ustripped=true)
+    @test 1/30 ≈ maxscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 1:2, timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 1:2))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(maxscantime(FID(Int64[1, 2, 3]u"s", 
+        [12, 956, 23]), 1:2, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2, timeunit=u"minute"))
+    @test Int == typeof(maxscantime(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 1:2, 
+        ustripped=true))
+    @test Float64 == typeof(maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError maxscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0.0:4.0, timeunit=u"minute", ustripped=true)
+end
+
+
+@testset "maxscantime scanindexrange GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == maxscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1:2)
+    @test (1/30)u"minute" ≈ maxscantime(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2, timeunit=u"minute")
+    @test 2 == maxscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1:2, 
+        ustripped=true)
+    @test 1/30 ≈ maxscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1:2, 
+        timeunit=u"minute", ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(maxscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", 
+        [85, 100], [0 12; 34 956; 23 1]), 1:2, timeunit=u"minute"))
+    @test Int == typeof(maxscantime(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2, ustripped=true))
+    @test Float64 == typeof(maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:2, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError maxscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0.0:4.0, timeunit=u"minute", ustripped=true)
+end
+
+
+@testset "maxscantime scanindexrange TIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == maxscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:2)
+    @test (1/30)u"minute" ≈ maxscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:2, 
+        timeunit=u"minute")
+    @test 2 == maxscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:2, ustripped=true)
+    @test 1/30 ≈ maxscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:2, timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 1:2))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(maxscantime(TIC(Int64[1, 2, 3]u"s", 
+        [12, 956, 23]), 1:2, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2, timeunit=u"minute"))
+    @test Int == typeof(maxscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 1:2, 
+        ustripped=true))
+    @test Float64 == typeof(maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:2, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError maxscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0.0:4.0, timeunit=u"minute", ustripped=true)
+end
+
+
+############################################################################################
 # scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
 # timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
@@ -439,6 +559,126 @@ end
     @test Int == typeof(minscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), ustripped=true))
     @test Float64 == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
         ustripped=true))
+end
+
+
+############################################################################################
+# minscantime(chrom::AbstractChromatogram, scanindexrange::OrdinalRange; 
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+############################################################################################
+@testset "minscantime scanindexrange FID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3)
+    @test (1/30)u"minute" ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
+        timeunit=u"minute")
+    @test 2 == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, ustripped=true)
+    @test 1/30 ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(FID(Int64[1, 2, 3]u"s", 
+        [12, 956, 23]), 2:3, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3, timeunit=u"minute"))
+    @test Int == typeof(minscantime(FID(Int[1, 2, 3]u"s", [12, 956, 23]), 2:3, 
+        ustripped=true))
+    @test Float64 == typeof(minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0.0:4.0, timeunit=u"minute", ustripped=true)
+end
+
+
+@testset "minscantime scanindexrange GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2:3)
+    @test (1/30)u"minute" ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3, timeunit=u"minute")
+    @test 2 == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2:3, 
+        ustripped=true)
+    @test 1/30 ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2:3, 
+        timeunit=u"minute", ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", 
+        [85, 100], [0 12; 34 956; 23 1]), 2:3, timeunit=u"minute"))
+    @test Int == typeof(minscantime(GCMS(Int[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3, ustripped=true))
+    @test Float64 == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2:3, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0.0:4.0, timeunit=u"minute", ustripped=true)
+end
+
+
+@testset "minscantime scanindexrange TIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 2u"s" == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3)
+    @test (1/30)u"minute" ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
+        timeunit=u"minute")
+    @test 2 == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, ustripped=true)
+    @test 1/30 ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, timeunit=u"minute", 
+        ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", 
+        [12, 956, 23]), 2:3, timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3, timeunit=u"minute"))
+    @test Int == typeof(minscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), 2:3, 
+        ustripped=true))
+    @test Float64 == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        2:3, ustripped=true))
+
+    # Check for BoundErrors and MethodErrors
+    @test_throws BoundsError minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:3, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        1:4, timeunit=u"minute", ustripped=true)
+    @test_throws BoundsError minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0:4, timeunit=u"minute", ustripped=true)
+    @test_throws MethodError minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        0.0:4.0, timeunit=u"minute", ustripped=true)
 end
 
 

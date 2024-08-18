@@ -716,7 +716,7 @@ function scantimes(
 
     convert = unit(eltype(chrom.scantimes)) ≠ timeunit
     if !convert && !ustripped
-        copy ? chrom.scantimes[:] : chrom.scantimes
+        return copy ? chrom.scantimes[:] : chrom.scantimes
     elseif !convert && ustripped
         return ustrip.(chrom.scantimes)
     elseif convert && !ustripped
@@ -885,14 +885,15 @@ scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
 
 
 """
-    minscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-    ustripped::Bool=false)
+    minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Return the time of the first scan. The optional keyword argument `timeunit` allows you to 
-change the unit of the returned `scantime`. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned value.
+Return the minimum scan time. The optional second position argument allows you to specify 
+the scan range for which the minimum scan time is returned. The optional keyword argument 
+`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
+in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
+`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
+whether the unit is stripped from the returned value.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`maxscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
@@ -909,24 +910,62 @@ julia> minscantime(gcms, timeunit=u"minute")
 
 julia> minscantime(gcms, timeunit=u"minute", ustripped=true)
 0.016666666666666666
+
+julia> minscantime(gcms, 2:3)
+2.0 s
+
+julia> minscantime(gcms, 2:3, timeunit=u"minute", ustripped=true)
+0.03333333333333333
 ```
 """
-function minscantime(chrom::AbstractChromatogram;
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, first(scantimes(chrom))) : uconvert(timeunit, 
-        first(scantimes(chrom)))
+function minscantime(
+    chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    ustripped::Bool=false)
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        return first(chrom.scantimes)
+    elseif !convert && ustripped
+        return ustrip.(first(chrom.scantimes))
+    elseif convert && !ustripped
+        return uconvert.(timeunit, first(chrom.scantimes))
+    else
+        return ustrip.(timeunit, first(chrom.scantimes))
+    end
+end
+
+
+function minscantime(
+    chrom::AbstractChromatogram,
+    scanindexrange::OrdinalRange{T, S}; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    ustripped::Bool=false
+    ) where {T<:Integer, S<:Integer}
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        return first(@view chrom.scantimes[scanindexrange])
+    elseif !convert && ustripped
+        return ustrip.(first(@view chrom.scantimes[scanindexrange]))
+    elseif convert && !ustripped
+        return uconvert.(timeunit, first(@view chrom.scantimes[scanindexrange]))
+    else
+        return ustrip.(timeunit, first(@view chrom.scantimes[scanindexrange]))
+    end
 end
 
 
 """
-    maxscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-    ustripped::Bool)
+    maxscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
+    timeunit::Unitful.TimeUnits, ustripped::Bool)
 
-Return the time of the last scan. The optional keyword argument `timeunit` allows you to 
-change the unit of the returned `scantime`. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned value.
+Return the maximum scan time. The optional second position argument allows you to specify 
+the scan range for which the maximum scan time is returned. The optional keyword argument 
+`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
+in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
+`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
+whether the unit is stripped from the returned value.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`minscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
@@ -943,12 +982,49 @@ julia> maxscantime(gcms, timeunit=u"minute")
 
 julia> maxscantime(gcms, timeunit=u"minute", ustripped=true)
 0.05
+
+julia> maxscantime(gcms, 1:2)
+2.0 s
+
+julia> maxscantime(gcms, 1:2, timeunit=u"minute", ustripped=true)
+0.03333333333333333
 ```
 """
-function maxscantime(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, last(scantimes(chrom))) : uconvert(timeunit, 
-        last(scantimes(chrom)))
+function maxscantime(
+    chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    ustripped::Bool=false)
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        return last(chrom.scantimes)
+    elseif !convert && ustripped
+        return ustrip.(last(chrom.scantimes))
+    elseif convert && !ustripped
+        return uconvert.(timeunit, last(chrom.scantimes))
+    else
+        return ustrip.(timeunit, last(chrom.scantimes))
+    end
+end
+
+
+function maxscantime(
+    chrom::AbstractChromatogram,
+    scanindexrange::OrdinalRange{T, S}; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    ustripped::Bool=false
+    ) where {T<:Integer, S<:Integer}
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        return last(@view chrom.scantimes[scanindexrange])
+    elseif !convert && ustripped
+        return ustrip.(last(@view chrom.scantimes[scanindexrange]))
+    elseif convert && !ustripped
+        return uconvert.(timeunit, last(@view chrom.scantimes[scanindexrange]))
+    else
+        return ustrip.(timeunit, last(@view chrom.scantimes[scanindexrange]))
+    end
 end
 
 
