@@ -815,8 +815,8 @@ end
 
 """
     intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{<:T1, <:S1}, 
-    ionindexrange::OrdinalRange{<:T2, <:S2}) where {T1<:Integer, T2<:Integer, T3<:Integer, 
-    T4<:Integer}
+    ionindexrange::OrdinalRange{<:T2, <:S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, 
+    S2<:Integer}
 
 Return the intensities of ions in scans given the `scanindexrange` of the scans and the 
 `ionindexrange` of the ions. Note that the function returns a view into the data structure.
