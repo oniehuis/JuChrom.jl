@@ -900,9 +900,9 @@ end
 
 
 """
-    ion(gcms::AbstractGCMS, index::Integer)
+    ion(gcms::AbstractGCMS, ionindex::Integer)
 
-Return the `ion` at the specified `index`.
+Return the `ion` at the specified `ionindex`.
 
 See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`minion`](@ref), 
 [`maxion`](@ref), [`ioncount`](@ref).
@@ -922,10 +922,10 @@ ERROR: BoundsError: attempt to access 2-element Vector{Int64} at index [3]
 [...]
 ```
 """
-function ion(gcms::AbstractGCMS, index::Integer)
-    firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
-        BoundsError(ions(gcms)[index]))
-    ions(gcms)[index]
+function ion(gcms::AbstractGCMS, ionindex::Integer)
+    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
+        BoundsError(ions(gcms)[ionindex]))
+    ions(gcms)[ionindex]
 end
 
 
