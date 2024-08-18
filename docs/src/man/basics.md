@@ -21,6 +21,7 @@ intensities(::AbstractGCMS, ::OrdinalRange{<:T1, <:S1}, ::OrdinalRange{<:T2, <:S
 intensity(::AbstractGC, ::Integer)
 intensity(::AbstractGC, ::Unitful.Time; ::Bool)
 intensity(::AbstractGCMS, ::Integer, ::Integer)
+intensity(::AbstractGCMS, ::Unitful.Time, ::Real; ::Bool)
 ion
 ioncount
 ionindex

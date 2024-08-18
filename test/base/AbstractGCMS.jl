@@ -245,6 +245,31 @@ end
 
 
 ############################################################################################
+# intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; precisetime::Bool=false)
+############################################################################################
+@testset "intensity GCMS time ion" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 34 == intensity(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1.9u"s", 
+        85)
+    @test 34 == intensity(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2u"s", 
+        85)
+    @test 34 == intensity(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2.0u"s", 
+        85, precisetime=true)
+
+    # Same return predictable container and element types
+    @test Int == typeof(intensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        1.9u"s", 85))
+    @test Float64 == typeof(intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 1.9u"s", 85))
+    
+    @test_throws ArgumentError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.9u"s", 101)
+    @test_throws ArgumentError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1.9u"s", 101, precisetime=true)
+end
+
+
+############################################################################################
 # ionscantime(δtᵢ::Function, gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer;
 # timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################

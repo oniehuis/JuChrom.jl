@@ -945,6 +945,46 @@ end
 
 
 """
+    intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; precisetime::Bool=false)
+
+Return the intensity of an `ion` at a given `time`. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. By default, the intensity associated with the scan whose timestamp is closest 
+to the given `time` is returned. If there is a tie, the intensity of the scan with the 
+later scan time is used. If the optional parameter `precisetime` is set to `true`, the 
+specified `time` must exist in the vector, otherwise an error is thrown.
+
+See also [`AbstractGCMS`](@ref), [`scantimeindex`](@ref), [`scancount`](@ref), 
+[`ionindex`](@ref), [`ions`](@ref), [`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensity(gcms, 1.9u"s", 85)
+34
+
+julia> intensity(gcms, 2.9u"s", 85, precisetime=true)
+ERROR: ArgumentError: scantime 2.9 s does not exist
+[...]
+
+julia> intensity(gcms, 3u"s", 85, precisetime=true)
+23
+```
+"""
+function intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; 
+    precisetime::Bool=false)
+    intensity(gcms, scantimeindex(gcms, time; precisetime=precisetime), 
+        ionindex(gcms, ion))
+end
+
+
+"""
     metadata(chrom::AbstractChromatogram) -> Dict{Any, Any}
 
 Return the `metadata`.
