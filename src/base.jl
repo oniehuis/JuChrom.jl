@@ -775,7 +775,6 @@ julia> intensities(fid)[2]  # intensity of 2nd scan
 intensities(chrom::AbstractChromatogram) = chrom.intensities
 
 
-
 """
     intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
 
