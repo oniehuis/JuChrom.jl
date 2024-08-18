@@ -90,6 +90,26 @@ end
     @test_throws ArgumentError integer(30.0, start=1.1)
  end
 
+ 
+############################################################################################
+# JuChrom.invert(dictionary::Dict)
+############################################################################################
+@testset "invert" begin
+    @test Dict(1.0 => [:a, :d], 2.0 => [:b, :c]) == JuChrom.invert(
+        Dict(:a => 1.0, :b => 2.0, :c => 2.0, :d => 1.0))
+    @test Dict(1.0 => [4, 1], 2.0 => [2, 3]) == JuChrom.invert(
+        Dict(1 => 1.0, 2 => 2.0, 3 => 2.0, 4 => 1.0))
+    @test Dict(:a => [4, 1], :b => [2, 3]) == JuChrom.invert(
+        Dict(1 => :a, 2 => :b, 3 => :b, 4 => :a))
+
+    @test Dict{Float64, Vector{Symbol}} == typeof(JuChrom.invert(
+        Dict(:a => 1.0, :b => 2.0, :c => 2.0, :d => 1.0)))
+    @test Dict{Float64, Vector{Int}} == typeof(JuChrom.invert(
+        Dict{Int, Float64}(1 => 1.0, 2 => 2.0, 3 => 2.0, 4 => 1.0)))
+    @test Dict{Symbol, Vector{Int}} == typeof(JuChrom.invert(
+        Dict{Int, Symbol}(1 => :a, 2 => :b, 3 => :b, 4 => :a)))
+end
+
 
 ############################################################################################
 # Base.iterate(LM::LocalMaxima, currentindex=LM.startindex)

@@ -127,6 +127,37 @@ end
 
 
 """
+    JuChrom.invert(dictionary::Dict)
+
+Return a dictionary in which the values in `dictionary` serve as keys to lists containing 
+all keys in `dictionary` that are associated with the value that now serves as the key 
+in the returned dictionary.
+
+# Example
+```jldoctest
+julia> d = Dict(:a => 1.0, :b => 2.0, :c => 2.0, :d => 1.0)
+Dict{Symbol, Float64} with 4 entries:
+  :a => 1.0
+  :b => 2.0
+  :d => 1.0
+  :c => 2.0
+
+julia> JuChrom.invert(d)
+Dict{Float64, Vector{Symbol}} with 2 entries:
+  2.0 => [:b, :c]
+  1.0 => [:a, :d]
+```
+"""
+function invert(dictionary::Dict{T1, T2}) where {T1, T2}
+    inverted_dictionary = Dict{T2, Vector{T1}}()
+    for (key, value) in dictionary
+        push!(get!(() -> T1[], inverted_dictionary, value), key)
+    end
+    inverted_dictionary
+end
+
+
+"""
     JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
     startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 
@@ -259,7 +290,7 @@ end
 
 function Base.iterate(LM::LocalMaxima, currentindex=LM.startindex)
     length(LM.values) == LM.length || throw(
-        AssertionError("number of elements changed since LocalMaxima construction"))
+        AssertionError("number of items changed since LocalMaxima was built"))
     if currentindex ≥ LM.stopindex - 1
         return nothing
     else
