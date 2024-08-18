@@ -655,14 +655,19 @@ end
 
 
 """
-    scantimes(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-    ustripped::Bool=false)
+    scantimes(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false, copy::Bool=true)
 
-Return the `scantimes`. The optional keyword argument `timeunit` allows you to change the 
-unit of the returned `scantimes`. All time units defined in the package 
+Return the scan times. The optional second position argument allows you to specify a scan 
+index range. The optional keyword argument `timeunit` allows you to change the unit of the 
+returned scan times. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned values.
+is stripped from the returned values. The optional keyword argument `copy` allows you to 
+specify whether to return a copy of the values in the data structure (default) or a 
+reference to/view into the data structure. Caution: Accessing the data structure directly 
+carries the risk of inadvertently changing the object's contents! Note that `copy` only has 
+an effect if no time unit conversion takes place and the time unit is not stripped.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
@@ -674,7 +679,7 @@ constructor is explicitly annotated to illustrate that the GCMS object preserves
 ```jldoctest
 julia> gcms = GCMS(Float32[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
-julia> scantimes(gcms)
+julia> a = scantimes(gcms)
 3-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  1.0f0 s
  2.0f0 s
@@ -691,11 +696,59 @@ julia> scantimes(gcms, timeunit=u"minute", ustripped=true)
  0.016666668
  0.033333335
  0.050000004
+
+julia> scantimes(gcms, 2:3)
+2-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+ 2.0f0 s
+ 3.0f0 s
+
+julia> scantimes(gcms, 2:3, timeunit=u"minute", ustripped=true)
+2-element Vector{Float32}:
+ 0.033333335
+ 0.050000004
 ```
 """
-function scantimes(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip.(timeunit, chrom.scantimes) : uconvert.(timeunit, chrom.scantimes)
+function scantimes(
+    chrom::AbstractChromatogram;
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)),
+    ustripped::Bool=false,
+    copy::Bool=true)
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        copy ? chrom.scantimes[:] : chrom.scantimes
+    elseif !convert && ustripped
+        return ustrip.(chrom.scantimes)
+    elseif convert && !ustripped
+        return uconvert.(timeunit, chrom.scantimes)
+    else
+        return ustrip.(timeunit, chrom.scantimes)
+    end
+end
+
+
+function scantimes(
+    chrom::AbstractChromatogram,
+    scanindexrange::OrdinalRange{T, S}; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)),
+    ustripped::Bool=false, 
+    copy::Bool=true
+    ) where {T<:Integer, S<:Integer}
+
+    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
+    if !convert && !ustripped
+        if !copy
+            return @view chrom.scantimes[scanindexrange]
+        else
+            return chrom.scantimes[scanindexrange]
+        end
+    elseif !convert && ustripped
+        return ustrip.(@view chrom.scantimes[scanindexrange])
+    elseif convert && !ustripped
+        return uconvert.(timeunit, @view chrom.scantimes[scanindexrange])
+    else
+        return ustrip.(timeunit, @view chrom.scantimes[scanindexrange])
+    end
 end
 
 
