@@ -386,14 +386,14 @@ ions(gcms::GCMS) = gcms.ions
 
 
 """
-    scantime(chrom::AbstractChromatogram, index::Integer; timeunit::Unitful.TimeUnits, 
+    scantime(chrom::AbstractChromatogram, scanindex::Integer; timeunit::Unitful.TimeUnits, 
     ustripped::Bool=false)
 
-Return the `scantime` by specifying the scan `index`. The optional parameter 
-`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
-in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
-`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
-whether the unit is stripped from the returned value.
+Return the scan time by specifying the `scanindex`. The optional parameter `timeunit` 
+allows you to change the unit of the returned `scantime`. All time units defined in the 
+package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`
+) are supported. The optional keyword argument `ustripped` allows you to specify whether 
+ the unit is stripped from the returned value.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref), 
@@ -414,14 +414,15 @@ julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
 
 julia> scantime(gcms, 5, timeunit=u"minute", ustripped=true)
 ERROR: BoundsError: attempt to access 3-element Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}} at index [5]
+[...]
 ```
 """
-function scantime(chrom::AbstractChromatogram, index::Integer; 
+function scantime(chrom::AbstractChromatogram, scanindex::Integer; 
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    firstindex(scantimes(chrom)) ≤ index ≤ lastindex(scantimes(chrom)) || throw(
-        BoundsError(scantimes(chrom)[index]))
-    ustripped ? ustrip(timeunit, scantimes(chrom)[index]) : uconvert(timeunit, 
-        scantimes(chrom)[index])
+    firstindex(scantimes(chrom)) ≤ scanindex ≤ lastindex(scantimes(chrom)) || throw(
+        BoundsError(scantimes(chrom)[scanindex]))
+    ustripped ? ustrip(timeunit, scantimes(chrom)[scanindex]) : uconvert(timeunit, 
+        scantimes(chrom)[scanindex])
 end
 
 
