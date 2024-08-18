@@ -814,9 +814,8 @@ end
 
 
 """
-    intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{T1, S1}, 
-    ionindexrange::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, 
-    S2<:Integer}
+    intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{T, S}, 
+    ionindexrange::OrdinalRange{T, S}) where {T<:Integer, S<:Integer}
 
 Return the intensities of ions in scans given the `scanindexrange` of the scans and the 
 `ionindexrange` of the ions. Note that the function returns a view into the data structure.
@@ -850,12 +849,8 @@ julia> intensities(gcms, 1:1, 1:2)[:]  # returns an independent copy of the valu
  12
 ```
 """
-function intensities(
-    gcms::AbstractGCMS,
-    scanindexrange::OrdinalRange{T1, S1}, 
-    ionindexrange::OrdinalRange{T2, S2}
-    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
-    
+function intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{T, S}, 
+    ionindexrange::OrdinalRange{T, S}) where {T<:Integer, S<:Integer}
     @view intensities(gcms)[scanindexrange, ionindexrange]
 end
 
