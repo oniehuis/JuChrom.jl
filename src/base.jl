@@ -742,6 +742,14 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](
 
 # Example
 ```jldoctest
+julia> fid = FID([1, 2, 3]u"s", Float32[12.0, 956.0, 23.0]);
+
+julia> intensities(fid)
+3-element Vector{Float32}:
+  12.0
+ 956.0
+  23.0
+
 julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
 
 julia> intensities(gcms)
@@ -750,13 +758,18 @@ julia> intensities(gcms)
  34  956
  23    1
 
-julia> fid = FID([1, 2, 3]u"s", Float32[12.0, 956.0, 23.0]);
+julia> @view intensities(gcms)[:, 1]  # values of all scans of the ion with the index 1
+3-element view(::Matrix{Int64}, :, 1) with eltype Int64:
+  0
+ 34
+ 23
 
-julia> intensities(fid)
-3-element Vector{Float32}:
-  12.0
- 956.0
-  23.0
+julia> @view intensities(gcms)[1, :]  # values of all ions of the scan with the index 1
+2-element view(::Matrix{Int64}, 1, :) with eltype Int64:
+  0
+ 12
+
+julia> intensities(gcms)[1, :]  # returns an independent copy of the values
 ```
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
@@ -785,7 +798,7 @@ julia> intensities(tic, 2:3)
  224
  103
 
-julia> intensities(tic, 2:3)[:]  # Return an independent copy of the values
+julia> intensities(tic, 2:3)[:]  # returns an independent copy of the values
 2-element Vector{Int64}:
  224
  103
@@ -828,7 +841,7 @@ julia> intensities(gcms, 2:3, 1:2)
  34  956
  23    1
 
-julia> intensities(gcms, 1:1, 1:2)[:]  # return an independent copy of the values
+julia> intensities(gcms, 1:1, 1:2)[:]  # returns an independent copy of the values
 2-element Vector{Int64}:
   0
  12
