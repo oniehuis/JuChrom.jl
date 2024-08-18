@@ -52,6 +52,49 @@ end
 
 
 ############################################################################################
+# intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{Integer, Integer})
+############################################################################################
+@testset "intensities scanindexrange FID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [956, 23] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3)
+    @test [12] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(FID([1, 2, 3]u"s", Int[12, 956, 23]), 2:3))
+    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(FID([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 2:3))
+    @test StepRange{Int64, Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10:5:20), 2:3))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10.0:5:20.0), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 0:3)
+    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 1:4)
+end
+
+
+@testset "intensities scanindexrange TIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3)
+    @test [12] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 2:3))
+    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 2:3))
+    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20), 2:3))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 0:3)
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:4)
+end
+
+
+############################################################################################
 # intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
 ############################################################################################
 @testset "intensity FID time" begin

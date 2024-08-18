@@ -643,8 +643,8 @@ end
 
 
 """
-    scantimes(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
-    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+    scantimes(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
+    <:Integer}]; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the scan times. The optional second position argument allows you to specify a scan 
 index range. The optional keyword argument `timeunit` allows you to change the unit of the 
@@ -692,6 +692,11 @@ julia> scantimes(gcms, 2:3, timeunit=u"minute", ustripped=true)
 2-element Vector{Float32}:
  0.033333335
  0.050000004
+
+julia> scantimes(gcms, 2:3)[:]  # return an independent copy of the values
+2-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+ 2.0f0 s
+ 3.0f0 s
 ```
 """
 function scantimes(chrom::AbstractChromatogram;
@@ -728,7 +733,7 @@ end
 """
     intensities(chrom::AbstractChromatogram)
 
-Return the `intensities`.
+Return the `intensities`. Note that the function returns a reference to the data structure.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
 [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
@@ -745,21 +750,6 @@ julia> intensities(gcms)
  34  956
  23    1
 
-
-julia> intensities(gcms)[3, :]  # all intensites of 3rd scan
-2-element Vector{Int64}:
- 23
-  1
-
-julia> intensities(gcms)[:, 1]  # all intensites of 1st ion
-3-element Vector{Int64}:
-  0
- 34
- 23
-
-julia> intensities(gcms)[2, 1]  # intensity of 2nd scan, 1st ion
-34
-
 julia> fid = FID([1, 2, 3]u"s", Float32[12.0, 956.0, 23.0]);
 
 julia> intensities(fid)
@@ -767,12 +757,91 @@ julia> intensities(fid)
   12.0
  956.0
   23.0
-
-julia> intensities(fid)[2]  # intensity of 2nd scan
-956.0f0
 ```
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
+
+
+"""
+    intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{T, S}) where {T<:Integer, 
+    S<:Integer}
+
+Return the intensities of scans given the `scanindexrange` of the scans. Note that the 
+function returns a view into the data structure.
+
+
+See also [`AbstractGC`](@ref), [`intensity`](@ref), [`scantimeindex`](@ref).
+
+# Example
+```jldoctest
+julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
+TIC {scantimes: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensities(tic, 2:3)
+2-element view(::Vector{Int64}, 2:3) with eltype Int64:
+ 224
+ 103
+
+julia> intensities(tic, 2:3)[:]  # Return an independent copy of the values
+2-element Vector{Int64}:
+ 224
+ 103
+```
+"""
+function intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{T, S}
+    ) where {T<:Integer, S<:Integer}
+    @view intensities(chrom)[scanindexrange]
+end
+
+
+"""
+    intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{<:T1, <:S1}, 
+    ionindexrange::OrdinalRange{<:T2, <:S2}) where {T1<:Integer, T2<:Integer, T3<:Integer, 
+    T4<:Integer}
+
+Return the intensities of ions in scans given the `scanindexrange` of the scans and the 
+`ionindexrange` of the ions. Note that the function returns a view into the data structure.
+
+See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
+[`maxintensity`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensities(gcms, 1:3, 1:1)
+3×1 view(::Matrix{Int64}, 1:3, 1:1) with eltype Int64:
+  0
+ 34
+ 23
+
+julia> intensities(gcms, 2:3, 1:2)
+2×2 view(::Matrix{Int64}, 2:3, 1:2) with eltype Int64:
+ 34  956
+ 23    1
+
+julia> intensities(gcms, 1:1, 1:2)[:]  # return an independent copy of the values
+2-element Vector{Int64}:
+  0
+ 12
+```
+"""
+function intensities(
+    gcms::AbstractGCMS,
+    scanindex::OrdinalRange{T1, S1}, 
+    ionindex::OrdinalRange{T2, S2}
+    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
+    
+    @view intensities(gcms)[scanindex, ionindex]
+end
 
 
 """
@@ -942,8 +1011,8 @@ scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
 
 
 """
-    minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
-    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+    minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
+    <:Integer}}]; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the minimum scan time. The optional second position argument allows you to specify 
 the scan range for which the minimum scan time is returned. The optional keyword argument 
@@ -988,8 +1057,8 @@ end
 
 
 """
-    maxscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
-    timeunit::Unitful.TimeUnits, ustripped::Bool)
+    maxscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
+    <:Integer}]; timeunit::Unitful.TimeUnits, ustripped::Bool)
 
 Return the maximum scan time. The optional second position argument allows you to specify 
 the scan range for which the maximum scan time is returned. The optional keyword argument 
