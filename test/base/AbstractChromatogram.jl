@@ -93,6 +93,38 @@ end
         precisetime=true)
 end
 
+
+############################################################################################
+# intensity(chrom::AbstractGC, scanindex::Integer)
+############################################################################################
+@testset "intensity FID scanindex" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 12 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 1)
+    @test 956 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 2)
+
+    # Same return container and element type as used to construct the object
+    @test Int == typeof(intensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 1))
+    @test Float64 == typeof(intensity(FID([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 1))
+    
+    @test_throws BoundsError intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 0)
+    @test_throws BoundsError intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 4)
+end
+
+
+@testset "intensity TIC scanindex" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 12 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 1)
+    @test 956 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 2)
+
+    # Same return container and element type as used to construct the object
+    @test Int == typeof(intensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 1))
+    @test Float64 == typeof(intensity(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 1))
+    
+    @test_throws BoundsError intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 0)
+    @test_throws BoundsError intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 4)
+end
+
+
 ############################################################################################
 # maxintensity(chrom::AbstractChromatogram)
 ############################################################################################

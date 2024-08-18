@@ -855,7 +855,7 @@ ERROR: ArgumentError: scantime 1.5 s does not exist
 ```
 """
 function intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
-    intensities(chrom)[scantimeindex(chrom, time, precisetime=precisetime)]
+    intensity(chrom, scantimeindex(chrom, time, precisetime=precisetime))
 end
 
 
