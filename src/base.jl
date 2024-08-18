@@ -770,6 +770,9 @@ julia> @view intensities(gcms)[1, :]  # values of all ions of the scan with the 
  12
 
 julia> intensities(gcms)[1, :]  # returns an independent copy of the values
+2-element Vector{Int64}:
+  0
+ 12
 ```
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
