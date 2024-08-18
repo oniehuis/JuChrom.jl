@@ -52,6 +52,48 @@ end
 
 
 ############################################################################################
+# intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
+############################################################################################
+@testset "intensity FID time" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 12 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s")
+    @test 12 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=true)
+    @test 956 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 1.5u"s")
+    @test 12 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), prevfloat(1.5)u"s")
+    @test 12 == intensity(FID([1, 2, 3]u"s", [12, 956, 23]), (1/60)u"minute"; 
+        precisetime=true)
+
+    # Same return container and element type as used to construct the object
+    @test Int == typeof(intensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 1u"s"))
+    @test Float64 == typeof(intensity(FID([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 
+        1u"s"))
+    
+    @test_throws ArgumentError intensity(FID([1, 2, 3]u"s", [12, 956, 23]), 1.5u"s", 
+        precisetime=true)
+end
+
+
+@testset "intensity TIC time" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 12 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s")
+    @test 12 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 1u"s", 
+        precisetime=true)
+    @test 956 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 1.5u"s")
+    @test 12 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), prevfloat(1.5)u"s")
+    @test 12 == intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), (1/60)u"minute"; 
+        precisetime=true)
+
+    # Same return container and element type as used to construct the object
+    @test Int == typeof(intensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 1u"s"))
+    @test Float64 == typeof(intensity(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 
+        1u"s"))
+    
+    @test_throws ArgumentError intensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 1.5u"s", 
+        precisetime=true)
+end
+
+############################################################################################
 # maxintensity(chrom::AbstractChromatogram)
 ############################################################################################
 @testset "maxintensity FID" begin

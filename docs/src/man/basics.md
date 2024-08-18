@@ -16,7 +16,9 @@ binions
 cosine
 integer
 intensities
-intensity
+intensity(::AbstractGC, ::Integer)
+intensity(::AbstractGC, ::Unitful.Time; ::Bool)
+intensity(::AbstractGCMS, ::Integer, ::Integer)
 ion
 ioncount
 ionindex

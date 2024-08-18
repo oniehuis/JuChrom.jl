@@ -594,7 +594,8 @@ end
 
 
 """
-    scantimeindex(gcms::AbstractGCMS, time::Unitful.Time; precisetime::Bool=false) -> Int
+    scantimeindex(gcms::AbstractChromatogram, time::Unitful.Time; 
+    precisetime::Bool=false) -> Int
 
 Return the index of the `scantime` closest to `time` in the `scantimes`. 
 All time units defined in the package 
@@ -774,6 +775,7 @@ julia> intensities(fid)[2]  # intensity of 2nd scan
 intensities(chrom::AbstractChromatogram) = chrom.intensities
 
 
+
 """
     intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
 
@@ -798,6 +800,64 @@ julia> intensity(gcms, 2, 1)
 """
 intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer) = intensities(
     gcms)[scanindex, ionindex]
+
+
+"""
+    intensity(chrom::AbstractGC, scanindex::Integer)
+
+Return the intensity of a scan by specifying its `scanindex`.
+
+See also [`AbstractGC`](@ref), [`intensities`](@ref), [`scantimeindex`](@ref).
+
+# Example
+```jldoctest
+julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
+TIC {scantimes: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensity(tic, 2)
+224
+```
+"""
+intensity(chrom::AbstractGC, scanindex::Integer) = intensities(chrom)[scanindex]
+
+
+"""
+    intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
+
+Return the intensity at a given `time`. All time units defined in the package
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. By default, the intensity associated with the scan whose timestamp is closest 
+to the given `time` is returned. If there is a tie, the intensity of the scan with the 
+later scan time is used. If the optional parameter `precisetime` is set to `true`, the 
+specified `time` must exist in the vector, otherwise an error is thrown.
+
+See also [`AbstractGC`](@ref), [`intensities`](@ref), [`scantimeindex`](@ref).
+
+# Example
+```jldoctest
+julia> tic = TIC([1.0, 2.0, 3.0]u"s", [123, 224, 103])
+TIC {scantimes: Float64, intensities: Int64}
+3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensity(tic, 1.5u"s")
+224
+
+julia> intensity(tic, 1u"s", precisetime=true)
+123
+
+julia> intensity(tic, 1.5u"s", precisetime=true)
+ERROR: ArgumentError: scantime 1.5 s does not exist
+[...]
+```
+"""
+function intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
+    intensities(chrom)[scantimeindex(chrom, time, precisetime=precisetime)]
+end
 
 
 """
