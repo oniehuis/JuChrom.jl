@@ -414,9 +414,9 @@ julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
 ```
 """
 function scantime(chrom::AbstractChromatogram, scanindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, chrom.scantimes[scanindex]) : uconvert(timeunit, 
-        chrom.scantimes[scanindex])
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, scantimes(chrom)[scanindex]) : uconvert(timeunit, 
+    scantimes(chrom)[scanindex])
 end
 
 
@@ -463,7 +463,7 @@ julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
-    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
+    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))),
     ustripped::Bool=false)
     t = scantime(gcms, scanindex) + δtᵢ(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
@@ -524,7 +524,7 @@ julia> ionscantime(δtᵢ, gcms, 1, 1)
 function ionscantimeindex(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
     time::Unitful.Time; precisetime::Bool=false)
     precisetime || return findclosest(ionscantimes(δtᵢ, gcms, ionindex), time)
-    t = ustrip(uconvert(unit(eltype(gcms.scantimes)), time))
+    t = ustrip(uconvert(unit(eltype(scantimes(gcms))), time))
     for (index, element) in enumerate(ionscantimes(δtᵢ, gcms, ionindex, ustripped=true))
         element ≈ t && return index
     end
@@ -588,8 +588,8 @@ julia> ionscantimes(δtᵢ, gcms, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)), ustripped::Bool=false)
-    ts = gcms.scantimes .+ δtᵢ(ionindex)
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))), ustripped::Bool=false)
+    ts = scantimes(gcms) .+ δtᵢ(ionindex)
     ustripped ? ustrip.(timeunit, ts) : uconvert.(timeunit, ts)
 end
 
@@ -633,8 +633,8 @@ julia> scantimeindex(gcms, 2.2u"s")
 """
 function scantimeindex(chrom::AbstractChromatogram, time::Unitful.Time; 
     precisetime::Bool=false)
-    precisetime || return findclosest(chrom.scantimes, time)
-    t = ustrip(uconvert(unit(eltype(chrom.scantimes)), time))
+    precisetime || return findclosest(scantimes(chrom), time)
+    t = ustrip(uconvert(unit(eltype(scantimes(chrom))), time))
     for (index, element) in enumerate(scantimes(chrom, ustripped=true))
         element ≈ t && return index
     end
@@ -644,18 +644,16 @@ end
 
 """
     scantimes(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
-    timeunit::Unitful.TimeUnits, ustripped::Bool=false, copy::Bool=true)
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the scan times. The optional second position argument allows you to specify a scan 
 index range. The optional keyword argument `timeunit` allows you to change the unit of the 
 returned scan times. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
 supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned values. The optional keyword argument `copy` allows you to 
-specify whether to return a copy of the values in the data structure (default) or a 
-reference to/view into the data structure. Caution: Accessing the data structure directly 
-carries the risk of inadvertently changing the object's contents! Note that `copy` only has 
-an effect if no time unit conversion takes place and the time unit is not stripped.
+is stripped from the returned values. Note: If no time unit conversion takes place and 
+the time unit is not stripped, the function returns a reference to/view into the data 
+structure.
 
 See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
 [`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
@@ -696,46 +694,33 @@ julia> scantimes(gcms, 2:3, timeunit=u"minute", ustripped=true)
  0.050000004
 ```
 """
-function scantimes(
-    chrom::AbstractChromatogram;
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)),
-    ustripped::Bool=false,
-    copy::Bool=true)
-
+function scantimes(chrom::AbstractChromatogram;
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
     convert = unit(eltype(chrom.scantimes)) ≠ timeunit
     if !convert && !ustripped
-        return copy ? chrom.scantimes[:] : chrom.scantimes
+        chrom.scantimes
     elseif !convert && ustripped
-        return ustrip.(chrom.scantimes)
+        ustrip.(chrom.scantimes)
     elseif convert && !ustripped
-        return uconvert.(timeunit, chrom.scantimes)
+        uconvert.(timeunit, chrom.scantimes)
     else
-        return ustrip.(timeunit, chrom.scantimes)
+        ustrip.(timeunit, chrom.scantimes)
     end
 end
 
 
-function scantimes(
-    chrom::AbstractChromatogram,
-    scanindexrange::OrdinalRange{T, S}; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)),
-    ustripped::Bool=false, 
-    copy::Bool=true
+function scantimes(chrom::AbstractChromatogram, scanindexrange::OrdinalRange{T, S}; 
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false
     ) where {T<:Integer, S<:Integer}
-
     convert = unit(eltype(chrom.scantimes)) ≠ timeunit
     if !convert && !ustripped
-        if !copy
-            return @view chrom.scantimes[scanindexrange]
-        else
-            return chrom.scantimes[scanindexrange]
-        end
+        @view chrom.scantimes[scanindexrange]
     elseif !convert && ustripped
-        return ustrip.(@view chrom.scantimes[scanindexrange])
+        ustrip.(@view chrom.scantimes[scanindexrange])
     elseif convert && !ustripped
-        return uconvert.(timeunit, @view chrom.scantimes[scanindexrange])
+        uconvert.(timeunit, @view chrom.scantimes[scanindexrange])
     else
-        return ustrip.(timeunit, @view chrom.scantimes[scanindexrange])
+        ustrip.(timeunit, @view chrom.scantimes[scanindexrange])
     end
 end
 
@@ -907,13 +892,13 @@ julia> minscantime(gcms, 2:3, timeunit=u"minute", ustripped=true)
 ```
 """
 function minscantime(chrom::AbstractChromatogram, 
-    scanindexrange::OrdinalRange{T, S}=(firstindex(chrom.scantimes):lastindex(
-        chrom.scantimes));
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
+        scantimes(chrom)));
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
     ustripped::Bool=false
     ) where {T<:Integer, S<:Integer}
 
-    t = first(@view chrom.scantimes[scanindexrange])
+    t = first(@view scantimes(chrom)[scanindexrange])
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
@@ -953,13 +938,13 @@ julia> maxscantime(gcms, 1:2, timeunit=u"minute", ustripped=true)
 ```
 """
 function maxscantime(chrom::AbstractChromatogram,
-    scanindexrange::OrdinalRange{T, S}=(firstindex(chrom.scantimes):lastindex(
-        chrom.scantimes)); 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
+    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
+        scantimes(chrom))); 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
     ustripped::Bool=false
     ) where {T<:Integer, S<:Integer}
 
-    t = last(@view chrom.scantimes[scanindexrange])
+    t = last(@view scantimes(chrom)[scanindexrange])
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
@@ -987,11 +972,7 @@ ERROR: BoundsError: attempt to access 2-element Vector{Int64} at index [3]
 [...]
 ```
 """
-function ion(gcms::AbstractGCMS, ionindex::Integer)
-    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
-        BoundsError(ions(gcms)[ionindex]))
-    ions(gcms)[ionindex]
-end
+ion(gcms::AbstractGCMS, ionindex::Integer) = ions(gcms)[ionindex]
 
 
 """
@@ -1099,8 +1080,8 @@ julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
 julia> minintensity(gcms)
 0
 
-julia> minintensity(gcms, 10)
-12
+julia> minintensity(gcms, 0)
+1
 
 julia> minintensity(gcms, 1000)
 
@@ -1110,11 +1091,7 @@ minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
 
 function minintensity(chrom::AbstractChromatogram, greaterthan::Real)
     filtered_intensities = filter(num -> num > greaterthan, intensities(chrom))
-    if length(filtered_intensities) > 0
-        return minimum(filtered_intensities)
-    else
-        return nothing
-    end
+    length(filtered_intensities) > 0 ? minimum(filtered_intensities) : nothing
 end
 
 
@@ -1218,7 +1195,7 @@ function scanduration(chrom::AbstractChromatogram; error::Real=0.001,
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
     scancount(chrom) > 1 || throw(
         ArgumentError("cannot calculate the scan duration from a single scan"))
-    Δts = Set{eltype(chrom.scantimes)}()
+    Δts = Set{eltype(scantimes(chrom))}()
     first = true
     for i in eachindex(scantimes(chrom))
         first && (first = false; continue)
@@ -1291,8 +1268,8 @@ totalionchromatogram(gcms::GCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms
 
 function Base.show(io::IO, fid::FID)
     # Information about the element types
-    println(io, "FID {scantimes: ", eltype(ustrip.(scantimes(fid))), ", intensities: ", 
-        eltype(intensities(fid)), "}")
+    println(io, "FID {scantimes: ", eltype(ustrip.(scantimes(fid))), 
+        ", intensities: ", eltype(intensities(fid)), "}")
 
     # Information about the scan count and the scan times
     if scancount(fid) > 10
@@ -1323,8 +1300,8 @@ end
 
 function Base.show(io::IO, gcms::GCMS)
     # Information about the element types
-    println(io, "GCMS {scantimes: ", eltype(ustrip.(scantimes(gcms))), ", ions: ", 
-        eltype(ions(gcms)), ", intensities: ", eltype(intensities(gcms)), "}")
+    println(io, "GCMS {scantimes: ", eltype(ustrip.(scantimes(gcms))), 
+        ", ions: ", eltype(ions(gcms)), ", intensities: ", eltype(intensities(gcms)), "}")
 
     # Information about the scan count and the scan times
     if scancount(gcms) > 10
@@ -1369,8 +1346,8 @@ end
 
 function Base.show(io::IO, tic::TIC)
     # Information about the element types
-    println(io, "TIC {scantimes: ", eltype(ustrip.(scantimes(tic))), ", intensities: ", 
-        eltype(intensities(tic)), "}")
+    println(io, "TIC {scantimes: ", eltype(ustrip.(scantimes(tic))), 
+        ", intensities: ", eltype(intensities(tic)), "}")
 
     # Information about the scan count and the scan times
     if scancount(tic) > 10

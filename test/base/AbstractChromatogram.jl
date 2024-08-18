@@ -477,8 +477,8 @@ end
 
 
 ############################################################################################
-# minscantime(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-# ustripped::Bool=false)
+# minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "minscantime FID" begin
     # Same return values as those provided as arguments to construct the object
@@ -487,6 +487,13 @@ end
         timeunit=u"minute")
     @test 1 == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
     @test 1/60 ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+        ustripped=true)
+
+    @test 2u"s" == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3)
+    @test (1/30)u"minute" ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
+        timeunit=u"minute")
+    @test 2 == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, ustripped=true)
+    @test 1/30 ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, timeunit=u"minute", 
         ustripped=true)
 
     # Same return container and element type as used to construct the object
@@ -503,79 +510,7 @@ end
     @test Int == typeof(minscantime(FID(Int[1, 2, 3]u"s", [12, 956, 23]), ustripped=true))
     @test Float64 == typeof(minscantime(FID(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
         ustripped=true))
-end
 
-
-@testset "minscantime GCMS" begin
-    # Same return values as those provided as arguments to construct the object
-    @test 1u"s" == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
-    @test (1/60)u"minute" ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
-        timeunit=u"minute")
-    @test 1 == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
-        ustripped=true)
-    @test 1/60 ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
-        timeunit=u"minute", ustripped=true)
-
-    # Same return container and element type as used to construct the object
-    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1])))
-    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
-        [0 12; 34 956; 23 1])))
-    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
-        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), timeunit=u"minute"))
-    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
-        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", 
-        [85, 100], [0 12; 34 956; 23 1]), timeunit=u"minute"))
-    @test Int == typeof(minscantime(GCMS(Int[1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
-        ustripped=true))
-    @test Float64 == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), ustripped=true))
-end
-
-
-@testset "minscantime TIC" begin
-    # Same return values as those provided as arguments to construct the object
-    @test 1u"s" == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]))
-    @test (1/60)u"minute" ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 
-        timeunit=u"minute")
-    @test 1 == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
-    @test 1/60 ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
-        ustripped=true)
-
-    # Same return container and element type as used to construct the object
-    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23])))
-    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23])))
-    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
-        1//1),), 𝐓, nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", 
-        [12, 956, 23]), timeunit=u"minute"))
-    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
-        timeunit=u"minute"))
-    @test Int == typeof(minscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), ustripped=true))
-    @test Float64 == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
-        ustripped=true))
-end
-
-
-############################################################################################
-# minscantime(chrom::AbstractChromatogram, scanindexrange::OrdinalRange; 
-# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
-############################################################################################
-@testset "minscantime scanindexrange FID" begin
-    # Same return values as those provided as arguments to construct the object
-    @test 2u"s" == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3)
-    @test (1/30)u"minute" ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
-        timeunit=u"minute")
-    @test 2 == minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, ustripped=true)
-    @test 1/30 ≈ minscantime(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, timeunit=u"minute", 
-        ustripped=true)
-
-    # Same return container and element type as used to construct the object
     @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
         nothing}} == typeof(minscantime(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
@@ -604,8 +539,16 @@ end
 end
 
 
-@testset "minscantime scanindexrange GCMS" begin
+@testset "minscantime GCMS" begin
     # Same return values as those provided as arguments to construct the object
+    @test 1u"s" == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
+    @test (1/60)u"minute" ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        timeunit=u"minute")
+    @test 1 == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        ustripped=true)
+    @test 1/60 ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        timeunit=u"minute", ustripped=true)
+
     @test 2u"s" == minscantime(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2:3)
     @test (1/30)u"minute" ≈ minscantime(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), 2:3, timeunit=u"minute")
@@ -615,6 +558,23 @@ end
         timeunit=u"minute", ustripped=true)
 
     # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", 
+        [85, 100], [0 12; 34 956; 23 1]), timeunit=u"minute"))
+    @test Int == typeof(minscantime(GCMS(Int[1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        ustripped=true))
+    @test Float64 == typeof(minscantime(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ustripped=true))
+
     @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
         nothing}} == typeof(minscantime(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), 2:3))
@@ -644,14 +604,36 @@ end
 end
 
 
-@testset "minscantime scanindexrange TIC" begin
+@testset "minscantime TIC" begin
     # Same return values as those provided as arguments to construct the object
+    @test 1u"s" == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test (1/60)u"minute" ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        timeunit=u"minute")
+    @test 1 == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), ustripped=true)
+    @test 1/60 ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), timeunit=u"minute", 
+        ustripped=true)
+
     @test 2u"s" == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3)
     @test (1/30)u"minute" ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
         timeunit=u"minute")
     @test 2 == minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, ustripped=true)
     @test 1/30 ≈ minscantime(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, timeunit=u"minute", 
         ustripped=true)
+
+    # Same return container and element type as used to construct the object
+    @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", [12, 956, 23])))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23])))
+    @test Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 𝐓}(0, 
+        1//1),), 𝐓, nothing}} == typeof(minscantime(TIC(Int64[1, 2, 3]u"s", 
+        [12, 956, 23]), timeunit=u"minute"))
+    @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
+        nothing}} == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        timeunit=u"minute"))
+    @test Int == typeof(minscantime(TIC(Int[1, 2, 3]u"s", [12, 956, 23]), ustripped=true))
+    @test Float64 == typeof(minscantime(TIC(Float64[1.0, 2.0, 3.0]u"s", [12, 956, 23]), 
+        ustripped=true))
 
     # Same return container and element type as used to construct the object
     @test Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
@@ -1170,7 +1152,7 @@ end
 
 ############################################################################################
 # scantimes(chrom::AbstractChromatogram; 
-# timeunit::Unitful.TimeUnits, ustripped::Bool=false, copy::Bool=true)
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "scantimes FID" begin
     # Same return values as those provided as arguments to construct the object
@@ -1185,11 +1167,9 @@ end
     @test [1/60, 1/30, 1/20] ≈ scantimes(FID([1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute", ustripped=true)
     
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     fid = FID([1, 2, 3]u"s", [12, 956, 23])
-    @test scantimes(fid) !== scantimes(fid)
-    @test scantimes(fid, copy=true) !== scantimes(fid, copy=true)
-    @test scantimes(fid, copy=false) === scantimes(fid, copy=false)
+    @test scantimes(fid) === scantimes(fid)
     
     # Same return container and element type as used to construct the object
     @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
@@ -1224,11 +1204,9 @@ end
     @test [1/60, 1/30, 1/20] ≈ scantimes(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), timeunit=u"minute", ustripped=true)
 
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-    @test scantimes(gcms) !== scantimes(gcms)
-    @test scantimes(gcms, copy=true) !== scantimes(gcms, copy=true)
-    @test scantimes(gcms, copy=false) === scantimes(gcms, copy=false)
+    @test scantimes(gcms) === scantimes(gcms)
     
     # Same return container and element type as used to construct the object
     @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
@@ -1267,11 +1245,9 @@ end
     @test [1/60, 1/30, 1/20] ≈ scantimes(TIC([1, 2, 3]u"s", [12, 956, 23]), 
         timeunit=u"minute", ustripped=true)
 
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     tic = TIC([1, 2, 3]u"s", [12, 956, 23])
-    @test scantimes(tic) !== scantimes(tic)
-    @test scantimes(tic, copy=true) !== scantimes(tic, copy=true)
-    @test scantimes(tic, copy=false) === scantimes(tic, copy=false)
+    @test scantimes(tic) === scantimes(tic)
 
     # Same return container and element type as used to construct the object
     @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
@@ -1297,7 +1273,7 @@ end
 
 ############################################################################################
 # scantimes(chrom::AbstractChromatogram, scanindexrange::OrdinalRange; 
-# timeunit::Unitful.TimeUnits, ustripped::Bool=false, copy::Bool=true)
+# timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "scantimes with scanindexrange FID" begin
     # Same return values as those provided as arguments to construct the object
@@ -1312,17 +1288,19 @@ end
     @test [1/30, 1/20] ≈ scantimes(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
         timeunit=u"minute", ustripped=true)
     
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     fid = FID([1, 2, 3]u"s", [12, 956, 23])
-    @test scantimes(fid, 2:3) !== scantimes(fid, 2:3)
-    @test scantimes(fid, 2:3, copy=true) !== scantimes(fid, 2:3, copy=true)
-    @test scantimes(fid, 2:3, copy=false) === scantimes(fid, 2:3, copy=false)
+    @test scantimes(fid, 2:3) === scantimes(fid, 2:3)
     
     # Same return container and element type as used to construct the object
-    @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
-        ), 𝐓, nothing}}} == typeof(scantimes(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
-    @test Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1
-        ),), 𝐓, nothing}}} == typeof(scantimes(FID(Float64[1.0, 2.0, 3.0]u"s", 
+    @test SubArray{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true} == typeof(scantimes(FID(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
+    @test SubArray{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true} == typeof(scantimes(FID(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23]), 2:3))
     @test Vector{Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 
         𝐓}(0, 1//1),), 𝐓, nothing}}} == typeof(scantimes(FID(Int64[1, 2, 3]u"s", 
@@ -1361,18 +1339,20 @@ end
     @test [1/30, 1/20] ≈ scantimes(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
         2:3, timeunit=u"minute", ustripped=true)
 
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-    @test scantimes(gcms, 2:3) !== scantimes(gcms, 2:3)
-    @test scantimes(gcms, 2:3, copy=true) !== scantimes(gcms, 2:3, copy=true)
-    @test scantimes(gcms, 2:3, copy=false) === scantimes(gcms, 2:3, copy=false)
+    @test scantimes(gcms, 2:3) === scantimes(gcms, 2:3)
     
     # Same return container and element type as used to construct the object
-    @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
-        ), 𝐓, nothing}}} == typeof(scantimes(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
+    @test SubArray{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true} == typeof(scantimes(GCMS(Int64[1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), 2:3))
-    @test Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1
-        ),), 𝐓, nothing}}} == typeof(scantimes(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test SubArray{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true} == typeof(scantimes(GCMS(Float64[1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), 2:3))
     @test Vector{Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 
         𝐓}(0, 1//1),), 𝐓, nothing}}} == typeof(scantimes(GCMS(Int64[1, 2, 3]u"s", 
@@ -1414,17 +1394,19 @@ end
     @test [1/30, 1/20] ≈ scantimes(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3, 
         timeunit=u"minute", ustripped=true)
     
-    # Check if reference to or copy of data structure is returned
+    # Check if reference to data structure is returned
     tic = TIC([1, 2, 3]u"s", [12, 956, 23])
-    @test scantimes(tic, 2:3) !== scantimes(tic, 2:3)
-    @test scantimes(tic, 2:3, copy=true) !== scantimes(tic, 2:3, copy=true)
-    @test scantimes(tic, 2:3, copy=false) === scantimes(tic, 2:3, copy=false)
+    @test scantimes(tic, 2:3) === scantimes(tic, 2:3)
     
     # Same return container and element type as used to construct the object
-    @test Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),
-        ), 𝐓, nothing}}} == typeof(scantimes(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
-    @test Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1
-        ),), 𝐓, nothing}}} == typeof(scantimes(TIC(Float64[1.0, 2.0, 3.0]u"s", 
+    @test SubArray{Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true}  == typeof(scantimes(TIC(Int64[1, 2, 3]u"s", [12, 956, 23]), 2:3))
+    @test SubArray{Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
+        1//1),), 𝐓, nothing}}, 1, Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{
+        (Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, nothing}}}, Tuple{UnitRange{Int64}}, 
+        true} == typeof(scantimes(TIC(Float64[1.0, 2.0, 3.0]u"s", 
         [12, 956, 23]), 2:3))
     @test Vector{Quantity{Rational{Int64}, 𝐓, Unitful.FreeUnits{ (Unitful.Unit{:Minute, 
         𝐓}(0, 1//1),), 𝐓, nothing}}} == typeof(scantimes(TIC(Int64[1, 2, 3]u"s", 
