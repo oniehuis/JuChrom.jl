@@ -411,18 +411,12 @@ julia> scantime(gcms, 2, timeunit=u"minute")
 
 julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
 1//30
-
-julia> scantime(gcms, 5, timeunit=u"minute", ustripped=true)
-ERROR: BoundsError: attempt to access 3-element Vector{Quantity{Int64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}} at index [5]
-[...]
 ```
 """
 function scantime(chrom::AbstractChromatogram, scanindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    firstindex(scantimes(chrom)) ≤ scanindex ≤ lastindex(scantimes(chrom)) || throw(
-        BoundsError(scantimes(chrom)[scanindex]))
-    ustripped ? ustrip(timeunit, scantimes(chrom)[scanindex]) : uconvert(timeunit, 
-        scantimes(chrom)[scanindex])
+    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, chrom.scantimes[scanindex]) : uconvert(timeunit, 
+        chrom.scantimes[scanindex])
 end
 
 
@@ -469,12 +463,8 @@ julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
-    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))),
+    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)),
     ustripped::Bool=false)
-    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
-        BoundsError(ions(gcms), ionindex))
-    firstindex(scantimes(gcms)) ≤ scanindex ≤ lastindex(scantimes(gcms)) || throw(
-        BoundsError(scantimes(gcms), scanindex))
     t = scantime(gcms, scanindex) + δtᵢ(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
@@ -534,7 +524,7 @@ julia> ionscantime(δtᵢ, gcms, 1, 1)
 function ionscantimeindex(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
     time::Unitful.Time; precisetime::Bool=false)
     precisetime || return findclosest(ionscantimes(δtᵢ, gcms, ionindex), time)
-    t = ustrip(uconvert(unit(eltype(scantimes(gcms))), time))
+    t = ustrip(uconvert(unit(eltype(gcms.scantimes)), time))
     for (index, element) in enumerate(ionscantimes(δtᵢ, gcms, ionindex, ustripped=true))
         element ≈ t && return index
     end
@@ -598,10 +588,8 @@ julia> ionscantimes(δtᵢ, gcms, 2; timeunit=u"minute", ustripped=true)
 ```
 """
 function ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))), ustripped::Bool=false)
-    firstindex(ions(gcms)) ≤ ionindex ≤ lastindex(ions(gcms)) || throw(
-        BoundsError(ions(gcms), ionindex))
-    ts = scantimes(gcms) .+ δtᵢ(ionindex)
+    timeunit::Unitful.TimeUnits=unit(eltype(gcms.scantimes)), ustripped::Bool=false)
+    ts = gcms.scantimes .+ δtᵢ(ionindex)
     ustripped ? ustrip.(timeunit, ts) : uconvert.(timeunit, ts)
 end
 
@@ -645,8 +633,8 @@ julia> scantimeindex(gcms, 2.2u"s")
 """
 function scantimeindex(chrom::AbstractChromatogram, time::Unitful.Time; 
     precisetime::Bool=false)
-    precisetime || return findclosest(scantimes(chrom), time)
-    t = ustrip(uconvert(unit(eltype(scantimes(chrom))), time))
+    precisetime || return findclosest(chrom.scantimes, time)
+    t = ustrip(uconvert(unit(eltype(chrom.scantimes)), time))
     for (index, element) in enumerate(scantimes(chrom, ustripped=true))
         element ≈ t && return index
     end
@@ -918,41 +906,15 @@ julia> minscantime(gcms, 2:3, timeunit=u"minute", ustripped=true)
 0.03333333333333333
 ```
 """
-function minscantime(
-    chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
-    ustripped::Bool=false)
-
-    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
-    if !convert && !ustripped
-        return first(chrom.scantimes)
-    elseif !convert && ustripped
-        return ustrip.(first(chrom.scantimes))
-    elseif convert && !ustripped
-        return uconvert.(timeunit, first(chrom.scantimes))
-    else
-        return ustrip.(timeunit, first(chrom.scantimes))
-    end
-end
-
-
-function minscantime(
-    chrom::AbstractChromatogram,
-    scanindexrange::OrdinalRange{T, S}; 
+function minscantime(chrom::AbstractChromatogram, 
+    scanindexrange::OrdinalRange{T, S}=(firstindex(chrom.scantimes):lastindex(
+        chrom.scantimes));
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
     ustripped::Bool=false
     ) where {T<:Integer, S<:Integer}
 
-    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
-    if !convert && !ustripped
-        return first(@view chrom.scantimes[scanindexrange])
-    elseif !convert && ustripped
-        return ustrip.(first(@view chrom.scantimes[scanindexrange]))
-    elseif convert && !ustripped
-        return uconvert.(timeunit, first(@view chrom.scantimes[scanindexrange]))
-    else
-        return ustrip.(timeunit, first(@view chrom.scantimes[scanindexrange]))
-    end
+    t = first(@view chrom.scantimes[scanindexrange])
+    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
 
@@ -990,41 +952,15 @@ julia> maxscantime(gcms, 1:2, timeunit=u"minute", ustripped=true)
 0.03333333333333333
 ```
 """
-function maxscantime(
-    chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
-    ustripped::Bool=false)
-
-    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
-    if !convert && !ustripped
-        return last(chrom.scantimes)
-    elseif !convert && ustripped
-        return ustrip.(last(chrom.scantimes))
-    elseif convert && !ustripped
-        return uconvert.(timeunit, last(chrom.scantimes))
-    else
-        return ustrip.(timeunit, last(chrom.scantimes))
-    end
-end
-
-
-function maxscantime(
-    chrom::AbstractChromatogram,
-    scanindexrange::OrdinalRange{T, S}; 
+function maxscantime(chrom::AbstractChromatogram,
+    scanindexrange::OrdinalRange{T, S}=(firstindex(chrom.scantimes):lastindex(
+        chrom.scantimes)); 
     timeunit::Unitful.TimeUnits=unit(eltype(chrom.scantimes)), 
     ustripped::Bool=false
     ) where {T<:Integer, S<:Integer}
 
-    convert = unit(eltype(chrom.scantimes)) ≠ timeunit
-    if !convert && !ustripped
-        return last(@view chrom.scantimes[scanindexrange])
-    elseif !convert && ustripped
-        return ustrip.(last(@view chrom.scantimes[scanindexrange]))
-    elseif convert && !ustripped
-        return uconvert.(timeunit, last(@view chrom.scantimes[scanindexrange]))
-    else
-        return ustrip.(timeunit, last(@view chrom.scantimes[scanindexrange]))
-    end
+    t = last(@view chrom.scantimes[scanindexrange])
+    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
 end
 
 
