@@ -16,6 +16,7 @@ binions
 cosine
 integer
 intensities
+intensity
 ion
 ioncount
 ionindex

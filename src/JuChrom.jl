@@ -20,12 +20,15 @@ export binions
 export cosine
 export integer
 export intensities
+export intensity
 export ion
 export ioncount
 export ionindex
 export ions
 export ionscantime
+export ionscantimeindex
 export ionscantimes
+export ionscantimeshift
 export maxintensity
 export maxion
 export maxscantime
@@ -37,11 +40,8 @@ export runduration
 export scancount
 export scanduration
 export scantime
-export ionscantime
-export ionscantimeindex
 export scantimeindex
 export scantimes
-export ionscantimeshift
 export totalionchromatogram
 
 end

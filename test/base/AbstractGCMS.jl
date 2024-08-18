@@ -185,36 +185,62 @@ end
 
 
 ############################################################################################
-# ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer;
+# intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
+############################################################################################
+@testset "intensity GCMS" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 34 == intensity(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 2, 1)
+    @test 12 == intensity(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 1, 2)
+
+    # Returned value has same type as element type was used to construct the object
+    @test Int == typeof(intensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        1, 2))
+    @test Float64 == typeof(intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 1, 2))
+
+    # Check BoundsErrors for scanindex and ionindex
+    @test_throws BoundsError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 0, 1)
+    @test_throws BoundsError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 4, 1)
+    @test_throws BoundsError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2, 0)
+    @test_throws BoundsError intensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 2, 3)
+end
+
+
+############################################################################################
+# ionscantime(δtᵢ::Function, gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer;
 # timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "ionscantime" begin
     # Same return values as those provided as arguments to construct the object
     gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
     δtᵢ = ionscantimeshift(gcms, LinearDescending())
-    @test 2u"s" ≈ ionscantime(δtᵢ, gcms, 1, 2)
+    @test 2u"s" ≈ ionscantime(δtᵢ, gcms, 2, 1)
     @test 1.5u"s" ≈ ionscantime(δtᵢ, gcms, 2, 2)
-    @test 0.03333333333333333u"minute" ≈ ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute")
+    @test 0.03333333333333333u"minute" ≈ ionscantime(δtᵢ, gcms, 2, 1, timeunit=u"minute")
     @test 0.025u"minute" ≈ ionscantime(δtᵢ, gcms, 2, 2, timeunit=u"minute")
-    @test 2 ≈ ionscantime(δtᵢ, gcms, 1, 2, ustripped=true)
+    @test 2 ≈ ionscantime(δtᵢ, gcms, 2, 1, ustripped=true)
     @test 1.5 ≈ ionscantime(δtᵢ, gcms, 2, 2, ustripped=true)
-    @test 0.03333333333333333 ≈ ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute", 
+    @test 0.03333333333333333 ≈ ionscantime(δtᵢ, gcms, 2, 1, timeunit=u"minute", 
         ustripped=true)
     @test 0.025 ≈ ionscantime(δtᵢ, gcms, 2, 2, timeunit=u"minute", ustripped=true)
 
     # Returned element type is always Float64
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(ionscantime(δtᵢ, gcms, 1, 2))
-    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 1, 2, ustripped=true))
+        nothing}} == typeof(ionscantime(δtᵢ, gcms, 2, 1))
+    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 2, 1, ustripped=true))
     @test Quantity{Float64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 1//1),), 𝐓, 
-        nothing}} == typeof(ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute"))
-    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 1, 2, timeunit=u"minute", ustripped=true))
+        nothing}} == typeof(ionscantime(δtᵢ, gcms, 2, 1, timeunit=u"minute"))
+    @test Float64 == typeof(ionscantime(δtᵢ, gcms, 2, 1, timeunit=u"minute", ustripped=true))
 
     # Check BoundsErrors for scanindex and ionindex
-    @test_throws BoundsError ionscantime(δtᵢ, gcms, 0, 2)
-    @test_throws BoundsError ionscantime(δtᵢ, gcms, 3, 2)
     @test_throws BoundsError ionscantime(δtᵢ, gcms, 2, 0)
-    @test_throws BoundsError ionscantime(δtᵢ, gcms, 2, 4)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 2, 3)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 0, 2)
+    @test_throws BoundsError ionscantime(δtᵢ, gcms, 4, 2)
 end
 
 

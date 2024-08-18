@@ -421,18 +421,17 @@ end
 
 
 """
-    ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, scanindex::Integer; 
+    ionscantime(δtᵢ::Function, gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Return the time at which an ion was actually scanned, given the `ionindex` and the 
-`scanindex` and a function `δtᵢ` that computes the time difference between the timestamp of 
-a scan and the scantime of the ion from the `ionindex`. The optional parameter `timeunit` 
-allows you to change the unit of the returned scantime. All time units defined in the 
-package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
-`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
-whether the unit is stripped from the returned value. Note that the timestamp of a scan is 
-assumed to be the time at which scanning of the ion intensities associated with that scan 
-was complete.
+Return the time at which an ion was actually scanned, given the `scanindex`, the `ionindex` 
+and a function `δtᵢ` that computes the time difference between the timestamp of a scan and 
+the scantime of the ion from the `ionindex`. The optional parameter `timeunit` allows you 
+to change the unit of the returned scantime. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
+is stripped from the returned value. Note that the timestamp of a scan is assumed to be the 
+time at which scanning of the ion intensities associated with that scan was complete.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
 [`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`ionscantimeshift`](@ref), 
@@ -449,7 +448,7 @@ metadata: 0 entries
 
 julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
 
-julia> ionscantime(δtᵢ, gcms, 1, 2)
+julia> ionscantime(δtᵢ, gcms, 2, 1)
 2.0 s
 
 julia> ionscantime(δtᵢ, gcms, 2, 2)
@@ -462,8 +461,8 @@ julia> ionscantime(δtᵢ, gcms, 2, 2; timeunit=u"minute", ustripped=true)
 0.025
 ```
 """
-function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer, 
-    scanindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))),
+function ionscantime(δtᵢ::Function, gcms::AbstractGCMS, scanindex::Integer, 
+    ionindex::Integer; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gcms))),
     ustripped::Bool=false)
     t = scantime(gcms, scanindex) + δtᵢ(ionindex)
     ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
@@ -773,6 +772,32 @@ julia> intensities(fid)[2]  # intensity of 2nd scan
 ```
 """
 intensities(chrom::AbstractChromatogram) = chrom.intensities
+
+
+"""
+    intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
+
+Return the intensity of an ion in a scan given the `scanindex` of the scan and the 
+`ionindex` of the ion.
+
+See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
+[`maxintensity`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensity(gcms, 2, 1)
+34
+```
+"""
+intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer) = intensities(
+    gcms)[scanindex, ionindex]
 
 
 """
