@@ -731,62 +731,16 @@ end
 
 
 """
-    intensities(chrom::AbstractChromatogram)
-
-Return the `intensities`. Note that the function returns a reference to the data structure.
-
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
-[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
-[`maxintensity`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
-[`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> fid = FID([1, 2, 3]u"s", Float32[12.0, 956.0, 23.0]);
-
-julia> intensities(fid)
-3-element Vector{Float32}:
-  12.0
- 956.0
-  23.0
-
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], Int64[0 12; 34 956; 23 1]);
-
-julia> intensities(gcms)
-3×2 Matrix{Int64}:
-  0   12
- 34  956
- 23    1
-
-julia> @view intensities(gcms)[:, 1]  # values of all scans of the ion with the index 1
-3-element view(::Matrix{Int64}, :, 1) with eltype Int64:
-  0
- 34
- 23
-
-julia> @view intensities(gcms)[1, :]  # values of all ions of the scan with the index 1
-2-element view(::Matrix{Int64}, 1, :) with eltype Int64:
-  0
- 12
-
-julia> intensities(gcms)[1, :]  # returns an independent copy of the values
-2-element Vector{Int64}:
-  0
- 12
-```
-"""
-intensities(chrom::AbstractChromatogram) = chrom.intensities
-
-
-"""
-    intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{T, S}) where {T<:Integer, 
+    intensities(chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}) where {T<:Integer, 
     S<:Integer}
 
-Return the intensities of scans given the `scanindexrange` of the scans. Note that the 
-function returns a view into the data structure.
+Return the intensities. The optional keyword argument `scanindexrange` allows you to select 
+a subset of scans for which intensities are to be returned. Note that the function returns 
+a reference to the intensity vector or a view into the intensity vector, depending on 
+whether the keyword argument selects a subset of scans.
 
-
-See also [`AbstractGC`](@ref), [`intensity`](@ref), [`scantimeindex`](@ref).
+See also [`AbstractGC`](@ref), [`FID`](@ref), [`TIC`](@ref), [`intensity`](@ref), 
+[`minintensity`](@ref), [`maxintensity`](@ref).
 
 # Example
 ```jldoctest
@@ -796,30 +750,50 @@ TIC {scantimes: Int64, intensities: Int64}
 intensity range: 103 - 224
 metadata: 0 entries
 
-julia> intensities(tic, 2:3)
+julia> intensities(tic)  # reference to the data structure
+3-element Vector{Int64}:
+ 123
+ 224
+ 103
+
+julia> intensities(tic)[:]  # independent copy of the values
+3-element Vector{Int64}:
+ 123
+ 224
+ 103
+
+julia> intensities(tic; scanindexrange=2:3)  # view into the data structure
 2-element view(::Vector{Int64}, 2:3) with eltype Int64:
  224
  103
 
-julia> intensities(tic, 2:3)[:]  # returns an independent copy of the values
+julia> intensities(tic; scanindexrange=2:3)[:]  # independent copy of the values
 2-element Vector{Int64}:
  224
  103
 ```
 """
-function intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{T, S}
-    ) where {T<:Integer, S<:Integer}
-    @view intensities(chrom)[scanindexrange]
+function intensities(
+    chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}=firstindex(scantimes(
+        chrom)):lastindex(scantimes(chrom))) where {T<:Integer, S<:Integer}
+
+    if scanindexrange == firstindex(scantimes(chrom)):lastindex(scantimes(chrom))
+        chrom.intensities
+    else
+        @view chrom.intensities[scanindexrange]
+    end
 end
 
 
 """
-    intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{T1, S1}, 
+    intensities(gcms::AbstractGCMS; scanindexrange::OrdinalRange{T1, S1}, 
     ionindexrange::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, 
     S2<:Integer}
 
-Return the intensities of ions in scans given the `scanindexrange` of the scans and the 
-`ionindexrange` of the ions. Note that the function returns a view into the data structure.
+Return the intensities. The optional keyword arguments `scanindexrange` and 
+`ionindexrange` allow you to select specific parts of the intensity matrix to be returned. 
+Note that the function returns a reference to the matrix or a view into the matrix 
+depending on whether the keyword arguments select subranges of the matrix.
 
 See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
 [`maxintensity`](@ref).
@@ -833,30 +807,62 @@ GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> intensities(gcms, 1:3, 1:1)
+julia> intensities(gcms)  # reference to the data structure
+3×2 Matrix{Int64}:
+  0   12
+ 34  956
+ 23    1
+
+julia> intensities(gcms)[:, :]  # independent copy of the values
+3×2 Matrix{Int64}:
+  0   12
+ 34  956
+ 23    1
+
+julia> intensities(gcms, ionindexrange=1:1)  # all intensities of ion with index 1
 3×1 view(::Matrix{Int64}, 1:3, 1:1) with eltype Int64:
   0
  34
  23
 
-julia> intensities(gcms, 2:3, 1:2)
-2×2 view(::Matrix{Int64}, 2:3, 1:2) with eltype Int64:
- 34  956
- 23    1
+julia> intensities(gcms, ionindexrange=1:1)[:]  # independent copy of the values
+3-element Vector{Int64}:
+  0
+ 34
+ 23
 
-julia> intensities(gcms, 1:1, 1:2)[:]  # returns an independent copy of the values
+julia> intensities(gcms, scanindexrange=1:1)  # intensities of all ions of scan 1
+1×2 view(::Matrix{Int64}, 1:1, 1:2) with eltype Int64:
+ 0  12
+
+julia> intensities(gcms, scanindexrange=1:1)[:]  # independent copy of the values
 2-element Vector{Int64}:
   0
  12
+
+julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)
+2×2 view(::Matrix{Int64}, 1:2, 1:2) with eltype Int64:
+  0   12
+ 34  956
+
+julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)[:, :]
+2×2 Matrix{Int64}:
+  0   12
+ 34  956
 ```
 """
 function intensities(
-    gcms::AbstractGCMS,
-    scanindexrange::OrdinalRange{T1, S1}, 
-    ionindexrange::OrdinalRange{T2, S2}
+    gcms::AbstractGCMS;
+    scanindexrange::OrdinalRange{T1, S1}=firstindex(scantimes(gcms)):lastindex(scantimes(gcms)), 
+    ionindexrange::OrdinalRange{T2, S2}=firstindex(ions(gcms)):lastindex(ions(gcms))
     ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
-    
-    @view intensities(gcms)[scanindexrange, ionindexrange]
+
+    if (scanindexrange == firstindex(scantimes(gcms)):lastindex(scantimes(gcms)) 
+        && ionindexrange == firstindex(ions(gcms)):lastindex(ions(gcms)))
+        gcms.intensities
+    else
+        @view intensities(gcms)[scanindexrange, ionindexrange]
+    end
 end
 
 

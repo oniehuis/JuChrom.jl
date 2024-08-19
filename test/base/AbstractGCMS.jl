@@ -185,36 +185,47 @@ end
 
 
 ############################################################################################
-# intensities(gcms::AbstractGCMS, scanindexrange::OrdinalRange{Integer, Integer}, 
+# intensities(gcms::AbstractGCMS; scanindexrange::OrdinalRange{Integer, Integer}, 
 # ionindexrange::OrdinalRange{Integer, Integer})
 ############################################################################################
 @testset "intensities GCMS scanindexrange ionindexrange" begin
     # Same return values as those provided as arguments to construct the object
+    @test [0 12; 34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]))
+    @test reshape([0, 956, 1], (:,1)) == intensities(GCMS([1, 2, 3]u"s", [85],
+        reshape([0, 956, 1], (:,1))))
     @test [34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 2:3, 1:2)
+        [0 12; 34 956; 23 1]), scanindexrange=2:3, ionindexrange=1:2)
     @test reshape([12], (1, 1)) == intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 1:1, 2:2)
+        [0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=2:2)
 
     # Same return predictable container and element types
+    @test Matrix{Int64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int64[0 12; 34 956; 23 1])))
+    @test Matrix{Float64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1])))
+    @test Matrix{Int64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85], reshape([0, 956, 1],
+         (:,1)))))
     @test SubArray{Int64, 2, Matrix{Int64}, Tuple{UnitRange{Int64}, UnitRange{Int64}}, 
         false} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Int[0 12; 34 956; 23 1]), 2:3, 1:2))
+        Int[0 12; 34 956; 23 1]), scanindexrange=2:3, ionindexrange=1:2))
     @test SubArray{Float64, 2, Matrix{Float64}, Tuple{UnitRange{Int64}, UnitRange{Int64}}, 
         false} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Float64[0 12; 34 956; 23 1]), 2:3, 1:2))
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:3, ionindexrange=1:2))
     @test Vector{Int64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Int[0 12; 34 956; 23 1]), 2:3, 1:2)[:])
+        Int[0 12; 34 956; 23 1]), scanindexrange=2:3, ionindexrange=1:2)[:])
     @test Vector{Float64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Float64[0 12; 34 956; 23 1]), 2:3, 1:2)[:])
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:3, ionindexrange=1:2)[:])
     
+    # Check for BoundsErrors
     @test_throws BoundsError intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 0:3, 1:2)
+        [0 12; 34 956; 23 1]), scanindexrange=0:3, ionindexrange=1:2)
     @test_throws BoundsError intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 1:4, 1:2)
+        [0 12; 34 956; 23 1]), scanindexrange=1:4, ionindexrange=1:2)
     @test_throws BoundsError intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 1:3, 0:2)
+        [0 12; 34 956; 23 1]), scanindexrange=1:3, ionindexrange=0:2)
     @test_throws BoundsError intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), 1:3, 1:3)
+        [0 12; 34 956; 23 1]), scanindexrange=1:3, ionindexrange=1:3)
 end
 
 

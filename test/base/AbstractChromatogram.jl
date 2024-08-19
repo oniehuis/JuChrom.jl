@@ -4,93 +4,68 @@ using Unitful: 𝐓
 
 
 ############################################################################################
-# intensities(chrom::AbstractChromatogram)
+# intensities(chrom::AbstractGC; scanindexrange::OrdinalRange{Integer, Integer})
 ############################################################################################
-@testset "intensities FID" begin
+@testset "intensities scanindexrange FID" begin
     # Same return values as those provided as arguments to construct the object
     @test [12, 956, 23] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]))
+    @test [956, 23] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=2:3)
+    @test [12] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=1:1)
 
-    # Same return container and element type as used to construct the object
+    # Same return same element type as used to construct the object
     @test Vector{Int} == typeof(intensities(FID([1, 2, 3]u"s", Int[12, 956, 23])))
     @test Vector{Float64} == typeof(intensities(FID([1, 2, 3]u"s", 
         Float64[12.0, 956.0, 23.0])))
     @test StepRange{Int64, Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10:5:20)))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
         Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10.0:5:20.0)))
+    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(FID([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=2:3))
+    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(FID([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), scanindexrange=2:3))
+    @test StepRange{Int64, Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10:5:20), 
+        scanindexrange=2:3))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10.0:5:20.0), 
+        scanindexrange=2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
 end
 
 
-@testset "intensities GCMS" begin
-    # Same return values as those provided as arguments to construct the object
-    @test [0 12; 34 956; 23 1] == intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]))
-    @test reshape([0, 956, 1], (:,1)) == intensities(GCMS([1, 2, 3]u"s", [85],
-        reshape([0, 956, 1], (:,1))))
-
-    # Same return container and element type as used to construct the object
-    @test Matrix{Int64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Int64[0 12; 34 956; 23 1])))
-    @test Matrix{Float64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85, 100], 
-        Float64[0 12; 34 956; 23 1])))
-    @test Matrix{Int64} == typeof(intensities(GCMS([1, 2, 3]u"s", [85], reshape([0, 956, 1],
-         (:,1)))))
-end
-
-
-@testset "intensities TIC" begin
+@testset "intensities scanindexrange TIC" begin
     # Same return values as those provided as arguments to construct the object
     @test [12, 956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test [956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=2:3)
+    @test [12] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=1:1)
 
-    # Same return container and element type as used to construct the object
+    # Same return same element type as used to construct the object
     @test Vector{Int} == typeof(intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23])))
     @test Vector{Float64} == typeof(intensities(TIC([1, 2, 3]u"s", 
         Float64[12.0, 956.0, 23.0])))
     @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20)))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
         Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0)))
-end
 
-
-############################################################################################
-# intensities(chrom::AbstractGC, scanindexrange::OrdinalRange{Integer, Integer})
-############################################################################################
-@testset "intensities scanindexrange FID" begin
-    # Same return values as those provided as arguments to construct the object
-    @test [956, 23] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 2:3)
-    @test [12] == intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 1:1)
-
-    # Same return same element type as used to construct the object
     @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(FID([1, 2, 3]u"s", Int[12, 956, 23]), 2:3))
+        intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=2:3))
     @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(FID([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 2:3))
-    @test StepRange{Int64, Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10:5:20), 2:3))
+        intensities(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), scanindexrange=2:3))
+    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20), 
+        scanindexrange=2:3))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
-        Int64} == typeof(intensities(FID([1, 2, 3]u"s", 10.0:5:20.0), 2:3))
+        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0), 
+        scanindexrange=2:3))
 
     # Check for BoundsErrors
-    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 0:3)
-    @test_throws BoundsError intensities(FID([1, 2, 3]u"s", [12, 956, 23]), 1:4)
-end
-
-
-@testset "intensities scanindexrange TIC" begin
-    # Same return values as those provided as arguments to construct the object
-    @test [956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 2:3)
-    @test [12] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:1)
-
-    # Same return same element type as used to construct the object
-    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 2:3))
-    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), 2:3))
-    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20), 2:3))
-    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
-        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0), 2:3))
-
-    # Check for BoundsErrors
-    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 0:3)
-    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 1:4)
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
 end
 
 
