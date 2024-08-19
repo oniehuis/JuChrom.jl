@@ -37,7 +37,7 @@ copy_with_eltype(array::AbstractArray, elementtype::Type) = copyto!(similar(arra
     JuChrom.findclosest(A::AbstractVector{<:Number}, x::Number) -> Int
 
 Return the index of the number closest to `x` in a list `A` of numbers sorted in ascending 
-order. If case of atie, the index of the larger number is returned.
+order. If case of a tie, the index of the larger number is returned.
 
 # Examples
 ```jldoctest
