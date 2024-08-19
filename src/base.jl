@@ -6,7 +6,7 @@ include("utilities.jl")
     AbstractChromatogram
 
 Supertype of all chromatogram implementations. All subtypes (e.g., `FID`, `GCMS`, `TIC`) 
-contain `scantimes`, `intensities`, and `metadata`.
+contain scan times, intensities, and metadata.
 
 See also [`AbstractGC`](@ref), [`AbstractFID`](@ref), [`AbstractGCMS`](@ref), 
 [`AbstractTIC`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`scantimes`](@ref), 
@@ -19,9 +19,9 @@ abstract type AbstractChromatogram end
     AbstractGC <: AbstractChromatogram
 
 Supertype of all chromatogram implementations that have no mass-charge ratio (*m*/*z*) data 
-(= `ions`) and therefore have a single intensity value associated with a given `scantime` 
-(e.g., `FID`, `TIC`). The `intensities` are stored in a vector whose index corresponds to 
-the index of the associated `scantime`.
+(= ions) and therefore have a single intensity value associated with a given scan time 
+(e.g., `FID`, `TIC`). The intensities are stored in a vector whose index corresponds to 
+the index of the associated scantime.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractTIC`](@ref), 
 [`FID`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
@@ -36,7 +36,7 @@ abstract type AbstractGC <: AbstractChromatogram end
 Supertype of all flame ionization detector chromatogram implementations (e.g., 
 `FID`).
 
-See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractGC`](@ref), 
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref),  
 [`FID`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 """
 abstract type AbstractFID <: AbstractGC end
@@ -71,9 +71,9 @@ Base.broadcastable(fid::FID) = Ref(fid)
     FID(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Construct a `FID` object consisting of `scantimes`, `intensities`, and `metadata`. Note that 
-the `scantimes` must be in ascending order and the `intensities` must not contain values 
-less than zero.
+Construct a `FID` object consisting of `scantimes`, `intensities`, and `metadata`. Note 
+that the `scantimes` must be in ascending order and the `intensities` must not contain 
+values less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -81,7 +81,7 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@
 In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `FID` object preserves the types.
 
-# Example
+# Examples
 ```jldoctest
 julia> FID(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 FID {scantimes: Int64, intensities: Int32}
@@ -108,104 +108,6 @@ function FID(scantimes::T1, intensities::T2, metadata::Dict=Dict{Any, Any}()) wh
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real}}
     FID{T1, T2}(scantimes, intensities, metadata)
-end
-
-
-"""
-    AbstractGCMS <: AbstractChromatogram
-
-Supertype of all chromatogram implementations that contain mass-charge ratio (*m*/*z*) data 
-(= `ions`) and associated abundance values (= `intensities`) and thus can have one or more 
-ion intensity values associated with a given scan time (e.g., `GCMS`). The `intensities` 
-are stored in a matrix where the row index corresponds to that of the associated `scantime` 
-and where the column index corresponds to that of the associated `ion`.
-
-See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`GCMS`](@ref), 
-[`scantimes`](@ref), [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
-"""
-abstract type AbstractGCMS <: AbstractChromatogram end
-
-
-struct GCMS{
-    T1<:AbstractVector{<:Unitful.Time},
-    T2<:AbstractVector{<:Real},
-    T3<:AbstractMatrix{<:Real}} <: AbstractGCMS
-    scantimes::T1
-    ions::T2
-    intensities::T3
-    metadata::Dict{Any, Any}
-    function GCMS{T1, T2, T3}(scantimes::T1, ions::T2, intensities::T3, metadata::Dict
-        ) where {
-            T1<:AbstractVector{<:Unitful.Time},
-            T2<:AbstractVector{<:Real},
-            T3<:AbstractMatrix{<:Real}}
-        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
-        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
-        length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
-        size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
-            "intensity matrix row count does not match scan count"))
-        size(intensities, 2) == length(ions) || throw(DimensionMismatch(
-            "intensity matrix column count does not match ion count"))
-        issorted(scantimes) || throw(ArgumentError("scantimes not in ascending order"))
-        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
-        count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
-            "intensity values contain at least one value less than zero"))
-        new(scantimes, ions, intensities, metadata)
-    end
-end
-
-Base.broadcastable(gcms::GCMS) = Ref(gcms)
-
-
-"""
-    GCMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
-    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
-
-Construct a `GCMS` object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
-Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
-must not contain values less than zero.
-
-See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
-[`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref), [`totalionchromatogram`](@ref).
-
-In the following examples, the number types of the arrays passed to the object constructor 
-are explicitly annotated to illustrate that the `GCMS` object preserves the types.
-
-# Example
-```jldoctest
-julia> GCMS(Int32[1, 2, 3]u"s", Int64[85, 100], Int32[0 12; 34 956; 23 1])
-GCMS {scantimes: Int32, ions: Int64, intensities: Int32}
-3 scans; scantimes: 1 s, 2 s, 3 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 4))
-GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
-2 scans; scantimes: 1.1f0 s, 2.1f0 s
-2 ions: m/z 35.1, 76.2
-intensity range: 0 - 956
-metadata: 1 entry
-
-julia> GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-ERROR: ArgumentError: scantimes not in ascending order
-[...]
-
-julia> GCMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
-ERROR: ArgumentError: ions not in ascending order
-[...]
-
-julia> GCMS([1, 2, 3]u"s", [85, 100], [0 -12; 34 956; 23 1])
-ERROR: ArgumentError: intensity values contain at least one value less than zero
-[...]
-```
-"""
-function GCMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any, Any}()
-    ) where {
-    T1<:AbstractVector{<:Unitful.Time},
-    T2<:AbstractVector{<:Real},
-    T3<:AbstractMatrix{<:Real}}
-    GCMS{T1, T2, T3}(scantimes, ions, intensities, metadata)
 end
 
 
@@ -260,7 +162,7 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@
 In the following examples, the number types of the arrays passed to the object constructor 
 are explicitly annotated to illustrate that the `TIC` object preserves the types.
 
-# Example
+# Examples
 ```jldoctest
 julia> TIC(Int64[1, 2, 3]u"s", Int32[12, 956, 1])
 TIC {scantimes: Int64, intensities: Int32}
@@ -291,15 +193,232 @@ end
 
 
 """
+    AbstractGCMS <: AbstractChromatogram
+
+Supertype of all chromatogram implementations that contain mass-charge ratio (*m*/*z*) data 
+(= ions) and associated abundance values (= intensities) and thus can have one or more ion 
+intensity values associated with a given scan time (e.g., `GCMS`). The intensities are 
+stored in a matrix where the row index corresponds to that of the associated scan time and 
+where the column index corresponds to that of the associated ion.
+
+See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`GCMS`](@ref), 
+[`scantimes`](@ref), [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+"""
+abstract type AbstractGCMS <: AbstractChromatogram end
+
+
+struct GCMS{
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractVector{<:Real},
+    T3<:AbstractMatrix{<:Real}} <: AbstractGCMS
+    scantimes::T1
+    ions::T2
+    intensities::T3
+    metadata::Dict{Any, Any}
+    function GCMS{T1, T2, T3}(scantimes::T1, ions::T2, intensities::T3, metadata::Dict
+        ) where {
+            T1<:AbstractVector{<:Unitful.Time},
+            T2<:AbstractVector{<:Real},
+            T3<:AbstractMatrix{<:Real}}
+        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
+        length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
+        size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
+            "intensity matrix row count does not match scan count"))
+        size(intensities, 2) == length(ions) || throw(DimensionMismatch(
+            "intensity matrix column count does not match ion count"))
+        issorted(scantimes) || throw(ArgumentError("scantimes not in ascending order"))
+        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
+        count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
+            "intensity values contain at least one value less than zero"))
+        new(scantimes, ions, intensities, metadata)
+    end
+end
+
+Base.broadcastable(gcms::GCMS) = Ref(gcms)
+
+
+"""
+    GCMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
+    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
+
+Construct a `GCMS` object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
+Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
+must not contain values less than zero.
+
+See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
+[`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+
+In the following examples, the number types of the arrays passed to the object constructor 
+are explicitly annotated to illustrate that the `GCMS` object preserves the types.
+
+# Examples
+```jldoctest
+julia> GCMS(Int32[1, 2, 3]u"s", Int64[85, 100], Int32[0 12; 34 956; 23 1])
+GCMS {scantimes: Int32, ions: Int64, intensities: Int32}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> GCMS([1.1f0, 2.1f0]u"s", [35.1f0, 76.2f0], Int64[0 12; 34 956], Dict(:id => 4))
+GCMS {scantimes: Float32, ions: Float32, intensities: Int64}
+2 scans; scantimes: 1.1f0 s, 2.1f0 s
+2 ions: m/z 35.1, 76.2
+intensity range: 0 - 956
+metadata: 1 entry
+
+julia> GCMS([2, 1, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+ERROR: ArgumentError: scantimes not in ascending order
+[...]
+
+julia> GCMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
+ERROR: ArgumentError: ions not in ascending order
+[...]
+
+julia> GCMS([1, 2, 3]u"s", [85, 100], [0 -12; 34 956; 23 1])
+ERROR: ArgumentError: intensity values contain at least one value less than zero
+[...]
+```
+"""
+function GCMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any, Any}()
+    ) where {
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractVector{<:Real},
+    T3<:AbstractMatrix{<:Real}}
+    GCMS{T1, T2, T3}(scantimes, ions, intensities, metadata)
+end
+
+
+"""
+    IonScanOrder
+
+Supertype of all ion scan order implementations.
+
+See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantimeshift`](@ref), 
+[`ionscantimes`](@ref), [`ionscantime`](@ref), [`ionscantimeindex`](@ref).
+"""
+abstract type IonScanOrder end
+
+
+struct LinearAscending{T1<:Real, T2<:Real} <: IonScanOrder
+    start::T1
+    stop::T2
+    function LinearAscending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
+        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
+            " not satisfy condition 0 ≤ start < stop ≤ 1")))
+        new(start, stop)
+    end
+end
+
+
+"""
+    LinearAscending(; start::Real=0, stop::Real=1) <: IonScanOrder
+
+Construct a `LinearAscending` ion scan order object. It specifies that the ions were 
+scanned in linear ascending order (i.e., smallest ion first, last ion last) during each 
+scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
+total scan interval time equally among the ions. The optional keyword arguments `start` and 
+`stop` allow you to limit the interval time during which the ions were scanned in each 
+scan. They specify relative points in the scan interval: `0 ≤ start < stop ≤ 1`. The 
+default values are `start=0` and `stop=1`, which means that the scan of the smallest ion 
+started at the beginning of the scan interval and the scan of the largest ion ended at the 
+end of the scan interval. In contrast, setting the start value to 0.5 indicates that the 
+ions were scanned only during the second half of the scan interval. For example, this could 
+occur if the instrument switched between SIM mode and Scan mode during each scan interval, 
+operating in Scan mode only during the second half, which generated the data in question.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
+[`ionscantimeshift`](@ref), [`ionscantimes`](@ref), [`ionscantime`](@ref), 
+[`ionscantimeindex`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+[`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref).
+
+# Examples
+```jldoctest
+julia> LinearAscending()
+LinearAscending{Int64, Int64}(0, 1)
+
+julia> LinearAscending(; start=0.5)
+LinearAscending{Float64, Int64}(0.5, 1)
+
+julia> LinearAscending(; start=0.1, stop=0.5)
+LinearAscending{Float64, Float64}(0.1, 0.5)
+
+julia> LinearAscending(; start=0.5, stop=0.5)
+ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
+[...]
+```
+"""
+function LinearAscending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
+    LinearAscending{T1, T2}(start, stop)
+end
+
+
+struct LinearDescending{T1<:Real, T2<:Real} <: IonScanOrder
+    start::T1
+    stop::T2
+    function LinearDescending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
+        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
+            " not satisfy condition 0 ≤ start < stop ≤ 1")))
+        new(start, stop)
+    end
+end
+
+
+"""
+    LinearDescending(; start::Real=0, stop::Real=1) <: IonScanOrder
+
+Construct a `LinearDescending` ion scan order object. It specifies that the ions were 
+scanned in linear descending order (i.e., largest ion first, smallest ion last) during each 
+scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
+total scan interval time equally among the ions. The optional `start` and `stop` parameters 
+allow you to limit the interval time during which the ions were scanned in each scan. They 
+specify relative points in the scan interval: `0 ≤ start < stop ≤ 1`. The default values 
+are `start=0` and `stop=1`, which means that the scan of the largest ion started at the 
+beginning of the scan interval and the scan of the smallest ion ended at the end of the 
+scan interval. In contrast, setting the start value to 0.5 indicates that the ions were 
+scanned only during the second half of the scan interval. For example, this could occur if 
+the instrument switched between SIM mode and Scan mode during each scan interval, operating 
+in Scan mode only during the second half, which generated the data in question.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
+[`ionscantimeshift`](@ref), [`ionscantimes`](@ref), [`ionscantime`](@ref), 
+[`ionscantimeindex`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
+[`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref).
+
+# Examples
+```jldoctest
+julia> LinearDescending()
+LinearDescending{Int64, Int64}(0, 1)
+
+julia> LinearDescending(; start=0.5)
+LinearDescending{Float64, Int64}(0.5, 1)
+
+julia> LinearDescending(; start=0.1, stop=0.5)
+LinearDescending{Float64, Float64}(0.1, 0.5)
+
+julia> LinearDescending(; start=0.5, stop=0.5)
+ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
+[...]
+```
+"""
+function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
+    LinearDescending{T1, T2}(start, stop)
+end
+
+
+"""
     binions(gcms::AbstractGCMS; ionbin::Function=integerion)
 
-Return a `GCMS` object in which the `ions` are binned according to the `ionbin` function 
-(default function is `integer`) and the `intensities` of the binned `ions` are summed.
+Return a `GCMS` object in which the ions are binned according to the `ionbin` function 
+(default function is `integer`) and the intensities of the binned ions are summed.
 
 See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`integer`](@ref), [`intensities`](@ref), 
 [`ions`](@ref), [`ioncount`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> gcms = GCMS((1:3)u"s", [84.8, 85.2, 100.9], [0 24 12; 0 0 956; 23 0 1])
 GCMS {scantimes: Int64, ions: Float64, intensities: Int64}
@@ -314,19 +433,19 @@ julia> intensities(gcms)
   0   0  956
  23   0    1
 
-julia> gcmsᵢ = binions(gcms)
+julia> gcms_bi = binions(gcms)
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 3 scans; scantimes: 1 s, 2 s, 3 s
 2 ions: m/z 85, 101
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> ions(gcmsᵢ)
+julia> ions(gcms_bi)
 2-element Vector{Int64}:
   85
  101
 
-julia> intensities(gcmsᵢ)
+julia> intensities(gcms_bi)
 3×2 Matrix{Int64}:
  24   12
   0  956
@@ -335,14 +454,14 @@ julia> intensities(gcmsᵢ)
 
 julia> custom_ionbin(ion) = integer(ion, start=0.9);
 
-julia> gcmsᵢ = binions(gcms, ionbin=custom_ionbin)
+julia> gcms_bi = binions(gcms, ionbin=custom_ionbin)
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
 3 scans; scantimes: 1 s, 2 s, 3 s
 3 ions: m/z 84, 85, 101
 intensity range: 0 - 956
 metadata: 0 entries
 
-julia> ions(gcmsᵢ)
+julia> ions(gcms_bi)
 3-element Vector{Int64}:
   84
   85
@@ -665,7 +784,7 @@ constructor is explicitly annotated to illustrate that the GCMS object preserves
 ```jldoctest
 julia> gcms = GCMS(Float32[1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
-julia> scantimes(gcms)
+julia> scantimes(gcms)  # reference to the data structure
 3-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  1.0f0 s
  2.0f0 s
@@ -683,8 +802,13 @@ julia> scantimes(gcms, timeunit=u"minute", ustripped=true)
  0.033333335
  0.050000004
 
-julia> scantimes(gcms, 2:3)
+julia> scantimes(gcms, 2:3)  # view into the data structure
 2-element view(::Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}, 2:3) with eltype Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}:
+ 2.0f0 s
+ 3.0f0 s
+
+julia> scantimes(gcms, 2:3)[:]  # copy of the values
+2-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  2.0f0 s
  3.0f0 s
 
@@ -692,11 +816,6 @@ julia> scantimes(gcms, 2:3, timeunit=u"minute", ustripped=true)
 2-element Vector{Float32}:
  0.033333335
  0.050000004
-
-julia> scantimes(gcms, 2:3)[:]  # return an independent copy of the values
-2-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
- 2.0f0 s
- 3.0f0 s
 ```
 """
 function scantimes(chrom::AbstractChromatogram;
@@ -1595,121 +1714,7 @@ end
 # Functions related to ion scan time shifts
 ############################################################################################
 
-"""
-    IonScanOrder
 
-Supertype of all ion scan order implementations.
-
-See also [`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantimeshift`](@ref), 
-[`ionscantime`](@ref).
-"""
-abstract type IonScanOrder end
-
-
-struct LinearAscending{T1<:Real, T2<:Real} <: IonScanOrder
-    start::T1
-    stop::T2
-    function LinearAscending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
-        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
-            " not satisfy condition 0 ≤ start < stop ≤ 1")))
-        new(start, stop)
-    end
-end
-
-
-"""
-    LinearAscending(; start::Real=0, stop::Real=1) <: IonScanOrder
-
-Construct a `LinearAscending` ion scan order object. It specifies that the ions were 
-scanned in linear ascending order (i.e., smallest ion first, last ion last) during each 
-scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
-total scan interval time equally among the ions. The optional `start` and `stop` parameters 
-allow you to limit the interval time during which the ions were scanned in each scan. They 
-specify relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
-`start`=0 and `stop`=1, which means that the scan of the smallest ion started at the 
-beginning of the scan interval and the scan of the largest ion ended at the end of the scan 
-interval. In contrast, setting the start value to 0.5 would indicate that the ions were 
-only scanned during the second half of the scan interval (e.g., because the instrument 
-switched between SIM mode and Scan mode during each scan interval and operated only in the 
-second half of the scan interval in Scan mode).
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
-[`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), 
-[`minscantime`](@ref), [`maxscantime`](@ref).
-
-# Example
-```jldoctest
-julia> LinearAscending()
-LinearAscending{Int64, Int64}(0, 1)
-
-julia> LinearAscending(start=0.5)
-LinearAscending{Float64, Int64}(0.5, 1)
-
-julia> LinearAscending(start=0.1, stop=0.5)
-LinearAscending{Float64, Float64}(0.1, 0.5)
-
-julia> LinearAscending(start=0.5, stop=0.5)
-ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
-[...]
-```
-"""
-function LinearAscending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
-    LinearAscending{T1, T2}(start, stop)
-end
-
-
-struct LinearDescending{T1<:Real, T2<:Real} <: IonScanOrder
-    start::T1
-    stop::T2
-    function LinearDescending{T1, T2}(start::T1, stop::T2) where {T1<:Real, T2<:Real}
-        0 ≤ start < stop ≤ 1 || throw(ArgumentError(string("start=$start and stop=$stop do", 
-            " not satisfy condition 0 ≤ start < stop ≤ 1")))
-        new(start, stop)
-    end
-end
-
-
-"""
-    LinearDescending(; start::Real=0, stop::Real=1) <: IonScanOrder
-
-Construct a `LinearDescending` ion scan order object. It specifies that the ions were 
-scanned in linear descending order (i.e., largest ion first, smallest ion last) during each 
-scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
-total scan interval time equally among the ions. The optional `start` and `stop` parameters 
-allow you to limit the interval time during which the ions were scanned in each scan. They 
-specify relative points in the scan interval: 0 ≤ start < stop ≤ 1. The default values are 
-`start`=0 and `stop`=1, which means that the scan of the largest ion started at the 
-beginning of the scan interval and the scan of the smallest ion ended at the end of the 
-scan interval. In contrast, setting the start value to 0.5 would indicate that the ions 
-were only scanned during the second half of the scan interval (e.g., because the instrument 
-switched between SIM mode and Scan mode during each scan interval and operated only in the 
-second half of the scan interval in Scan mode).
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
-[`ionscantimeshift`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), 
-[`minscantime`](@ref), [`maxscantime`](@ref).
-
-# Example
-```jldoctest
-julia> LinearDescending()
-LinearDescending{Int64, Int64}(0, 1)
-
-julia> LinearDescending(start=0.5)
-LinearDescending{Float64, Int64}(0.5, 1)
-
-julia> LinearDescending(start=0.1, stop=0.5)
-LinearDescending{Float64, Float64}(0.1, 0.5)
-
-julia> LinearDescending(start=0.5, stop=0.5)
-ERROR: ArgumentError: start=0.5 and stop=0.5 do not satisfy condition 0 ≤ start < stop ≤ 1
-[...]
-```
-"""
-function LinearDescending(; start::T1=0, stop::T2=1) where {T1<:Real, T2<:Real}
-    LinearDescending{T1, T2}(start, stop)
-end
 
 
 function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS, error::Real)

@@ -2,16 +2,16 @@
 
 ```@docs
 AbstractChromatogram
-AbstractFID
 AbstractGC
-AbstractGCMS
-AbstractTIC
+AbstractFID
 FID
+AbstractTIC
+TIC
+AbstractGCMS
 GCMS
 IonScanOrder
 LinearAscending
 LinearDescending
-TIC
 binions
 cosine
 integer
