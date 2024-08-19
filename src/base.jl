@@ -5,8 +5,8 @@ include("utilities.jl")
 """
     AbstractChromatogram
 
-Supertype of all chromatogram implementations. All subtypes (e.g., `FID`, `GCMS`, `TIC`) 
-contain scan times, intensities, and metadata.
+Supertype for all chromatogram implementations. All subtypes (e.g., FID, GCMS, TIC) 
+include scan times, intensities, and metadata.
 
 See also [`AbstractGC`](@ref), [`AbstractFID`](@ref), [`AbstractGCMS`](@ref), 
 [`AbstractTIC`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`scantimes`](@ref), 
@@ -18,10 +18,10 @@ abstract type AbstractChromatogram end
 """
     AbstractGC <: AbstractChromatogram
 
-Supertype of all chromatogram implementations that have no mass-charge ratio (*m*/*z*) data 
-(= ions) and therefore have a single intensity value associated with a given scan time 
-(e.g., `FID`, `TIC`). The intensities are stored in a vector whose index corresponds to 
-the index of the associated scantime.
+Supertype for all chromatogram implementations that lack mass-charge ratio (*m*/*z*) data 
+(ions) and thus have a single intensity value associated with each scan time (e.g., FID, 
+TIC). The intensities are stored in a vector, with the index corresponding to the scan time 
+index.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractFID`](@ref), [`AbstractTIC`](@ref), 
 [`FID`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
@@ -33,8 +33,7 @@ abstract type AbstractGC <: AbstractChromatogram end
 """
     AbstractFID <: AbstractGC
 
-Supertype of all flame ionization detector chromatogram implementations (e.g., 
-`FID`).
+Supertype for all flame ionization detector chromatogram implementations (e.g., FID).
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref),  
 [`FID`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -71,15 +70,15 @@ Base.broadcastable(fid::FID) = Ref(fid)
     FID(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Construct a `FID` object consisting of `scantimes`, `intensities`, and `metadata`. Note 
-that the `scantimes` must be in ascending order and the `intensities` must not contain 
-values less than zero.
+Construct a `FID` object that includes `scantimes`, `intensities`, and `metadata`. Note 
+that `scantimes` must be in ascending order, and `intensities` must not contain any values 
+less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor 
-are explicitly annotated to illustrate that the `FID` object preserves the types.
+In the following examples, the types of `scantimes` and `intensities` are explicitely 
+annotated to demonstrate that the `FID` object preserves these types.
 
 # Examples
 ```jldoctest
@@ -114,7 +113,7 @@ end
 """
     AbstractTIC <: AbstractGC
 
-Supertype of all total ion chromatogram implementations (e.g., `TIC`).
+Supertype for all total ion chromatogram implementations (e.g., `TIC`).
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
 [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -151,16 +150,16 @@ Base.broadcastable(tic::TIC) = Ref(tic)
     TIC(scantimes::AbstractVector{<:Unitful.Time}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any}())
 
-Construct a `TIC` object consisting of `scantimes`, `intensities`, and `metadata`. Note 
-that the `scantimes` must be in ascending order and the `intensities` must not contain 
-values less than zero.
+Construct a `TIC` object that includes `scantimes`, `intensities`, and `metadata`. Note 
+that `scantimes` must be in ascending order, and `intensities` must not contain any values 
+less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractTIC`](@ref), 
 [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref), 
 [`totalionchromatogram`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor 
-are explicitly annotated to illustrate that the `TIC` object preserves the types.
+In the following examples, the types of `scantimes` and `intensities` are explicitely 
+annotated to demonstrate that the `TIC` object preserves these types.
 
 # Examples
 ```jldoctest
@@ -195,11 +194,11 @@ end
 """
     AbstractGCMS <: AbstractChromatogram
 
-Supertype of all chromatogram implementations that contain mass-charge ratio (*m*/*z*) data 
-(= ions) and associated abundance values (= intensities) and thus can have one or more ion 
-intensity values associated with a given scan time (e.g., `GCMS`). The intensities are 
-stored in a matrix where the row index corresponds to that of the associated scan time and 
-where the column index corresponds to that of the associated ion.
+Supertype for all chromatogram implementations that include mass-charge ratio (*m*/*z*) 
+data (ions) and associated abundance values (intensities) (e.g., GCMS). This type can have 
+one or more ion intensity values associated with a given scan time. Intensities are stored 
+in a matrix where the row index represents the scan time and the column index represents 
+the ion.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`GCMS`](@ref), 
 [`scantimes`](@ref), [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -235,6 +234,7 @@ struct GCMS{
     end
 end
 
+
 Base.broadcastable(gcms::GCMS) = Ref(gcms)
 
 
@@ -242,15 +242,15 @@ Base.broadcastable(gcms::GCMS) = Ref(gcms)
     GCMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
     intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
 
-Construct a `GCMS` object consisting of `scantimes`, `ions`, `intensities`, and `metadata`. 
-Note that the `scantimes` and the `ions` must be in ascending order and the `intensities` 
-must not contain values less than zero.
+Construct a `GCMS` object that includes `scantimes`, `ions`, `intensities`, and `metadata`. 
+Note that `scantimes` and `ions` must be in ascending order, and `intensities` must not 
+contain any values less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
 [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 
-In the following examples, the number types of the arrays passed to the object constructor 
-are explicitly annotated to illustrate that the `GCMS` object preserves the types.
+In the following examples, the types of `scantimes`, `ions`, and `intensities` are 
+explicitely annotated to demonstrate that the `GCMS` object preserves these types.
 
 # Examples
 ```jldoctest
@@ -315,24 +315,23 @@ end
 """
     LinearAscending(; start::Real=0, stop::Real=1) <: IonScanOrder
 
-Construct a `LinearAscending` ion scan order object. It specifies that the ions were 
-scanned in linear ascending order (i.e., smallest ion first, last ion last) during each 
-scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
-total scan interval time equally among the ions. The optional keyword arguments `start` and 
-`stop` allow you to limit the interval time during which the ions were scanned in each 
-scan. They specify relative points in the scan interval: `0 ≤ start < stop ≤ 1`. The 
-default values are `start=0` and `stop=1`, which means that the scan of the smallest ion 
-started at the beginning of the scan interval and the scan of the largest ion ended at the 
-end of the scan interval. In contrast, setting the start value to 0.5 indicates that the 
-ions were scanned only during the second half of the scan interval. For example, this could 
-occur if the instrument switched between SIM mode and Scan mode during each scan interval, 
-operating in Scan mode only during the second half, which generated the data in question.
+Construct a `LinearAscending` ion scan order object. This object specifies that ions were 
+scanned in linear ascending order (i.e., smallest ion first, largest ion last) during each 
+scan. The time allocated to scan each ion is assumed to be equal, resulting from dividing 
+the total scan interval time equally among the ions. The optional `start` and `stop` 
+parameters allow you to limit the time interval during which ions were scanned in each 
+scan. These parameters specify relative points within the scan interval: `0 ≤ start < stop 
+≤ 1`. The default values are `start=0` and `stop=1`, meaning the scan of the smallest ion 
+began at the start of the scan interval and the scan of the largest ion concluded at the 
+end of the interval. In contrast, setting the start value to 0.5 indicates that ions were 
+scanned only during the second half of the scan interval. For instance, this could occur if 
+the instrument switched between SIM mode and Scan mode during each scan interval, operating 
+in Scan mode only during the second half, which generated the data in question.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearDescending`](@ref), 
-[`ionscantimeshift`](@ref), [`ionscantimes`](@ref), [`ionscantime`](@ref), 
-[`ionscantimeindex`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-[`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref).
+See also [`AbstractGCMS`](@ref), [`LinearDescending`](@ref), [`ionscantimeshift`](@ref), 
+[`ionscantimes`](@ref), [`ionscantime`](@ref), [`ionscantimeindex`](@ref), [`ions`](@ref), 
+[`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), 
+[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Examples
 ```jldoctest
@@ -369,24 +368,23 @@ end
 """
     LinearDescending(; start::Real=0, stop::Real=1) <: IonScanOrder
 
-Construct a `LinearDescending` ion scan order object. It specifies that the ions were 
+Construct a `LinearDescending` ion scan order object. This object specifies that ions were 
 scanned in linear descending order (i.e., largest ion first, smallest ion last) during each 
-scan. The time to scan each ion is assumed to be equal and is the result of dividing the 
-total scan interval time equally among the ions. The optional `start` and `stop` parameters 
-allow you to limit the interval time during which the ions were scanned in each scan. They 
-specify relative points in the scan interval: `0 ≤ start < stop ≤ 1`. The default values 
-are `start=0` and `stop=1`, which means that the scan of the largest ion started at the 
-beginning of the scan interval and the scan of the smallest ion ended at the end of the 
-scan interval. In contrast, setting the start value to 0.5 indicates that the ions were 
-scanned only during the second half of the scan interval. For example, this could occur if 
+scan. The time allocated to scan each ion is assumed to be equal, resulting from dividing 
+the total scan interval time equally among the ions. The optional `start` and `stop` 
+parameters allow you to limit the time interval during which ions were scanned in each 
+scan. These parameters specify relative points within the scan interval: `0 ≤ start < stop 
+≤ 1`. The default values are `start=0` and `stop=1`, meaning the scan of the largest ion 
+began at the start of the scan interval and the scan of the smallest ion concluded at the 
+end of the interval. In contrast, setting the start value to 0.5 indicates that ions were 
+scanned only during the second half of the scan interval. For instance, this could occur if 
 the instrument switched between SIM mode and Scan mode during each scan interval, operating 
 in Scan mode only during the second half, which generated the data in question.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`LinearAscending`](@ref), 
-[`ionscantimeshift`](@ref), [`ionscantimes`](@ref), [`ionscantime`](@ref), 
-[`ionscantimeindex`](@ref), [`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), 
-[`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref).
+See also [`AbstractGCMS`](@ref), [`LinearAscending`](@ref), [`ionscantimeshift`](@ref), 
+[`ionscantimes`](@ref), [`ionscantime`](@ref), [`ionscantimeindex`](@ref), [`ions`](@ref), 
+[`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), 
+[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
 
 # Examples
 ```jldoctest
@@ -412,11 +410,11 @@ end
 """
     binions(gcms::AbstractGCMS; ionbin::Function=integerion)
 
-Return a `GCMS` object in which the ions are binned according to the `ionbin` function 
-(default function is `integer`) and the intensities of the binned ions are summed.
+Return a GCMS object in which the ions are binned according to the `ionbin` function (the 
+default is the integer function), and the intensities of the binned ions are summed.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`integer`](@ref), [`intensities`](@ref), 
-[`ions`](@ref), [`ioncount`](@ref).
+See also [`AbstractGCMS`](@ref), [`integer`](@ref), [`intensities`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref).
 
 # Examples
 ```jldoctest
@@ -481,61 +479,405 @@ end
 
 
 """
-    ions(gcms::AbstractGCMS)
+    cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
 
-Return the `ions`.
+Return the angle between two non-zero vectors, which can be considered a measure of the
+similarity (i.e., `cosine` similarity) between the two vectors.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ion`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ionindex`](@ref), [`ioncount`](@ref).
-
-In the following example, the number type of `ions` passed to the object constructor 
-is explicitly annotated to illustrate that the GCMS object preserves the type.
-
-# Example
+# Examples
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+julia> cosine([100, 500, 250], [200, 1000, 0])
+0.8978872704229618
 
-julia> ions(gcms)
+julia> cosine([100, 0, 50], [0, 20, 0])
+0.0
+
+julia> cosine([10, 50, 25], [100, 500, 250])
+1.0
+```
+"""
+function cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
+    length(x) == length(y) || throw(
+        DimensionMismatch("vectors x and y have different lengths"))
+    length(x) == 0 && throw(ArgumentError("vectors x and y are empty"))
+    iszero(x) && throw(ArgumentError("vector x contains only zeros"))
+    iszero(y) && throw(ArgumentError("vector y contains only zeros"))
+    s = sum(x .* y) / (sqrt(sum(x.^2)) * sqrt(sum(y.^2)))
+    0 ≤ s ≤ 1 && return s
+    (s < 0 || isnan(s)) ? zero(typeof(s)) : one(typeof(s))
+end
+## See also [`similarity`](@ref).
+
+
+"""
+    integer(value:::Real; start::Real=0.7) -> Int
+
+Return the `integer` for the given `value` that satisfies the following condition: 
+`integer - 1 + start ≤ value < integer + start`, where `0 ≤ start < 1``.
+
+See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`binions`](@ref), [`ions`](@ref).
+
+# Examples
+```jldoctest
+julia> integer(29.7)
+30
+
+julia> integer(30.0)
+30
+
+julia> integer(30.69)
+30
+
+julia> integer(29.7, start=0.8)
+29
+```
+"""
+function integer(value::Real; start::Real=0.7)
+    0 ≤ start < 1 || throw(ArgumentError(string("fractional digits of binning interval ",
+        "start is outside the interval [0,1) of allowed values: $start")))
+    start == 0 && return trunc(Int, value)
+    trunc(Int, value + (1 - start))
+end
+
+
+"""
+    intensities(chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}) where {T<:Integer, 
+    S<:Integer}
+
+Returns the intensities. The optional keyword argument `scanindexrange` lets you select a 
+subset of scans for which the intensities will be returned. Note that the function will 
+return either a reference to the intensity vector or a view into the intensity vector, 
+depending on whether a subset of scans is selected.
+
+See also [`AbstractGC`](@ref), [`intensity`](@ref), [`minintensity`](@ref), 
+[`maxintensity`](@ref), [`scancount`](@ref).
+
+# Examples
+```jldoctest
+julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
+TIC {scantimes: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensities(tic)  # reference to the data structure
+3-element Vector{Int64}:
+ 123
+ 224
+ 103
+
+julia> intensities(tic)[:]  # independent copy of the values
+3-element Vector{Int64}:
+ 123
+ 224
+ 103
+
+julia> intensities(tic; scanindexrange=2:3)  # view into the data structure
+2-element view(::Vector{Int64}, 2:3) with eltype Int64:
+ 224
+ 103
+
+julia> intensities(tic; scanindexrange=2:3)[:]  # independent copy of the values
 2-element Vector{Int64}:
-  85
- 100
+ 224
+ 103
 ```
 """
-ions(gcms::GCMS) = gcms.ions
+function intensities(
+    chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}=firstindex(scantimes(
+        chrom)):lastindex(scantimes(chrom))) where {T<:Integer, S<:Integer}
+
+    if scanindexrange == firstindex(scantimes(chrom)):lastindex(scantimes(chrom))
+        chrom.intensities
+    else
+        @view chrom.intensities[scanindexrange]
+    end
+end
 
 
 """
-    scantime(chrom::AbstractChromatogram, scanindex::Integer; timeunit::Unitful.TimeUnits, 
-    ustripped::Bool=false)
+    intensities(gcms::AbstractGCMS; scanindexrange::OrdinalRange{T1, S1}, 
+    ionindexrange::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, 
+    S2<:Integer}
 
-Return the scan time by specifying the `scanindex`. The optional parameter `timeunit` 
-allows you to change the unit of the returned `scantime`. All time units defined in the 
-package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`
-) are supported. The optional keyword argument `ustripped` allows you to specify whether 
- the unit is stripped from the returned value.
+Returns the intensities. The optional keyword arguments `scanindexrange` and 
+`ionindexrange` allow you to select specific parts of the intensity matrix to be returned. 
+Note that the function returns either a reference to the matrix or a view into it, 
+depending on whether the keyword arguments specify subranges of the matrix.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref), 
-[`ionscantime`](@ref).
+See also [`AbstractGCMS`](@ref), [`scancount`](@ref), [`ioncount`](@ref), 
+[`minintensity`](@ref), [`maxintensity`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensities(gcms)  # reference to the data structure
+3×2 Matrix{Int64}:
+  0   12
+ 34  956
+ 23    1
+
+julia> intensities(gcms)[:, :]  # copy of the values
+3×2 Matrix{Int64}:
+  0   12
+ 34  956
+ 23    1
+
+julia> intensities(gcms, ionindexrange=1:1)  # all intensities of ion with index 1
+3×1 view(::Matrix{Int64}, 1:3, 1:1) with eltype Int64:
+  0
+ 34
+ 23
+
+julia> intensities(gcms, ionindexrange=1:1)[:]  # copy of the values
+3-element Vector{Int64}:
+  0
+ 34
+ 23
+
+julia> intensities(gcms, scanindexrange=1:1)  # intensities of all ions of scan 1
+1×2 view(::Matrix{Int64}, 1:1, 1:2) with eltype Int64:
+ 0  12
+
+julia> intensities(gcms, scanindexrange=1:1)[:]  # copy of the values
+2-element Vector{Int64}:
+  0
+ 12
+
+julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)
+2×2 view(::Matrix{Int64}, 1:2, 1:2) with eltype Int64:
+  0   12
+ 34  956
+
+julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)[:, :]
+2×2 Matrix{Int64}:
+  0   12
+ 34  956
+```
+"""
+function intensities(
+    gcms::AbstractGCMS;
+    scanindexrange::OrdinalRange{T1, S1}=firstindex(scantimes(gcms)):lastindex(scantimes(gcms)), 
+    ionindexrange::OrdinalRange{T2, S2}=firstindex(ions(gcms)):lastindex(ions(gcms))
+    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
+
+    if (scanindexrange == firstindex(scantimes(gcms)):lastindex(scantimes(gcms)) 
+        && ionindexrange == firstindex(ions(gcms)):lastindex(ions(gcms)))
+        gcms.intensities
+    else
+        @view intensities(gcms)[scanindexrange, ionindexrange]
+    end
+end
+
+
+"""
+    intensity(chrom::AbstractGC, scanindex::Integer)
+
+Return the intensity for a scan by specifying its `scanindex`.
+
+See also [`AbstractGC`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
+[`maxintensity`](@ref).
+
+# Examples
+```jldoctest
+julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
+TIC {scantimes: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensity(tic, 1)
+123
+
+julia> intensity(tic, 2)
+224
+```
+"""
+intensity(chrom::AbstractGC, scanindex::Integer) = intensities(chrom)[scanindex]
+
+
+"""
+    intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
+
+Return the intensity at a given `time`. All time units defined in the package
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. By default, the intensity associated with the scan whose timestamp is closest 
+to the given `time` is returned. In case of a tie, the intensity of the scan with the 
+later timestamp is used. If the optional parameter `precisetime` is set to true, the 
+specified `time` must exactly match a timestamp in the vector; otherwise, an error is 
+thrown.
+
+See also [`AbstractGC`](@ref), [`intensities`](@ref), [`scantimes`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
+
+# Examples
+```jldoctest
+julia> tic = TIC([1.0, 2.0, 3.0]u"s", [123, 224, 103])
+TIC {scantimes: Float64, intensities: Int64}
+3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> intensity(tic, 1.5u"s")
+224
+
+julia> intensity(tic, 1u"s", precisetime=true)
+123
+
+julia> intensity(tic, 1.5u"s", precisetime=true)
+ERROR: ArgumentError: scantime 1.5 s does not exist
+[...]
+```
+"""
+function intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
+    intensity(chrom, scantimeindex(chrom, time, precisetime=precisetime))
+end
+
+
+"""
+    intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
+
+Return the intensity of an ion in a scan, given the `scanindex` of the scan and the 
+`ionindex` of the ion.
+
+See also [`AbstractGCMS`](@ref), [`scancount`](@ref), [`ions`](@ref), [`ioncount`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1 s, 2 s, 3 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensity(gcms, 2, 1)
+34
+
+julia> intensity(gcms, 1, 2)
+12
+```
+"""
+intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer) = intensities(
+    gcms)[scanindex, ionindex]
+
+
+"""
+    intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; precisetime::Bool=false)
+
+Return the intensity of an `ion` at a given `time`. All time units defined in the package
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. By default, the intensity associated with the scan whose timestamp is closest 
+to the given `time` is returned. In case of a tie, the intensity of the scan with the 
+later timestamp is used. If the optional parameter `precisetime` is set to true, the 
+specified `time` must exactly match a timestamp in the vector; otherwise, an error is 
+thrown.
+
+See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`ions`](@ref), [`scantimes`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> intensity(gcms, 1.9u"s", 85)
+34
+
+julia> intensity(gcms, 2.9u"s", 85, precisetime=true)
+ERROR: ArgumentError: scantime 2.9 s does not exist
+[...]
+
+julia> intensity(gcms, 3u"s", 85, precisetime=true)
+23
+```
+"""
+function intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; 
+    precisetime::Bool=false)
+    intensity(gcms, scantimeindex(gcms, time; precisetime=precisetime), 
+        ionindex(gcms, ion))
+end
+
+
+"""
+    ion(gcms::AbstractGCMS, ionindex::Integer)
+
+Return the ion at the specified `ionindex`.
+
+See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS((1:3)u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> ion(gcms, 1)
+85
+
+julia> ion(gcms, 2)
+100
+
+julia> ion(gcms, 3)
+ERROR: BoundsError: attempt to access 2-element Vector{Int64} at index [3]
+[...]
+```
+"""
+ion(gcms::AbstractGCMS, ionindex::Integer) = ions(gcms)[ionindex]
+
+
+"""
+    ioncount(gcms::AbstractGCMS) -> Int
+
+Return the number of ions.
+
+See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ion`](@ref), [`minion`](@ref), 
+[`maxion`](@ref).
 
 # Example
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
 
-julia> scantime(gcms, 2)
-2 s
-
-julia> scantime(gcms, 2, timeunit=u"minute")
-1//30 minute
-
-julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
-1//30
+julia> ioncount(gcms)
+2
 ```
 """
-function scantime(chrom::AbstractChromatogram, scanindex::Integer; 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    ustripped ? ustrip(timeunit, scantimes(chrom)[scanindex]) : uconvert(timeunit, 
-    scantimes(chrom)[scanindex])
+ioncount(gcms::AbstractGCMS) = length(ions(gcms))
+
+
+"""
+    ionindex(gcms::AbstractGCMS, ion::Real) -> Int
+
+Return the index of the specified `ion`. An error is thrown if the `ion` does not exist.
+
+See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ioncount`](@ref), [`ion`](@ref), 
+[`minion`](@ref), [`maxion`](@ref), [`ionscantime`](@ref), [`ionscantimeshift`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS((1:3)u"s", [85.2f0, 100.1f0], [0 12; 34 956; 23 1]);
+
+julia> ionindex(gcms, 100.1)
+2
+
+julia> ionindex(gcms, 201.1)
+ERROR: ArgumentError: ion 201.1 does not exist
+[...]
+```
+"""
+function ionindex(gcms::AbstractGCMS, ion::Real)
+    for (index, element) in enumerate(ions(gcms))
+        element ≈ ion && return index
+    end
+    throw(ArgumentError("ion $ion does not exist"))
 end
 
 
@@ -543,20 +885,20 @@ end
     ionscantime(δtᵢ::Function, gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer; 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Return the time at which an ion was actually scanned, given the `scanindex`, the `ionindex` 
+Return the time at which an ion was actually scanned, given the `scanindex`, `ionindex`, 
 and a function `δtᵢ` that computes the time difference between the timestamp of a scan and 
-the scantime of the ion from the `ionindex`. The optional parameter `timeunit` allows you 
-to change the unit of the returned scantime. All time units defined in the package 
+the scan time of the ion from the `ionindex`. The optional parameter `timeunit` allows you 
+to specify the unit of the returned scan time. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned value. Note that the timestamp of a scan is assumed to be the 
-time at which scanning of the ion intensities associated with that scan was complete.
+supported. The optional keyword argument `ustripped` lets you choose whether the unit is 
+included in the returned value. Note that the timestamp of a scan is assumed to be the time 
+when the scanning of ion intensities associated with that scan was completed.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref),
+See also [`AbstractGCMS`](@ref), [`scantimes`](@ref), [`scantime`](@ref), 
 [`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`ionscantimeshift`](@ref), 
 [`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref).
 
-# Example
+# Examples
 ```julia-repl
 julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
 GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
@@ -594,18 +936,18 @@ end
 
 Return the index of the scan where the scan time for the ion is closest to the specified 
 `time`, given the `ionindex` and a function `δtᵢ` that computes the time difference between 
-the timestamp of a scan and the scantime of the ion from the `ionindex`. All time units 
+the timestamp of a scan and the scan time of the ion from the `ionindex`. All time units 
 defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
-`u"s"`, `u"minute"`) are supported. If there is a tie, the larger `scanindex` is returned. 
-If the optional parameter `precisetime` is set to `true`, the ion must have been scanned 
-exactly at the specified time, otherwise an error is thrown.
+`u"s"`, `u"minute"`) are supported. In case of a tie, the larger scan index is returned. 
+If the optional parameter `precisetime` is set to true, the ion must have been scanned 
+exactly at the specified `time`; otherwise, an error is thrown.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`scantimeindex`](@ref), 
-[`ionscantime`](@ref), [`ionscantimeshift`](@ref), [`IonScanOrder`](@ref), 
-[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`scantimes`](@ref), 
-[`scantime`](@ref), [`ions`](@ref), [`ion`](@ref), [`ionindex`](@ref).
+See also [`AbstractGCMS`](@ref), [`scantimeindex`](@ref), [`ionscantime`](@ref), 
+[`ionscantimeshift`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
+[`LinearDescending`](@ref), [`scantimes`](@ref), [`scantime`](@ref), [`ions`](@ref), 
+[`ion`](@ref), [`ionindex`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
 GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
@@ -655,21 +997,19 @@ end
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Return the times at which an ion was actually scanned, given the `ionindex` and a function 
-`δtᵢ` that computes the time difference between the timestamp of a scan and the scantime of 
-the ion from the `ionindex`. The optional parameter `timeunit` allows you to change the 
-unit of the returned scantimes. All time units defined in the package 
+`δtᵢ` that computes the time difference between the timestamp of a scan and the scan time 
+of the ion from the `ionindex`. The optional parameter `timeunit` allows you to specify the 
+unit for the returned scan times. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the 
-unit is stripped from the returned value. Note that the timestamp of a scan is assumed to 
-be the time at which scanning of the ion intensities associated with that scan was 
-complete.
+supported. The optional keyword argument `ustripped` lets you choose whether to include the 
+unit in the returned value. Note that the timestamp of a scan is assumed to be the time 
+when the scanning of ion intensities associated with that scan was completed.
 
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ionscantime`](@ref), 
-[`ionscantimeshift`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
-[`LinearDescending`](@ref), [`scantimes`](@ref), [`scantimeindex`](@ref), 
-[`ions`](@ref), [`ionindex`](@ref).
+See also [`AbstractGCMS`](@ref), [`ionscantime`](@ref), [`ionscantimeshift`](@ref), 
+[`IonScanOrder`](@ref), [`LinearAscending`](@ref), [`LinearDescending`](@ref), 
+[`scantimes`](@ref), [`scantimeindex`](@ref), [`ions`](@ref), [`ionindex`](@ref).
 
-# Example
+# Examples
 ```julia-repl
 julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
 GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
@@ -712,22 +1052,534 @@ function ionscantimes(δtᵢ::Function, gcms::AbstractGCMS, ionindex::Integer;
 end
 
 
+function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS, error::Real)
+    intervalsize = scanduration(gcms, error=error)
+    index::Integer -> begin
+        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
+            BoundsError(ions(gcms), index))
+        intervalsize * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
+            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
+    end
+end
+
+
+function ionscantimeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS, error::Real)
+    intervalsize = scanduration(gcms, error=error)
+    index::Integer -> begin
+        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
+            BoundsError(ions(gcms), index))
+        intervalsize * ((ionscanorder.stop - 1) + ((1 - index) 
+            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
+    end
+end
+
+
+"""
+    ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder; error::Real=0.001)
+
+Return a function, based on the `ionscanorder`, that calculates the time difference between 
+the timestamp of a scan and the time when an ion was actually scanned, given the ion index 
+as an argument. The time difference will be zero or negative, since the timestamp of a scan 
+is considered to be when the scanning of the last ion was completed. The returned function 
+assumes that the duration of each scan is consistent throughout the run. The optional 
+keyword argument `error` lets you specify the maximum allowed deviation of the scan 
+duration, as a fraction of the average scan time, between the timestamps of two consecutive 
+scans.
+
+See also [`AbstractGCMS`](@ref), [`IonScanOrder`](@ref), [`LinearAscending`](@ref), 
+[`LinearDescending`](@ref), [`ionscantime`](@ref), [`ions`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ioncount`](@ref), [`scanduration`](@ref), [`scantimes`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref).
+
+# Examples
+```julia-repl
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
+GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
+3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> δtᵢ = ionscantimeshift(gcms, LinearAscending());
+
+julia> δtᵢ(1)
+-0.5 s
+
+julia> δtᵢ(2)
+0.0 s
+
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
+
+julia> δtᵢ(1)
+0.0 s
+
+julia> δtᵢ(2)
+-0.5 s
+
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.5));
+
+julia> δtᵢ(1)
+0.0 s
+
+julia> δtᵢ(2)
+-0.25 s
+
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(stop=0.5));
+
+julia> δtᵢ(1)
+-0.5 s
+
+julia> δtᵢ(2)
+-0.75 s
+
+julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.25, stop=0.75));
+
+julia> δtᵢ(1)
+-0.25 s
+
+julia> δtᵢ(2)
+-0.5 s
+```
+"""
+ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder, error::Real=0.001
+    ) = ionscantimeshift(ionscanorder, gcms, error)
+
+
+"""
+    ions(gcms::AbstractGCMS)
+
+Return the ions.
+
+See also [`AbstractGCMS`](@ref), [`ioncount`](@ref), [`ion`](@ref), [`minion`](@ref), 
+[`maxion`](@ref), [`ionindex`](@ref), [`ionscantime`](@ref), [`ionscantimeshift`](@ref). 
+
+In the following examples, the type of `ions` is explicitely annotated to demonstrate that 
+the GCMS object preserves this type.
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
+
+julia> ions(gcms)
+2-element Vector{Int64}:
+  85
+ 100
+
+julia> gcms = GCMS([1, 2, 3]u"s", Float32[85, 100], [0 12; 34 956; 23 1]);
+
+julia> ions(gcms)
+2-element Vector{Float32}:
+  85.0
+ 100.0
+```
+"""
+ions(gcms::GCMS) = gcms.ions
+
+
+"""
+    maxintensity(chrom::AbstractChromatogram)
+
+Return the maximum intensity.
+
+See also [`AbstractChromatogram`](@ref), [`minintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> maxintensity(gcms)
+956
+```
+"""
+maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
+
+
+"""
+    maxion(gcms::AbstractGCMS)
+
+Return the largest ion.
+
+See also [`AbstractGCMS`](@ref), [`minion`](@ref), [`ions`](@ref), [`ion`](@ref), 
+[`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> maxion(gcms)
+100
+```
+"""
+maxion(gcms::AbstractGCMS) = last(ions(gcms))
+
+
+"""
+    maxscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
+    <:Integer}]; timeunit::Unitful.TimeUnits, ustripped::Bool)
+
+Returns the maximum scan time. The optional second positional argument allows you to 
+specify the scan range for which the maximum scan time is returned. The optional keyword 
+argument `timeunit` lets you change the unit of the returned scantime. All time units 
+defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
+u"s", u"minute") are supported. The optional keyword argument `ustripped` lets you choose 
+whether to include the unit in the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`minscantime`](@ref), [`scantimes`](@ref), 
+[`scantime`](@ref),[`scancount`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> maxscantime(gcms)
+3.0 s
+
+julia> maxscantime(gcms, timeunit=u"minute")
+0.05 minute
+
+julia> maxscantime(gcms, timeunit=u"minute", ustripped=true)
+0.05
+
+julia> maxscantime(gcms, 1:2)
+2.0 s
+
+julia> maxscantime(gcms, 1:2, timeunit=u"minute", ustripped=true)
+0.03333333333333333
+```
+"""
+function maxscantime(chrom::AbstractChromatogram,
+    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
+        scantimes(chrom))); 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
+    ustripped::Bool=false
+    ) where {T<:Integer, S<:Integer}
+
+    t = last(@view scantimes(chrom)[scanindexrange])
+    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
+end
+
+
+"""
+    metadata(chrom::AbstractChromatogram) -> Dict{Any, Any}
+
+Return the metadata.
+
+See also [`AbstractChromatogram`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms₁ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956], Dict(:id => 4))
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; scantimes: 1 s, 2 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 1 entry
+
+julia> metadata(gcms₁)
+Dict{Any, Any} with 1 entry:
+  :id => 4
+
+julia> gcms₂ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956])
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; scantimes: 1 s, 2 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 0 entries
+
+julia> metadata(gcms₂)
+Dict{Any, Any}()
+
+julia> metadata(gcms₂)["name"] = "sample"
+"sample"
+
+julia> metadata(gcms₂)[:id] = 123
+123
+
+julia> metadata(gcms₂)
+Dict{Any, Any} with 2 entries:
+  "name" => "sample"
+  :id    => 123
+
+julia> gcms₂
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; scantimes: 1 s, 2 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 2 entries
+
+julia> delete!(metadata(gcms₂), "name")
+Dict{Any, Any} with 1 entry:
+  :id => 123
+
+julia> gcms₂
+GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
+2 scans; scantimes: 1 s, 2 s
+2 ions: m/z 85, 100
+intensity range: 0 - 956
+metadata: 1 entry
+```
+"""
+metadata(chrom::AbstractChromatogram) = chrom.metadata
+
+
+"""
+    minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
+
+Returns the minimum intensity. The optional argument `greaterthan` allows you to specify 
+a value; the returned minimum intensity will be greater than this value. If no intensity 
+above the specified value is found, nothing is returned.
+
+See also [`AbstractChromatogram`](@ref), [`maxintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> minintensity(gcms)
+0
+
+julia> minintensity(gcms, 0)
+1
+
+julia> minintensity(gcms, 1000)
+
+```
+"""
+minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
+
+function minintensity(chrom::AbstractChromatogram, greaterthan::Real)
+    filtered_intensities = filter(num -> num > greaterthan, intensities(chrom))
+    length(filtered_intensities) > 0 ? minimum(filtered_intensities) : nothing
+end
+
+
+"""
+    minion(gcms::AbstractGCMS)
+
+Return the smallest ion.
+
+See also [`AbstractGCMS`](@ref), [`maxion`](@ref), [`ions`](@ref), [`ion`](@ref), 
+[`ioncount`](@ref).
+
+# Example
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> minion(gcms)
+85
+```
+
+"""
+minion(gcms::AbstractGCMS) = first(ions(gcms))
+
+
+"""
+    minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
+    <:Integer}}]; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+
+Returns the minimum scan time. The optional second positional argument allows you to 
+specify a scan range for which the minimum scan time is returned. The optional keyword 
+argument `timeunit` lets you change the unit of the returned scantime. All time units 
+defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
+`u"s"`, `u"minute"`) are supported. The optional keyword argument `ustripped` lets you 
+choose whether to include the unit in the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`maxscantime`](@ref), [`scantimes`](@ref), 
+[`scantime`](@ref), [`scancount`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> minscantime(gcms)
+1.0 s
+
+julia> minscantime(gcms, timeunit=u"minute")
+0.016666666666666666 minute
+
+julia> minscantime(gcms, timeunit=u"minute", ustripped=true)
+0.016666666666666666
+
+julia> minscantime(gcms, 2:3)
+2.0 s
+
+julia> minscantime(gcms, 2:3, timeunit=u"minute", ustripped=true)
+0.03333333333333333
+```
+"""
+function minscantime(chrom::AbstractChromatogram, 
+    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
+        scantimes(chrom)));
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
+    ustripped::Bool=false
+    ) where {T<:Integer, S<:Integer}
+
+    t = first(@view scantimes(chrom)[scanindexrange])
+    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
+end
+
+
+"""
+    runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool=false)
+
+Return the duration of the run. The optional keyword argument `timeunit` lets you specify 
+the unit for the returned time interval. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` lets you choose whether to include 
+the unit in the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref).
+
+# Examples
+```jldoctest
+julia> fid = FID([30.1u"minute", 40.8u"minute", 51.5u"minute"], [12, 956, 23])
+FID {scantimes: Float64, intensities: Int64}
+3 scans; scantimes: 30.1 minute, 40.8 minute, 51.5 minute
+intensity range: 12 - 956
+metadata: 0 entries
+
+julia> runduration(fid)
+21.4 minute
+
+julia> runduration(fid, timeunit=u"s")
+1284.0 s
+
+julia> runduration(fid, timeunit=u"s", ustripped=true)
+1284.0
+```
+"""
+function runduration(chrom::AbstractChromatogram; 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    Δt = maxscantime(chrom) - minscantime(chrom)
+    ustripped ? ustrip(timeunit, Δt) : uconvert(timeunit, Δt)
+end
+
+
+"""
+    scancount(chrom::AbstractChromatogram) -> Int
+
+Return the number of scans.
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref).
+
+# Example
+```jldoctest
+julia> fid = FID([1, 2, 3]u"s", [12, 956, 23]);
+
+julia> scancount(fid)
+3
+```
+"""
+scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
+
+
+"""
+    scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
+    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
+
+Calculates the periodicity with which the scans were recorded over time. The optional 
+keyword argument `error` allows you to specify the maximum allowable deviation of the 
+time interval between consecutive scans from the average scan time, as a fraction of 
+the average scan time. The optional keyword argument `timeunit` lets you specify the unit 
+for the returned value. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` lets you choose whether the unit is 
+include in the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref), [`runduration`](@ref).
+
+# Examples
+```jldoctest
+julia> fid = FID([1.0, 2.0, 3.0]u"s", [12, 956, 1]);
+
+julia> scanduration(fid)
+1.0 s
+
+julia> scanduration(fid, timeunit=u"minute")
+0.016666666666666666 minute
+
+julia> scanduration(fid, timeunit=u"minute", ustripped=true)
+0.016666666666666666
+
+julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]))
+ERROR: ArgumentError: maximum scan duration variation above threshold: 0.010000000000000009 > 0.001
+[...]
+
+julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]), error=0.02)
+1.0 s
+```
+"""
+function scanduration(chrom::AbstractChromatogram; error::Real=0.001,
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    scancount(chrom) > 1 || throw(
+        ArgumentError("cannot calculate the scan duration from a single scan"))
+    Δts = Set{eltype(scantimes(chrom))}()
+    first = true
+    for i in eachindex(scantimes(chrom))
+        first && (first = false; continue)
+        push!(Δts, scantime(chrom, i) - scantime(chrom, i - 1))
+    end
+    mean = runduration(chrom) / (scancount(chrom) - 1)
+    error_obs = max(abs(maximum(Δts) - mean), abs(minimum(Δts) - mean)) / mean
+    error_obs > error && throw(ArgumentError(string("maximum scan duration ", 
+        "variation above threshold: $error_obs > $error")))
+    ustripped ? ustrip.(timeunit, mean) : uconvert.(timeunit, mean)
+end
+
+
+"""
+    scantime(chrom::AbstractChromatogram, scanindex::Integer; timeunit::Unitful.TimeUnits, 
+    ustripped::Bool=false)
+
+Returns the scan time for a given `scanindex`. The optional parameter `timeunit` lets you 
+specify the unit for the returned scan time. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `ustripped` lets you choose whether the unit is 
+included in the returned value.
+
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref), [`ionscantime`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+
+julia> scantime(gcms, 2)
+2 s
+
+julia> scantime(gcms, 2, timeunit=u"minute")
+1//30 minute
+
+julia> scantime(gcms, 2, timeunit=u"minute", ustripped=true)
+1//30
+```
+"""
+function scantime(chrom::AbstractChromatogram, scanindex::Integer; 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
+    ustripped ? ustrip(timeunit, scantimes(chrom)[scanindex]) : uconvert(timeunit, 
+    scantimes(chrom)[scanindex])
+end
+
+
 """
     scantimeindex(gcms::AbstractChromatogram, time::Unitful.Time; 
     precisetime::Bool=false) -> Int
 
-Return the index of the `scantime` closest to `time` in the `scantimes`. 
-All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl)
-(e.g., `u"s"`, `u"minute"`) are supported. If there is a tie, the larger `scantime` is 
-returned. If the optional parameter `precisetime` is set to `true`, the specified time 
-must exist in the `scantimes`, otherwise an error is thrown.
+Return the index of the scan time closest to `time` in the scan times. All time units 
+defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., 
+`u"s"`, `u"minute"`) are supported. In case of a tie, the larger scantime is returned. If 
+the optional parameter `precisetime` is set to true, the specified time must exactly match 
+a scan time value; otherwise, an error is thrown.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantimes`](@ref), [`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), 
-[`scancount`](@ref), [`ionindex`](@ref).
+See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`scantime`](@ref), 
+[`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref), [`ionindex`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> gcms = GCMS([1.1f0, 2.1f0, 3.1f0]u"s", [85, 100], [0 12; 34 956; 23 1])
 GCMS {scantimes: Float32, ions: Int64, intensities: Int64}
@@ -765,20 +1617,19 @@ end
     scantimes(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
     <:Integer}]; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
-Return the scan times. The optional second position argument allows you to specify a scan 
-index range. The optional keyword argument `timeunit` allows you to change the unit of the 
-returned scan times. All time units defined in the package 
+Return the scan times. The optional second positional argument allows you to specify a 
+range of scan indices. The optional keyword argument `timeunit` lets you change the unit of 
+the returned scan times. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned values. Note: If no time unit conversion takes place and 
-the time unit is not stripped, the function returns a reference to/view into the data 
-structure.
+supported. The optional keyword argument `ustripped` lets you choose whether to include the 
+unit in the returned values. Note: If no time unit conversion is applied and the unit is 
+not stripped, the function returns a reference to or a view into the data structure.
 
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantime`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref), [`scancount`](@ref).
+See also [`AbstractChromatogram`](@ref), [`scantime`](@ref), [`minscantime`](@ref), 
+[`maxscantime`](@ref), [`scancount`](@ref).
 
-In the following example, the element type of the `scantimes` vector passed to the object 
-constructor is explicitly annotated to illustrate that the GCMS object preserves the type.
+In the following example, the type of `scantimes` is explicitely annotated to demonstrate 
+that the `GCMS` object preserves this type.
 
 # Example
 ```jldoctest
@@ -850,710 +1701,14 @@ end
 
 
 """
-    intensities(chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}) where {T<:Integer, 
-    S<:Integer}
-
-Return the intensities. The optional keyword argument `scanindexrange` allows you to select 
-a subset of scans for which intensities are to be returned. Note that the function returns 
-a reference to the intensity vector or a view into the intensity vector, depending on 
-whether the keyword argument selects a subset of scans.
-
-See also [`AbstractGC`](@ref), [`FID`](@ref), [`TIC`](@ref), [`intensity`](@ref), 
-[`minintensity`](@ref), [`maxintensity`](@ref).
-
-# Example
-```jldoctest
-julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
-TIC {scantimes: Int64, intensities: Int64}
-3 scans; scantimes: 1 s, 2 s, 3 s
-intensity range: 103 - 224
-metadata: 0 entries
-
-julia> intensities(tic)  # reference to the data structure
-3-element Vector{Int64}:
- 123
- 224
- 103
-
-julia> intensities(tic)[:]  # independent copy of the values
-3-element Vector{Int64}:
- 123
- 224
- 103
-
-julia> intensities(tic; scanindexrange=2:3)  # view into the data structure
-2-element view(::Vector{Int64}, 2:3) with eltype Int64:
- 224
- 103
-
-julia> intensities(tic; scanindexrange=2:3)[:]  # independent copy of the values
-2-element Vector{Int64}:
- 224
- 103
-```
-"""
-function intensities(
-    chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}=firstindex(scantimes(
-        chrom)):lastindex(scantimes(chrom))) where {T<:Integer, S<:Integer}
-
-    if scanindexrange == firstindex(scantimes(chrom)):lastindex(scantimes(chrom))
-        chrom.intensities
-    else
-        @view chrom.intensities[scanindexrange]
-    end
-end
-
-
-"""
-    intensities(gcms::AbstractGCMS; scanindexrange::OrdinalRange{T1, S1}, 
-    ionindexrange::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, 
-    S2<:Integer}
-
-Return the intensities. The optional keyword arguments `scanindexrange` and 
-`ionindexrange` allow you to select specific parts of the intensity matrix to be returned. 
-Note that the function returns a reference to the matrix or a view into the matrix 
-depending on whether the keyword arguments select subranges of the matrix.
-
-See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
-[`maxintensity`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-3 scans; scantimes: 1 s, 2 s, 3 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> intensities(gcms)  # reference to the data structure
-3×2 Matrix{Int64}:
-  0   12
- 34  956
- 23    1
-
-julia> intensities(gcms)[:, :]  # independent copy of the values
-3×2 Matrix{Int64}:
-  0   12
- 34  956
- 23    1
-
-julia> intensities(gcms, ionindexrange=1:1)  # all intensities of ion with index 1
-3×1 view(::Matrix{Int64}, 1:3, 1:1) with eltype Int64:
-  0
- 34
- 23
-
-julia> intensities(gcms, ionindexrange=1:1)[:]  # independent copy of the values
-3-element Vector{Int64}:
-  0
- 34
- 23
-
-julia> intensities(gcms, scanindexrange=1:1)  # intensities of all ions of scan 1
-1×2 view(::Matrix{Int64}, 1:1, 1:2) with eltype Int64:
- 0  12
-
-julia> intensities(gcms, scanindexrange=1:1)[:]  # independent copy of the values
-2-element Vector{Int64}:
-  0
- 12
-
-julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)
-2×2 view(::Matrix{Int64}, 1:2, 1:2) with eltype Int64:
-  0   12
- 34  956
-
-julia> intensities(gcms, scanindexrange=1:2, ionindexrange=1:2)[:, :]
-2×2 Matrix{Int64}:
-  0   12
- 34  956
-```
-"""
-function intensities(
-    gcms::AbstractGCMS;
-    scanindexrange::OrdinalRange{T1, S1}=firstindex(scantimes(gcms)):lastindex(scantimes(gcms)), 
-    ionindexrange::OrdinalRange{T2, S2}=firstindex(ions(gcms)):lastindex(ions(gcms))
-    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
-
-    if (scanindexrange == firstindex(scantimes(gcms)):lastindex(scantimes(gcms)) 
-        && ionindexrange == firstindex(ions(gcms)):lastindex(ions(gcms)))
-        gcms.intensities
-    else
-        @view intensities(gcms)[scanindexrange, ionindexrange]
-    end
-end
-
-
-"""
-    intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer)
-
-Return the intensity of an ion in a scan given the `scanindex` of the scan and the 
-`ionindex` of the ion.
-
-See also [`AbstractGCMS`](@ref), [`intensities`](@ref), [`minintensity`](@ref), 
-[`maxintensity`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-3 scans; scantimes: 1 s, 2 s, 3 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> intensity(gcms, 2, 1)
-34
-```
-"""
-intensity(gcms::AbstractGCMS, scanindex::Integer, ionindex::Integer) = intensities(
-    gcms)[scanindex, ionindex]
-
-
-"""
-    intensity(chrom::AbstractGC, scanindex::Integer)
-
-Return the intensity of a scan by specifying its `scanindex`.
-
-See also [`AbstractGC`](@ref), [`intensities`](@ref), [`scantimeindex`](@ref).
-
-# Example
-```jldoctest
-julia> tic = TIC([1, 2, 3]u"s", [123, 224, 103])
-TIC {scantimes: Int64, intensities: Int64}
-3 scans; scantimes: 1 s, 2 s, 3 s
-intensity range: 103 - 224
-metadata: 0 entries
-
-julia> intensity(tic, 2)
-224
-```
-"""
-intensity(chrom::AbstractGC, scanindex::Integer) = intensities(chrom)[scanindex]
-
-
-"""
-    intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
-
-Return the intensity at a given `time`. All time units defined in the package
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. By default, the intensity associated with the scan whose timestamp is closest 
-to the given `time` is returned. If there is a tie, the intensity of the scan with the 
-later scan time is used. If the optional parameter `precisetime` is set to `true`, the 
-specified `time` must exist in the vector, otherwise an error is thrown.
-
-See also [`AbstractGC`](@ref), [`intensities`](@ref), [`scantimeindex`](@ref).
-
-# Example
-```jldoctest
-julia> tic = TIC([1.0, 2.0, 3.0]u"s", [123, 224, 103])
-TIC {scantimes: Float64, intensities: Int64}
-3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
-intensity range: 103 - 224
-metadata: 0 entries
-
-julia> intensity(tic, 1.5u"s")
-224
-
-julia> intensity(tic, 1u"s", precisetime=true)
-123
-
-julia> intensity(tic, 1.5u"s", precisetime=true)
-ERROR: ArgumentError: scantime 1.5 s does not exist
-[...]
-```
-"""
-function intensity(chrom::AbstractGC, time::Unitful.Time; precisetime::Bool=false)
-    intensity(chrom, scantimeindex(chrom, time, precisetime=precisetime))
-end
-
-
-"""
-    intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; precisetime::Bool=false)
-
-Return the intensity of an `ion` at a given `time`. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. By default, the intensity associated with the scan whose timestamp is closest 
-to the given `time` is returned. If there is a tie, the intensity of the scan with the 
-later scan time is used. If the optional parameter `precisetime` is set to `true`, the 
-specified `time` must exist in the vector, otherwise an error is thrown.
-
-See also [`AbstractGCMS`](@ref), [`scantimeindex`](@ref), [`scancount`](@ref), 
-[`ionindex`](@ref), [`ions`](@ref), [`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
-GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
-3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> intensity(gcms, 1.9u"s", 85)
-34
-
-julia> intensity(gcms, 2.9u"s", 85, precisetime=true)
-ERROR: ArgumentError: scantime 2.9 s does not exist
-[...]
-
-julia> intensity(gcms, 3u"s", 85, precisetime=true)
-23
-```
-"""
-function intensity(gcms::AbstractGCMS, time::Unitful.Time, ion::Real; 
-    precisetime::Bool=false)
-    intensity(gcms, scantimeindex(gcms, time; precisetime=precisetime), 
-        ionindex(gcms, ion))
-end
-
-
-"""
-    metadata(chrom::AbstractChromatogram) -> Dict{Any, Any}
-
-Return the `metadata`.
-
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref).
-
-# Example
-```jldoctest
-julia> gcms₁ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956], Dict(:id => 4))
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-2 scans; scantimes: 1 s, 2 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 1 entry
-
-julia> metadata(gcms₁)
-Dict{Any, Any} with 1 entry:
-  :id => 4
-
-julia> gcms₂ = GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956])
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-2 scans; scantimes: 1 s, 2 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> metadata(gcms₂)
-Dict{Any, Any}()
-
-julia> metadata(gcms₂)["name"] = "sample"
-"sample"
-
-julia> metadata(gcms₂)[:id] = 123
-123
-
-julia> metadata(gcms₂)
-Dict{Any, Any} with 2 entries:
-  "name" => "sample"
-  :id    => 123
-
-julia> gcms₂
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-2 scans; scantimes: 1 s, 2 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 2 entries
-
-julia> delete!(metadata(gcms₂), "name")
-Dict{Any, Any} with 1 entry:
-  :id => 123
-
-julia> gcms₂
-GCMS {scantimes: Int64, ions: Int64, intensities: Int64}
-2 scans; scantimes: 1 s, 2 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 1 entry
-```
-"""
-metadata(chrom::AbstractChromatogram) = chrom.metadata
-
-
-"""
-    scancount(chrom::AbstractChromatogram) -> Int
-
-Return the number of scans.
-
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
-
-# Example
-```jldoctest
-julia> fid = FID([1, 2, 3]u"s", [12, 956, 23]);
-
-julia> scancount(fid)
-3
-```
-"""
-scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
-
-
-"""
-    minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
-    <:Integer}}]; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
-
-Return the minimum scan time. The optional second position argument allows you to specify 
-the scan range for which the minimum scan time is returned. The optional keyword argument 
-`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
-in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
-`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
-whether the unit is stripped from the returned value.
-
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`maxscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> minscantime(gcms)
-1.0 s
-
-julia> minscantime(gcms, timeunit=u"minute")
-0.016666666666666666 minute
-
-julia> minscantime(gcms, timeunit=u"minute", ustripped=true)
-0.016666666666666666
-
-julia> minscantime(gcms, 2:3)
-2.0 s
-
-julia> minscantime(gcms, 2:3, timeunit=u"minute", ustripped=true)
-0.03333333333333333
-```
-"""
-function minscantime(chrom::AbstractChromatogram, 
-    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
-        scantimes(chrom)));
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
-    ustripped::Bool=false
-    ) where {T<:Integer, S<:Integer}
-
-    t = first(@view scantimes(chrom)[scanindexrange])
-    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
-end
-
-
-"""
-    maxscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{<:Integer, 
-    <:Integer}]; timeunit::Unitful.TimeUnits, ustripped::Bool)
-
-Return the maximum scan time. The optional second position argument allows you to specify 
-the scan range for which the maximum scan time is returned. The optional keyword argument 
-`timeunit` allows you to change the unit of the returned `scantime`. All time units defined 
-in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
-`u"minute"`) are supported. The optional keyword argument `ustripped` allows you to specify 
-whether the unit is stripped from the returned value.
-
-See also [`AbstractChromatogram`](@ref), [`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), 
-[`minscantime`](@ref), [`scantimes`](@ref), [`scancount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> maxscantime(gcms)
-3.0 s
-
-julia> maxscantime(gcms, timeunit=u"minute")
-0.05 minute
-
-julia> maxscantime(gcms, timeunit=u"minute", ustripped=true)
-0.05
-
-julia> maxscantime(gcms, 1:2)
-2.0 s
-
-julia> maxscantime(gcms, 1:2, timeunit=u"minute", ustripped=true)
-0.03333333333333333
-```
-"""
-function maxscantime(chrom::AbstractChromatogram,
-    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
-        scantimes(chrom))); 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), 
-    ustripped::Bool=false
-    ) where {T<:Integer, S<:Integer}
-
-    t = last(@view scantimes(chrom)[scanindexrange])
-    ustripped ? ustrip(timeunit, t) : uconvert(timeunit, t)
-end
-
-
-"""
-    ion(gcms::AbstractGCMS, ionindex::Integer)
-
-Return the `ion` at the specified `ionindex`.
-
-See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ionindex`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS((1:3)u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> ion(gcms, 1)
-85
-
-julia> ion(gcms, 2)
-100
-
-julia> ion(gcms, 3)
-ERROR: BoundsError: attempt to access 2-element Vector{Int64} at index [3]
-[...]
-```
-"""
-ion(gcms::AbstractGCMS, ionindex::Integer) = ions(gcms)[ionindex]
-
-
-"""
-    ioncount(gcms::AbstractGCMS) -> Int
-
-Return the number of `ions`.
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`ions`](@ref), [`ion`](@ref), 
-[`minion`](@ref), [`maxion`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> ioncount(gcms)
-2
-```
-"""
-ioncount(gcms::AbstractGCMS) = length(ions(gcms))
-
-
-"""
-    ionindex(gcms::AbstractGCMS, ion::Real) -> Int
-
-Return the index of the `ion`. If the `ion` does not exist, an error is thrown.
-
-See also [`AbstractGCMS`](@ref), [`ions`](@ref), [`ion`](@ref), [`minion`](@ref), 
-[`maxion`](@ref), [`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS((1:3)u"s", [85.2f0, 100.1f0], [0 12; 34 956; 23 1]);
-
-julia> ionindex(gcms, 100.1)
-2
-
-julia> ionindex(gcms, 201.1)
-ERROR: ArgumentError: ion 201.1 does not exist
-[...]
-```
-"""
-function ionindex(gcms::AbstractGCMS, ion::Real)
-    for (index, element) in enumerate(ions(gcms))
-        element ≈ ion && return index
-    end
-    throw(ArgumentError("ion $ion does not exist"))
-end
-
-
-"""
-    minion(gcms::AbstractGCMS)
-
-Return the smallest `ion`.
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`maxion`](@ref), [`ions`](@ref), 
-[`ion`](@ref), [`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> minion(gcms)
-85
-```
-
-"""
-minion(gcms::AbstractGCMS) = first(ions(gcms))
-
-
-"""
-    maxion(gcms::AbstractGCMS)
-
-Return the largest `ion`.
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`minion`](@ref), [`ions`](@ref), 
-[`ion`](@ref), [`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> maxion(gcms)
-100
-```
-"""
-maxion(gcms::AbstractGCMS) = last(ions(gcms))
-
-
-"""
-    minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
-
-Return the minimum `intensity`. The optional argument `greatherthan` allows you to specify 
-a value greater than which the returned minimum must be. If no intensity is found above the 
-specified value, `nothing` is returned.
-
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
-[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`maxintensity`](@ref), 
-[`intensities`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
-[`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> minintensity(gcms)
-0
-
-julia> minintensity(gcms, 0)
-1
-
-julia> minintensity(gcms, 1000)
-
-```
-"""
-minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
-
-function minintensity(chrom::AbstractChromatogram, greaterthan::Real)
-    filtered_intensities = filter(num -> num > greaterthan, intensities(chrom))
-    length(filtered_intensities) > 0 ? minimum(filtered_intensities) : nothing
-end
-
-
-"""
-    maxintensity(chrom::AbstractChromatogram)
-
-Return the maximum `intensity`.
-
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractGCMS`](@ref), 
-[`FID`](@ref), [`GCMS`](@ref), [`TIC`](@ref), [`minintensity`](@ref), 
-[`intensities`](@ref), [`scantimes`](@ref), [`scancount`](@ref), [`ions`](@ref), 
-[`ioncount`](@ref).
-
-# Example
-```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
-
-julia> maxintensity(gcms)
-956
-```
-"""
-maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
-
-
-"""
-    runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
-    ustripped::Bool=false)
-
-Return the `runduration`. The optional keyword argument `timeunit` allows you to change the 
-unit of the returned time interval. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the unit 
-is stripped from the returned value. 
-
-See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref), [`scancount`](@ref).
-
-# Example
-```jldoctest
-julia> fid = FID([30.1u"minute", 40.8u"minute", 51.5u"minute"], [12, 956, 23])
-FID {scantimes: Float64, intensities: Int64}
-3 scans; scantimes: 30.1 minute, 40.8 minute, 51.5 minute
-intensity range: 12 - 956
-metadata: 0 entries
-
-julia> runduration(fid)
-21.4 minute
-
-julia> runduration(fid, timeunit=u"s")
-1284.0 s
-
-julia> runduration(fid, timeunit=u"s", ustripped=true)
-1284.0
-```
-"""
-function runduration(chrom::AbstractChromatogram; 
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    Δt = maxscantime(chrom) - minscantime(chrom)
-    ustripped ? ustrip(timeunit, Δt) : uconvert(timeunit, Δt)
-end
-
-
-"""
-    scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
-    timeunit::Unitful.TimeUnits, ustripped::Bool=false)
-
-Calculate the periodicity with which the scans were recorded over time. The optional 
-keyword argument `error` allows you to specify the maximum fraction of the average scan 
-time that the time interval defined by the timestamps of two consecutive scans is allowed 
-to deviate from the average scan time duration. The optional keyword argument `timeunit` 
-allows you to change the unit of the return value. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `ustripped` allows you to specify whether the 
-unit is stripped from the returned value. 
-
-See also [`AbstractChromatogram`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), 
-[`maxscantime`](@ref), [`scancount`](@ref), [`runduration`](@ref).
-
-# Example
-```jldoctest
-julia> fid = FID([1.0, 2.0, 3.0]u"s", [12, 956, 1]);
-
-julia> scanduration(fid)
-1.0 s
-
-julia> scanduration(fid, timeunit=u"minute")
-0.016666666666666666 minute
-
-julia> scanduration(fid, timeunit=u"minute", ustripped=true)
-0.016666666666666666
-
-julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]))
-ERROR: ArgumentError: maximum scan duration variation above threshold: 0.010000000000000009 > 0.001
-[...]
-
-julia> scanduration(FID([1.0, 1.99, 3.0]u"s", [12, 956, 1]), error=0.02)
-1.0 s
-```
-"""
-function scanduration(chrom::AbstractChromatogram; error::Real=0.001,
-    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
-    scancount(chrom) > 1 || throw(
-        ArgumentError("cannot calculate the scan duration from a single scan"))
-    Δts = Set{eltype(scantimes(chrom))}()
-    first = true
-    for i in eachindex(scantimes(chrom))
-        first && (first = false; continue)
-        push!(Δts, scantime(chrom, i) - scantime(chrom, i - 1))
-    end
-    mean = runduration(chrom) / (scancount(chrom) - 1)
-    error_obs = max(abs(maximum(Δts) - mean), abs(minimum(Δts) - mean)) / mean
-    error_obs > error && throw(ArgumentError(string("maximum scan duration ", 
-        "variation above threshold: $error_obs > $error")))
-    ustripped ? ustrip.(timeunit, mean) : uconvert.(timeunit, mean)
-end
-
-
-"""
     totalionchromatogram(gcms::GCMS)
 
 Compute the total ion chromatrogram.
 
-See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`GCMS`](@ref), 
-[`AbstractTIC`](@ref), [`TIC`](@ref), [`scantimes`](@ref), [`intensities`](@ref), 
-[`metadata`](@ref).
+See also [`GCMS`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 
-In the following example, the element type of `intensities` passed to the object 
-constructor  is explicitly annotated to show that the `TIC` object has the same type.
+In the following example, the type of `intensities` is explicitely annotated to demonstrate 
+that the `TIC` object preserves this type.
 
 # Example
 ```jldoctest
@@ -1708,103 +1863,3 @@ function Base.show(io::IO, tic::TIC)
     n = length(metadata(tic))
     print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end
-
-
-############################################################################################
-# Functions related to ion scan time shifts
-############################################################################################
-
-
-
-
-function ionscantimeshift(ionscanorder::LinearAscending, gcms::AbstractGCMS, error::Real)
-    intervalsize = scanduration(gcms, error=error)
-    index::Integer -> begin
-        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
-            BoundsError(ions(gcms), index))
-        intervalsize * ((ionscanorder.stop - 1) + ((index - ioncount(gcms))
-            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
-    end
-end
-
-
-function ionscantimeshift(ionscanorder::LinearDescending, gcms::AbstractGCMS, error::Real)
-    intervalsize = scanduration(gcms, error=error)
-    index::Integer -> begin
-        firstindex(ions(gcms)) ≤ index ≤ lastindex(ions(gcms)) || throw(
-            BoundsError(ions(gcms), index))
-        intervalsize * ((ionscanorder.stop - 1) + ((1 - index) 
-            * (ionscanorder.stop - ionscanorder.start)) / ioncount(gcms))
-    end
-end
-
-
-"""
-    ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder; error::Real=0.001)
-
-Return a function that calculates the time difference between the timestamp of a scan and 
-the time when an ion was actually scanned, given the index of the ion as an argument. The 
-time difference will be a negative value or zero, since the timestamp of a scan is 
-considered to be the time at which the scanning of the last ion was completed. The returned 
-function relies on the assumption that the duration of each scan is the same across the 
-entire run. The optional keyword argument `error` allows you to specify the maximum 
-fraction of the average scan time that a scanduration defined by the timestamps of two 
-consecutive scans is allowed to deviate from the average scan time duration.
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`IonScanOrder`](@ref), 
-[`LinearAscending`](@ref), [`LinearDescending`](@ref), [`ionscantime`](@ref), 
-[`ions`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref), 
-[`scanduration`](@ref), [`scantimes`](@ref), [`minscantime`](@ref), [`maxscantime`](@ref).
-
-# Example
-```julia-repl
-julia> gcms = GCMS([1.0, 2.0, 3.0]u"s", [85, 100], [0 12; 34 956; 23 1])
-GCMS {scantimes: Float64, ions: Int64, intensities: Int64}
-3 scans; scantimes: 1.0 s, 2.0 s, 3.0 s
-2 ions: m/z 85, 100
-intensity range: 0 - 956
-metadata: 0 entries
-
-julia> δtᵢ = ionscantimeshift(gcms, LinearAscending());
-
-julia> δtᵢ(1)
--0.5 s
-
-julia> δtᵢ(2)
-0.0 s
-
-julia> δtᵢ = ionscantimeshift(gcms, LinearDescending());
-
-julia> δtᵢ(1)
-0.0 s
-
-julia> δtᵢ(2)
--0.5 s
-
-julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.5));
-
-julia> δtᵢ(1)
-0.0 s
-
-julia> δtᵢ(2)
--0.25 s
-
-julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(stop=0.5));
-
-julia> δtᵢ(1)
--0.5 s
-
-julia> δtᵢ(2)
--0.75 s
-
-julia> δtᵢ = ionscantimeshift(gcms, LinearDescending(start=0.25, stop=0.75));
-
-julia> δtᵢ(1)
--0.25 s
-
-julia> δtᵢ(2)
--0.5 s
-```
-"""
-ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder, error::Real=0.001
-    ) = ionscantimeshift(ionscanorder, gcms, error)

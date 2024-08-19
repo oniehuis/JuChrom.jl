@@ -4,7 +4,7 @@
 Create a mutable copy of the `array` with the type of its elements converted to 
 `elementtype`.
 
-# Example
+# Examples
 ```jldoctest
 julia> JuChrom.copy_with_eltype(Int[1, 2, 3, 4, 5, 6], Float64)
 6-element Vector{Float64}:
@@ -34,43 +34,12 @@ copy_with_eltype(array::AbstractArray, elementtype::Type) = copyto!(similar(arra
 
 
 """
-    cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
-
-Return the angle between two non-zero vectors, which can be considered a measure of the
-`similarity` (i.e., `cosine` similarity) between the two vectors.
-
-# Example
-```jldoctest
-julia> cosine([100, 500, 250], [200, 1000, 0])
-0.8978872704229618
-
-julia> cosine([100, 0, 50], [0, 20, 0])
-0.0
-
-julia> cosine([100, 500, 250], [10, 50, 25])
-1.0
-```
-"""
-function cosine(x::AbstractVector{<:Real}, y::AbstractVector{<:Real})
-    length(x) == length(y) || throw(
-        DimensionMismatch("vectors x and y have different lengths"))
-    length(x) == 0 && throw(ArgumentError("vectors x and y are empty"))
-    iszero(x) && throw(ArgumentError("vector x contains only zeros"))
-    iszero(y) && throw(ArgumentError("vector y contains only zeros"))
-    s = sum(x .* y) / (sqrt(sum(x.^2)) * sqrt(sum(y.^2)))
-    0 ≤ s ≤ 1 && return s
-    (s < 0 || isnan(s)) ? zero(typeof(s)) : one(typeof(s))
-end
-## See also [`similarity`](@ref).
-
-
-"""
     JuChrom.findclosest(A::AbstractVector{<:Number}, x::Number) -> Int
 
-Return the index of the number closest to number x in a list of numbers sorted in ascending 
-order. If there is a tie, the index of the larger number is returned.
+Return the index of the number closest to `x` in a list `A` of numbers sorted in ascending 
+order. If case of atie, the index of the larger number is returned.
 
-# Example
+# Examples
 ```jldoctest
 julia> JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], 0)
 3
@@ -96,42 +65,11 @@ end
 
 
 """
-    integer(value:::Real; start::Real=0.7) -> Int
-
-Return the `integer` for the given `value` that satisfies the following condition: 
-`integer` - 1 + `start` ≤ `value` < `integer` + `start`, where 0 ≤ `start` < 1.
-
-See also [`AbstractGCMS`](@ref), [`GCMS`](@ref), [`binions`](@ref), [`ions`](@ref).
-
-# Example
-```jldoctest
-julia> integer(29.7)
-30
-
-julia> integer(30.0)
-30
-
-julia> integer(30.69)
-30
-
-julia> integer(29.7, start=0.8)
-29
-```
-"""
-function integer(value::Real; start::Real=0.7)
-    0 ≤ start < 1 || throw(ArgumentError(string("fractional digits of binning interval ",
-        "start is outside the interval [0,1) of allowed values: $start")))
-    start == 0 && return trunc(Int, value)
-    trunc(Int, value + (1 - start))
-end
-
-
-"""
     JuChrom.invert(dictionary::Dict)
 
-Return a dictionary in which the values in `dictionary` serve as keys to lists containing 
-all keys in `dictionary` that are associated with the value that now serves as the key 
-in the returned dictionary.
+Return a dictionary where the values from the input dictionary become the keys. Each key 
+in the returned dictionary maps to a list of all original keys from dictionary that were 
+associated with that value.
 
 # Example
 ```jldoctest
@@ -161,12 +99,12 @@ end
     JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
     startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 
-Return the index range of the next local maximum. If the maximum is a single peak, the 
-range has length 1; if a plateau maximum is found, the range has length greater than 1. 
-If no maximum is found, nothing is returned. The optional keyword arguments startindex and 
-stopindex allow you to restrict the range within which the maximum is searched. Note that 
-the startindex and the stopindex must be at least two indices apart (e.g., startindex=1, 
-stopindex=3).
+Returns the index range of the next local maximum. If the maximum is a single peak, the 
+range will have a length of 1; if a plateau maximum is found, the range will have a 
+length greater than 1. If no maximum is found, nothing is returned. The optional keyword 
+arguments `startindex` and `startindex` allow you to restrict the search range for the 
+maximum. Note that `startindex` and `startindex` must be at least two indices apart (e.g., 
+`startindex=1`, `stopindex=3`).
 
 See also [`LocalMaxima`](@ref).
 
@@ -241,12 +179,12 @@ end
     JuChrom.LocalMaxima(values::AbstractVector{<:Real}; 
     startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 
-Return an iterator that yields the index range of the next local maximum until no more 
-local maxima are found. If the maximum is a single peak, the range has length 1; if a 
-plateau maximum is found, the range has length greater than 1. The optional keyword 
-arguments startindex and stopindex allow you to restrict the range within which the 
-maximum is searched. Note that startindex and stopindex must be at least two indices 
-apart (e.g., startindex=1, stopindex=3).
+Returns an iterator that yields the index range of each local maximum until no more local 
+maxima are found. If the maximum is a single peak, the range will have a length of 1; if a 
+plateau maximum is found, the range will have a length greater than 1. The optional keyword 
+arguments `startindex` and `stopindex` allow you to restrict the search range for the 
+maximum. Note that `startindex` and `stopindex` must be at least two indices apart (e.g., 
+`startindex=1`, `stopindex=3`).
 
 See also [`nextlocalmaximum`](@ref).
 
