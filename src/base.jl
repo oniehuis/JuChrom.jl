@@ -57,7 +57,7 @@ struct FID{
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
-            ArgumentError("intensity values contain values less than zero"))
+            ArgumentError("intensity values contain at least one value less than zero"))
         new(scantimes, intensities, metadata)
     end
 end
@@ -135,13 +135,13 @@ struct RiFID{
             ArgumentError("retention indices not in ascending order"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(retentionindices) == length(scantimes) || throw(
-            DimensionMismatch())
+            DimensionMismatch("retention index count does not match scan time count"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
-            ArgumentError("intensity values contain values less than zero"))
+            ArgumentError("intensity values contain at least one value less than zero"))
         new(scantimes, retentionindexname, retentionindices, intensities, metadata)
     end
 end
@@ -170,10 +170,6 @@ julia> RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
-julia> RiFID([1, 2, 3]u"s", "Kovats", [200.0, 300.0], [12, 956, 1]);
-ERROR: DimensionMismatch: 
-[...]
-
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
 ERROR: ArgumentError: retention indices not in ascending order
 [...]
@@ -192,11 +188,6 @@ function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,
     RiFID{T1, T2, T3, T4}(scantimes, retentionindexname, retentionindices, intensities, 
         metadata)
 end
-# julia> RiFID([1, 2, 3]u"s", "Kovats", [200.0, 300.0], [12, 956, 1])
-# ERROR: DimensionMismatch: retention index count does not match scan time count
-# [...]
-
-
 
 
 """
@@ -413,7 +404,7 @@ struct TIC{
         length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
-            DimensionMismatch("intensity count does not match scan count"))
+            DimensionMismatch("intensity count does not match scan time count"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -503,7 +494,7 @@ struct GCMS{
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
         size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
-            "intensity matrix row count does not match scan count"))
+            "intensity matrix row count does not match scan time count"))
         size(intensities, 2) == length(ions) || throw(DimensionMismatch(
             "intensity matrix column count does not match ion count"))
         issorted(scantimes) || throw(ArgumentError("scan times not in ascending order"))
