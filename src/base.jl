@@ -248,10 +248,12 @@ RetentionIndexStyle(::Type{<:RiFID}) = HasRetentionIndexData()
 
 
 """
-    maxretentionindex(chrom::AbstractChromatogram)
+    maxretentionindex(chrom::AbstractChromatogram[, 
+    scanindexrange::OrdinalRange{T<:Integer, <:Integer}])
 
-Return the maximum retention index, ignoring any missing values. Note that this function 
-will only return the maximum retention index for specific AbstractChromatogram subtypes 
+Return the maximum retention index, ignoring any missing values. An optional second 
+argument lets you specify a range of scans for which the maximum retention index will be 
+returned. Note that this function only applies to certain AbstractChromatogram subtypes 
 that store retention index data, such as RiFID.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](@ref), 
@@ -264,25 +266,38 @@ julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]
 julia> maxretentionindex(rifid)
 300
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [100.0, 200.0, missing], [12, 956, 1]);
 
-julia> maxretentionindex(rifid)
-300.0
+julia> maxretentionindex(rifid, 2:3)
+200.0
 ```
 """
-maxretentionindex(chrom::T) where {T<:AbstractChromatogram} = maxretentionindex(
-    RetentionIndexStyle(T), chrom)
-maxretentionindex(::HasRetentionIndexData, chrom) = maximum(
-    skipmissing(chrom.retentionindices))
-maxretentionindex(::HasNoRetentionIndexData, chrom) = throw(
-    MethodError(maxretentionindex, (chrom,)))
+function maxretentionindex(chrom::T1, scanindexrange::OrdinalRange{T2, T3}=firstindex(
+    scantimes(chrom)):lastindex(scantimes(chrom))) where {T1<:AbstractChromatogram, 
+        T2<:Integer, T3<:Integer}
+    maxretentionindex(RetentionIndexStyle(T1), chrom, scanindexrange)
+end
+
+
+function maxretentionindex(::HasRetentionIndexData, chrom, scanindexrange)
+    indices = collect(skipmissing(chrom.retentionindices[scanindexrange]))
+    length(indices) > 0 || throw(
+        ArgumentError("scan index range contains no numerical values"))
+    maximum(skipmissing(chrom.retentionindices[scanindexrange]))
+end
+
+
+maxretentionindex(::HasNoRetentionIndexData, chrom, scanindexrange) = throw(
+    MethodError(minretentionindex, (chrom,)))
 
 
 """
-    minretentionindex(chrom::AbstractChromatogram)
+    minretentionindex(chrom::AbstractChromatogram[, 
+    scanindexrange::OrdinalRange{T<:Integer, <:Integer}])
 
-Return the minimum retention index, ignoring any missing values. Note that this function 
-will only return the minimum retention index for specific AbstractChromatogram subtypes 
+Return the minimum retention index, ignoring any missing values. An optional second 
+argument lets you specify a range of scans for which the minimum retention index will be 
+returned. Note that this function only applies to certain AbstractChromatogram subtypes 
 that store retention index data, such as RiFID.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`maxretentionindex`](@ref), 
@@ -295,26 +310,36 @@ julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]
 julia> minretentionindex(rifid)
 100
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [100.0, 200.0, missing], [12, 956, 1]);
 
-julia> minretentionindex(rifid)
+julia> minretentionindex(rifid, 2:3)
 200.0
 ```
 """
-minretentionindex(chrom::T) where {T<:AbstractChromatogram} = minretentionindex(
-    RetentionIndexStyle(T), chrom)
-minretentionindex(::HasRetentionIndexData, chrom) = minimum(
-    skipmissing(chrom.retentionindices))
-minretentionindex(::HasNoRetentionIndexData, chrom) = throw(
+function minretentionindex(chrom::T1, scanindexrange::OrdinalRange{T2, T3}=firstindex(
+    scantimes(chrom)):lastindex(scantimes(chrom))) where {T1<:AbstractChromatogram, 
+        T2<:Integer, T3<:Integer}
+    minretentionindex(RetentionIndexStyle(T1), chrom, scanindexrange)
+end
+
+
+function minretentionindex(::HasRetentionIndexData, chrom, scanindexrange)
+    indices = collect(skipmissing(chrom.retentionindices[scanindexrange]))
+    length(indices) > 0 || throw(
+        ArgumentError("scan index range contains no numerical values"))
+    minimum(skipmissing(chrom.retentionindices[scanindexrange]))
+end
+
+
+minretentionindex(::HasNoRetentionIndexData, chrom, scanindexrange) = throw(
     MethodError(minretentionindex, (chrom,)))
 
 
 """
     retentionindexname(chrom::AbstractChromatogram)
 
-Return the retention index name. Note that this function will only return the retention 
-index name for specific AbstractChromatogram subtypes that store retention index data, such 
-as RiFID.
+Return the retention index name. Note that this function only applies to certain 
+AbstractChromatogram subtypes that store retention index data, such as RiFID.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@ref), 
 [`maxretentionindex`](@ref), [`minretentionindex`](@ref).
@@ -335,11 +360,15 @@ retentionindexname(::HasNoRetentionIndexData, chrom) = throw(
 
 
 """
-    retentionindices(chrom::AbstractChromatogram)
+    retentionindices(chrom::AbstractChromatogram[, 
+    scanindexrange::OrdinalRange{<:Integer, <:Integer}])
 
-Return the retention indices. Note that this function will only return the retention 
-indices for specific AbstractChromatogram subtypes that store retention index data, such 
-as RiFID. Also, be aware that the returned retention indices may include missing values.
+Return the retention indices. An optional second argument lets you specify a range of scans 
+for which the retention indices will be returned. Note that this function only 
+applies to certain AbstractChromatogram subtypes that store retention index data, such as 
+RiFID. Additionally, be aware that the returned retention indices may include missing 
+values. Depending on whether a subset of scans is selected, the function will return either 
+a reference to the data structure holding the retention indices or a view into it.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindexname`](@ref), 
 [`maxretentionindex`](@ref), [`minretentionindex`](@ref).
@@ -361,12 +390,35 @@ julia> retentionindices(rifid)
     missing
  200.0
  300.0
+
+julia> retentionindices(rifid, 2:3)  # view into the data structure
+2-element view(::Vector{Union{Missing, Float64}}, 2:3) with eltype Union{Missing, Float64}:
+ 200.0
+ 300.0
+
+julia> retentionindices(rifid, 2:3)[:]  # a copy of these values
+2-element Vector{Union{Missing, Float64}}:
+ 200.0
+ 300.0
 ```
 """
-retentionindices(chrom::T) where {T<:AbstractChromatogram} = retentionindices(
-    RetentionIndexStyle(T), chrom)
-retentionindices(::HasRetentionIndexData, chrom) = chrom.retentionindices
-retentionindices(::HasNoRetentionIndexData, chrom) = throw(
+function retentionindices(chrom::T1, scanindexrange::OrdinalRange{T2, T3}=firstindex(
+    scantimes(chrom)):lastindex(scantimes(chrom))) where {
+    T1<:AbstractChromatogram, T2<:Integer, T3<:Integer}
+        retentionindices(RetentionIndexStyle(T1), chrom, scanindexrange)
+end
+
+
+function retentionindices(::HasRetentionIndexData, chrom, scanindexrange)
+    if scanindexrange == firstindex(scantimes(chrom)):lastindex(scantimes(chrom))
+        chrom.retentionindices
+    else
+        @view chrom.retentionindices[scanindexrange]
+    end
+end
+
+
+retentionindices(::HasNoRetentionIndexData, chrom, scanindexrange) = throw(
     MethodError(retentionindices, (chrom,)))
 
 

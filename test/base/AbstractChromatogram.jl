@@ -180,6 +180,51 @@ end
     @test Float64 == typeof(maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23])))
 end
 
+############################################################################################
+# maxretentionindex(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{T, S}]) 
+# where {T<:Integer, S<:Integer}
+############################################################################################
+@testset "maxretentionindex RiFID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 300 == maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+    @test 200 == maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:2)
+    @test 100 == maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test Int == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23]), 2:3))
+    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0]), 2:3))
+    @test Int64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
+
+    # Check for ArgumentError when specified range contains no numercial values
+    @test_throws ArgumentError maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, missing, missing], [12, 956, 23]), 2:3)
+end
+
+
 
 ############################################################################################
 # maxscantime(chrom::AbstractChromatogram); timeunit::Unitful.TimeUnits, 
@@ -569,6 +614,51 @@ end
 
 
 ############################################################################################
+# minretentionindex(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{T, S}]) 
+# where {T<:Integer, S<:Integer}
+############################################################################################
+@testset "minretentionindex RiFID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 100 == minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+    @test 200 == minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 2:3)
+    @test 100 == minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test Int == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23]), 2:3))
+    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0]), 2:3))
+    @test Int64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
+
+    # Check for ArgumentError when specified range contains no numercial values
+    @test_throws ArgumentError minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, missing, missing], [12, 956, 23]), 2:3)
+end
+
+
+############################################################################################
 # minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
 # timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
@@ -755,6 +845,97 @@ end
         0.0:4.0, timeunit=u"minute", ustripped=true)
 end
 
+
+############################################################################################
+# retentionindexname(chrom::AbstractChromatogram)
+############################################################################################
+@testset "retentionindexname RiFID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test "Kovats" == retentionindexname(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+
+    # Same return same element type as used to construct the object
+    @test String == typeof(retentionindexname(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23])))
+    @test SubString{String} == typeof(retentionindexname(RiFID([1, 2, 3]u"s", 
+        SubString("Kovats", 1:6), [100, 200, 300], [12.0, 956.0, 23.0])))
+end
+
+
+############################################################################################
+# retentionindices(chrom::AbstractChromatogram)
+############################################################################################
+@testset "retentionindices RiFID" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [100, 200, 300] == retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]))
+    @test [200, 300] == retentionindices(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 2:3)
+    @test [100] == retentionindices(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test Vector{Int} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Vector{Float64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test StepRange{Int64, Int64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", 
+        "Kovats", 10:5:20, [12.0, 956.0, 23.0])))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
+    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        retentionindices(RiFID([1, 2, 3]u"s", "Kovats", Int[100, 200, 300], [12, 956, 23]), 
+        2:3))
+    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        retentionindices(RiFID([1, 2, 3]u"s", "Kovats", Float64[100, 200, 300], 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test StepRange{Int64, Int64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        10:5:20, [12.0, 956.0, 23.0]), 2:3))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
+end
+
+
+@testset "intensities scanindexrange TIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [12, 956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]))
+    @test [956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=2:3)
+    @test [12] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=1:1)
+
+    # Same return same element type as used to construct the object
+    @test Vector{Int} == typeof(intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23])))
+    @test Vector{Float64} == typeof(intensities(TIC([1, 2, 3]u"s", 
+        Float64[12.0, 956.0, 23.0])))
+    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20)))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0)))
+
+    @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=2:3))
+    @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
+        intensities(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), scanindexrange=2:3))
+    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20), 
+        scanindexrange=2:3))
+    @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
+        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0), 
+        scanindexrange=2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
+end
 
 ############################################################################################
 # runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
