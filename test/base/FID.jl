@@ -28,6 +28,12 @@ using Unitful: 𝐓
     @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractGC)
     @test isa(FID([1, 2, 3]u"s", [12, 956, 23]), AbstractFID)
 
+    # Check the associated trait
+    @test JuChrom.HasNoRetentionIndexData() == JuChrom.RetentionIndexStyle(typeof(FID(
+        [1, 2, 3]u"s", [12, 956, 23])))
+    @test JuChrom.HasRetentionIndexData() ≠ JuChrom.RetentionIndexStyle(typeof(FID(
+        [1, 2, 3]u"s", [12, 956, 23])))
+
     # Scan time vector accepts only time values
     @test_throws MethodError FID([1, 2, 3], [12, 956, 23])
     @test_throws MethodError FID([1, 2, 3]u"m", [12, 956, 23])

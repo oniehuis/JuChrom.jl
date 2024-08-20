@@ -57,6 +57,12 @@ using Unitful: 𝐓
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)
     @test isa(GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractGCMS)
 
+    # Check the associated trait
+    @test JuChrom.HasNoRetentionIndexData() == JuChrom.RetentionIndexStyle(typeof(GCMS(
+        [1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])))
+    @test JuChrom.HasRetentionIndexData() ≠ JuChrom.RetentionIndexStyle(typeof(GCMS(
+        [1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])))
+
     # Scan time vector accepts only time values
     @test_throws MethodError GCMS([1, 2, 3], [85, 100], [0 12; 34 956; 23 1])
     @test_throws MethodError GCMS([1, 2, 3]u"m", [85, 100], [0 12; 34 956; 23 1])

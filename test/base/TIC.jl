@@ -28,6 +28,12 @@ using Unitful: 𝐓
     @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractGC)
     @test isa(TIC([1, 2, 3]u"s", [12, 956, 23]), AbstractTIC)
 
+    # Check the associated trait
+    @test JuChrom.HasNoRetentionIndexData() == JuChrom.RetentionIndexStyle(typeof(TIC(
+        [1, 2, 3]u"s", [12, 956, 23])))
+    @test JuChrom.HasRetentionIndexData() ≠ JuChrom.RetentionIndexStyle(typeof(TIC(
+        [1, 2, 3]u"s", [12, 956, 23])))
+
     # Scan time vector accepts only time values
     @test_throws MethodError TIC([1, 2, 3], [12, 956, 23])
     @test_throws MethodError TIC([1, 2, 3]u"m", [12, 956, 23])
