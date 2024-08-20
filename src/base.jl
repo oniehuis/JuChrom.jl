@@ -135,7 +135,7 @@ struct RiFID{
             ArgumentError("retention indices not in ascending order"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(retentionindices) == length(scantimes) || throw(
-            DimensionMismatch("retention count does not match scan time count"))
+            DimensionMismatch())
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
         issorted(scantimes) || throw(
@@ -171,7 +171,7 @@ julia> RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [200.0, 300.0], [12, 956, 1]);
-ERROR: DimensionMismatch: retention count does not match scan time count
+ERROR: DimensionMismatch: 
 [...]
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
