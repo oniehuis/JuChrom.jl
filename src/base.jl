@@ -2100,53 +2100,53 @@ function Base.show(io::IO, fid::FID)
 end
 
 
-function Base.show(io::IO, rifid::RiFID)
-    # Information about the element types
-    println(io, "RiFID {scan times: ", eltype(ustrip.(scantimes(rifid))), 
-        ", retention indices: ", eltype(retentionindices(rifid)), 
-        ", intensities: ", eltype(intensities(rifid)), "}")
+# function Base.show(io::IO, rifid::RiFID)
+#     # Information about the element types
+#     println(io, "RiFID {scan times: ", eltype(ustrip.(scantimes(rifid))), 
+#         ", retention indices: ", eltype(retentionindices(rifid)), 
+#         ", intensities: ", eltype(intensities(rifid)), "}")
 
-    # Information about the scan count and the scan times
-    if scancount(rifid) > 10
-        println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), " - ", 
-            maxscantime(rifid))
-    elseif 1 < scancount(rifid) ≤ 10
-        print(io, scancount(rifid), " scans; scan times: ")
-        for i in eachindex(scantimes(rifid))
-            print(io, scantime(rifid, i))
-            i < scancount(rifid) ? print(io, ", ") : println(io)
-        end
-    else
-        println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
-    end
+#     # Information about the scan count and the scan times
+#     if scancount(rifid) > 10
+#         println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), " - ", 
+#             maxscantime(rifid))
+#     elseif 1 < scancount(rifid) ≤ 10
+#         print(io, scancount(rifid), " scans; scan times: ")
+#         for i in eachindex(scantimes(rifid))
+#             print(io, scantime(rifid, i))
+#             i < scancount(rifid) ? print(io, ", ") : println(io)
+#         end
+#     else
+#         println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
+#     end
 
-    # Information about the retention index count and the retention indices
-    println(io, "retention index name: ", retentionindexname(rifid))
-    println(io, "retention indices: ", retentionindices(rifid))
-    # if scancount(rifid) > 10
-    #     println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), 
-    #         " - ", maxscantime(rifid))
-    # elseif 1 < scancount(rifid) ≤ 10
-    #     print(io, scancount(rifid), " scans; scan times: ")
-    #     for i in eachindex(scantimes(rifid))
-    #         print(io, scantime(rifid, i))
-    #         i < scancount(rifid) ? print(io, ", ") : println(io)
-    #     end
-    # else
-    #     println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
-    # end
+#     # Information about the retention index count and the retention indices
+#     println(io, "retention index name: ", retentionindexname(rifid))
+#     println(io, "retention indices: ", retentionindices(rifid))
+#     # if scancount(rifid) > 10
+#     #     println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), 
+#     #         " - ", maxscantime(rifid))
+#     # elseif 1 < scancount(rifid) ≤ 10
+#     #     print(io, scancount(rifid), " scans; scan times: ")
+#     #     for i in eachindex(scantimes(rifid))
+#     #         print(io, scantime(rifid, i))
+#     #         i < scancount(rifid) ? print(io, ", ") : println(io)
+#     #     end
+#     # else
+#     #     println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
+#     # end
 
-    # Information about the intensities
-    if length(intensities(rifid)) > 1
-        println(io, "intensity range: ", minintensity(rifid), " - ", maxintensity(rifid))
-    else
-        println(io, "intensity: ", first(intensities(rifid)))
-    end
+#     # Information about the intensities
+#     if length(intensities(rifid)) > 1
+#         println(io, "intensity range: ", minintensity(rifid), " - ", maxintensity(rifid))
+#     else
+#         println(io, "intensity: ", first(intensities(rifid)))
+#     end
 
-    # Information about the metadata
-    n = length(metadata(rifid))
-    print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
-end
+#     # Information about the metadata
+#     n = length(metadata(rifid))
+#     print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
+# end
 
 
 function Base.show(io::IO, gcms::GCMS)
