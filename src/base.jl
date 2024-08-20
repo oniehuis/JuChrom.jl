@@ -151,7 +151,7 @@ Base.broadcastable(rifid::RiFID) = Ref(rifid)
 
 """
     RiFID(scantimes::AbstractVector{<:Unitful.Time}, retentionindexname::AbstractString, 
-    retentionindices::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}, 
+    retentionindices::{<:Union{Real, Missing}}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
 Create an `RiFID` object that includes `scantimes`, `retentionindexname`, the 
