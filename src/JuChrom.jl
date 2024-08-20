@@ -12,6 +12,7 @@ export AbstractTIC
 export FID
 export RiFID
 export GCMS
+export RiGCMS
 export TIC
 export RiTIC
 export IonScanOrder

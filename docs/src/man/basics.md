@@ -11,6 +11,7 @@ TIC
 RiTIC
 AbstractGCMS
 GCMS
+RiGCMS
 IonScanOrder
 LinearAscending
 LinearDescending

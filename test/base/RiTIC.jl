@@ -14,21 +14,13 @@ using Unitful: 𝐓
         1//1),), 𝐓 , nothing}}} == typeof(RiTIC(Float64[1, 2, 3]u"s", "Kovats", 
         [100, 200, 300], [12, 956, 23]).scantimes)
 
-    # Intensities
-    @test [12, 956, 23] == RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        [12, 956, 23]).intensities
-    @test Vector{Int64} == typeof(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        Int64[12, 956, 23]).intensities)
-    @test Vector{Float64} == typeof(RiTIC([1, 2, 3]u"s",  "Kovats", [100, 200, 300], 
-        Float64[12, 956, 23]).intensities)
-
     # Retention index name
     @test "Kovats" == RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]
         ).retentionindexname
     @test String == typeof(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]
         ).retentionindexname)
     @test SubString{String} == typeof(RiTIC([1, 2, 3]u"s", SubString("Kovats", 1:6), 
-        [100, 200, 300], Float64[12, 956, 23]).retentionindexname)
+        [100, 200, 300], [12, 956, 23]).retentionindexname)
 
     # # Retention indices
     @test [100, 200, 300] == RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
@@ -39,6 +31,14 @@ using Unitful: 𝐓
         [12, 956, 23]).retentionindices)
     @test Vector{Union{Missing, Float64}} == typeof(RiTIC([1, 2, 3]u"s", "Kovats", 
         [missing, 200.0, 300.0], [12, 956, 23]).retentionindices)
+
+    # Intensities
+    @test [12, 956, 23] == RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]).intensities
+    @test Vector{Int64} == typeof(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int64[12, 956, 23]).intensities)
+    @test Vector{Float64} == typeof(RiTIC([1, 2, 3]u"s",  "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]).intensities)
 
     # Metadata
     @test Dict{Any, Any} == typeof(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
@@ -85,7 +85,7 @@ using Unitful: 𝐓
     @test_throws ArgumentError RiTIC(Int[]u"s", "Kovats", Int[100], [12])
     @test [1]u"s" == RiTIC([1]u"s", "Kovats", Int[100], [12]).scantimes
 
-    # Must provide a reteion index name
+    # Must provide a retention index name
     @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "", [100, 200, 300], [12, 956, 23])
 
     # Must provide at least on retention index
@@ -108,11 +108,15 @@ using Unitful: 𝐓
     # Scan times must be in ascending order
     @test_throws ArgumentError RiTIC([2, 1, 3]u"s", "Kovats", [100, 300, 200], 
         [12, 956, 23])
+    @test_throws ArgumentError RiTIC([2, 2, 3]u"s", "Kovats", [100, 300, 200], 
+        [12, 956, 23])
 
     # Retention indices must be in ascending order
     @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "Kovats", [100, 300, 200], 
         [12, 956, 23])
     @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "Kovats", [missing, 300, 200], 
+        [12, 956, 23])
+    @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "Kovats", [200, 200, 300], 
         [12, 956, 23])
 
     # Intensity values cannot be less than zero

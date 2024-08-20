@@ -2,6 +2,7 @@ using SafeTestsets
 
 # Testing contents of base.jl
 @safetestset "GCMS" begin include("base/GCMS.jl") end
+@safetestset "RiGCMS" begin include("base/RiGCMS.jl") end
 @safetestset "FID" begin include("base/FID.jl") end
 @safetestset "RiFID" begin include("base/RiFID.jl") end
 @safetestset "TIC" begin include("base/TIC.jl") end

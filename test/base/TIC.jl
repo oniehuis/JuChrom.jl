@@ -60,6 +60,7 @@ using Unitful: 𝐓
 
     # Scan times must be in ascending order
     @test_throws ArgumentError TIC([2, 1, 3]u"s", [12, 956, 23])
+    @test_throws ArgumentError TIC([2, 2, 3]u"s", [12, 956, 23])
 
     # Intensity values cannot be less than zero
     @test_throws ArgumentError TIC([1, 2, 3]u"s", [-12, 956, 23])

@@ -111,6 +111,8 @@ struct FID{
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
+        length(Set(scantimes)) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -188,6 +190,9 @@ struct RiFID{
             "no retention index name provided"))
         length(collect(skipmissing(retentionindices))) > 0 || throw(ArgumentError(
             "no retention index value(s) provided"))
+        length(Set(collect(skipmissing(retentionindices)))) == length(collect(
+            skipmissing(retentionindices))) || throw(
+            ArgumentError("retention indices contain identical values"))
         issorted(collect(skipmissing(retentionindices))) || throw(
             ArgumentError("retention indices not in ascending order"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
@@ -195,6 +200,8 @@ struct RiFID{
             DimensionMismatch("retention index count does not match scan time count"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
+        length(Set(scantimes)) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -275,6 +282,8 @@ struct TIC{
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
+        length(Set(scantimes)) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -353,6 +362,9 @@ struct RiTIC{
             "no retention index name provided"))
         length(collect(skipmissing(retentionindices))) > 0 || throw(ArgumentError(
             "no retention index value(s) provided"))
+        length(Set(collect(skipmissing(retentionindices)))) == length(collect(
+            skipmissing(retentionindices))) || throw(
+            ArgumentError("retention indices contain identical values"))
         issorted(collect(skipmissing(retentionindices))) || throw(
             ArgumentError("retention indices not in ascending order"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
@@ -360,6 +372,8 @@ struct RiTIC{
             DimensionMismatch("retention index count does not match scan time count"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan time count"))
+        length(scantimes) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -451,7 +465,11 @@ struct GCMS{
             "intensity matrix row count does not match scan time count"))
         size(intensities, 2) == length(ions) || throw(DimensionMismatch(
             "intensity matrix column count does not match ion count"))
+        length(Set(scantimes)) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(ArgumentError("scan times not in ascending order"))
+        length(Set(ions)) == length(ions) || throw(
+            ArgumentError("ions contain identical values"))
         issorted(ions) || throw(ArgumentError("ions not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
             "intensity values contain at least one value less than zero"))
@@ -512,6 +530,105 @@ function GCMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any,
     T2<:AbstractVector{<:Real},
     T3<:AbstractMatrix{<:Real}}
     GCMS{T1, T2, T3}(scantimes, ions, intensities, metadata)
+end
+
+
+struct RiGCMS{
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractString,
+    T3<:AbstractVector{<:Union{Real, Missing}},
+    T4<:AbstractVector{<:Real},
+    T5<:AbstractMatrix{<:Real}} <: AbstractGCMS
+    scantimes::T1
+    retentionindexname::T2
+    retentionindices::T3
+    ions::T4
+    intensities::T5
+    metadata::Dict{Any, Any}
+    function RiGCMS{T1, T2, T3, T4, T5}(scantimes::T1, retentionindexname::T2, 
+        retentionindices::T3, ions::T4, intensities::T5, metadata::Dict) where {
+        T1<:AbstractVector{<:Unitful.Time},
+        T2<:AbstractString,
+        T3<:AbstractVector{<:Union{Real, Missing}},
+        T4<:AbstractVector{<:Real},
+        T5<:AbstractMatrix{<:Real}}
+        length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
+        length(retentionindexname) > 0 || throw(ArgumentError(
+            "no retention index name provided"))
+        length(collect(skipmissing(retentionindices))) > 0 || throw(ArgumentError(
+            "no retention index value(s) provided"))
+        length(Set(collect(skipmissing(retentionindices)))) == length(collect(
+            skipmissing(retentionindices))) || throw(
+            ArgumentError("retention indices contain identical values"))
+        issorted(collect(skipmissing(retentionindices))) || throw(
+            ArgumentError("retention indices not in ascending order"))
+        length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
+        length(retentionindices) == length(scantimes) || throw(
+            DimensionMismatch("retention index count does not match scan time count"))
+        size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
+            "intensity matrix row count does not match scan time count"))
+        size(intensities, 2) == length(ions) || throw(DimensionMismatch(
+            "intensity matrix column count does not match ion count"))
+        length(Set(scantimes)) == length(scantimes) || throw(
+            ArgumentError("scan times contain identical values"))
+        issorted(scantimes) || throw(
+            ArgumentError("scan times not in ascending order"))
+        length(Set(ions)) == length(ions) || throw(
+            ArgumentError("ions contain identical values"))
+        issorted(ions) || throw(ArgumentError("ions not in ascending order"))
+        count(i -> i < 0, intensities) == 0 || throw(
+            ArgumentError("intensity values contain at least one value less than zero"))
+        new(scantimes, retentionindexname, retentionindices, ions, intensities, metadata)
+    end
+end
+
+
+Base.broadcastable(rigcms::RiGCMS) = Ref(rigcms)
+
+
+RetentionIndexStyle(::Type{<:RiGCMS}) = HasRetentionIndexData()
+
+
+"""
+    RiGCMS(scantimes::AbstractVector{<:Unitful.Time}, retentionindexname::AbstractString, 
+    retentionindices::{<:Union{Real, Missing}}, ions::AbstractVector{<:Real}, 
+    intensities::AbstractVector{<:Real}, metadata::Dict=Dict{Any, Any})
+
+Create an `RiGCMS` object that includes `scantimes`, a `retentionindexname`, 
+`retentionindices`, `ions`, `intensities`, and `metadata`. The `retentionindices` may 
+contain missing values but must have at least one numerical entry. Ensure that `scantimes`, 
+`retentionindices`, and `ions` are all in ascending order. Ensure that `scantimes` and 
+`retentionindices` have the same length. Additionally, ensure that all values in 
+`intensities` are non-negative.
+
+See also [`AbstractChromatogram`](@ref), [`AbstractGCMS`](@ref), [`scantimes`](@ref), 
+[`retentionindexname`](@ref), [`retentionindices`](@ref), [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+
+# Examples
+```jldoctest
+julia> RiGCMS([1.0, 2.0]u"s", "Kovats", [10.0, 20.0], Int64[85, 100], Int64[0 12; 34 6]);
+
+julia> RiGCMS([1.0, 2.0]u"s", "Kovats", [missing, 10.0], Int64[85, 100], Int64[0 12; 34 6]);
+
+julia> RiGCMS([1.0, 2.0]u"s", "Kovats", [20.0, 10.0], Int64[85, 100], Int64[0 12; 34 6]);
+ERROR: ArgumentError: retention indices not in ascending order
+[...]
+
+julia> RiGCMS([1.0, 2.0]u"s", "Kovats", [10.0, 20.0], Int64[85, 100], Int64[0 -1; 34 6]);
+ERROR: ArgumentError: intensity values contain at least one value less than zero
+[...]
+```
+"""
+function RiGCMS(scantimes::T1, retentionindexname::T2, retentionindices::T3,  
+    ions::T4, intensities::T5, metadata::Dict=Dict{Any, Any}()) where {
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractString,
+    T3<:AbstractVector{<:Union{Real, Missing}},
+    T4<:AbstractVector{<:Real},
+    T5<:AbstractMatrix{<:Real}}
+    RiGCMS{T1, T2, T3, T4, T5}(scantimes, retentionindexname, retentionindices, ions, 
+        intensities, metadata)
 end
 
 
