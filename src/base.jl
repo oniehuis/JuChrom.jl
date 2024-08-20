@@ -154,7 +154,7 @@ Base.broadcastable(rifid::RiFID) = Ref(rifid)
     retentionindices::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Create an `RiFID` object that includes `scantimes`, `retentionindexname`, 
+Create an `RiFID` object that includes `scantimes`, `retentionindexname`, the 
 `retentionindices`, `intensities`, and `metadata`. The `retentionindices` may contain 
 missing values but must have at least one numerical entry. Ensure that `scantimes` and 
 `retentionindices` are both in ascending order and have the same length. Additionally, 
@@ -173,6 +173,10 @@ julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
 ERROR: ArgumentError: retention indices not in ascending order
 [...]
+
+julia> RiFID([1, 2, 3]u"s", "Kovats", [100.0, missing, 300.0], [12, 956, -1])
+ERROR: ArgumentError: intensity values contain values less than zero
+[...]
 ```
 """
 function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,  
@@ -189,9 +193,7 @@ end
 # [...]
 
 
-# julia> RiFID([1, 2, 3]u"s", "Kovats", [100.0, missing, 300.0], [12, 956, -1])
-# ERROR: ArgumentError: intensity values contain values less than zero
-# [...]
+
 
 """
     JuChrom.RetentionIndexStyle
@@ -240,7 +242,7 @@ julia> fid = FID([1, 2, 3]u"s", [12, 956, 1]);
 julia> JuChrom.RetentionIndexStyle(typeof(fid))
 JuChrom.HasNoRetentionIndexData()
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> JuChrom.RetentionIndexStyle(typeof(rifid))
 JuChrom.HasRetentionIndexData()
@@ -360,7 +362,7 @@ See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindexname`]
 
 # Examples
 ```jldoctest
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> retentionindices(rifid)
 3-element Vector{Int64}:
