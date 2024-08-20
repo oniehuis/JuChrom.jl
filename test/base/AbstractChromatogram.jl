@@ -225,6 +225,21 @@ end
 end
 
 
+@testset "maxretentionindex FID" begin
+    @test_throws MethodError maxretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+@testset "maxretentionindex GCMS" begin
+    @test_throws MethodError maxretentionindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]))
+end
+
+
+@testset "maxretentionindex TIC" begin
+    @test_throws MethodError maxretentionindex(TIC([1, 2, 3]u"s", [12, 956, 23]))
+end
+
 
 ############################################################################################
 # maxscantime(chrom::AbstractChromatogram); timeunit::Unitful.TimeUnits, 
@@ -658,6 +673,21 @@ end
 end
 
 
+@testset "minretentionindex FID" begin
+    @test_throws MethodError minretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+@testset "minretentionindex GCMS" begin
+    @test_throws MethodError minretentionindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]))
+end
+
+
+@testset "minretentionindex TIC" begin
+    @test_throws MethodError minretentionindex(TIC([1, 2, 3]u"s", [12, 956, 23]))
+end
+
 ############################################################################################
 # minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
 # timeunit::Unitful.TimeUnits, ustripped::Bool=false)
@@ -862,6 +892,22 @@ end
 end
 
 
+@testset "retentionindexname FID" begin
+    @test_throws MethodError retentionindexname(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+@testset "retentionindexname GCMS" begin
+    @test_throws MethodError retentionindexname(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]))
+end
+
+
+@testset "retentionindexname TIC" begin
+    @test_throws MethodError retentionindexname(TIC([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
 ############################################################################################
 # retentionindices(chrom::AbstractChromatogram)
 ############################################################################################
@@ -903,6 +949,22 @@ end
         [100, 200, 300], [12, 956, 23]), 0:3)
     @test_throws BoundsError retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
         [100, 200, 300], [12, 956, 23]), 1:4)
+end
+
+
+@testset "retentionindices FID" begin
+    @test_throws MethodError retentionindices(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+@testset "retentionindices GCMS" begin
+    @test_throws MethodError retentionindices(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]))
+end
+
+
+@testset "retentionindices TIC" begin
+    @test_throws MethodError retentionindices(TIC([1, 2, 3]u"s", [12, 956, 23]))
 end
 
 
