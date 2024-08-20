@@ -99,7 +99,7 @@ ERROR: ArgumentError: scan times not in ascending order
 [...]
 
 julia> FID([1, 2, 3]u"s", [-12.0, 956.0, 1.0])
-ERROR: ArgumentError: intensity values contain values less than zero
+ERROR: ArgumentError: intensity values contain at least one value less than zero
 [...]
 ```
 """
@@ -175,7 +175,7 @@ ERROR: ArgumentError: retention indices not in ascending order
 [...]
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [100.0, missing, 300.0], [12, 956, -1])
-ERROR: ArgumentError: intensity values contain values less than zero
+ERROR: ArgumentError: intensity values contain at least one value less than zero
 [...]
 ```
 """
