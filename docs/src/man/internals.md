@@ -6,4 +6,8 @@ JuChrom.findclosest
 JuChrom.invert
 JuChrom.LocalMaxima
 JuChrom.nextlocalmaximum
+JuChrom.RetentionIndexStyle
+JuChrom.RetentionIndexStyle(::Type)
+JuChrom.HasNoRetentionIndexData
+JuChrom.HasRetentionIndexData
 ```

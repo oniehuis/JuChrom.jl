@@ -10,6 +10,7 @@ export AbstractGC
 export AbstractGCMS
 export AbstractTIC
 export FID
+export RiFID
 export GCMS
 export TIC
 export IonScanOrder
@@ -31,11 +32,15 @@ export ionscantimes
 export ionscantimeshift
 export maxintensity
 export maxion
+export maxretentionindex
 export maxscantime
 export metadata
 export minintensity
 export minion
+export minretentionindex
 export minscantime
+export retentionindices
+export retentionindexname
 export runduration
 export scancount
 export scanduration

@@ -50,10 +50,10 @@ struct FID{
     function FID{T1, T2}(scantimes::T1, intensities::T2, metadata::Dict) where {
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
-        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
-            DimensionMismatch("intensity count does not match scantime count"))
+            DimensionMismatch("intensity count does not match scan time count"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
         count(i -> i < 0, intensities) == 0 || throw(
@@ -110,6 +110,281 @@ function FID(scantimes::T1, intensities::T2, metadata::Dict=Dict{Any, Any}()) wh
 end
 
 
+struct RiFID{
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractString,
+    T3<:AbstractVector{<:Union{Real, Missing}},
+    T4<:AbstractVector{<:Real}} <: AbstractFID
+    scantimes::T1
+    retentionindexname::T2
+    retentionindices::T3
+    intensities::T4
+    metadata::Dict{Any, Any}
+    function RiFID{T1, T2, T3, T4}(scantimes::T1, retentionindexname::T2, 
+        retentionindices::T3, intensities::T4, metadata::Dict) where {
+        T1<:AbstractVector{<:Unitful.Time},
+        T2<:AbstractString,
+        T3<:AbstractVector{<:Union{Real, Missing}},
+        T4<:AbstractVector{<:Real}}
+        length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
+        length(retentionindexname) > 0 || throw(ArgumentError(
+            "no retention index name provided"))
+        length(collect(skipmissing(retentionindices))) > 0 || throw(ArgumentError(
+            "no retention index value(s) provided"))
+        issorted(collect(skipmissing(retentionindices))) || throw(
+            ArgumentError("retention indices not in ascending order"))
+        length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
+        length(retentionindices) == length(scantimes) || throw(
+            DimensionMismatch("retention index count does not match scan time count"))
+        length(intensities) == length(scantimes) || throw(
+            DimensionMismatch("intensity count does not match scan time count"))
+        issorted(scantimes) || throw(
+            ArgumentError("scan times not in ascending order"))
+        count(i -> i < 0, intensities) == 0 || throw(
+            ArgumentError("intensity values contain values less than zero"))
+        new(scantimes, retentionindexname, retentionindices, intensities, metadata)
+    end
+end
+
+Base.broadcastable(rifid::RiFID) = Ref(rifid)
+
+
+"""
+    RiFID(scantimes::AbstractVector{<:Unitful.Time}, retentionindexname::AbstractString, 
+    retentionindices::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}, 
+    metadata::Dict=Dict{Any, Any})
+
+Create an `RiFID` object that includes `scantimes`, `retentionindexname`, 
+`retentionindices`, `intensities`, and `metadata`. The `retentionindices` may contain 
+missing values but must have at least one numerical entry. Ensure that `scantimes` and 
+`retentionindices` are both in ascending order and have the same length. Additionally, 
+ensure that all values in `intensities` are non-negative.
+
+See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
+[`scantimes`](@ref), [`retentionindexname`](@ref), [`retentionindices`](@ref), 
+[`intensities`](@ref), [`metadata`](@ref).
+
+# Examples
+```jldoctest
+julia> RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> RiFID([1, 2, 3]u"s", "Kovats RI", [200.0, 300.0], [12, 956, 1])
+ERROR: DimensionMismatch: retention index count does not match scan time count
+[...]
+
+julia> RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 300.0, 200.0], [12, 956, 1])
+ERROR: ArgumentError: retention indices not in ascending order
+[...]
+
+julia> RiFID([1, 2, 3]u"s", "Kovats RI", [100.0, missing, 300.0], [12, 956, -1])
+ERROR: ArgumentError: intensity values contain values less than zero
+[...]
+```
+"""
+function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,  
+    intensities::T4, metadata::Dict=Dict{Any, Any}()) where {
+    T1<:AbstractVector{<:Unitful.Time},
+    T2<:AbstractString,
+    T3<:AbstractVector{<:Union{Real, Missing}},
+    T4<:AbstractVector{<:Real}}
+    RiFID{T1, T2, T3, T4}(scantimes, retentionindexname, retentionindices, intensities, 
+        metadata)
+end
+
+
+"""
+    JuChrom.RetentionIndexStyle
+
+Supertype for traits related to the availability of retention index data.
+
+See also [`HasRetentionIndexData`](@ref), [`HasNoRetentionIndexData`](@ref), 
+[`RiFID`](@ref).
+"""
+abstract type RetentionIndexStyle end
+
+
+"""
+    JuChrom.HasRetentionIndexData <: JuChrom.RetentionIndexStyle
+
+Data type that functions as a trait indicating the availability of retention index data.
+
+See also [`RetentionIndexStyle`](@ref), [`HasNoRetentionIndexData`](@ref), 
+[`RiFID`](@ref).
+"""
+struct HasRetentionIndexData <: RetentionIndexStyle end
+
+
+"""
+    JuChrom.HasNoRetentionIndexData <: JuChrom.RetentionIndexStyle
+
+Data type that functions as a trait indicating the absence of retention index data.
+
+See also [`RetentionIndexStyle`](@ref), [`HasNoRetentionIndexData`](@ref), 
+[`RiFID`](@ref).
+"""
+struct HasNoRetentionIndexData <: RetentionIndexStyle end
+
+
+"""
+    JuChrom.RetentionIndexStyle(::Type)
+
+Return the RetentionIndexStyle trait assigned to the specified data type.
+
+See also [`AbstractChromatogram`](@ref), [`HasRetentionIndexData`](@ref), 
+[`HasNoRetentionIndexData`](@ref), [`retentionindices`](@ref), 
+[`retentionindexname`](@ref).
+
+# Examples
+```jldoctest
+julia> fid = FID([1, 2, 3]u"s", [12, 956, 1]);
+
+julia> JuChrom.RetentionIndexStyle(typeof(fid))
+JuChrom.HasNoRetentionIndexData()
+
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> JuChrom.RetentionIndexStyle(typeof(rifid))
+JuChrom.HasRetentionIndexData()
+```
+"""
+RetentionIndexStyle(::Type) = HasNoRetentionIndexData()
+RetentionIndexStyle(::Type{<:RiFID}) = HasRetentionIndexData()
+
+
+"""
+    maxretentionindex(chrom::AbstractChromatogram)
+
+Return the maximum retention index, ignoring any missing values. Note that this function 
+will only return the maximum retention index for specific AbstractChromatogram subtypes 
+that store retention index data, such as RiFID.
+
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](@ref), 
+[`retentionindices`](@ref), [`retentionindexname`](@ref).
+
+# Examples
+```jldoctest
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> maxretentionindex(rifid)
+300
+
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> maxretentionindex(rifid)
+300.0
+```
+"""
+maxretentionindex(chrom::T) where {T<:AbstractChromatogram} = maxretentionindex(
+    RetentionIndexStyle(T), chrom)
+maxretentionindex(::HasRetentionIndexData, chrom) = maximum(
+    skipmissing(chrom.retentionindices))
+maxretentionindex(::HasNoRetentionIndexData, chrom) = throw(
+    MethodError(maxretentionindex, (chrom,)))
+
+
+"""
+    minretentionindex(chrom::AbstractChromatogram)
+
+Return the minimum retention index, ignoring any missing values. Note that this function 
+will only return the minimum retention index for specific AbstractChromatogram subtypes 
+that store retention index data, such as RiFID.
+
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](@ref), 
+[`retentionindices`](@ref), [`retentionindexname`](@ref).
+
+# Examples
+```jldoctest
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> minretentionindex(rifid)
+100
+
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> minretentionindex(rifid)
+200.0
+```
+"""
+minretentionindex(chrom::T) where {T<:AbstractChromatogram} = minretentionindex(
+    RetentionIndexStyle(T), chrom)
+minretentionindex(::HasRetentionIndexData, chrom) = minimum(
+    skipmissing(chrom.retentionindices))
+minretentionindex(::HasNoRetentionIndexData, chrom) = throw(
+    MethodError(minretentionindex, (chrom,)))
+
+
+"""
+    retentionindexname(chrom::AbstractChromatogram)
+
+Return the retention index name. Note that this function will only return the retention 
+index name for specific AbstractChromatogram subtypes that store retention index data, such 
+as RiFID.
+
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@ref).
+
+# Examples
+```jldoctest
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> retentionindices(rifid)
+3-element Vector{Int64}:
+ 100
+ 200
+ 300
+
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> retentionindices(rifid)
+3-element Vector{Union{Missing, Float64}}:
+    missing
+ 200.0
+ 300.0
+```
+"""
+retentionindexname(chrom::T) where {T<:AbstractChromatogram} = retentionindexname(
+    RetentionIndexStyle(T), chrom)
+retentionindexname(::HasRetentionIndexData, chrom) = chrom.retentionindexname
+retentionindexname(::HasNoRetentionIndexData, chrom) = throw(
+    MethodError(retentionindexname, (chrom,)))
+
+
+"""
+    retentionindices(chrom::AbstractChromatogram)
+
+Return the retention indices. Note that this function will only return the retention 
+indices for specific AbstractChromatogram subtypes that store retention index data, such 
+as RiFID. Also, be aware that the returned retention indices may include missing values.
+
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindexname`](@ref).
+
+# Examples
+```jldoctest
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+
+julia> retentionindices(rifid)
+3-element Vector{Int64}:
+ 100
+ 200
+ 300
+
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> retentionindices(rifid)
+3-element Vector{Union{Missing, Float64}}:
+    missing
+ 200.0
+ 300.0
+```
+"""
+retentionindices(chrom::T) where {T<:AbstractChromatogram} = retentionindices(
+    RetentionIndexStyle(T), chrom)
+retentionindices(::HasRetentionIndexData, chrom) = chrom.retentionindices
+retentionindices(::HasNoRetentionIndexData, chrom) = throw(
+    MethodError(retentionindices, (chrom,)))
+
+
 """
     AbstractTIC <: AbstractGC
 
@@ -130,7 +405,7 @@ struct TIC{
     function TIC{T1, T2}(scantimes::T1, intensities::T2, metadata::Dict) where {
         T1<:AbstractVector{<:Unitful.Time},
         T2<:AbstractVector{<:Real}}
-        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
             DimensionMismatch("intensity count does not match scan count"))
@@ -219,7 +494,7 @@ struct GCMS{
             T1<:AbstractVector{<:Unitful.Time},
             T2<:AbstractVector{<:Real},
             T3<:AbstractMatrix{<:Real}}
-        length(scantimes) > 0 || throw(ArgumentError("no scantime(s) provided"))
+        length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
         size(intensities, 1) == length(scantimes) || throw(DimensionMismatch(
@@ -1156,7 +1431,7 @@ See also [`AbstractGCMS`](@ref), [`ioncount`](@ref), [`ion`](@ref), [`minion`](@
 In the following examples, the type of `ions` is explicitely annotated to demonstrate that 
 the GCMS object preserves this type.
 
-# Example
+# Examples
 ```jldoctest
 julia> gcms = GCMS([1, 2, 3]u"s", Int64[85, 100], [0 12; 34 956; 23 1]);
 
@@ -1784,6 +2059,55 @@ function Base.show(io::IO, fid::FID)
 
     # Information about the metadata
     n = length(metadata(fid))
+    print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
+end
+
+
+function Base.show(io::IO, rifid::RiFID)
+    # Information about the element types
+    println(io, "RiFID {scan times: ", eltype(ustrip.(scantimes(rifid))), 
+        ", retention indices: ", eltype(retentionindices(rifid)), 
+        ", intensities: ", eltype(intensities(rifid)), "}")
+
+    # Information about the scan count and the scan times
+    if scancount(rifid) > 10
+        println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), " - ", 
+            maxscantime(rifid))
+    elseif 1 < scancount(rifid) ≤ 10
+        print(io, scancount(rifid), " scans; scan times: ")
+        for i in eachindex(scantimes(rifid))
+            print(io, scantime(rifid, i))
+            i < scancount(rifid) ? print(io, ", ") : println(io)
+        end
+    else
+        println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
+    end
+
+    # Information about the retention index count and the retention indices
+    println(io, "retention index name: ", retentionindexname(rifid))
+    println(io, "retention indices: ", retentionindices(rifid))
+    # if scancount(rifid) > 10
+    #     println(io, scancount(rifid), " scans; scan time range: ", minscantime(rifid), 
+    #         " - ", maxscantime(rifid))
+    # elseif 1 < scancount(rifid) ≤ 10
+    #     print(io, scancount(rifid), " scans; scan times: ")
+    #     for i in eachindex(scantimes(rifid))
+    #         print(io, scantime(rifid, i))
+    #         i < scancount(rifid) ? print(io, ", ") : println(io)
+    #     end
+    # else
+    #     println(io, scancount(rifid), " scan; scan time: ", scantime(rifid, 1))
+    # end
+
+    # Information about the intensities
+    if length(intensities(rifid)) > 1
+        println(io, "intensity range: ", minintensity(rifid), " - ", maxintensity(rifid))
+    else
+        println(io, "intensity: ", first(intensities(rifid)))
+    end
+
+    # Information about the metadata
+    n = length(metadata(rifid))
     print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
 end
 

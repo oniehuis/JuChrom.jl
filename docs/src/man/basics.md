@@ -5,6 +5,7 @@ AbstractChromatogram
 AbstractGC
 AbstractFID
 FID
+RiFID
 AbstractTIC
 TIC
 AbstractGCMS
@@ -31,11 +32,15 @@ ionscantimeshift
 ions
 maxintensity
 maxion
+maxretentionindex
 maxscantime
 metadata
 minintensity
 minion
+minretentionindex
 minscantime
+retentionindices
+retentionindexname
 runduration
 scancount
 scanduration
