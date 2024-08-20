@@ -75,7 +75,7 @@ that `scantimes` must be in ascending order, and `intensities` must not contain 
 less than zero.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@ref), 
-[`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
+[`RiFID`](@ref), [`scantimes`](@ref), [`intensities`](@ref), [`metadata`](@ref).
 
 In the following examples, the types of `scantimes` and `intensities` are explicitely 
 annotated to demonstrate that the `FID` object preserves these types.
@@ -154,7 +154,7 @@ Base.broadcastable(rifid::RiFID) = Ref(rifid)
     retentionindices::{<:Union{Real, Missing}}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Create an `RiFID` object that includes `scantimes`, the `retentionindexname`, 
+Create an `RiFID` object that includes `scantimes`, a `retentionindexname`, 
 `retentionindices`, `intensities`, and `metadata`. The `retentionindices` may contain 
 missing values but must have at least one numerical entry. Ensure that `scantimes` and 
 `retentionindices` are both in ascending order and have the same length. Additionally, 
@@ -319,23 +319,12 @@ as RiFID.
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@ref), 
 [`maxretentionindex`](@ref), [`minretentionindex`](@ref).
 
-# Examples
+# Example
 ```jldoctest
 julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
-julia> retentionindices(rifid)
-3-element Vector{Int64}:
- 100
- 200
- 300
-
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
-
-julia> retentionindices(rifid)
-3-element Vector{Union{Missing, Float64}}:
-    missing
- 200.0
- 300.0
+julia> retentionindexname(rifid)
+"Kovats"
 ```
 """
 retentionindexname(chrom::T) where {T<:AbstractChromatogram} = retentionindexname(
