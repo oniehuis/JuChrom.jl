@@ -154,7 +154,7 @@ Base.broadcastable(rifid::RiFID) = Ref(rifid)
     retentionindices::{<:Union{Real, Missing}}, intensities::AbstractVector{<:Real}, 
     metadata::Dict=Dict{Any, Any})
 
-Create an `RiFID` object that includes `scantimes`, `retentionindexname`, the 
+Create an `RiFID` object that includes `scantimes`, the `retentionindexname`, 
 `retentionindices`, `intensities`, and `metadata`. The `retentionindices` may contain 
 missing values but must have at least one numerical entry. Ensure that `scantimes` and 
 `retentionindices` are both in ascending order and have the same length. Additionally, 
@@ -169,6 +169,10 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@
 julia> RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> RiFID([1, 2, 3]u"s", "Kovats", [200.0, 300.0], [12, 956, 1])
+ERROR: DimensionMismatch: retention index count does not match scan time count
+[...]
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
 ERROR: ArgumentError: retention indices not in ascending order
