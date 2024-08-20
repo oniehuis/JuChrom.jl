@@ -184,6 +184,11 @@ end
 # maxretentionindex(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{T, S}]) 
 # where {T<:Integer, S<:Integer}
 ############################################################################################
+@testset "maxretentionindex FID" begin
+    @test_throws MethodError maxretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
 @testset "maxretentionindex RiFID" begin
     # Same return values as those provided as arguments to construct the object
     @test 300 == maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
@@ -225,11 +230,6 @@ end
 end
 
 
-@testset "maxretentionindex FID" begin
-    @test_throws MethodError maxretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
-end
-
-
 @testset "maxretentionindex GCMS" begin
     @test_throws MethodError maxretentionindex(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]))
@@ -238,6 +238,47 @@ end
 
 @testset "maxretentionindex TIC" begin
     @test_throws MethodError maxretentionindex(TIC([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
+@testset "maxretentionindex RiTIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 300 == maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+    @test 200 == maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:2)
+    @test 100 == maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test Int == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23]), 2:3))
+    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0]), 2:3))
+    @test Int64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
+
+    # Check for ArgumentError when specified range contains no numercial values
+    @test_throws ArgumentError maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, missing, missing], [12, 956, 23]), 2:3)
 end
 
 
@@ -632,6 +673,11 @@ end
 # minretentionindex(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange{T, S}]) 
 # where {T<:Integer, S<:Integer}
 ############################################################################################
+@testset "minretentionindex FID" begin
+    @test_throws MethodError minretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
 @testset "minretentionindex RiFID" begin
     # Same return values as those provided as arguments to construct the object
     @test 100 == minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
@@ -673,11 +719,6 @@ end
 end
 
 
-@testset "minretentionindex FID" begin
-    @test_throws MethodError minretentionindex(FID([1, 2, 3]u"s", [12, 956, 23]))
-end
-
-
 @testset "minretentionindex GCMS" begin
     @test_throws MethodError minretentionindex(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]))
@@ -687,6 +728,48 @@ end
 @testset "minretentionindex TIC" begin
     @test_throws MethodError minretentionindex(TIC([1, 2, 3]u"s", [12, 956, 23]))
 end
+
+
+@testset "minretentionindex RiTIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test 100 == minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+    @test 200 == minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 2:3)
+    @test 100 == minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
+
+    # Same return same element type as used to construct the object
+    @test Int == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0])))
+    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
+    @test Int64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23]), 2:3))
+    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0]), 2:3))
+    @test Int64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
+
+    # Check for ArgumentError when specified range contains no numercial values
+    @test_throws ArgumentError minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, missing, missing], [12, 956, 23]), 2:3)
+end
+
 
 ############################################################################################
 # minscantime(chrom::AbstractChromatogram[, scanindexrange::OrdinalRange]; 
@@ -879,6 +962,11 @@ end
 ############################################################################################
 # retentionindexname(chrom::AbstractChromatogram)
 ############################################################################################
+@testset "retentionindexname FID" begin
+    @test_throws MethodError retentionindexname(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
 @testset "retentionindexname RiFID" begin
     # Same return values as those provided as arguments to construct the object
     @test "Kovats" == retentionindexname(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
@@ -889,11 +977,6 @@ end
         [100, 200, 300], [12, 956, 23])))
     @test SubString{String} == typeof(retentionindexname(RiFID([1, 2, 3]u"s", 
         SubString("Kovats", 1:6), [100, 200, 300], [12.0, 956.0, 23.0])))
-end
-
-
-@testset "retentionindexname FID" begin
-    @test_throws MethodError retentionindexname(FID([1, 2, 3]u"s", [12, 956, 23]))
 end
 
 
@@ -908,9 +991,27 @@ end
 end
 
 
+@testset "retentionindexname RiTIC" begin
+    # Same return values as those provided as arguments to construct the object
+    @test "Kovats" == retentionindexname(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]))
+
+    # Same return same element type as used to construct the object
+    @test String == typeof(retentionindexname(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23])))
+    @test SubString{String} == typeof(retentionindexname(RiTIC([1, 2, 3]u"s", 
+        SubString("Kovats", 1:6), [100, 200, 300], [12.0, 956.0, 23.0])))
+end
+
+
 ############################################################################################
 # retentionindices(chrom::AbstractChromatogram)
 ############################################################################################
+@testset "retentionindices FID" begin
+    @test_throws MethodError retentionindices(FID([1, 2, 3]u"s", [12, 956, 23]))
+end
+
+
 @testset "retentionindices RiFID" begin
     # Same return values as those provided as arguments to construct the object
     @test [100, 200, 300] == retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
@@ -952,11 +1053,6 @@ end
 end
 
 
-@testset "retentionindices FID" begin
-    @test_throws MethodError retentionindices(FID([1, 2, 3]u"s", [12, 956, 23]))
-end
-
-
 @testset "retentionindices GCMS" begin
     @test_throws MethodError retentionindices(GCMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]))
@@ -967,37 +1063,46 @@ end
     @test_throws MethodError retentionindices(TIC([1, 2, 3]u"s", [12, 956, 23]))
 end
 
-
-@testset "intensities scanindexrange TIC" begin
+@testset "retentionindices RiTIC" begin
     # Same return values as those provided as arguments to construct the object
-    @test [12, 956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]))
-    @test [956, 23] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=2:3)
-    @test [12] == intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), scanindexrange=1:1)
+    @test [100, 200, 300] == retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]))
+    @test [200, 300] == retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 2:3)
+    @test [100] == retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1:1)
 
     # Same return same element type as used to construct the object
-    @test Vector{Int} == typeof(intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23])))
-    @test Vector{Float64} == typeof(intensities(TIC([1, 2, 3]u"s", 
-        Float64[12.0, 956.0, 23.0])))
-    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20)))
+    @test Vector{Int} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Int[100, 200, 300], [12, 956, 23])))
+    @test Vector{Float64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        Float64[100, 200, 300], [12.0, 956.0, 23.0])))
+    @test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    @test StepRange{Int64, Int64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", 
+        "Kovats", 10:5:20, [12.0, 956.0, 23.0])))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
-        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0)))
-
+        Int64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0])))
     @test SubArray{Int64, 1, Vector{Int64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(TIC([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=2:3))
+        retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", Int[100, 200, 300], [12, 956, 23]), 
+        2:3))
     @test SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true} == typeof(
-        intensities(TIC([1, 2, 3]u"s", Float64[12.0, 956.0, 23.0]), scanindexrange=2:3))
-    @test StepRange{Int64, Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10:5:20), 
-        scanindexrange=2:3))
+        retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", Float64[100, 200, 300], 
+        [12.0, 956.0, 23.0]), 2:3))
+    @test StepRange{Int64, Int64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        10:5:20, [12.0, 956.0, 23.0]), 2:3))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
-        Int64} == typeof(intensities(TIC([1, 2, 3]u"s", 10.0:5:20.0), 
-        scanindexrange=2:3))
+        Int64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
+        [12.0, 956.0, 23.0]), 2:3))
 
     # Check for BoundsErrors
-    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
-        scanindexrange=0:3)
-    @test_throws BoundsError intensities(TIC([1, 2, 3]u"s", [12, 956, 23]), 
-        scanindexrange=1:4)
+    @test_throws BoundsError retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 0:3)
+    @test_throws BoundsError retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, 300], [12, 956, 23]), 1:4)
 end
+
 
 ############################################################################################
 # runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 

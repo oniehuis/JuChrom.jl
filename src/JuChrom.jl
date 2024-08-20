@@ -13,6 +13,7 @@ export FID
 export RiFID
 export GCMS
 export TIC
+export RiTIC
 export IonScanOrder
 export LinearAscending
 export LinearDescending

@@ -8,6 +8,7 @@ FID
 RiFID
 AbstractTIC
 TIC
+RiTIC
 AbstractGCMS
 GCMS
 IonScanOrder
