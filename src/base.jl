@@ -169,6 +169,10 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@
 julia> RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
+
+julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
+ERROR: ArgumentError: retention indices not in ascending order
+[...]
 ```
 """
 function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,  
@@ -184,9 +188,6 @@ end
 # ERROR: DimensionMismatch: retention index count does not match scan time count
 # [...]
 
-# julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
-# ERROR: ArgumentError: retention indices not in ascending order
-# [...]
 
 # julia> RiFID([1, 2, 3]u"s", "Kovats", [100.0, missing, 300.0], [12, 956, -1])
 # ERROR: ArgumentError: intensity values contain values less than zero
@@ -197,8 +198,7 @@ end
 
 Supertype for traits related to the availability of retention index data.
 
-See also [`HasRetentionIndexData`](@ref), [`HasNoRetentionIndexData`](@ref), 
-[`RiFID`](@ref).
+See also [`HasRetentionIndexData`](@ref), [`HasNoRetentionIndexData`](@ref).
 """
 abstract type RetentionIndexStyle end
 
@@ -209,7 +209,8 @@ abstract type RetentionIndexStyle end
 Data type that functions as a trait indicating the availability of retention index data.
 
 See also [`RetentionIndexStyle`](@ref), [`HasNoRetentionIndexData`](@ref), 
-[`RiFID`](@ref).
+[`RiFID`](@ref), [`retentionindexname`](@ref), [`retentionindices`](@ref), 
+[`maxretentionindex`](@ref), [`minretentionindex`](@ref).
 """
 struct HasRetentionIndexData <: RetentionIndexStyle end
 
@@ -219,8 +220,7 @@ struct HasRetentionIndexData <: RetentionIndexStyle end
 
 Data type that functions as a trait indicating the absence of retention index data.
 
-See also [`RetentionIndexStyle`](@ref), [`HasNoRetentionIndexData`](@ref), 
-[`RiFID`](@ref).
+See also [`RetentionIndexStyle`](@ref), [`HasNoRetentionIndexData`](@ref).
 """
 struct HasNoRetentionIndexData <: RetentionIndexStyle end
 
@@ -231,8 +231,7 @@ struct HasNoRetentionIndexData <: RetentionIndexStyle end
 Return the RetentionIndexStyle trait assigned to the specified data type.
 
 See also [`AbstractChromatogram`](@ref), [`HasRetentionIndexData`](@ref), 
-[`HasNoRetentionIndexData`](@ref), [`retentionindices`](@ref), 
-[`retentionindexname`](@ref).
+[`HasNoRetentionIndexData`](@ref).
 
 # Examples
 ```jldoctest
@@ -289,7 +288,7 @@ Return the minimum retention index, ignoring any missing values. Note that this 
 will only return the minimum retention index for specific AbstractChromatogram subtypes 
 that store retention index data, such as RiFID.
 
-See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](@ref), 
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`maxretentionindex`](@ref), 
 [`retentionindices`](@ref), [`retentionindexname`](@ref).
 
 # Examples
@@ -320,7 +319,8 @@ Return the retention index name. Note that this function will only return the re
 index name for specific AbstractChromatogram subtypes that store retention index data, such 
 as RiFID.
 
-See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@ref).
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@ref), 
+[`maxretentionindex`](@ref), [`minretentionindex`](@ref).
 
 # Examples
 ```jldoctest
@@ -355,7 +355,8 @@ Return the retention indices. Note that this function will only return the reten
 indices for specific AbstractChromatogram subtypes that store retention index data, such 
 as RiFID. Also, be aware that the returned retention indices may include missing values.
 
-See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindexname`](@ref).
+See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindexname`](@ref), 
+[`maxretentionindex`](@ref), [`minretentionindex`](@ref).
 
 # Examples
 ```jldoctest
