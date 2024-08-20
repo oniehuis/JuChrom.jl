@@ -166,21 +166,9 @@ See also [`AbstractChromatogram`](@ref), [`AbstractGC`](@ref), [`AbstractFID`](@
 
 # Examples
 ```jldoctest
-julia> RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
-julia> RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
-
-julia> RiFID([1, 2, 3]u"s", "Kovats RI", [200.0, 300.0], [12, 956, 1])
-ERROR: DimensionMismatch: retention index count does not match scan time count
-[...]
-
-julia> RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 300.0, 200.0], [12, 956, 1])
-ERROR: ArgumentError: retention indices not in ascending order
-[...]
-
-julia> RiFID([1, 2, 3]u"s", "Kovats RI", [100.0, missing, 300.0], [12, 956, -1])
-ERROR: ArgumentError: intensity values contain values less than zero
-[...]
+julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 ```
 """
 function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,  
@@ -192,7 +180,17 @@ function RiFID(scantimes::T1, retentionindexname::T2, retentionindices::T3,
     RiFID{T1, T2, T3, T4}(scantimes, retentionindexname, retentionindices, intensities, 
         metadata)
 end
+# julia> RiFID([1, 2, 3]u"s", "Kovats", [200.0, 300.0], [12, 956, 1])
+# ERROR: DimensionMismatch: retention index count does not match scan time count
+# [...]
 
+# julia> RiFID([1, 2, 3]u"s", "Kovats", [missing, 300.0, 200.0], [12, 956, 1])
+# ERROR: ArgumentError: retention indices not in ascending order
+# [...]
+
+# julia> RiFID([1, 2, 3]u"s", "Kovats", [100.0, missing, 300.0], [12, 956, -1])
+# ERROR: ArgumentError: intensity values contain values less than zero
+# [...]
 
 """
     JuChrom.RetentionIndexStyle
@@ -265,12 +263,12 @@ See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](
 
 # Examples
 ```jldoctest
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> maxretentionindex(rifid)
 300
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
 julia> maxretentionindex(rifid)
 300.0
@@ -296,12 +294,12 @@ See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`minretentionindex`](
 
 # Examples
 ```jldoctest
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> minretentionindex(rifid)
 100
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
 julia> minretentionindex(rifid)
 200.0
@@ -326,7 +324,7 @@ See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`retentionindices`](@
 
 # Examples
 ```jldoctest
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", Int64[100, 200, 300], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", Int64[100, 200, 300], [12, 956, 1]);
 
 julia> retentionindices(rifid)
 3-element Vector{Int64}:
@@ -334,7 +332,7 @@ julia> retentionindices(rifid)
  200
  300
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
 julia> retentionindices(rifid)
 3-element Vector{Union{Missing, Float64}}:
@@ -369,7 +367,7 @@ julia> retentionindices(rifid)
  200
  300
 
-julia> rifid = RiFID([1, 2, 3]u"s", "Kovats RI", [missing, 200.0, 300.0], [12, 956, 1]);
+julia> rifid = RiFID([1, 2, 3]u"s", "Kovats", [missing, 200.0, 300.0], [12, 956, 1]);
 
 julia> retentionindices(rifid)
 3-element Vector{Union{Missing, Float64}}:
