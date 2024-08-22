@@ -366,7 +366,7 @@ struct RiTIC{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractString,
     T3<:AbstractVector{<:Union{Real, Missing}},
-    T4<:AbstractVector{<:Real}} <: AbstractFID
+    T4<:AbstractVector{<:Real}} <: AbstractTIC
     scantimes::T1
     retentionindexname::T2
     retentionindices::T3
@@ -816,7 +816,7 @@ end
 
 
 """
-    binions(gcms::AbstractGCMS; ionbin::Function=integer)
+    binions(gcms::Union{GCMS, RiGCMS}; ionbin::Function=integer)
 
 Return a GCMS object in which the ions are binned according to the `ionbin` function (the 
 default is the integer function), and the intensities of the binned ions are summed.
@@ -874,15 +874,26 @@ julia> ions(gcms_binnedions)
  101
 ```
 """
-function binions(gcms::AbstractGCMS; ionbin::Function=integer)
+function binions(gcms::GCMS; ionbin::Function=integer)
     binnedions = sort(unique(ionbin.(ions(gcms))))
     imₙ = zeros(eltype(intensities(gcms)), (size(intensities(gcms), 1), length(binnedions)))
     for (i, ion) in enumerate(ions(gcms))
         binnedion = ionbin(ion)
         imₙ[:, searchsortedlast(binnedions, binnedion)] .+= @view intensities(gcms)[:, i]
     end
-    imₙ
     GCMS(scantimes(gcms), binnedions, imₙ, metadata(gcms))
+end
+
+
+function binions(gcms::RiGCMS; ionbin::Function=integer)
+    binnedions = sort(unique(ionbin.(ions(gcms))))
+    imₙ = zeros(eltype(intensities(gcms)), (size(intensities(gcms), 1), length(binnedions)))
+    for (i, ion) in enumerate(ions(gcms))
+        binnedion = ionbin(ion)
+        imₙ[:, searchsortedlast(binnedions, binnedion)] .+= @view intensities(gcms)[:, i]
+    end
+    RiGCMS(scantimes(gcms), retentionindexname(gcms), retentionindices(gcms), binnedions, 
+        imₙ, metadata(gcms))
 end
 
 
@@ -2343,7 +2354,7 @@ end
 
 
 """
-    totalionchromatogram(gcms::GCMS)
+    totalionchromatogram(gcms::Union{GCMS, RiGCMS})
 
 Compute the total ion chromatrogram.
 
@@ -2373,16 +2384,18 @@ julia> intensities(tic)
  990
   24
 
-julia> gcms = GCMS((1.1:3.1)u"s", [85, 100], Float64[0 12; 34 956; 23 1])
-GCMS {scan times: Float64, ions: Int64, intensities: Float64}
-3 scans; scan times: 1.1 s, 2.1 s, 3.1 s
+julia> gcms = RiGCMS((1:3)u"s", "Kovats", 1:1.0:3, [85, 100], Float64[0 12; 34 956; 23 1])
+RiGCMS {scan times: Int64, retention indices: Float64, ions: Int64, intensities: Float64}
+3 scans; scan times: 1 s, 2 s, 3 s
+3 retention indices: 1.0 (≘ 1 s), 2.0 (≘ 2 s), 3.0 (≘ 3 s)
 2 ions: m/z 85, 100
 intensity range: 0.0 - 956.0
 metadata: 0 entries
 
 julia> tic = totalionchromatogram(gcms)
-TIC {scan times: Float64, intensities: Float64}
-3 scans; scan times: 1.1 s, 2.1 s, 3.1 s
+RiTIC {scan times: Int64, retention indices: Float64, intensities: Float64}
+3 scans; scan times: 1 s, 2 s, 3 s
+3 retention indices: 1.0 (≘ 1 s), 2.0 (≘ 2 s), 3.0 (≘ 3 s)
 intensity range: 12.0 - 990.0
 metadata: 0 entries
 
@@ -2395,6 +2408,8 @@ julia> intensities(tic)
 """
 totalionchromatogram(gcms::GCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
     dims=2)), metadata(gcms))
+totalionchromatogram(gcms::RiGCMS) = RiTIC(scantimes(gcms), retentionindexname(gcms), 
+    retentionindices(gcms), vec(sum(intensities(gcms), dims=2)), metadata(gcms))
 
 
 function Base.show(io::IO, chrom::AbstractChromatogram)
