@@ -1807,6 +1807,85 @@ end
 
 
 ############################################################################################
+# retentionindex(chrom::AbstractChromatogram, scanindex::Integer)
+############################################################################################
+@testset "retentionindex FID scanindex" begin
+    @test_throws MethodError retentionindex(FID([1, 2, 3]u"s", [12, 956, 23]), 1)
+end
+
+
+@testset "retentionindex RiFID scanindex" begin
+    @test 100 == retentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [12, 956, 23]), 1)
+    @test missing === retentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [12, 956, 23]), 3)
+
+    @test Int == typeof(retentionindex(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1))
+    @test Float64 == typeof(retentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [12, 956, 23]), 1))
+    @test Missing == typeof(retentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [12, 956, 23]), 3))
+
+    @test_throws BoundsError retentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [12, 956, 23]), 0)
+    @test_throws BoundsError retentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [12, 956, 23]), 4)
+end
+
+
+@testset "retentionindex GCMS scanindex" begin
+    @test_throws MethodError retentionindex(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), 1)
+end
+
+
+@testset "retentionindex RiGCMS scanindex" begin
+    @test 100 == retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [85, 100], [0 12; 34 956; 23 1]), 1)
+    @test missing === retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [85, 100], [0 12; 34 956; 23 1]), 3)
+
+    @test Int == typeof(retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), 1))
+    @test Float64 == typeof(retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [85, 100], [0 12; 34 956; 23 1]), 1))
+    @test Missing == typeof(retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [85, 100], [0 12; 34 956; 23 1]), 3))
+
+    @test_throws BoundsError retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [85, 100], [0 12; 34 956; 23 1]), 0)
+    @test_throws BoundsError retentionindex(RiGCMS([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [85, 100], [0 12; 34 956; 23 1]), 4)
+end
+
+
+@testset "retentionindex TIC scanindex" begin
+    @test_throws MethodError retentionindex(TIC([1, 2, 3]u"s", [12, 956, 23]), 1)
+end
+
+
+@testset "retentionindex RiTIC scanindex" begin
+    @test 100 == retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [12, 956, 23]), 1)
+    @test missing === retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, missing], 
+        [12, 956, 23]), 3)
+
+    @test Int == typeof(retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), 1))
+    @test Float64 == typeof(retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [12, 956, 23]), 1))
+    @test Missing == typeof(retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100.0, 200.0, missing], [12, 956, 23]), 3))
+
+    @test_throws BoundsError retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [12, 956, 23]), 0)
+    @test_throws BoundsError retentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+        [100, 200, missing], [12, 956, 23]), 4)
+end
+
+
+############################################################################################
 # retentionindexname(chrom::AbstractChromatogram)
 ############################################################################################
 @testset "retentionindexname FID" begin
