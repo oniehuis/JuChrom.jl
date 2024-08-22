@@ -52,7 +52,7 @@ using Unitful: 𝐓
     @test isa(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]), 
         AbstractChromatogram)
     @test isa(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]), AbstractGC)
-    @test isa(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]), AbstractFID)
+    @test isa(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], [12, 956, 23]), AbstractTIC)
 
     # Check the associated trait
     @test JuChrom.HasRetentionIndexData() == JuChrom.RetentionIndexStyle(typeof(RiTIC(
