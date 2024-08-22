@@ -41,6 +41,7 @@ minintensity
 minion
 minretentionindex
 minscantime
+retentionindex
 retentionindices
 retentionindexname
 runduration

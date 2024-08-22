@@ -121,14 +121,14 @@ end
     io = IOBuffer()
     show(io, GCMS(Int64[1]u"s", Int64[85], reshape(Int64[12], (:,1))))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "1 scan; scan time: 1 s\n",
         "1 ion: m/z 85\n",
         "intensity: 12\n",
         "metadata: 0 entries")
     show(io, GCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956]))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "2 scans; scan times: 1 s, 2 s\n",
         "2 ions: m/z 85, 100\n",
         "intensity range: 0 - 956\n",
@@ -136,7 +136,7 @@ end
     show(io, GCMS(convert(Vector{Int64}, (1:10))u"s", Int64[85, 100], 
         reshape(convert(Vector{Int64}, (0:19)), (10,2))))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
         "2 ions: m/z 85, 100\n",
         "intensity range: 0 - 19\n",
@@ -144,7 +144,7 @@ end
     show(io, GCMS(convert(Vector{Int64}, (1:11))u"s", Int64[85, 100], 
         reshape(convert(Vector{Int64}, (0:21)), (11,2))))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "11 scans; scan time range: 1 s - 11 s\n",
         "2 ions: m/z 85, 100\n",
         "intensity range: 0 - 21\n",
@@ -152,7 +152,7 @@ end
     show(io, GCMS(Int64[1, 2, 3]u"s", Int64[85, 100], Int64[0 12; 34 956; 23 1], 
         Dict(:id => 4)))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "2 ions: m/z 85, 100\n",
         "intensity range: 0 - 956\n",
@@ -160,7 +160,7 @@ end
     show(io, GCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:94), 
         reshape(convert(Vector{Int64}, (0:29)), (3,10))))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "10 ions: m/z 85, 86, 87, 88, 89, 90, 91, 92, 93, 94\n",
         "intensity range: 0 - 29\n",
@@ -168,7 +168,7 @@ end
     show(io, GCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:95), 
         reshape(convert(Vector{Int64}, (0:32)), (3,11))))
     @test String(take!(io)) == string(
-        "GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "11 ions; range: m/z 85 - 95\n",
         "intensity range: 0 - 32\n",

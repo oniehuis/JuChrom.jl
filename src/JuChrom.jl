@@ -41,6 +41,7 @@ export minintensity
 export minion
 export minretentionindex
 export minscantime
+export retentionindex
 export retentionindices
 export retentionindexname
 export runduration

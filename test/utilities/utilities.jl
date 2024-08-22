@@ -176,6 +176,17 @@ end
 
 
 ############################################################################################
+# JuChrom.name(::Type)
+############################################################################################
+@testset "name" begin
+    @test FID == JuChrom.name(typeof(FID([1, 2, 3]u"s", [12, 956, 23])))
+    @test GCMS == JuChrom.name(typeof(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])))
+    @test Array == JuChrom.name(typeof(Int[1, 2, 3]))
+end
+
+
+############################################################################################
 # JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
 # startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 ############################################################################################

@@ -119,6 +119,10 @@ using Unitful: 𝐓
     @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "Kovats", [200, 200, 300], 
         [12, 956, 23])
 
+    # Numerical retention indices cannot be interrupted by missing values
+    @test_throws ArgumentError RiFID([1, 2, 3]u"s", "Kovats", [100, missing, 200], 
+        [12, 956, 23])
+
     # Intensity values cannot be less than zero
     @test_throws ArgumentError RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         [-1, 956, 23])
@@ -129,43 +133,56 @@ using Unitful: 𝐓
 end
 
 
-# @testset "show RiTIC" begin
-#     io = IOBuffer()
-#     show(io, RiTIC(Int64[1]u"s", Int64[12]))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "1 scan; scan time: 1 s\n",
-#         "intensity: 12\n",
-#         "metadata: 0 entries")
-#     show(io, RiTIC(Int64[1, 2]u"s", Int64[12, 13]))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "2 scans; scan times: 1 s, 2 s\n",
-#         "intensity range: 12 - 13\n",
-#         "metadata: 0 entries")
-#     show(io, RiTIC(convert(Vector{Int64}, (1:10))u"s", convert(Vector{Int64}, (12:21))))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
-#         "intensity range: 12 - 21\n",
-#         "metadata: 0 entries")
-#     show(io, RiTIC(convert(Vector{Int64}, (1:11))u"s", convert(Vector{Int64}, (12:22))))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "11 scans; scan time range: 1 s - 11 s\n",
-#         "intensity range: 12 - 22\n",
-#         "metadata: 0 entries")
-#     show(io, RiTIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4)))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "3 scans; scan times: 1 s, 2 s, 3 s\n",
-#         "intensity range: 12 - 956\n",
-#         "metadata: 1 entry")
-#     show(io, RiTIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4, 
-#         "name" => "sample")))
-#     @test String(take!(io)) == string(
-#         "RiTIC {scan times: Int64, intensities: Int64}\n",
-#         "3 scans; scan times: 1 s, 2 s, 3 s\n",
-#         "intensity range: 12 - 956\n",
-#         "metadata: 2 entries")
-# end
+@testset "show RiTIC" begin
+    io = IOBuffer()
+    show(io, RiTIC(Int64[1]u"s", "Kovats", Float64[1000], Int64[12]))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Float64, intensities: Int64}\n",
+        "1 scan; scan time: 1 s\n",
+        "1 retention index: 1000.0 (≘ 1 s)\n",
+        "intensity: 12\n",
+        "metadata: 0 entries")
+    show(io, RiTIC(Int64[1, 2]u"s", "Kovats", Float64[1000, 2000], Int64[12, 13]))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Float64, intensities: Int64}\n",
+        "2 scans; scan times: 1 s, 2 s\n",
+        "2 retention indices: 1000.0 (≘ 1 s), 2000.0 (≘ 2 s)\n",
+        "intensity range: 12 - 13\n",
+        "metadata: 0 entries")
+    show(io, RiTIC(convert(Vector{Int64}, (1:10))u"s", "Kovats", 1000:100.0:1900, 
+        convert(Vector{Int64}, (12:21))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Float64, intensities: Int64}\n",
+        "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
+        "10 retention indices: 1000.0 (≘ 1 s), 1100.0 (≘ 2 s), 1200.0 (≘ 3 s), ",
+        "1300.0 (≘ 4 s), 1400.0 (≘ 5 s), 1500.0 (≘ 6 s), 1600.0 (≘ 7 s), 1700.0 (≘ 8 s), ",
+        "1800.0 (≘ 9 s), 1900.0 (≘ 10 s)\n",
+        "intensity range: 12 - 21\n",
+        "metadata: 0 entries")
+    show(io, RiTIC(convert(Vector{Int64}, (1:11))u"s", "Kovats", 1000:100.0:2000, 
+        convert(Vector{Int64}, (12:22))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Float64, intensities: Int64}\n",
+        "11 scans; scan time range: 1 s - 11 s\n",
+        "11 retention indices; retention index range: 1000.0 (≘ 1 s) – 2000.0 (≘ 11 s)\n",
+        "intensity range: 12 - 22\n",
+        "metadata: 0 entries")
+    show(io, RiTIC(Int64[1, 2, 3]u"s", "Kovats", [missing, 2000, 3000], Int64[12, 956, 23], 
+        Dict(:id => 4)))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Union{Missing, Int64}, ",
+        "intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "2 retention indices: 2000 (≘ 2 s), 3000 (≘ 3 s)\n",
+        "intensity range: 12 - 956\n",
+        "metadata: 1 entry")
+    show(io, RiTIC(Int64[1, 2, 3]u"s", "Kovats", [missing, 2000, missing], 
+        Int64[12, 956, 23], Dict(:id => 4, "name" => "sample")))
+    @test String(take!(io)) == string(
+        "JuChrom.RiTIC {scan times: Int64, retention indices: Union{Missing, Int64}, ",
+        "intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "1 retention index: 2000 (≘ 2 s)\n",
+        "intensity range: 12 - 956\n",
+        "metadata: 2 entries")
+end

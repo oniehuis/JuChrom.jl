@@ -171,6 +171,10 @@ using Unitful: 𝐓
     @test_throws ArgumentError RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], [85, 85], 
         [0 12; 34 956; 23 1])
 
+    # Numerical retention indices cannot be interrupted by missing values
+    @test_throws ArgumentError RiGCMS([1, 2, 3]u"s", "Kovats", [100, missing, 200], 
+        [85, 100], [-1 12; 34 956; 23 1])
+
     # Intensity values cannot be less than zero
     @test_throws ArgumentError RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], [85, 100], 
         [-1 12; 34 956; 23 1])
@@ -181,60 +185,78 @@ using Unitful: 𝐓
 end
 
 
-# @testset "show RiGCMS" begin
-#     io = IOBuffer()
-#     show(io, RiGCMS(Int64[1]u"s", Int64[85], reshape(Int64[12], (:,1))))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "1 scan; scan time: 1 s\n",
-#         "1 ion: m/z 85\n",
-#         "intensity: 12\n",
-#         "metadata: 0 entries")
-#     show(io, RiGCMS(Int64[1, 2]u"s", Int64[85, 100], Int64[0 12; 34 956]))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "2 scans; scan times: 1 s, 2 s\n",
-#         "2 ions: m/z 85, 100\n",
-#         "intensity range: 0 - 956\n",
-#         "metadata: 0 entries")
-#     show(io, RiGCMS(convert(Vector{Int64}, (1:10))u"s", Int64[85, 100], 
-#         reshape(convert(Vector{Int64}, (0:19)), (10,2))))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
-#         "2 ions: m/z 85, 100\n",
-#         "intensity range: 0 - 19\n",
-#         "metadata: 0 entries")
-#     show(io, RiGCMS(convert(Vector{Int64}, (1:11))u"s", Int64[85, 100], 
-#         reshape(convert(Vector{Int64}, (0:21)), (11,2))))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "11 scans; scan time range: 1 s - 11 s\n",
-#         "2 ions: m/z 85, 100\n",
-#         "intensity range: 0 - 21\n",
-#         "metadata: 0 entries")
-#     show(io, RiGCMS(Int64[1, 2, 3]u"s", Int64[85, 100], Int64[0 12; 34 956; 23 1], 
-#         Dict(:id => 4)))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "3 scans; scan times: 1 s, 2 s, 3 s\n",
-#         "2 ions: m/z 85, 100\n",
-#         "intensity range: 0 - 956\n",
-#         "metadata: 1 entry")
-#     show(io, RiGCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:94), 
-#         reshape(convert(Vector{Int64}, (0:29)), (3,10))))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "3 scans; scan times: 1 s, 2 s, 3 s\n",
-#         "10 ions: m/z 85, 86, 87, 88, 89, 90, 91, 92, 93, 94\n",
-#         "intensity range: 0 - 29\n",
-#         "metadata: 0 entries")
-#     show(io, RiGCMS(Int64[1, 2, 3]u"s", convert(Vector{Int64}, 85:95), 
-#         reshape(convert(Vector{Int64}, (0:32)), (3,11))))
-#     @test String(take!(io)) == string(
-#         "RiGCMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
-#         "3 scans; scan times: 1 s, 2 s, 3 s\n",
-#         "11 ions; range: m/z 85 - 95\n",
-#         "intensity range: 0 - 32\n",
-#         "metadata: 0 entries")
-# end
+@testset "show RiGCMS" begin
+    io = IOBuffer()
+    show(io, RiGCMS(Int64[1]u"s", "Kovats", Float64[1000], Int64[85], 
+        reshape(Int64[12], (:,1))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Float64, ions: Int64, ", 
+            "intensities: Int64}\n",
+        "1 scan; scan time: 1 s\n",
+        "1 retention index: 1000.0 (≘ 1 s)\n",
+        "1 ion: m/z 85\n",
+        "intensity: 12\n",
+        "metadata: 0 entries")
+    show(io, RiGCMS(Int64[1, 2]u"s", "Kovats", Float64[1000, 2000], Int64[85, 100], 
+        Int64[0 12; 34 956]))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Float64, ions: Int64, ",
+            "intensities: Int64}\n",
+        "2 scans; scan times: 1 s, 2 s\n",
+        "2 retention indices: 1000.0 (≘ 1 s), 2000.0 (≘ 2 s)\n",
+        "2 ions: m/z 85, 100\n",
+        "intensity range: 0 - 956\n",
+        "metadata: 0 entries")
+    show(io, RiGCMS(convert(Vector{Int64}, (1:10))u"s", "Kovats", 1000:100.0:1900, 
+        Int64[85, 100], reshape(convert(Vector{Int64}, (0:19)), (10,2))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Float64, ions: Int64, ",
+            "intensities: Int64}\n",
+        "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
+        "10 retention indices: 1000.0 (≘ 1 s), 1100.0 (≘ 2 s), 1200.0 (≘ 3 s), ",
+            "1300.0 (≘ 4 s), 1400.0 (≘ 5 s), 1500.0 (≘ 6 s), 1600.0 (≘ 7 s), ",
+            "1700.0 (≘ 8 s), 1800.0 (≘ 9 s), 1900.0 (≘ 10 s)\n",
+        "2 ions: m/z 85, 100\n",
+        "intensity range: 0 - 19\n",
+        "metadata: 0 entries")
+    show(io, RiGCMS(convert(Vector{Int64}, (1:11))u"s", "Kovats", 1000:100.0:2000, 
+        Int64[85, 100], reshape(convert(Vector{Int64}, (0:21)), (11,2))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Float64, ions: Int64, ",
+            "intensities: Int64}\n",
+        "11 scans; scan time range: 1 s - 11 s\n",
+        "11 retention indices; retention index range: 1000.0 (≘ 1 s) – 2000.0 (≘ 11 s)\n",
+        "2 ions: m/z 85, 100\n",
+        "intensity range: 0 - 21\n",
+        "metadata: 0 entries")
+    show(io, RiGCMS(Int64[1, 2, 3]u"s", "Kovats", [missing, 2000, 3000], Int64[85, 100], 
+        Int64[0 12; 34 956; 23 1], Dict(:id => 4)))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Union{Missing, Int64}, ", 
+            "ions: Int64, intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "2 retention indices: 2000 (≘ 2 s), 3000 (≘ 3 s)\n",
+        "2 ions: m/z 85, 100\n",
+        "intensity range: 0 - 956\n",
+        "metadata: 1 entry")
+    show(io, RiGCMS(Int64[1, 2, 3]u"s", "Kovats", [missing, 2000, missing], 
+        convert(Vector{Int64}, 85:94), reshape(convert(Vector{Int64}, (0:29)), (3,10))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Union{Missing, Int64}, ",
+            "ions: Int64, intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "1 retention index: 2000 (≘ 2 s)\n",
+        "10 ions: m/z 85, 86, 87, 88, 89, 90, 91, 92, 93, 94\n",
+        "intensity range: 0 - 29\n",
+        "metadata: 0 entries")
+    show(io, RiGCMS(Int64[1, 2, 3]u"s", "Kovats", [missing, 2000, missing], 
+        convert(Vector{Int64}, 85:95), reshape(convert(Vector{Int64}, (0:32)), (3,11))))
+    @test String(take!(io)) == string(
+        "JuChrom.RiGCMS {scan times: Int64, retention indices: Union{Missing, Int64}, ",
+        "ions: Int64, intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "1 retention index: 2000 (≘ 2 s)\n",
+        "11 ions; range: m/z 85 - 95\n",
+        "intensity range: 0 - 32\n",
+        "metadata: 0 entries")
+end

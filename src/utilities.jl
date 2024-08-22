@@ -96,10 +96,26 @@ end
 
 
 """
+    JuChrom.name(::Type)
+
+Return the name of the type.
+
+# Example
+```jldoctest
+julia> gcms = GCMS(Int32[1, 2, 3]u"s", Int64[85, 100], Int32[0 12; 34 956; 23 1]);
+
+julia> JuChrom.name(typeof(gcms))
+GCMS
+```
+"""
+name(::Type{T}) where {T} = (isempty(T.parameters) ? T : T.name.wrapper)
+
+
+"""
     JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
     startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 
-Returns the index range of the next local maximum. If the maximum is a single peak, the 
+Return the index range of the next local maximum. If the maximum is a single peak, the 
 range will have a length of 1; if a plateau maximum is found, the range will have a 
 length greater than 1. If no maximum is found, nothing is returned. The optional keyword 
 arguments `startindex` and `startindex` allow you to restrict the search range for the 
@@ -108,7 +124,7 @@ maximum. Note that `startindex` and `startindex` must be at least two indices ap
 
 See also [`LocalMaxima`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> values = [4, 3, 5, 3, 6, 6, 6, 4, 7];
 
@@ -179,7 +195,7 @@ end
     JuChrom.LocalMaxima(values::AbstractVector{<:Real}; 
     startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 
-Returns an iterator that yields the index range of each local maximum until no more local 
+Return an iterator that yields the index range of each local maximum until no more local 
 maxima are found. If the maximum is a single peak, the range will have a length of 1; if a 
 plateau maximum is found, the range will have a length greater than 1. The optional keyword 
 arguments `startindex` and `stopindex` allow you to restrict the search range for the 
@@ -188,7 +204,7 @@ maximum. Note that `startindex` and `stopindex` must be at least two indices apa
 
 See also [`nextlocalmaximum`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> values = [4, 3, 5, 3, 6, 6, 6, 4, 7];
 

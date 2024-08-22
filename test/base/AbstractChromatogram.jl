@@ -203,8 +203,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test Int64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
         [12.0, 956.0, 23.0])))
     @test Float64 == typeof(maxretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
@@ -255,8 +255,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test Int64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
         [12.0, 956.0, 23.0])))
     @test Float64 == typeof(maxretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
@@ -692,8 +692,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test Int64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10:5:20, 
         [12.0, 956.0, 23.0])))
     @test Float64 == typeof(minretentionindex(RiFID([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
@@ -744,8 +744,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test Int64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10:5:20, 
         [12.0, 956.0, 23.0])))
     @test Float64 == typeof(minretentionindex(RiTIC([1, 2, 3]u"s", "Kovats", 10.0:5:20.0, 
@@ -1026,8 +1026,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Vector{Float64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiFID([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test StepRange{Int64, Int64} == typeof(retentionindices(RiFID([1, 2, 3]u"s", 
         "Kovats", 10:5:20, [12.0, 956.0, 23.0])))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 
@@ -1077,8 +1077,8 @@ end
         Int[100, 200, 300], [12, 956, 23])))
     @test Vector{Float64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
         Float64[100, 200, 300], [12.0, 956.0, 23.0])))
-    @test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
-        [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
+    #@test Vector{Union{Float64, Missing}} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", "Kovats", 
+    #    [100.0, missing, 300.0], [12.0, 956.0, 23.0])))
     @test StepRange{Int64, Int64} == typeof(retentionindices(RiTIC([1, 2, 3]u"s", 
         "Kovats", 10:5:20, [12.0, 956.0, 23.0])))
     @test StepRangeLen{Float64, Base.TwicePrecision{Float64}, Base.TwicePrecision{Float64}, 

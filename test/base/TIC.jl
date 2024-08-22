@@ -75,38 +75,38 @@ end
     io = IOBuffer()
     show(io, TIC(Int64[1]u"s", Int64[12]))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "1 scan; scan time: 1 s\n",
         "intensity: 12\n",
         "metadata: 0 entries")
     show(io, TIC(Int64[1, 2]u"s", Int64[12, 13]))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "2 scans; scan times: 1 s, 2 s\n",
         "intensity range: 12 - 13\n",
         "metadata: 0 entries")
     show(io, TIC(convert(Vector{Int64}, (1:10))u"s", convert(Vector{Int64}, (12:21))))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "10 scans; scan times: 1 s, 2 s, 3 s, 4 s, 5 s, 6 s, 7 s, 8 s, 9 s, 10 s\n",
         "intensity range: 12 - 21\n",
         "metadata: 0 entries")
     show(io, TIC(convert(Vector{Int64}, (1:11))u"s", convert(Vector{Int64}, (12:22))))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "11 scans; scan time range: 1 s - 11 s\n",
         "intensity range: 12 - 22\n",
         "metadata: 0 entries")
     show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4)))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "intensity range: 12 - 956\n",
         "metadata: 1 entry")
     show(io, TIC(Int64[1, 2, 3]u"s", Int64[12, 956, 23], Dict(:id => 4, 
         "name" => "sample")))
     @test String(take!(io)) == string(
-        "TIC {scan times: Int64, intensities: Int64}\n",
+        "JuChrom.TIC {scan times: Int64, intensities: Int64}\n",
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "intensity range: 12 - 956\n",
         "metadata: 2 entries")
