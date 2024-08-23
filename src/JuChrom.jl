@@ -3,7 +3,7 @@ module JuChrom
 using Pkg.Artifacts
 using PrecompileTools: @setup_workload, @compile_workload
 
-aglient = artifact"Agilent"
+agilent = artifact"Agilent"
 
 include("base.jl")
 
