@@ -1,0 +1,6 @@
+[ExampleData]
+git-tree-sha1 = "479e1cc6a8563b5de3d5303ddff6a1ddb348af67"
+
+    [[ExampleData.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/C7-C40_ChemStationMS.D.tar.gz"
+    sha256 = "6f9d0997c9ea6c65a5f4d3581f3daab03bbaecf3aea2638ce3bb618547e4257f"

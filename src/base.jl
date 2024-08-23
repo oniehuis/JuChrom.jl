@@ -1640,7 +1640,7 @@ maxion(gcms::AbstractGCMS) = last(ions(gcms))
 Return the maximum retention index, ignoring any missing values. An optional second 
 argument lets you specify a range of scans for which the maximum retention index will be 
 returned. The optional keyword argument `scanindex` lets you choose whether to return the
-the corresponding scan index as well. Note that this function only applies to certain 
+corresponding scan index as well. Note that this function only applies to certain 
 AbstractChromatogram subtypes that store retention index data, such as RiFID.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`maxretentionindex`](@ref), 
@@ -1857,7 +1857,7 @@ minion(gcms::AbstractGCMS) = first(ions(gcms))
 Return the minimum retention index, ignoring any missing values. An optional second 
 argument lets you specify a range of scans for which the minimum retention index will be 
 returned. The optional keyword argument `scanindex` lets you choose whether to return the
-the corresponding scan index as well. Note that this function only applies to certain 
+corresponding scan index as well. Note that this function only applies to certain 
 AbstractChromatogram subtypes that store retention index data, such as RiFID.
 
 See also [`AbstractChromatogram`](@ref), [`RiFID`](@ref), [`maxretentionindex`](@ref), 
@@ -2408,6 +2408,8 @@ julia> intensities(tic)
 """
 totalionchromatogram(gcms::GCMS) = TIC(scantimes(gcms), vec(sum(intensities(gcms), 
     dims=2)), metadata(gcms))
+
+
 totalionchromatogram(gcms::RiGCMS) = RiTIC(scantimes(gcms), retentionindexname(gcms), 
     retentionindices(gcms), vec(sum(intensities(gcms), dims=2)), metadata(gcms))
 

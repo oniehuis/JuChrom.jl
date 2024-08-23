@@ -1,6 +1,9 @@
 module JuChrom
 
+using Pkg.Artifacts
 using PrecompileTools: @setup_workload, @compile_workload
+
+exampledata = artifact"ExampleData"
 
 include("base.jl")
 
@@ -51,5 +54,18 @@ export scantime
 export scantimeindex
 export scantimes
 export totalionchromatogram
+
+include("IO/InputOutput.jl")
+using .InputOutput
+
+export FileFormat
+#export AgilentFID
+#export ANDI
+export ChemStationMS
+#export DelimitedText
+#export Excel
+#export MassHunterMS
+#export exportdata
+export importdata
 
 end
