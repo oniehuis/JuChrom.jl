@@ -4,8 +4,8 @@
 Returns a sorted list of ions and an intensity matrix with the number of columns equal to 
 the number of ions in the sorted list and the number of rows equal to the number of scans. 
 This is based on a vector that stores the number of ion-intensity pairs per scan 
-(pointscounts), a vector of continuously recorded ions throughout the run, and a vector of 
-intensity values associated with those ions.
+(`pointcounts`), a vector of continuously recorded ions throughout the run (`ionvec`), and 
+a vector of intensity values associated with those ions (`intsvec`).
 
 # Examples
 ```jldoctest
@@ -34,10 +34,15 @@ julia> xic
  21   0   0    0    0  523      0
 ```
 """
-function buildxic(pointcounts, ionvec, intsvec)
-    scancount = length(pointcounts)
+function buildxic(pointcounts::AbstractVector{<:Integer}, ionvec::AbstractVector{<:Real}, 
+    intsvec::AbstractVector{<:Real})
+    length(ionvec) == length(intsvec) || throw(
+        ArgumentError("ion and intensity values differ in their counts"))
+    sum(pointcounts) == length(ionvec) == length(intsvec) || throw(
+        ArgumentError("point counts incompatible with ion and intensity value counts"))
     ions = sort(unique(ionvec))
     ionidx = Dict(ion => i for (i, ion) in enumerate(ions))
+    scancount = length(pointcounts)
     xic = zeros(eltype(intsvec), scancount, length(ions))
     start = 1
     for iₛ in 1:scancount
@@ -84,7 +89,7 @@ struct Path <: Source end
 """
     JuChrom.InputOutput.IOError(msg::AbstractString) <: Exception
 
-There was a problem reading or writing a file. `msg`` is a descriptive error message.
+There was a problem reading or writing a file. `msg` is a descriptive error message.
 
 See also [`FileExistsError`](@ref).
 """
@@ -101,7 +106,7 @@ Base.showerror(io::IO, e::IOError) = print(io, e.msg)
 """
     JuChrom.InputOutput.FileExistsError(msg::AbstractString) <: Exception
 
-File already exists. `msg`` is a descriptive error message.
+File already exists. `msg` is a descriptive error message.
 
 See also [`IOError`](@ref).
 """

@@ -50,7 +50,7 @@ metadata: 0 entries
 
 julia> datafile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D/data.ms");
 
-julia> gcms = importdata(dfolder, ChemStationMS())
+julia> gcms = importdata(datafile, ChemStationMS())
 GCMS {scan times: Float32, ions: Float32, intensities: Int64}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
