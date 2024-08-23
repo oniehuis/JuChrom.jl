@@ -1,6 +1,6 @@
-[ExampleData]
-git-tree-sha1 = "479e1cc6a8563b5de3d5303ddff6a1ddb348af67"
+[Agilent]
+git-tree-sha1 = "77f88bc338c03216ebdc53a0e3d34e4be908273e"
 
-    [[ExampleData.download]]
-    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/C7-C40_ChemStationMS.D.tar.gz"
-    sha256 = "6f9d0997c9ea6c65a5f4d3581f3daab03bbaecf3aea2638ce3bb618547e4257f"
+    [[Agilent.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/Agilent.tar.gz"
+    sha256 = "fe4c7c773619cb2e9bc1f2a90334c85aa416d6dcaa557aa949d29386606d9477"
