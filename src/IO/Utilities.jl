@@ -47,8 +47,8 @@ function buildxic(pointcounts::AbstractVector{<:Integer}, ionvec::AbstractVector
     start = 1
     for iₛ in 1:scancount
         stop = start + pointcounts[iₛ] - 1
-        for (i₂, ion) in enumerate(@view ionvec[start:stop])
-            xic[iₛ, ionidx[ion]] += (@view intsvec[start:stop])[i₂]
+        for (iᵢ, ion) in enumerate(@view ionvec[start:stop])
+            xic[iₛ, ionidx[ion]] += (@view intsvec[start:stop])[iᵢ]
         end
         start += pointcounts[iₛ]
     end
