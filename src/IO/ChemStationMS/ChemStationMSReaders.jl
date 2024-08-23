@@ -3,27 +3,33 @@ module ChemStationMSReaders
 using Unitful
 
 import ...JuChrom: GCMS
-import ..InputOutput: FileFormat, importdata
+import ..InputOutput: FileFormat, importdata 
+import ..InputOutput: Path, IOError, FileExistsError, buildxic, File 
 
 export ChemStationMS
 
-include("../Utilities.jl")
 
 struct ChemStationMS{T<:AbstractString} <: FileFormat
     datafilename::T
-    function ChemStationMS{T}(datafilename::T) where {T<:AbstractString}
-        new(datafilename)
-    end
+    ChemStationMS{T}(datafilename::T) where {T<:AbstractString} = new(datafilename)
 end
-# TYPE STABLE June 11, 2024
 
 
 """
     
     ChemStationMS(; datafilename::AbstractString="data.ms")
 
-Return an object of the ChemStationMS file format. The optional keyword argument 
-`datafilename` allows you to specify the name of the data file to read.
+Returns an object representing the `ChemStationMS` file format. The optional keyword 
+argument, `datafilename`, allows you to specify a different name for the data file to be 
+read, instead of the default `data.ms` (e.g., `datasim.ms`). Upper and lower case are not 
+considered when specifying the data file name. Note that when using the function 
+importdata, the `ChemStationMS` data reader expects the Agilent .D folder as the source 
+location, with the specified data file located at the top level of the .D folder. 
+However, you can also provide the full pathname of the data file directly when using 
+the function importdata, in which case the `datafilename` entry in the `ChemStationMS` 
+object is ignored.
+
+See also [`FileFormat`](@ref), [`importdata`](@ref).
 
 # Example
 ```jldoctest
@@ -41,14 +47,21 @@ GCMS {scan times: Float32, ions: Float32, intensities: Int64}
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
 metadata: 0 entries
+
+julia> datafile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D/data.ms");
+
+julia> gcms = importdata(dfolder, ChemStationMS())
+GCMS {scan times: Float32, ions: Float32, intensities: Int64}
+2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
+5176 ions; range: m/z 29.0 - 562.9
+intensity range: 0 - 1186816
+metadata: 0 entries
 ```
 """
 function ChemStationMS(; datafilename::T="data.ms") where {T<:AbstractString}
     ChemStationMS{T}(datafilename)
 end
-# TYPE STABLE June 11, 2024
-#See also [`Fileformat`](@ref), [`importdata`](@ref).
-# julia> gcms = importdata(examplefile, ChemStationMS());
+
 
 datafilename(fileformat::ChemStationMS) = fileformat.datafilename
 
@@ -63,13 +76,15 @@ function readfile(::ChemStationMSV1, file::AbstractString)
 
         # File version
         ver = String(ltoh.(read(f, ltoh(read(f, UInt8)))))  # position 1 (= 0x1)
-        ver == "2" || throw(FileFormatError("cannot read file with a version \"$ver\": \"$file\""))
+        ver == "2" || throw(
+                FileFormatError("cannot read file with a version \"$ver\": \"$file\""))
 
         # File type
         seek(f, 4)
         filetype = String(ltoh.(read(f, ltoh(read(f, UInt8)))))
         (filetype == "GC / MS Data File" || filetype == "GC / MS DATA FILE") || throw(
-            FileFormatError("cannot read file with the file type signature \"$filetype\": \"$file\""))
+            FileFormatError(string("cannot read file with the file type signature ",
+                "\"$filetype\": \"$file\"")))
 
         # Scan count
         seek(f, 278)
@@ -118,7 +133,7 @@ function readfile(::ChemStationMSV1, file::AbstractString)
         
         ions, xic = buildxic(pointcounts, ionvec, intsvec)
 
-        GCMS(scantimes * 1u"ms", ions, xic, Dict()) # file)
+        GCMS(scantimes * 1u"ms", ions, xic, Dict())
     end
 end
 
@@ -145,7 +160,8 @@ function importdata(::Path, fileformat::ChemStationMS, path::AbstractString)
     files = readdir(path)
     datafile = datafilename(fileformat)
     idcs = findall(file -> lowercase(file) == lowercase.(datafile), files)
-    length(idcs) ≤ 1 || throw(IOError(string("found multiple data files in path \"$path\": ", files[idcs])))
+    length(idcs) ≤ 1 || throw(IOError(string("found multiple data files in path ", 
+        "\"$path\": ", files[idcs])))
     if length(idcs) == 1
         filename = files[idcs[1]]
         importdata(File(), fileformat, joinpath(path, filename))

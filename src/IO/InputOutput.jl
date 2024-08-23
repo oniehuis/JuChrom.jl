@@ -1,6 +1,12 @@
 module InputOutput
 
 using Unitful
+export buildxic
+export Source
+export File
+export Path
+export IOError
+export FileExistsError
 
 # import ..JuChrom: AbstractGC, scantimes
 
@@ -13,6 +19,8 @@ export ChemStationMS
 #export MassHunterMS
 #export exportdata
 export importdata
+
+include("./Utilities.jl")
 
 
 """
