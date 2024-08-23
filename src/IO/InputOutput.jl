@@ -36,6 +36,13 @@ reader.
 # Example
 ```jldoctest
 julia> examplefile = joinpath(JuChrom.exampledata, "C7-C40_ChemStationMS.D");
+
+julia> gcms = importdata(examplefile, ChemStationMS())
+GCMS {scan times: Float32, ions: Float32, intensities: Int64}
+2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
+5176 ions; range: m/z 29.0 - 562.9
+intensity range: 0 - 1186816
+metadata: 0 entries
 ```
 """
 function importdata(source::AbstractString, fileformat::FileFormat)
