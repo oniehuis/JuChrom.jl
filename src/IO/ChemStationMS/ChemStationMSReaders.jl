@@ -67,29 +67,12 @@ end
 datafilename(fileformat::ChemStationMS) = fileformat.datafilename
 
 
-function guess_encoding(bytes, encodings)
-    for encoding in encodings
-        string = decode(bytes, encoding)
-        readable = true 
-        for char in string
-            if !(32 ≤ Int(char) ≤ 255)
-                readable = false
-                break
-            end
-        end
-        readable && return string
-    end
-    @warn "unexpected metadata encoding" 
-    String(bytes)  # fallback
-end
-
-
 function readmetadata(f::IOStream, positionof::Dict{String, Int}, stepwidth::Integer)
     metadata = Dict{Any, Any}()
     for (feature, pos) in pairs(positionof)
         seek(f, pos)
         bytes = ltoh.(read(f, ltoh(read(f, UInt8)) * stepwidth))[begin:stepwidth:end]
-        value = guess_encoding(bytes, ["Windows-1252"])
+        value = decode(bytes, "Windows-1252")
         metadata[feature] = value ≠ "" ? value : nothing
     end
     metadata
@@ -102,7 +85,7 @@ struct ChemStationMSV1 end
 # Tested with data file from MSD ChemStation F.01.03.2357 1989-2015
 function readfile(::ChemStationMSV1, file::AbstractString)
 
-    # Location of meta data
+    # Location of string type metadata
     positionof = Dict{String, Int}(
         "sample"      =>  24,
         "description" =>  86,
@@ -126,10 +109,10 @@ function readfile(::ChemStationMSV1, file::AbstractString)
             FileFormatError(string("cannot read file with the file type signature ",
                 "\"$filetype\": \"$file\"")))
 
-        # Extract some metadata
+        # Extract string type metadata
         metadata = readmetadata(f, positionof, 1)
 
-        # Sample sequence, vial, and replicate
+        # Extract integer type metadata
         seek(f, 252)
         metadata["sequence"] = convert(Int, ntoh(read(f, Int16)))
         metadata["vial"] = convert(Int, ntoh(read(f, Int16)))
