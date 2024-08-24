@@ -113,11 +113,11 @@ function readfile(::AgilentFIDv179, file::AbstractString)
         metadata["signal unit"] = signalunit
 
         # Signal scaling factor
-        seek(f, 4732)  # 0x127C
+        seek(f, 4732)
         scalingfactor = ntoh(read(f, Float64))
 
         # Signals
-        seek(f, 6144)  # 0x1800
+        seek(f, 6144)
         signals = ltoh.(read!(f, Vector{Float64}(undef, scancount)))
 
         intensities = [abs(signal * scalingfactor) for signal in signals]

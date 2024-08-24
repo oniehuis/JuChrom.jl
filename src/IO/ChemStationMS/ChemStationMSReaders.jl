@@ -43,7 +43,7 @@ ChemStationMS{String}("DATASIM.MS")
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
 
 julia> gcms = importdata(dfolder, ChemStationMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Int64}
+GCMS {scan times: Float32, ions: Float32, intensities: Int32}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
@@ -52,7 +52,7 @@ metadata: 10 entries
 julia> datafile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D/data.ms");
 
 julia> gcms = importdata(datafile, ChemStationMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Int64}
+GCMS {scan times: Float32, ions: Float32, intensities: Int32}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
@@ -131,9 +131,9 @@ function readfile(::ChemStationMSV1, file::AbstractString)
 
         # Reading scan data
         scantimes = Vector{Float32}(undef, scancount)
-        pointcounts = Vector{Int}(undef, scancount)
+        pointcounts = Vector{Int32}(undef, scancount) # Was Int! better concret? Int32 or Int64
         ionvec = Vector{Float32}()
-        intsvec = Vector{Int}()
+        intsvec = Vector{Int32}()  # Was Int! Better concret? Int32 or Int64?
 
         for i = 1:scancount
 
