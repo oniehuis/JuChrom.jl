@@ -81,6 +81,7 @@ end
 
 struct ChemStationMSV1 end
 
+
 # Tested with data file from MSD ChemStation E.02.02.1431 1989-2011
 # Tested with data file from MSD ChemStation F.01.03.2357 1989-2015
 function readfile(::ChemStationMSV1, file::AbstractString)
@@ -163,9 +164,7 @@ function readfile(::ChemStationMSV1, file::AbstractString)
         # Calculate intensity values
         @. intsvec = (intsvec & 16383) * 8^(intsvec >> 14)
         
-        ions, xic = buildxic(pointcounts, ionvec, intsvec)
-
-        GCMS(scantimes * 1u"ms", ions, xic, metadata)
+        GCMS(scantimes * 1u"ms", buildxic(pointcounts, ionvec, intsvec)..., metadata)
     end
 end
 
