@@ -1,6 +1,5 @@
 using JuChrom
 using Test
-using Unitful: 𝐓
 
 
 @testset "buildxic" begin

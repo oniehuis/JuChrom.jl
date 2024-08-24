@@ -16,3 +16,5 @@ using SafeTestsets
 @safetestset "base Utilities" begin include("utilities/utilities.jl") end
 
 @safetestset "IO Utilities" begin include("IO/utilities.jl") end
+
+@safetestset "IO ChemStationMS" begin include("IO/ChemStationMS.jl") end
