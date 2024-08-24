@@ -28,18 +28,18 @@ end
 
 Return an object representing the `MassHunterMS` file format. The optional `scanmethodid` 
 keyword argument allows you to specify which scan method ID's data to read, especially 
-when multiple scan methods have been applied simultaneously (e.g., tandem mass spectra). 
-The optional `scantimedigits` keyword argument allows you to round the scan time to a 
-specified number of decimal digits. Similarly, the optional `iondigits` keyword argument 
-rounds the mass-to-charge ratio values to the desired number of decimal places. Note that 
-this is different from ion binning. The optional `intensitydigits` keyword argument rounds 
-the intensity values to the specified number of decimals. If zero decimal places are 
-specified, the values are returned as integers. The keyword arguments `scantimedigits`, 
-`mzdigits`, and `intensitydigits` address the inconvenience that MassHunter files may 
-store data in types different than the original data collected. A simple type conversion 
-would be insufficient due to inaccuracies introduced during the data conversion before 
-storing the data in MassHunter files. Note that when using the function importdata, the 
-`MassHunterMS` data reader expects the Agilent .D folder as the source location.
+when multiple scan methods have been applied simultaneously. The optional `scantimedigits` 
+keyword argument allows you to round the scan time to a specified number of decimal digits. 
+Similarly, the optional `iondigits` keyword argument rounds the mass-to-charge ratio values 
+to the desired number of decimal places. Note that this is different from ion binning. The 
+optional `intensitydigits` keyword argument rounds the intensity values to the specified 
+number of decimals. If zero decimal places are specified, the values are returned as 
+integers. The keyword arguments `scantimedigits`, `mzdigits`, and `intensitydigits` address 
+the inconvenience that MassHunter files may store data in types different than the original 
+data collected. A simple type conversion would be insufficient due to inaccuracies 
+introduced during the data conversion before storing the data in MassHunter files. Note 
+that when using the function importdata, the `MassHunterMS` data reader expects the Agilent 
+.D folder as the source location.
 
 See also [`FileFormat`](@ref), [`importdata`](@ref), [`JuChrom.binions`](@ref).
 
@@ -130,7 +130,7 @@ function msscandata(::MSScanBinV1, file::AbstractString)
         startpos = ltoh(read(io, UInt16))
         seek(io, startpos)
         (endpos - startpos) % size == 0 || throw(
-            FileFormatError("MSScan.bin has unexpected data content"))
+            IOError("MSScan.bin has unexpected data content"))
         scancount = div(endpos - startpos, size)
         data = Vector{MSScanDataV1}(undef, scancount)
         for i in 1:scancount
@@ -142,11 +142,8 @@ end
 
 
 pointcountsum(scandata::Vector{MSScanDataV1}) = sum(s.PointCount for s in scandata)
-#pointcountsum(scandata::Vector{MSScanDataV1}, scanmethodid::Int) = sum(
-#    scanmethodid == s.ScanMethodID ? s.PointCount : 0 for s in scandata)
 bytecountsum(scandata::Vector{MSScanDataV1}) = sum(s.ByteCount for s in scandata)
 scantimes(scandata::Vector{MSScanDataV1}) = [s.ScanTime for s in scandata]
-# tic(scandata::Vector{MSScanDataV1}) = [s.TIC for s in scandata]
 bytesperpoint(scandata::Vector{MSScanDataV1}) = (bytecountsum(scandata) 
     / pointcountsum(scandata))
 scanmethodids(scandata::Vector{MSScanDataV1}) = [s.ScanMethodID for s in scandata]
@@ -191,11 +188,11 @@ function readfile(::MSPeakBinV1, path::AbstractString, fileformat::MassHunterMS,
     file = joinpath(path, "MSPeak.bin")
     signature = magicnumber(file)
     signature == 259 || throw(
-        FileFormatError("\"$file\" has unexpected file signature: \"$signature\""))
+        IOError("\"$file\" has unexpected file signature: \"$signature\""))
     methodscandata = filter(s -> s.ScanMethodID .== scanmethodid(fileformat), scandata)
     bpp = bytesperpoint(methodscandata)
     bpp == 8 || bpp == 16 || throw(
-        FileFormatError("\"$file\" has unexpected ByteCount: \"$bpp\""))
+        IOError("\"$file\" has unexpected ByteCount: \"$bpp\""))
     type = bpp == 8 ? Float32 : Float64
     mspeakdata(MSPeakBinV1(), file, fileformat, methodscandata, type)
 end
@@ -206,11 +203,11 @@ function readfile(::MSScanBinV1, path::AbstractString,
     file = joinpath(path, "MSScan.bin")
     signature = magicnumber(file)
     signature == 257 || throw(
-        FileFormatError("\"$file\" has unexpected file signature: \"$signature\""))
+        IOError("\"$file\" has unexpected file signature: \"$signature\""))
     scandata = msscandata(MSScanBinV1(), file)
     methodid = scanmethodid(fileformat)
     methodid in scanmethodids(scandata) || throw(
-        FileFormatError("\"$file\" contains no data for ScanMethodID \"$methodid\""))
+        IOError("\"$file\" contains no data for ScanMethodID \"$methodid\""))
     scandata
 end
 
