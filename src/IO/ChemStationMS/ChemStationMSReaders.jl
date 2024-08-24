@@ -1,10 +1,11 @@
 module ChemStationMSReaders
 
 using Unitful
+using StringEncodings
 
 import ...JuChrom: GCMS
 import ..InputOutput: FileFormat, importdata 
-import ..InputOutput: Path, IOError, FileExistsError, buildxic, File 
+import ..InputOutput: File, Path, FileExistsError, IOError, buildxic
 
 export ChemStationMS
 
@@ -46,7 +47,7 @@ GCMS {scan times: Float32, ions: Float32, intensities: Int64}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
-metadata: 0 entries
+metadata: 10 entries
 
 julia> datafile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D/data.ms");
 
@@ -55,7 +56,7 @@ GCMS {scan times: Float32, ions: Float32, intensities: Int64}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
-metadata: 0 entries
+metadata: 10 entries
 ```
 """
 function ChemStationMS(; datafilename::T="data.ms") where {T<:AbstractString}
@@ -66,12 +67,51 @@ end
 datafilename(fileformat::ChemStationMS) = fileformat.datafilename
 
 
+function guess_encoding(bytes, encodings)
+    for encoding in encodings
+        string = decode(bytes, encoding)
+        readable = true 
+        for char in string
+            if !(32 ≤ Int(char) ≤ 255)
+                readable = false
+                break
+            end
+        end
+        readable && return string
+    end
+    @warn "unexpected metadata encoding" 
+    String(bytes)  # fallback
+end
+
+
+function readmetadata(f::IOStream, positionof::Dict{String, Int}, stepwidth::Integer)
+    metadata = Dict{Any, Any}()
+    for (feature, pos) in pairs(positionof)
+        seek(f, pos)
+        bytes = ltoh.(read(f, ltoh(read(f, UInt8)) * stepwidth))[begin:stepwidth:end]
+        value = guess_encoding(bytes, ["Windows-1252"])
+        metadata[feature] = value ≠ "" ? value : nothing
+    end
+    metadata
+end
+
+
 struct ChemStationMSV1 end
 
-# Reads data from MSD ChemStation F.01.03.2357 1989-2015 file provided by Wolf Haberer (Freiburg).
-# Reads data from MSD ChemStation E.02.02.1431 1989-2011 file provided by Florian Menzel (Mainz).
-# Reads data from Chemstation VERSION? file provided by Thomas Schmitt (Würzburg).
+# Tested with data file from MSD ChemStation E.02.02.1431 1989-2011
+# Tested with data file from MSD ChemStation F.01.03.2357 1989-2015
 function readfile(::ChemStationMSV1, file::AbstractString)
+
+    # Location of meta data
+    positionof = Dict{String, Int}(
+        "sample"      =>  24,
+        "description" =>  86,
+        "operator"    => 148,
+        "datetime"    => 178,
+        "type"        => 208,
+        "inlet"       => 218,
+        "method"      => 228)
+
     open(file, "r") do f
 
         # File version
@@ -85,6 +125,15 @@ function readfile(::ChemStationMSV1, file::AbstractString)
         (filetype == "GC / MS Data File" || filetype == "GC / MS DATA FILE") || throw(
             FileFormatError(string("cannot read file with the file type signature ",
                 "\"$filetype\": \"$file\"")))
+
+        # Extract some metadata
+        metadata = readmetadata(f, positionof, 1)
+
+        # Sample sequence, vial, and replicate
+        seek(f, 252)
+        metadata["sequence"] = convert(Int, ntoh(read(f, Int16)))
+        metadata["vial"] = convert(Int, ntoh(read(f, Int16)))
+        metadata["replicate"] = convert(Int, ntoh(read(f, Int16)))
 
         # Scan count
         seek(f, 278)
@@ -133,7 +182,7 @@ function readfile(::ChemStationMSV1, file::AbstractString)
         
         ions, xic = buildxic(pointcounts, ionvec, intsvec)
 
-        GCMS(scantimes * 1u"ms", ions, xic, Dict())
+        GCMS(scantimes * 1u"ms", ions, xic, metadata)
     end
 end
 

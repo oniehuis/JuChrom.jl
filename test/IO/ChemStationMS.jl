@@ -18,7 +18,7 @@ end
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",
-        "metadata: 0 entries")
+        "metadata: 10 entries")
 
     dfile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
     gcms = importdata(dfile, JuChrom.InputOutput.ChemStationMSReaders.ChemStationMS())
@@ -29,7 +29,7 @@ end
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",
-        "metadata: 0 entries")
+        "metadata: 10 entries")
 
     # IOError: unsupported source for ChemStationMS data import, because file does not 
     # exist
