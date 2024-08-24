@@ -16,7 +16,7 @@ export AgilentFID
 export ChemStationMS
 #export DelimitedText
 #export Excel
-#export MassHunterMS
+export MassHunterMS
 #export exportdata
 export importdata
 
@@ -66,8 +66,8 @@ using .AgilentFIDReaders
 include(joinpath(".", "ChemStationMS", "ChemStationMSReaders.jl"))
 using .ChemStationMSReaders
 
-#include(joinpath(".", "MassHunterMS", "MassHunterMSReaders.jl"))
-#using .MassHunterMSReaders
+include(joinpath(".", "MassHunterMS", "MassHunterMSReaders.jl"))
+using .MassHunterMSReaders
 
 #include(joinpath(".", "ANDI", "ANDIReaders.jl"))
 #using .ANDIReaders

@@ -4,5 +4,6 @@
 FileFormat
 AgilentFID
 ChemStationMS
+MassHunterMS
 importdata
 ```

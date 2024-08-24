@@ -20,3 +20,5 @@ using SafeTestsets
 @safetestset "IO ChemStationMS" begin include("IO/ChemStationMS.jl") end
 
 @safetestset "IO AgilentFID" begin include("IO/AgilentFID.jl") end
+
+@safetestset "IO MassHunterMS" begin include("IO/MassHunterMS.jl") end

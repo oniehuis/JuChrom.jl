@@ -64,7 +64,7 @@ export AgilentFID
 export ChemStationMS
 #export DelimitedText
 #export Excel
-#export MassHunterMS
+export MassHunterMS
 #export exportdata
 export importdata
 
