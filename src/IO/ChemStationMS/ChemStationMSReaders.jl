@@ -1,14 +1,14 @@
 module ChemStationMSReaders
 
-using Unitful
 using StringEncodings
+using Unitful
 
 import ...JuChrom: GCMS
-import ..InputOutput: FileFormat, importdata 
-import ..InputOutput: File, Path, FileExistsError, IOError, buildxic
+import ..InputOutput: FileFormat, File, Path, IOError, buildxic, importdata
 
 export ChemStationMS
 
+const encoding = "Windows-1252"
 
 struct ChemStationMS{T<:AbstractString} <: FileFormat
     datafilename::T
@@ -32,7 +32,7 @@ object is ignored.
 
 See also [`FileFormat`](@ref), [`importdata`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> ChemStationMS()
 ChemStationMS{String}("data.ms")
@@ -72,7 +72,7 @@ function readmetadata(f::IOStream, positionof::Dict{String, Int}, stepwidth::Int
     for (feature, pos) in pairs(positionof)
         seek(f, pos)
         bytes = ltoh.(read(f, ltoh(read(f, UInt8)) * stepwidth))[begin:stepwidth:end]
-        value = decode(bytes, "Windows-1252")
+        value = decode(bytes, encoding)
         metadata[feature] = value ≠ "" ? value : nothing
     end
     metadata
@@ -99,13 +99,15 @@ function readfile(::ChemStationMSV1, file::AbstractString)
     open(file, "r") do f
 
         # File version
-        ver = String(ltoh.(read(f, ltoh(read(f, UInt8)))))  # position 1 (= 0x1)
+        
+        ver = decode(ltoh.(read(f, ltoh(read(f, UInt8)))), encoding)
         ver == "2" || throw(
-                FileFormatError("cannot read file with a version \"$ver\": \"$file\""))
+            FileFormatError("cannot read file with a version \"$ver\": \"$file\""))
 
         # File type
         seek(f, 4)
-        filetype = String(ltoh.(read(f, ltoh(read(f, UInt8)))))
+        
+        filetype = decode(ltoh.(read(f, ltoh(read(f, UInt8)))), encoding)
         (filetype == "GC / MS Data File" || filetype == "GC / MS DATA FILE") || throw(
             FileFormatError(string("cannot read file with the file type signature ",
                 "\"$filetype\": \"$file\"")))

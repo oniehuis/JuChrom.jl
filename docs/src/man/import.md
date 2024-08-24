@@ -2,6 +2,7 @@
 
 ```@docs
 FileFormat
+AgilentFID
 ChemStationMS
 importdata
 ```

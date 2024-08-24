@@ -11,7 +11,7 @@ export FileExistsError
 # import ..JuChrom: AbstractGC, scantimes
 
 export FileFormat
-#export AgilentFID
+export AgilentFID
 #export ANDI
 export ChemStationMS
 #export DelimitedText
@@ -28,10 +28,10 @@ include("./Utilities.jl")
 
 Supertype of all FileFormat implementations.
 
-See also [`ChemStationMS`](@ref).
+See also [`AgilentFID`](@ref), [`ChemStationMS`](@ref).
 """
 abstract type FileFormat end
-# [`AgilentFID`](@ref), [`ANDI`](@ref), , [`MassHunterMS`](@ref)
+# [`ANDI`](@ref), , [`MassHunterMS`](@ref)
 
 
 """
@@ -40,6 +40,8 @@ abstract type FileFormat end
 Read data from the specified source using the appropriate file format reader. The source 
 may be a file or a directory path, depending on the requirements of the chosen file format 
 reader.
+
+See also [`AgilentFID`](@ref), [`ChemStationMS`](@ref).
 
 # Example
 ```jldoctest
@@ -58,8 +60,8 @@ function importdata(source::AbstractString, fileformat::FileFormat)
 end
 # See also [`AgilentFID`](@ref), [`ANDI`](@ref), [`ChemStationMS`](@ref), [`MassHunterMS`](@ref), [`GCMS`](@ref), [`FID`](@ref), .
 
-#include(joinpath(".", "AgilentFID", "AgilentFIDReaders.jl"))
-#using .AgilentFIDReaders
+include(joinpath(".", "AgilentFID", "AgilentFIDReaders.jl"))
+using .AgilentFIDReaders
 
 include(joinpath(".", "ChemStationMS", "ChemStationMSReaders.jl"))
 using .ChemStationMSReaders

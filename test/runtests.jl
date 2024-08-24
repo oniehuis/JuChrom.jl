@@ -18,3 +18,5 @@ using SafeTestsets
 @safetestset "IO Utilities" begin include("IO/utilities.jl") end
 
 @safetestset "IO ChemStationMS" begin include("IO/ChemStationMS.jl") end
+
+@safetestset "IO AgilentFID" begin include("IO/AgilentFID.jl") end

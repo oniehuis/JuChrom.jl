@@ -59,7 +59,7 @@ include("IO/InputOutput.jl")
 using .InputOutput
 
 export FileFormat
-#export AgilentFID
+export AgilentFID
 #export ANDI
 export ChemStationMS
 #export DelimitedText
