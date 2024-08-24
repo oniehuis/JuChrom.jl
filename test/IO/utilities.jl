@@ -2,6 +2,7 @@ using JuChrom
 using Test
 using Unitful: 𝐓
 
+
 @testset "buildxic" begin
     # Verify that the function returns teh expected contents
     @test ([84.9, 85.1, 85.2, 99.9, 100.2, 100.6, 112.1], 
@@ -47,4 +48,58 @@ using Unitful: 𝐓
     mzs, xic = JuChrom.InputOutput.buildxic([2, 3, 2], [100, 85, 112, 99, 85, 100, 84], 
         [12, 234, 23, 324, 45422, 21, 523])
     @test issorted(mzs)
+end
+
+
+@testset "File" begin
+    # Test object construction
+    @test JuChrom.InputOutput.File() == JuChrom.InputOutput.File()
+
+    # Test Supertype
+    @test isa(JuChrom.InputOutput.File(), JuChrom.InputOutput.Source)
+end
+
+
+@testset "Path" begin
+    # Test object construction
+    @test JuChrom.InputOutput.Path() == JuChrom.InputOutput.Path()
+
+    # Test Supertype
+    @test isa(JuChrom.InputOutput.Path(), JuChrom.InputOutput.Source)
+end
+
+
+@testset "IOError" begin
+    # Test object construction
+    @test JuChrom.InputOutput.IOError() == JuChrom.InputOutput.IOError()
+
+    # Check if content is properly returned
+    @test "IOError: " == JuChrom.InputOutput.IOError().msg
+    @test "IOError: message" == JuChrom.InputOutput.IOError("message").msg
+
+    # Check supertype
+    @test isa(JuChrom.InputOutput.IOError(), JuChrom.InputOutput.IOError)
+
+    # Test if proper Error is thrown
+    @test_throws JuChrom.InputOutput.IOError throw(JuChrom.InputOutput.IOError())
+    @test_throws JuChrom.InputOutput.IOError throw(JuChrom.InputOutput.IOError("message"))
+end
+
+
+@testset "FileExistsError" begin
+    # Test object construction
+    @test JuChrom.InputOutput.FileExistsError() == JuChrom.InputOutput.FileExistsError()
+
+    # Check if content is properly returned
+    @test "FileExistsError: " == JuChrom.InputOutput.FileExistsError().msg
+    @test "FileExistsError: message" == JuChrom.InputOutput.FileExistsError("message").msg
+
+    # Check supertype
+    @test isa(JuChrom.InputOutput.FileExistsError(), JuChrom.InputOutput.FileExistsError)
+
+    # Test if proper Error is thrown
+    @test_throws JuChrom.InputOutput.FileExistsError throw(
+        JuChrom.InputOutput.FileExistsError())
+    @test_throws JuChrom.InputOutput.FileExistsError throw(
+        JuChrom.InputOutput.FileExistsError("message"))
 end

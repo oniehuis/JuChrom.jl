@@ -88,15 +88,18 @@ struct Path <: Source end
 
 
 """
-    JuChrom.InputOutput.IOError(msg::AbstractString) <: Exception
+    JuChrom.InputOutput.IOError([msg::AbstractString]) <: Exception
 
-There was a problem reading or writing a file. `msg` is a descriptive error message.
+There was a problem reading or writing a file. `msg` is an optional descriptive error 
+message.
 
 See also [`FileExistsError`](@ref).
 """
 struct IOError{T<:AbstractString} <: Exception
     msg::T
-    IOError{T}(msg::T) where T<:AbstractString = new(msg)
+    function IOError{T}(msg::T) where T<:AbstractString
+        new(string("IOError: ", msg))
+    end
 end
 
 IOError(msg::T="") where T<:AbstractString = IOError{T}(msg)
@@ -105,15 +108,17 @@ Base.showerror(io::IO, e::IOError) = print(io, e.msg)
 
 
 """
-    JuChrom.InputOutput.FileExistsError(msg::AbstractString) <: Exception
+    JuChrom.InputOutput.FileExistsError([msg::AbstractString]) <: Exception
 
-File already exists. `msg` is a descriptive error message.
+File already exists. `msg` is an optional descriptive error message.
 
 See also [`IOError`](@ref).
 """
 struct FileExistsError{T<:AbstractString} <: Exception
     msg::String
-    FileExistsError{T}(msg::T) where T<:AbstractString = new(msg)
+    function FileExistsError{T}(msg::T) where T<:AbstractString
+        new(string("FileExistsError: ", msg))
+    end
 end
 
 
