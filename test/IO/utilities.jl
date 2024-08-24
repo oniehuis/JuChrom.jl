@@ -83,6 +83,10 @@ end
     # Test if proper Error is thrown
     @test_throws JuChrom.InputOutput.IOError throw(JuChrom.InputOutput.IOError())
     @test_throws JuChrom.InputOutput.IOError throw(JuChrom.InputOutput.IOError("message"))
+
+    io = IOBuffer()
+    Base.showerror(io, JuChrom.InputOutput.IOError("message"))
+    @test String(take!(io)) == "IOError: message"
 end
 
 
@@ -102,4 +106,8 @@ end
         JuChrom.InputOutput.FileExistsError())
     @test_throws JuChrom.InputOutput.FileExistsError throw(
         JuChrom.InputOutput.FileExistsError("message"))
+
+    io = IOBuffer()
+    Base.showerror(io, JuChrom.InputOutput.FileExistsError("message"))
+    @test String(take!(io)) == "FileExistsError: message"
 end
