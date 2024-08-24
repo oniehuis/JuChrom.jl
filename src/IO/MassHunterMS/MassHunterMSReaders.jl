@@ -142,11 +142,11 @@ end
 
 
 pointcountsum(scandata::Vector{MSScanDataV1}) = sum(s.PointCount for s in scandata)
-pointcountsum(scandata::Vector{MSScanDataV1}, scanmethodid::Int) = sum(
-    scanmethodid == s.ScanMethodID ? s.PointCount : 0 for s in scandata)
+#pointcountsum(scandata::Vector{MSScanDataV1}, scanmethodid::Int) = sum(
+#    scanmethodid == s.ScanMethodID ? s.PointCount : 0 for s in scandata)
 bytecountsum(scandata::Vector{MSScanDataV1}) = sum(s.ByteCount for s in scandata)
 scantimes(scandata::Vector{MSScanDataV1}) = [s.ScanTime for s in scandata]
-tic(scandata::Vector{MSScanDataV1}) = [s.TIC for s in scandata]
+# tic(scandata::Vector{MSScanDataV1}) = [s.TIC for s in scandata]
 bytesperpoint(scandata::Vector{MSScanDataV1}) = (bytecountsum(scandata) 
     / pointcountsum(scandata))
 scanmethodids(scandata::Vector{MSScanDataV1}) = [s.ScanMethodID for s in scandata]
