@@ -13,7 +13,7 @@ end
     io = IOBuffer()
     Base.show(io, gcms)
     @test String(take!(io)) == string(
-        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",
@@ -24,7 +24,7 @@ end
     io = IOBuffer()
     Base.show(io, gcms)
     @test String(take!(io)) == string(
-        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int64}\n",
+        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",
