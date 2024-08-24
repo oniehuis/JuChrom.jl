@@ -1,7 +1,8 @@
 """
-    JuChrom.InputOutput.buildxic(pointcounts, ionvec, intsvec)
+    JuChrom.InputOutput.buildxic(pointcounts::AbstractVector{<:Integer}, 
+    ionvec::AbstractVector{<:Real}, intsvec::AbstractVector{<:Real})
 
-Returns a sorted list of ions and an intensity matrix with the number of columns equal to 
+Return a sorted list of ions and an intensity matrix with the number of columns equal to 
 the number of ions in the sorted list and the number of rows equal to the number of scans. 
 This is based on a vector that stores the number of ion-intensity pairs per scan 
 (`pointcounts`), a vector of continuously recorded ions throughout the run (`ionvec`), and 

@@ -1,16 +1,18 @@
 using SafeTestsets
 
 # Testing contents of base.jl
-@safetestset "GCMS" begin include("base/GCMS.jl") end
-@safetestset "RiGCMS" begin include("base/RiGCMS.jl") end
-@safetestset "FID" begin include("base/FID.jl") end
-@safetestset "RiFID" begin include("base/RiFID.jl") end
-@safetestset "TIC" begin include("base/TIC.jl") end
-@safetestset "RiTIC" begin include("base/RiTIC.jl") end
+@safetestset "base GCMS" begin include("base/GCMS.jl") end
+@safetestset "base RiGCMS" begin include("base/RiGCMS.jl") end
+@safetestset "base FID" begin include("base/FID.jl") end
+@safetestset "base RiFID" begin include("base/RiFID.jl") end
+@safetestset "base TIC" begin include("base/TIC.jl") end
+@safetestset "base RiTIC" begin include("base/RiTIC.jl") end
 
-@safetestset "AbstractGCMS" begin include("base/AbstractGCMS.jl") end
-@safetestset "AbstractChromatogram" begin include("base/AbstractChromatogram.jl") end
+@safetestset "base AbstractGCMS" begin include("base/AbstractGCMS.jl") end
+@safetestset "base AbstractChromatogram" begin include("base/AbstractChromatogram.jl") end
 
-@safetestset "IonScanOrder" begin include("base/IonScanOrder.jl") end
+@safetestset "base IonScanOrder" begin include("base/IonScanOrder.jl") end
 
-@safetestset "Utilities" begin include("utilities/utilities.jl") end
+@safetestset "base Utilities" begin include("utilities/utilities.jl") end
+
+@safetestset "IO Utilities" begin include("IO/utilities.jl") end
