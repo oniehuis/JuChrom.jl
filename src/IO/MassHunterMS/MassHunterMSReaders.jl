@@ -214,11 +214,8 @@ function readfile(::MSPeakBinV1, path::AbstractString, fileformat::MassHunterMS,
     signature == 259 || throw(
         IOError("\"$file\" has unexpected file signature: \"$signature\""))
     scanmethodids = sort(collect(Set(scanmethodid(fileformat))))
-    if length(scanmethodids) > 1
-        methodscandata = filter(s -> s.ScanMethodID .== scanmethodid(fileformat), scandata)
-    else
-        methodscandata = scandata
-    end
+    methodscandata = length(scanmethodids) == 1 ? scandata : filter(
+        s -> s.ScanMethodID .== scanmethodid(fileformat), scandata)
     bpp = bytesperpoint(methodscandata)
     bpp == 8 || bpp == 16 || throw(
         IOError("\"$file\" has unexpected ByteCount: \"$bpp\""))
