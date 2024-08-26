@@ -1596,22 +1596,68 @@ ions(gcms::AbstractGCMS) = gcms.ions
 
 
 """
-    maxintensity(chrom::AbstractChromatogram)
+    maxintensity(chrom::AbstractGC[; scanindexrange::OrdinalRange{T, S}]) 
+    where {T<:Integer, S<:Integer})
 
-Return the maximum intensity.
+Return the minimum intensity. The optional keyword argument `scanindexrange` allows you to 
+specify a range of scans from which the minimum intensity is determined.
 
-See also [`AbstractChromatogram`](@ref), [`minintensity`](@ref), [`intensities`](@ref), 
+See also [`AbstractGC`](@ref), [`minintensity`](@ref), [`intensities`](@ref), 
 [`intensity`](@ref).
 
-# Example
+# Examples
 ```jldoctest
-julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]);
+julia> tic = TIC([1, 2, 3]u"s", [12, 1, 956]);
+
+julia> maxintensity(tic)
+956
+
+julia> maxintensity(tic, scanindexrange=1:2)
+12
+```
+"""
+function maxintensity(chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}=(
+    firstindex(scantimes(chrom)):lastindex(scantimes(chrom)))) where {
+    T<:Integer, S<:Integer}
+    maximum(intensities(chrom, scanindexrange=scanindexrange))
+end
+
+
+"""
+    maxintensity(gcms::AbstractGCMS[; scanindexrange::OrdinalRange{T1, S1}, 
+    ionindexrange::OrdinalRange{T2, S2}]) where {T1<:Integer, S1<:Integer, 
+    T2<:Integer, S2<:Integer})
+
+Return the maximum intensity. The optional keyword arguments `scanindexrange` and 
+`ionindexrange` allow you to select a range of scans and ions from which the minimum 
+intensity is determined.
+
+See also [`AbstractGCMS`](@ref), [`minintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
+
+# Examples
+```jldoctest
+julia> gcms = GCMS([1, 2, 3]u"s", [85, 100], [0 12; 34 1; 23 956]);
 
 julia> maxintensity(gcms)
 956
+
+julia> maxintensity(gcms, scanindexrange=1:2)
+34
+
+julia> maxintensity(gcms, ionindexrange=1:1)
+34
+
+julia> maxintensity(gcms, scanindexrange=1:2, ionindexrange=2:2)
+12
 ```
 """
-maxintensity(chrom::AbstractChromatogram) = maximum(intensities(chrom))
+function maxintensity(gcms::AbstractGCMS; scanindexrange::OrdinalRange{T1, S1}=(
+    firstindex(scantimes(gcms)):lastindex(scantimes(gcms))), 
+    ionindexrange::OrdinalRange{T2, S2}=(firstindex(ions(gcms)):lastindex(ions(gcms)))
+    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
+    maximum(intensities(gcms, scanindexrange=scanindexrange, ionindexrange=ionindexrange))
+end
 
 
 """
@@ -1798,14 +1844,65 @@ metadata: 1 entry
 metadata(chrom::AbstractChromatogram) = chrom.metadata
 
 
+
 """
-    minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
+    minintensity(chrom::AbstractGC[, greaterthan::Real; 
+    scanindexrange::OrdinalRange{T, S}]) where {T<:Integer, S<:Integer})
 
-Return the minimum intensity. The optional argument `greaterthan` allows you to specify 
-a value; the returned minimum intensity will be greater than this value. If no intensity 
-above the specified value is found, nothing is returned.
+Return the minimum intensity. The optional positional argument `greaterthan` allows you to 
+specify a threshold value; the returned minimum intensity will be greater than this 
+threshold. If no intensity exceeds the specified value, nothing is returned. The optional 
+keyword argument `scanindexrange` allows you to specify a range of scans from which the 
+minimum intensity is determined.
 
-See also [`AbstractChromatogram`](@ref), [`maxintensity`](@ref), [`intensities`](@ref), 
+See also [`AbstractGC`](@ref), [`maxintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
+
+# Examples
+```jldoctest
+julia> tic = TIC([1, 2, 3]u"s", [12, 956, 1]);
+
+julia> minintensity(tic)
+1
+
+julia> minintensity(tic, 1)
+12
+
+julia> minintensity(tic, scanindexrange=1:2)
+12
+
+julia> minintensity(tic, 1, scanindexrange=2:3)
+956
+```
+"""
+function minintensity(chrom::AbstractGC; scanindexrange::OrdinalRange{T, S}=(
+    firstindex(scantimes(chrom)):lastindex(scantimes(chrom)))) where {
+    T<:Integer, S<:Integer}
+    minimum(intensities(chrom, scanindexrange=scanindexrange))
+end
+
+
+function minintensity(chrom::AbstractGC, greaterthan::Real; 
+    scanindexrange::OrdinalRange{T, S}=(firstindex(scantimes(chrom)):lastindex(
+    scantimes(chrom)))) where {T<:Integer, S<:Integer}
+    filtered_intensities = filter(num -> num > greaterthan, intensities(chrom, 
+        scanindexrange=scanindexrange))
+    length(filtered_intensities) > 0 ? minimum(filtered_intensities) : nothing
+end
+
+
+"""
+    minintensity(gcms::AbstractGCMS[, greaterthan::Real; 
+    scanindexrange::OrdinalRange{T1, S1}, ionindexrange::OrdinalRange{T2, S2}]) 
+    where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer})
+
+Return the minimum intensity. The optional positional argument `greaterthan` allows you to 
+specify a threshold value; the returned minimum intensity will be greater than this 
+threshold. If no intensity exceeds the specified value, nothing is returned. The optional 
+keyword arguments `scanindexrange` and `ionindexrange` allow you to select a range of scans
+and ions from which the minimum intensity is determined.
+
+See also [`AbstractGCMS`](@ref), [`maxintensity`](@ref), [`intensities`](@ref), 
 [`intensity`](@ref).
 
 # Examples
@@ -1818,14 +1915,34 @@ julia> minintensity(gcms)
 julia> minintensity(gcms, 0)
 1
 
-julia> minintensity(gcms, 1000)
+julia> minintensity(gcms, scanindexrange=2:3)
+1
 
+julia> minintensity(gcms, ionindexrange=1:1)
+0
+
+julia> minintensity(gcms, scanindexrange=2:3, ionindexrange=1:1)
+23
+
+julia> minintensity(gcms, 25, scanindexrange=2:3, ionindexrange=1:1)
+34
 ```
 """
-minintensity(chrom::AbstractChromatogram) = minimum(intensities(chrom))
+function minintensity(gcms::AbstractGCMS; scanindexrange::OrdinalRange{T1, S1}=(
+    firstindex(scantimes(gcms)):lastindex(scantimes(gcms))), 
+    ionindexrange::OrdinalRange{T2, S2}=(firstindex(ions(gcms)):lastindex(ions(gcms)))
+    ) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
+    minimum(intensities(gcms, scanindexrange=scanindexrange, ionindexrange=ionindexrange))
+end
 
-function minintensity(chrom::AbstractChromatogram, greaterthan::Real)
-    filtered_intensities = filter(num -> num > greaterthan, intensities(chrom))
+
+function minintensity(gcms::AbstractGCMS, greaterthan::Real; 
+    scanindexrange::OrdinalRange{T1, S1}=(firstindex(scantimes(gcms)):lastindex(
+    scantimes(gcms))), ionindexrange::OrdinalRange{T2, S2}=(firstindex(
+    ions(gcms)):lastindex(ions(gcms)))) where {T1<:Integer, S1<:Integer, T2<:Integer, 
+    S2<:Integer}
+    filtered_intensities = filter(num -> num > greaterthan, intensities(gcms, 
+        scanindexrange=scanindexrange, ionindexrange=ionindexrange))
     length(filtered_intensities) > 0 ? minimum(filtered_intensities) : nothing
 end
 

@@ -763,6 +763,400 @@ end
 
 
 ############################################################################################
+# maxintensity(gcms::AbstractGCMS[; scanindexrange, ionindexrange])
+############################################################################################
+@testset "maxintensity GCMS" begin
+    # Validate the returned value
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]))
+    @test 12 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:1)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]))
+    @test 12 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=1:1)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2)
+
+    @test 34 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        ionindexrange=1:1)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        ionindexrange=1:2)
+    @test 34 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        ionindexrange=1:1)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        ionindexrange=1:2)
+
+    @test 0 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:1, ionindexrange=1:1)
+    @test 12 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=1:1, ionindexrange=1:2)
+    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2, ionindexrange=2:2)
+    @test 34 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=2:2, ionindexrange=1:1)
+
+    # Same element return type as the one that was used to construct the object
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1])))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1])))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:4)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=0:2)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=1:3)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=0:3)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:4, ionindexrange=0:3)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=1:4, ionindexrange=1:3)
+    @test_throws BoundsError maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:3, ionindexrange=0:2)  
+end
+
+
+@testset "maxintensity RiGCMS" begin
+    # Validate the returned value
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]))
+    @test 12 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]))
+    @test 12 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2)
+
+    @test 34 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:1)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:2)
+    @test 34 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:1)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:2)
+
+    @test 0 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1)
+    @test 12 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:2)
+    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=2:2)
+    @test 34 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:2, ionindexrange=1:1)
+
+    # Same element return type as the one that was used to construct the object
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1])))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1])))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:4)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=0:2)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=1:3)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:4, ionindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=1:4, ionindexrange=1:3)
+    @test_throws BoundsError maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:3, ionindexrange=0:2)  
+end
+
+
+############################################################################################
+# minintensity(gcms::AbstractGCMS[; scanindexrange, ionindexrange])
+############################################################################################
+@testset "minintensity GCMS [, greaterthan::Real; scanindexrange, ionindexrange]" begin
+    # Validate the returned value
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]))
+    @test 34 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=2:2)
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2)
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]))
+    @test 34 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=2:2)
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2)
+
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        ionindexrange=1:1)
+    @test 1 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        ionindexrange=2:2)
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        ionindexrange=1:1)
+    @test 1 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        ionindexrange=2:2)
+
+    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:1, ionindexrange=1:1)
+    @test 34 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=2:2, ionindexrange=1:2)
+    @test 12 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]), 
+        scanindexrange=1:2, ionindexrange=2:2)
+    @test 34 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 
+        scanindexrange=2:2, ionindexrange=1:1)
+
+    @test 1 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 0)
+    @test 12 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 0, 
+        scanindexrange=1:2)
+    @test 23 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 0, 
+        ionindexrange=1:1)
+    @test 34 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]), 0, 
+        scanindexrange=1:2, ionindexrange=1:1)
+    
+    @test nothing === minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 956)
+    @test nothing === minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2)
+    @test nothing === minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 34, ionindexrange=1:1)
+    @test nothing === minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2, ionindexrange=1:1)
+    
+    # Same element return type as the one that was used to construct the object
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1])))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1])))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Nothing === typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 956))
+    @test Nothing === typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2))
+    @test Nothing === typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 34, ionindexrange=1:1))
+    @test Nothing === typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2, ionindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:3)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=1:4)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:4)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=0:2)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=1:3)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), ionindexrange=0:3)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:4, ionindexrange=0:3)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=1:4, ionindexrange=1:3)
+    @test_throws BoundsError minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]), scanindexrange=0:3, ionindexrange=0:2)
+end
+
+
+@testset "minintensity RiGCMS [, greaterthan::Real; scanindexrange, ionindexrange]" begin
+    # Validate the returned value
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]))
+    @test 34 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=2:2)
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2)
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]))
+    @test 34 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:2)
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=1:2)
+
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=1:1)
+    @test 1 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), ionindexrange=2:2)
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=1:1)
+    @test 1 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), ionindexrange=2:2)
+
+    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1)
+    @test 34 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:2, ionindexrange=1:2)
+    @test 12 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=2:2)
+    @test 34 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), scanindexrange=2:2, ionindexrange=1:1)
+
+    @test 1 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 0)
+    @test 12 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 0, scanindexrange=1:2)
+    @test 23 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 0, ionindexrange=1:1)
+    @test 34 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], [85, 100], 
+        Float64[0 12; 34 956; 23 1]), 0, scanindexrange=1:2, ionindexrange=1:1)
+    
+    @test nothing === minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 956)
+    @test nothing === minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2)
+    @test nothing === minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 34, ionindexrange=1:1)
+    @test nothing === minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2, ionindexrange=1:1)
+    
+    # Same element return type as the one that was used to construct the object
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1])))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1])))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:2))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), ionindexrange=1:1))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), ionindexrange=1:2))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Int[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:1, ionindexrange=1:1))
+    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 34 956; 23 1]), scanindexrange=1:2, ionindexrange=1:2))
+    @test Nothing === typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 956))
+    @test Nothing === typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2))
+    @test Nothing === typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 34, ionindexrange=1:1))
+    @test Nothing === typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], Float64[0 12; 23 1; 34 956]), 23, scanindexrange=1:2, 
+        ionindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:3)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=1:4)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:4)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=0:2)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=1:3)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), ionindexrange=0:3)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:4, ionindexrange=0:3)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=1:4, ionindexrange=1:3)
+    @test_throws BoundsError minintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
+        [85, 100], [0 12; 34 956; 23 1]), scanindexrange=0:3, ionindexrange=0:2)
+end
+
+
+############################################################################################
 # totalionchromatogram(gcms::AbstractGCMS)
 ############################################################################################
 @testset "totalionchromatogram GCMS" begin

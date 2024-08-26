@@ -310,85 +310,145 @@ end
 
 
 ############################################################################################
-# maxintensity(chrom::AbstractChromatogram)
+# maxintensity(chrom::AbstractGC; scanindexrange)
 ############################################################################################
-@testset "maxintensity FID" begin
+@testset "maxintensity FID; scanindexrange" begin
     # Validate the returned value
     @test 956 == maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]))
+    @test 12 == maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=1:2)
     @test 956 == maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]))
+    @test 12 == maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23])))
+    @test Int == typeof(maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Int == typeof(maxintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:2))
     @test Float64 == typeof(maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23])))
+    @test Float64 == typeof(maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:4)
 end
 
 
-@testset "maxintensity RiFID" begin
+@testset "maxintensity RiFID; scanindexrange" begin
     # Validate the returned value
     @test 956 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23]))
+    @test 12 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2)
     @test 956 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]))
+    @test 12 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23])))
+    @test Int == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1))
+    @test Int == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2))
     @test Float64 == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23])))
+    @test Float64 == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:4)
 end
 
 
-@testset "maxintensity GCMS" begin
-    # Validate the returned value
-    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]))
-    @test 956 == maxintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]))
-
-    # Same element return type as the one that was used to construct the object
-    @test Int == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
-        Int[0 12; 34 956; 23 1])))
-    @test Float64 == typeof(maxintensity(GCMS([1, 2, 3]u"s", [85, 100], 
-        Float64[0 12; 34 956; 23 1])))
-end
-
-
-@testset "maxintensity RiGCMS" begin
-    # Validate the returned value
-    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
-        [85, 100], Int[0 12; 34 956; 23 1]))
-    @test 956 == maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
-        [85, 100], Float64[0 12; 34 956; 23 1]))
-
-    # Same element return type as the one that was used to construct the object
-    @test Int == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
-        [85, 100], Int[0 12; 34 956; 23 1])))
-    @test Float64 == typeof(maxintensity(RiGCMS([1, 2, 3]u"s", "Kovates", [100, 200, 300], 
-        [85, 100], Float64[0 12; 34 956; 23 1])))
-end
-
-
-@testset "maxintensity TIC" begin
+@testset "maxintensity TIC; scanindexrange" begin
     # Validate the returned value
     @test 956 == maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]))
+    @test 12 == maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), scanindexrange=1:2)
     @test 956 == maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]))
+    @test 12 == maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23])))
+    @test Int == typeof(maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Int == typeof(maxintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:2))
     @test Float64 == typeof(maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23])))
+    @test Float64 == typeof(maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:4)
 end
 
 
-@testset "maxintensity RiTIC" begin
+@testset "maxintensity RiTIC; scanindexrange" begin
     # Validate the returned value
     @test 956 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23]))
+    @test 12 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2)
     @test 956 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]))
+    @test 12 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:1)
+    @test 956 == maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23])))
+    @test Int == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1))
+    @test Int == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2))
     @test Float64 == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23])))
+    @test Float64 == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:1))
+    @test Float64 == typeof(maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), scanindexrange=1:2))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:4)
 end
 
 
@@ -1209,105 +1269,205 @@ end
 end
 
 ############################################################################################
-# minintensity(chrom::AbstractChromatogram[, greaterthan::Real])
+# minintensity(chrom::AbstractChromatogram[, greaterthan::Real; scanindexrange])
 ############################################################################################
-@testset "minintensity FID" begin
+@testset "minintensity FID [, greaterthan::Real; scanindexrange]" begin
     # Validate the returned value
     @test 12 == minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]))
+    @test 23 == minintensity(FID([1, 2, 3]u"s", Int[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(FID([1, 2, 3]u"s", Int[23, 12, 956]), scanindexrange=1:2)
     @test 12 == minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]))
+    @test 23 == minintensity(FID([1, 2, 3]u"s", Float64[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(FID([1, 2, 3]u"s", Float64[23, 12, 956]), scanindexrange=1:2)
+
     @test 23 == minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12)
+    @test 956 == minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12, 
+        scanindexrange=1:2)
+
     @test nothing === minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956)
+    @test nothing === minintensity(FID([1, 2, 3]u"s", Float64[23, 12, 956]), 23, 
+        scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23])))
+    @test Int == typeof(minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Int == typeof(minintensity(FID([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:2))
     @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23])))
-    @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12))
+    @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 12, 
+        scanindexrange=1:2))
     @test Nothing === typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956))
+    @test Nothing === typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956, 
+        scanindexrange=1:1))
+    @test Nothing === typeof(minintensity(FID([1, 2, 3]u"s", Float64[12, 956, 23]), 956, 
+        scanindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(FID([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:4)
+    # "Kovats", [100, 200, 300]
 end
 
 
-@testset "minintensity RiFID" begin
+@testset "minintensity RiFID [, greaterthan::Real; scanindexrange]" begin
     # Validate the returned value
     @test 12 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23]))
+    @test 23 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[23, 12, 956]), scanindexrange=1:2)
     @test 12 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]))
     @test 23 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), scanindexrange=1:2)
+
+    @test 23 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 12)
+    @test 956 == minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 12, scanindexrange=1:2)
+
     @test nothing === minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 956)
+    @test nothing === minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), 23, scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23])))
+    @test Int == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1))
+    @test Int == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2))
     @test Float64 == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23])))
     @test Float64 == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        Float64[12, 956, 23]), 12))
+        Float64[12, 956, 23]), scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 12, scanindexrange=1:2))
     @test Nothing === typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 956))
+    @test Nothing === typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 956, scanindexrange=1:1))
+    @test Nothing === typeof(minintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 956, scanindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(RiFID([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:4)
 end
 
 
-@testset "minintensity GCMS" begin
-    # Validate the returned value
-    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Int[0 12; 34 956; 23 1]))
-    @test 0 == minintensity(GCMS([1, 2, 3]u"s", [85, 100], Float64[0 12; 34 956; 23 1]))
-
-    # Same element return type as the one that was used to construct the object
-    @test Int == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
-        Int[0 12; 34 956; 23 1])))
-    @test Float64 == typeof(minintensity(GCMS([1, 2, 3]u"s", [85, 100], 
-        Float64[0 12; 34 956; 23 1])))
-end
-
-
-@testset "minintensity RiGCMS" begin
-    # Validate the returned value
-    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], [85, 100], 
-        Int[0 12; 34 956; 23 1]))
-    @test 0 == minintensity(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], [85, 100], 
-        Float64[0 12; 34 956; 23 1]))
-
-    # Same element return type as the one that was used to construct the object
-    @test Int == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        [85, 100], Int[0 12; 34 956; 23 1])))
-    @test Float64 == typeof(minintensity(RiGCMS([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        [85, 100], Float64[0 12; 34 956; 23 1])))
-end
-
-
-@testset "minintensity TIC" begin
+@testset "minintensity TIC [, greaterthan::Real; scanindexrange]" begin
     # Validate the returned value
     @test 12 == minintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]))
+    @test 23 == minintensity(TIC([1, 2, 3]u"s", Int[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(TIC([1, 2, 3]u"s", Int[23, 12, 956]), scanindexrange=1:2)
     @test 12 == minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]))
+    @test 23 == minintensity(TIC([1, 2, 3]u"s", Float64[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(TIC([1, 2, 3]u"s", Float64[23, 12, 956]), scanindexrange=1:2)
+
+    @test 23 == minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 12)
+    @test 956 == minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 12, 
+        scanindexrange=1:2)
+
+    @test nothing === minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 956)
+    @test nothing === minintensity(TIC([1, 2, 3]u"s", Float64[23, 12, 956]), 23, 
+        scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(minintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23])))
+    @test Int == typeof(minintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Int == typeof(minintensity(TIC([1, 2, 3]u"s", Int[12, 956, 23]), 
+        scanindexrange=1:2))
     @test Float64 == typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23])))
+    @test Float64 == typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 
+        scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 12, 
+        scanindexrange=1:2))
+    @test Nothing === typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 956))
+    @test Nothing === typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 956, 
+        scanindexrange=1:1))
+    @test Nothing === typeof(minintensity(TIC([1, 2, 3]u"s", Float64[12, 956, 23]), 956, 
+        scanindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(TIC([1, 2, 3]u"s", [12, 956, 23]), 
+        scanindexrange=0:4)
+    # "Kovats", [100, 200, 300]
 end
 
 
-@testset "minintensity RiTIC" begin
+@testset "minintensity RiTIC [, greaterthan::Real; scanindexrange]" begin
     # Validate the returned value
     @test 12 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23]))
+    @test 23 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[23, 12, 956]), scanindexrange=1:2)
     @test 12 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]))
     @test 23 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), scanindexrange=1:1)
+    @test 12 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), scanindexrange=1:2)
+
+    @test 23 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 12)
+    @test 956 == minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 12, scanindexrange=1:2)
+
     @test nothing === minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 956)
+    @test nothing === minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[23, 12, 956]), 23, scanindexrange=1:2)
 
     # Same element return type as the one that was used to construct the object
     @test Int == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Int[12, 956, 23])))
+    @test Int == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:1))
+    @test Int == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Int[12, 956, 23]), scanindexrange=1:2))
     @test Float64 == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23])))
     @test Float64 == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
-        Float64[12, 956, 23]), 12))
+        Float64[12, 956, 23]), scanindexrange=1:1))
+    @test Float64 == typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 12, scanindexrange=1:2))
     @test Nothing === typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
         Float64[12, 956, 23]), 956))
+    @test Nothing === typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 956, scanindexrange=1:1))
+    @test Nothing === typeof(minintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        Float64[12, 956, 23]), 956, scanindexrange=1:1))
+
+    # Check for BoundsErrors
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:3)
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=1:4)
+    @test_throws BoundsError maxintensity(RiTIC([1, 2, 3]u"s", "Kovats", [100, 200, 300], 
+        [12, 956, 23]), scanindexrange=0:4)
 end
 
 
