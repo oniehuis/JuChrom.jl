@@ -4,6 +4,7 @@ using Pkg.Artifacts
 using PrecompileTools: @setup_workload, @compile_workload
 
 agilent = artifact"Agilent"
+andi = artifact"ANDI"
 
 include("base.jl")
 
@@ -60,7 +61,7 @@ using .InputOutput
 
 export FileFormat
 export AgilentFID
-#export ANDI
+export ANDI
 export ChemStationMS
 #export DelimitedText
 #export Excel

@@ -12,7 +12,7 @@ export FileExistsError
 
 export FileFormat
 export AgilentFID
-#export ANDI
+export ANDI
 export ChemStationMS
 #export DelimitedText
 #export Excel
@@ -28,10 +28,10 @@ include("./Utilities.jl")
 
 Supertype of all FileFormat implementations.
 
-See also [`AgilentFID`](@ref), [`ChemStationMS`](@ref).
+See also [`AgilentFID`](@ref), [`ANDI`](@ref), [`ChemStationMS`](@ref), 
+[`MassHunterMS`](@ref).
 """
 abstract type FileFormat end
-# [`ANDI`](@ref), , [`MassHunterMS`](@ref)
 
 
 """
@@ -41,9 +41,10 @@ Read data from the specified source using the appropriate file format reader. Th
 may be a file or a directory path, depending on the requirements of the chosen file format 
 reader.
 
-See also [`AgilentFID`](@ref), [`ChemStationMS`](@ref).
+See also [`AgilentFID`](@ref), [`ANDI`](@ref), [`ChemStationMS`](@ref), 
+[`MassHunterMS`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
 
@@ -58,7 +59,7 @@ metadata: 10 entries
 function importdata(source::AbstractString, fileformat::FileFormat)
     importdata(fileformat, source)
 end
-# See also [`AgilentFID`](@ref), [`ANDI`](@ref), [`ChemStationMS`](@ref), [`MassHunterMS`](@ref), [`GCMS`](@ref), [`FID`](@ref), .
+
 
 include(joinpath(".", "AgilentFID", "AgilentFIDReaders.jl"))
 using .AgilentFIDReaders
@@ -69,8 +70,8 @@ using .ChemStationMSReaders
 include(joinpath(".", "MassHunterMS", "MassHunterMSReaders.jl"))
 using .MassHunterMSReaders
 
-#include(joinpath(".", "ANDI", "ANDIReaders.jl"))
-#using .ANDIReaders
+include(joinpath(".", "ANDI", "ANDIReaders.jl"))
+using .ANDIReaders
 
 
 # """
