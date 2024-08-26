@@ -129,7 +129,7 @@ function readfile(::ANDIV1, file::AbstractString, ::Type{T1}, ::Type{T2}, ::Type
     ions, xic = buildxic(pointcounts, mzvec, intsvec)
 
     mzs = T2 <: Nothing ? ions : convert(Vector{T2}, ions)
-    im = T3 <: Nothing ? xic : convert(Matrix{T2}, xic)
+    im = T3 <: Nothing ? xic : convert(Matrix{T3}, xic)
 
     GCMS(scantimes_unitful, mzs, im, Dict(:ionunit => ionunit, 
         :intensityunit => intensityunit))
