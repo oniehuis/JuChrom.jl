@@ -114,9 +114,7 @@ function readfile(::ANDIV1, file::AbstractString, ::Type{T1}, ::Type{T2}, ::Type
     cond3::Bool = length(mzvec) == 0
     cond4::Bool = length(intsvec) == 0
 
-    if cond1 || cond2 || cond3 || cond4
-        error("cannot read file '$file'")
-    end
+    (cond1 || cond2 || cond3 || cond4) && throw(IOError("cannot read file \"$file\""))
 
     if scantimeunit == "Seconds"
         scantimes_unitful = T1 <: Nothing ? (scantimes * 1u"s") : (
