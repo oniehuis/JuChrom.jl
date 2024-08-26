@@ -116,13 +116,13 @@ function readfile(::ANDIV1, file::AbstractString, ::Type{T1}, ::Type{T2}, ::Type
 
     (cond1 || cond2 || cond3 || cond4) && throw(IOError("cannot read file \"$file\""))
 
-    if scantimeunit == "Seconds"
-        scantimes_unitful = T1 <: Nothing ? (scantimes * 1u"s") : (
-            convert(Vector{T1}, scantimes) * 1u"s")
-    else
-        throw(ErrorException(string("scantimes in \"$file\" in an unexpected unit: ", 
-            "\"$scantimeunit\"")))
-    end
+    # This may need to be updated in the future! So far I have only seen "Seconds" as a 
+    # scantime unit
+    @assert scantimeunit == "Seconds" string("scantimes in \"$file\" in an unexpected ", 
+        "unit: \"$scantimeunit\"")
+
+    scantimes_unitful = T1 <: Nothing ? (scantimes * 1u"s") : (convert(Vector{T1}, 
+        scantimes) * 1u"s")
 
     ions, xic = buildxic(pointcounts, mzvec, intsvec)
 
