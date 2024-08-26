@@ -32,12 +32,14 @@ ionscantimeindex
 ionscantimes
 ionscantimeshift
 ions
-maxintensity
+maxintensity(::AbstractGC; ::OrdinalRange{T, S}) where {T<:Integer, S<:Integer}
+maxintensity(::AbstractGCMS; ::OrdinalRange{T1, S1}, ::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
 maxion
 maxretentionindex
 maxscantime
 metadata
-minintensity
+minintensity(::AbstractGC; ::OrdinalRange{T, S}) where {T<:Integer, S<:Integer}
+minintensity(::AbstractGCMS; ::OrdinalRange{T1, S1}, ::OrdinalRange{T2, S2}) where {T1<:Integer, S1<:Integer, T2<:Integer, S2<:Integer}
 minion
 minretentionindex
 minscantime
