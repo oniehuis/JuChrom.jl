@@ -14,15 +14,20 @@ export ANDI
     ANDI(; scantimetype::Union{AbstractFloat, Nothing}=Nothing, iontype::Union{
     AbstractFloat, Nothing}=Nothing, intensitytype::Union{AbstractFloat, Nothing}=Nothing)
 
-Returns an object representing the `ANDI` file format. `ANDI` files typically have a .CDF 
-file extension. The optional keyword argument `scantimetype` allows the scan times to be 
-converted to a specified float type. Similarly, the optional keyword arguments `iontype` 
-and `intensitytype` enable the conversion of mass-to-charge ratio values and intensity 
-values, respectively, to a desired float type. These keyword arguments — `scantimetype`, 
-`iontype`, and `intensitytype` — are provided to address cases where `ANDI` files store 
-data as Float64 even though it was originally collected as Float32. When using the 
-importdata function, note that the `ANDI` data reader expects the source location to 
-be a netCDF file.
+Returns an object representing the `ANDI` file format. When using the importdata function, 
+the `ANDI` data reader expects the source location to be a netCDF file, which typically has 
+a .CDF file extension. The keyword arguments `scantimetype`, `iontype`, and `intensitytype` 
+are provided to address cases where `ANDI` files may store data as Float64 even though it 
+was originally collected as Float32. The default type Nothing indicates that no conversion 
+takes place and the type in which the data is stored is returned. Backgroud: When decimal 
+numbers are converted to binary floats, they are rounded to the nearest binary fraction 
+rather than a decimal fraction. This rounding can cause slight changes in the values. If 
+the data were initially stored as Float32 and are then converted to Float64, these changes 
+can become visible. However, the changes can usually be ignored. However, if one wishes to 
+convert the float types, the optional `scantimetype` keyword argument allows the scan times 
+to be converted to a specified float type. Similarly, the optional keyword arguments 
+`iontype` and `intensitytype` allow the conversion of mass-to-charge ratio values and 
+intensity values, respectively, to a desired float type. 
 
 See also [`FileFormat`](@ref), [`importdata`](@ref).
 

@@ -8,14 +8,16 @@ import ..InputOutput: FileFormat, Path, IOError, buildxic, importdata
 export MassHunterMS
 
 
-struct MassHunterMS{T1<:Integer, T2<:Type, T3<:Type, T4<:Type} <: FileFormat
+struct MassHunterMS{T1<:Integer, T2<:Union{AbstractFloat, Nothing}, 
+    T3<:Union{AbstractFloat, Nothing}, T4<:Union{AbstractFloat, Nothing}} <: FileFormat
     scanmethodid::T1
-    scantimetype::T2
-    iontype::T3
-    intensitytype::T4
-    function MassHunterMS{T1, T2, T3, T4}(scanmethodid::T1, scantimetype::T2, 
-        iontype::T3, intensitytype::T4) where {T1<:Integer, T2<:Type, T3<:Type, 
-        T4<:Type}
+    scantimetype::Type{T2}
+    iontype::Type{T3}
+    intensitytype::Type{T4}
+    function MassHunterMS{T1, T2, T3, T4}(scanmethodid::T1, scantimetype::Type{T2}, 
+        iontype::Type{T3}, intensitytype::Type{T4}) where {T1<:Integer, 
+        T2<:Union{AbstractFloat, Nothing}, T3<:Union{AbstractFloat, Nothing}, 
+        T4<:Union{AbstractFloat, Nothing}}
         new(scanmethodid, scantimetype, iontype, intensitytype)
     end
 end
@@ -23,25 +25,29 @@ end
 
 """
     
-    MassHunterMS(; scanmethodid::Integer=1, scantimetype::Union{Float32, Float64}=Float32, 
-    iontype::Union{Float32, Float64}=Float32, intensitytype::Union{Float32, Float64}=Float32)
+    MassHunterMS(; scanmethodid::Integer=1, 
+    scantimetype::Union{AbstractFloat, Nothing}=Nothing, 
+    iontype::Union{AbstractFloat, Nothing}=Nothing, 
+    intensitytype::Union{AbstractFloat, Nothing}=Nothing
 
-Return an object representing the `MassHunterMS` file format. The optional `scanmethodid` 
-keyword argument allows you to specify which scan method ID data to read, which is 
-particularly useful when multiple scan methods have been applied simultaneously. The 
-:ScanMethodID and :ScanMethodIDs metadata entries indicate which scan method ID data was 
-extracted and which scan method IDs are available for a given run. The optional 
-`scantimetype` keyword argument allows the scan time to be converted to the specified float 
-type. Similarly, the optional `iontype` keyword argument allows the mass-to-charge ratio 
-values to be converted to the desired float type. The optional `intensitytype` keyword 
-argument allows the intensity values to be converted to the specified float type. The 
-keyword arguments `scantimetype`, `iontype`, and `intensitytype` are provided to address 
-the issue that MassHunter files may store data as Float64 when it was originally collected 
-as Float32. The storage format (Float64 or Float32) of the ion and intensity values can be 
-determined by checking the bytes per point value in the metadata: a value of 16 corresponds 
-to Float64, while a value of 8 corresponds to Float32. Scan times are always stored as 
-64-bit floats. Note that when using the importdata function, the MassHunterMS data reader 
-expects the source location to be the Agilent .D folder.
+Return an object representing the `MassHunterMS` file format. When using the importdata 
+function, the MassHunterMS data reader expects the source location to be the Agilent .D 
+folder. The optional `scanmethodid` keyword argument allows you to specify which scan 
+method ID data to read, which is particularly useful when multiple scan methods have been 
+applied simultaneously. The :ScanMethodID and :ScanMethodIDs metadata entries indicate 
+which scan method ID data was extracted and which scan method IDs are available for a given 
+run. The keyword arguments `scantimetype`, `iontype`, and `intensitytype` are provided to 
+address cases where MassHunter files may store data as Float64 even though it was 
+originally collected as Float32. The default type Nothing indicates that no conversion 
+takes place and the type in which the data is stored is returned. Backgroud: When decimal 
+numbers are converted to binary floats, they are rounded to the nearest binary fraction 
+rather than a decimal fraction. This rounding can cause slight changes in the values. If 
+the data were initially stored as Float32 and are then converted to Float64, these changes 
+can become visible. However, the changes can usually be ignored. However, if one wishes to 
+convert the float types, the optional `scantimetype` keyword argument allows the scan times 
+to be converted to a specified float type. Similarly, the optional keyword arguments 
+`iontype` and `intensitytype` allow the conversion of mass-to-charge ratio values and 
+intensity values, respectively, to a desired float type.
 
 See also [`FileFormat`](@ref), [`importdata`](@ref), [`JuChrom.binions`](@ref).
 
@@ -50,46 +56,36 @@ See also [`FileFormat`](@ref), [`importdata`](@ref), [`JuChrom.binions`](@ref).
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_MassHunterMS.D");
 
 julia> gcms = importdata(dfolder, MassHunterMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Float32}
-2405 scans; scan time range: 3.1990166f0 minute - 31.650784f0 minute
-50275 ions; range: m/z 29.02 - 562.89
-intensity range: 0.0 - 1.1872475e6
-metadata: 3 entries
-
-julia> ions(gcms)[1:6]  # ions are converted per default to 32-bit floats
-6-element Vector{Float32}:
- 29.02
- 29.03
- 29.04
- 29.05
- 29.06
- 29.07
-
-julia> metadata(gcms)  # ion and intensity values are stored as 64-bit floats
-Dict{Any, Any} with 3 entries:
-  :ScanMethodID  => 1
-  :BytesPerPoint => 16.0
-  :ScanMethodIDs => [1]
-
-julia> gcms = importdata(dfolder, MassHunterMS(iontype=Float64))  # convert ions to Float64
-GCMS {scan times: Float32, ions: Float64, intensities: Float32}
-2405 scans; scan time range: 3.1990166f0 minute - 31.650784f0 minute
+GCMS {scan times: Float64, ions: Float64, intensities: Float64}
+2405 scans; scan time range: 191.941 s - 1899.047 s
 50275 ions; range: m/z 29.020000457763672 - 562.8900146484375
 intensity range: 0.0 - 1.1872475e6
-metadata: 3 entries
+metadata: 2 entries
 
-julia> ions(gcms)[1:6]  # 64-bit floats do not display the ion values well
-6-element Vector{Float64}:
+julia> ions(gcms)[1:3]  # ion decimal digits suggest Float32
+3-element Vector{Float64}:
  29.020000457763672
  29.030000686645508
  29.040000915527344
- 29.049999237060547
- 29.059999465942383
- 29.06999969482422
+
+julia> gcms = importdata(dfolder, MassHunterMS(; iontype=Float32))
+GCMS {scan times: Float64, ions: Float32, intensities: Float64}
+2405 scans; scan time range: 191.941 s - 1899.047 s
+50275 ions; range: m/z 29.02 - 562.89
+intensity range: 0.0 - 1.1872475e6
+metadata: 2 entries
+
+julia> ions(gcms)[1:3]
+3-element Vector{Float32}:
+ 29.02
+ 29.03
+ 29.04
 ```
 """
-function MassHunterMS(; scanmethodid::T1=1, scantimetype::T2=Float32, iontype::T3=Float32, 
-    intensitytype::T4=Float32) where {T1<:Integer, T2<:Type, T3<:Type, T4<:Type}
+function MassHunterMS(; scanmethodid::T1=1, scantimetype::Type{T2}=Nothing, 
+    iontype::Type{T3}=Nothing, intensitytype::Type{T4}=Nothing) where {T1<:Integer, 
+    T2<:Union{AbstractFloat, Nothing}, T3<:Union{AbstractFloat, Nothing}, 
+    T4<:Union{AbstractFloat, Nothing}}
     MassHunterMS{T1, T2, T3, T4}(scanmethodid, scantimetype, iontype, intensitytype)
 end
 
@@ -176,27 +172,30 @@ scanmethodids(scandata::Vector{MSScanDataV1}) = [s.ScanMethodID for s in scandat
 
 
 function mspeakdata(::MSPeakBinV1, file::AbstractString, fileformat::FileFormat, 
-    scandata::Vector{MSScanDataV1}, ::Type{T}, ::Type{T2}, ::Type{T3}, ::Type{T4}, 
-    bpp, scanmethodids) where {T, T2, T3, T4}
-    mzvec = Vector{T}(undef, pointcountsum(scandata))
-    intsvec = Vector{T}(undef, pointcountsum(scandata))
+    scandata::Vector{MSScanDataV1}, ::Type{T1}, ::Type{T2}, ::Type{T3}, ::Type{T4}, 
+    scanmethodids) where {T1, T2, T3, T4}
+    mzvec = Vector{T1}(undef, pointcountsum(scandata))
+    intsvec = Vector{T1}(undef, pointcountsum(scandata))
     open(file, "r") do f
         i = 1
         for s in scandata
             seek(f, s.SpectrumOffset)
-            mzvec[i:i+s.PointCount-1] = ltoh.(read!(f, Vector{T}(undef, s.PointCount)))
-            intsvec[i:i+s.PointCount-1] = ltoh.(read!(f, Vector{T}(undef, s.PointCount)))
+            mzvec[i:i+s.PointCount-1] = ltoh.(read!(f, Vector{T1}(undef, s.PointCount)))
+            intsvec[i:i+s.PointCount-1] = ltoh.(read!(f, Vector{T1}(undef, s.PointCount)))
             i += s.PointCount
         end
     end
-    mzvec_converted = convert(Vector{iontype(fileformat)}, mzvec)
-    intsvec_converted = convert(Vector{intensitytype(fileformat)}, intsvec)
+
+    mzvec_converted = T3 <: Nothing ? mzvec : convert(Vector{T3}, mzvec)
+    intsvec_converted = T4 <: Nothing ? intsvec : convert(Vector{T4}, intsvec)
+    
     ions, xic = buildxic([scandata[i].PointCount for i in 1:length(scandata)], 
         mzvec_converted, intsvec_converted)
-    scantimes_converted_unitful = convert(Vector{scantimetype(fileformat)}, 
-        scantimes(scandata)) * 1u"minute"
-    GCMS(scantimes_converted_unitful, ions, xic, Dict(:BytesPerPoint => bpp, 
-    :ScanMethodID => scanmethodid(fileformat), :ScanMethodIDs => scanmethodids))
+    
+    scantimes_converted_unitful = (T2 <: Nothing ? scantimes(scandata) * 60u"s" 
+        : convert(Vector{T2}, scantimes(scandata)) * 60u"s")
+    GCMS(scantimes_converted_unitful, ions, xic, 
+        Dict(:ScanMethodID => scanmethodid(fileformat), :ScanMethodIDs => scanmethodids))
 end
 
 
@@ -221,7 +220,7 @@ function readfile(::MSPeakBinV1, path::AbstractString, fileformat::MassHunterMS,
         IOError("\"$file\" has unexpected ByteCount: \"$bpp\""))
     storagetype = bpp == 8 ? Float32 : Float64
     mspeakdata(MSPeakBinV1(), file, fileformat, methodscandata, storagetype, 
-        scantimetype(fileformat), iontype(fileformat), intensitytype(fileformat), bpp, 
+        scantimetype(fileformat), iontype(fileformat), intensitytype(fileformat), 
         scanmethodids)
 end
 
