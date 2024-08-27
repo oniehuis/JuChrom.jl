@@ -95,6 +95,72 @@ function invert(dictionary::Dict{T1, T2}) where {T1, T2}
 end
 
 
+const metricprefixes = (
+    ("q", 10^-30),
+    ("r", 10^-27),
+    ("y", 10^-24),
+    ("z", 10^-21),
+    ("a", 10^-18),            
+    ("f", 10^-15), 
+    ("p", 10^-12),
+    ("n", 10^-9),
+    ("µ", 10^-6),
+    ("m", 10^-3),
+    ("" , 10^0),
+    ("K", 10^3),
+    ("M", 10^6),
+    ("G", 10^9),
+    ("T", 10^12),
+    ("P", BigInt(10)^15),
+    ("E", BigInt(10)^18),
+    ("Z", BigInt(10)^21),
+    ("Y", BigInt(10)^24),
+    ("R", BigInt(10)^27),
+    ("Q", BigInt(10)^30))
+
+
+"""
+    JuChrom.metricprefix(number::Real) -> Tuple
+
+Return the metric prefix and the corresponding exponent for a given number.
+
+# Examples
+```jldoctest
+julia> JuChrom.metricprefix(347 * 10^7)
+("G", 1000000000)
+
+julia> JuChrom.metricprefix(-42558335)
+("M", 1000000)
+
+julia> JuChrom.metricprefix(23)
+("", 1)
+
+julia> JuChrom.metricprefix(-0.00003623)
+("µ", 1.0e-6)
+
+julia> JuChrom.metricprefix(425 * 10^-17)
+("f", 1.0e-15)
+
+julia> JuChrom.metricprefix(big"136455347543543453485634875672536725423547234")
+("Q", 1000000000000000000000000000000)
+
+julia> JuChrom.metricprefix(Inf)
+("", 1)
+
+julia> JuChrom.metricprefix(0)
+("", 1)
+
+julia> JuChrom.metricprefix(NaN)
+("", 1)
+```
+"""
+function metricprefix(number::Real)
+    (number == -Inf || number == 0 || number == +Inf || number === NaN) && return "", 1
+    i = findfirst(prefix -> last(prefix) > 0.001 * abs(number), metricprefixes)
+    isnothing(i) ? last(metricprefixes) : metricprefixes[i]
+end
+
+
 """
     JuChrom.name(::Type)
 
