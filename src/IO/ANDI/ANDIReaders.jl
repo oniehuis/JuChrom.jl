@@ -19,11 +19,11 @@ the `ANDI` data reader expects the source location to be a netCDF file, which ty
 a .CDF file extension. The keyword arguments `scantimetype`, `iontype`, and `intensitytype` 
 are provided to address cases where `ANDI` files may store data as Float64 even though it 
 was originally collected as Float32. The default type Nothing indicates that no conversion 
-takes place and the type in which the data is stored is returned. Backgroud: When decimal 
+takes place and the type in which the data is stored is returned. Background: When decimal 
 numbers are converted to binary floats, they are rounded to the nearest binary fraction 
 rather than a decimal fraction. This rounding can cause slight changes in the values. If 
-the data were initially stored as Float32 and are then converted to Float64, these changes 
-can become visible. However, the changes can usually be ignored. However, if one wishes to 
+the data were initially recorded as Float32 and are then converted to Float64, these 
+changes can become visible. However, the changes can usually be ignored. If one wishes to 
 convert the float types, the optional `scantimetype` keyword argument allows the scan times 
 to be converted to a specified float type. Similarly, the optional keyword arguments 
 `iontype` and `intensitytype` allow the conversion of mass-to-charge ratio values and 
