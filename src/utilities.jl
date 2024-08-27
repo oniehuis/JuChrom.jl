@@ -96,68 +96,68 @@ end
 
 
 const metricprefixes = (
-    ("q", 10^-30),
-    ("r", 10^-27),
-    ("y", 10^-24),
-    ("z", 10^-21),
-    ("a", 10^-18),            
-    ("f", 10^-15), 
-    ("p", 10^-12),
-    ("n", 10^-9),
-    ("µ", 10^-6),
-    ("m", 10^-3),
-    ("" , 10^0),
-    ("K", 10^3),
-    ("M", 10^6),
-    ("G", 10^9),
-    ("T", 10^12),
-    ("P", BigInt(10)^15),
-    ("E", BigInt(10)^18),
-    ("Z", BigInt(10)^21),
-    ("Y", BigInt(10)^24),
-    ("R", BigInt(10)^27),
-    ("Q", BigInt(10)^30))
+    ("q", -30),
+    ("r", -27),
+    ("y", -24),
+    ("z", -21),
+    ("a", -18),            
+    ("f", -15), 
+    ("p", -12),
+    ("n",  -9),
+    ("µ",  -6),
+    ("m",  -3),
+    ("" ,   0),
+    ("K",  +3),
+    ("M",  +6),
+    ("G",  +9),
+    ("T", +12),
+    ("P", +15),
+    ("E", +18),
+    ("Z", +21),
+    ("Y", +24),
+    ("R", +27),
+    ("Q", +30))
 
 
-    
 """
-    JuChrom.metricprefix(number::Real) -> Tuple
+    JuChrom.metricprefix(number::Real) -> Tuple{String, Int}
 
 Return the metric prefix and the corresponding exponent for a given number.
 
 # Examples
 ```jldoctest
 julia> JuChrom.metricprefix(347 * 10^7)
-("G", 1000000000)
+("G", 9)
 
 julia> JuChrom.metricprefix(-42558335)
-("M", 1000000)
+("M", 6)
 
 julia> JuChrom.metricprefix(23)
-("", 1)
+("", 0)
 
 julia> JuChrom.metricprefix(-0.00003623)
-("µ", 1.0e-6)
+("µ", -6)
 
 julia> JuChrom.metricprefix(425 * 10^-17)
-("f", 1.0e-15)
+("f", -15)
 
 julia> JuChrom.metricprefix(big"136455347543543453485634875672536725423547234")
-("Q", 1000000000000000000000000000000)
+("Q", 30)
 
 julia> JuChrom.metricprefix(Inf)
-("", 1)
+("", 0)
 
 julia> JuChrom.metricprefix(0)
-("", 1)
+("", 0)
 
 julia> JuChrom.metricprefix(NaN)
-("", 1)
+("", 0)
 ```
 """
 function metricprefix(number::Real)
-    (number == -Inf || number == 0 || number == +Inf || number === NaN) && return "", 1
-    i = findfirst(prefix -> last(prefix) > 0.001 * abs(number), metricprefixes)
+    (number == -Inf || number == 0 || number == +Inf || number === NaN) && return "", 0
+    i = findfirst(prefix -> BigInt(10)^Float64(last(prefix)) > 0.001 * abs(number), 
+        metricprefixes)
     isnothing(i) ? last(metricprefixes) : metricprefixes[i]
 end
 

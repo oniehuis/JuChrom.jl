@@ -179,17 +179,17 @@ end
 # JuChrom.metricprefix(number::Real) -> Tuple
 ############################################################################################
 @testset "metricprefix" begin
-    @test ("G", 1000000000) == JuChrom.metricprefix(347 * 10^7)
-    @test ("M", 1000000) == JuChrom.metricprefix(-42558335)
-    @test ("", 1) == JuChrom.metricprefix(23)
-    @test ("µ", 1.0e-6) == JuChrom.metricprefix(-0.00003623)
-    @test ("f", 1.0e-15) == JuChrom.metricprefix(425 * 10^-17)
-    @test ("Q", 1000000000000000000000000000000) == JuChrom.metricprefix(
+    @test ("G", 9) == JuChrom.metricprefix(347 * 10^7)
+    @test ("M", 6) == JuChrom.metricprefix(-42558335)
+    @test ("", 0) == JuChrom.metricprefix(23)
+    @test ("µ", -6) == JuChrom.metricprefix(-0.00003623)
+    @test ("f", -15) == JuChrom.metricprefix(425 * 10^-17)
+    @test ("Q", 30) == JuChrom.metricprefix(
         big"136455347543543453485634875672536725423547234")
-    @test ("", 1) == JuChrom.metricprefix(-Inf)
-    @test ("", 1) == JuChrom.metricprefix(+Inf)
-    @test ("", 1) == JuChrom.metricprefix(0)
-    @test ("", 1) == JuChrom.metricprefix(NaN)
+    @test ("", 0) == JuChrom.metricprefix(-Inf)
+    @test ("", 0) == JuChrom.metricprefix(+Inf)
+    @test ("", 0) == JuChrom.metricprefix(0)
+    @test ("", 0) == JuChrom.metricprefix(NaN)
 
     @test String == typeof(first(JuChrom.metricprefix(347 * 10^7)))
     @test String == typeof(first(JuChrom.metricprefix(
@@ -197,13 +197,13 @@ end
     @test String == typeof(first(JuChrom.metricprefix(-Inf)))
     @test String == typeof(first(JuChrom.metricprefix(+Inf)))
     @test String == typeof(first(JuChrom.metricprefix(0)))
-    @test typeof(last(JuChrom.metricprefix(347 * 10^7))) <: Number
+    @test typeof(last(JuChrom.metricprefix(347 * 10^7))) <: Int
     @test typeof(last(JuChrom.metricprefix(
-        big"136455347543543453485634875672536725423547234"))) <: Number
-    @test typeof(last(JuChrom.metricprefix(-Inf))) <: Number
-    @test typeof(last(JuChrom.metricprefix(+Inf))) <: Number
-    @test typeof(last(JuChrom.metricprefix(0))) <: Number
-    @test typeof(last(JuChrom.metricprefix(NaN))) <: Number
+        big"136455347543543453485634875672536725423547234"))) <:Int
+    @test typeof(last(JuChrom.metricprefix(-Inf))) <:Int
+    @test typeof(last(JuChrom.metricprefix(+Inf))) <:Int
+    @test typeof(last(JuChrom.metricprefix(0))) <:Int
+    @test typeof(last(JuChrom.metricprefix(NaN))) <:Int
 end
 
 
