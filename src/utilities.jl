@@ -41,6 +41,9 @@ true
 
 julia> rt2ri(5u"s")
 missing
+
+julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:linear);
+
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
