@@ -179,31 +179,41 @@ end
 # JuChrom.metricprefix(number::Real) -> Tuple
 ############################################################################################
 @testset "metricprefix" begin
-    @test ("G", 9) == JuChrom.metricprefix(347 * 10^7)
-    @test ("M", 6) == JuChrom.metricprefix(-42558335)
-    @test ("", 0) == JuChrom.metricprefix(23)
-    @test ("µ", -6) == JuChrom.metricprefix(-0.00003623)
-    @test ("f", -15) == JuChrom.metricprefix(425 * 10^-17)
-    @test ("Q", 30) == JuChrom.metricprefix(
-        big"136455347543543453485634875672536725423547234")
+    @test ("Q", 30) == JuChrom.metricprefix(10.0^30)
+    @test ("R", 27) == JuChrom.metricprefix(prevfloat(10.0^30))
+    @test ("Q", 30) == JuChrom.metricprefix(-10.0^30)
+    @test ("", 0) == JuChrom.metricprefix(1.0)
+    @test ("m", -3) == JuChrom.metricprefix(prevfloat(1.0))
+    @test ("", 0) == JuChrom.metricprefix(-1.0)
+    @test ("m", -3) == JuChrom.metricprefix(prevfloat(-1.0))
+    @test ("R", 27) == JuChrom.metricprefix(-prevfloat(10.0^30))
+    @test ("r", -27) == JuChrom.metricprefix(10.0^-27)
+    @test ("q", -30) == JuChrom.metricprefix(prevfloat(10.0^-27))
+    @test ("Q", 30) == JuChrom.metricprefix(-10.0^30)
+    @test ("R", 27) == JuChrom.metricprefix(-prevfloat(10.0^30))
+    @test ("Q", 30) == JuChrom.metricprefix(10.0^234)
+    @test ("q", -30) == JuChrom.metricprefix(10.0^-234)
     @test ("", 0) == JuChrom.metricprefix(-Inf)
     @test ("", 0) == JuChrom.metricprefix(+Inf)
     @test ("", 0) == JuChrom.metricprefix(0)
     @test ("", 0) == JuChrom.metricprefix(NaN)
 
-    @test String == typeof(first(JuChrom.metricprefix(347 * 10^7)))
-    @test String == typeof(first(JuChrom.metricprefix(
-        big"136455347543543453485634875672536725423547234")))
+    @test String == typeof(first(JuChrom.metricprefix(10^0)))
+    @test String == typeof(first(JuChrom.metricprefix(10^3)))
+    @test String == typeof(first(JuChrom.metricprefix(10^234)))
+    @test String == typeof(first(JuChrom.metricprefix(10^-234)))
     @test String == typeof(first(JuChrom.metricprefix(-Inf)))
     @test String == typeof(first(JuChrom.metricprefix(+Inf)))
-    @test String == typeof(first(JuChrom.metricprefix(0)))
-    @test typeof(last(JuChrom.metricprefix(347 * 10^7))) <: Int
-    @test typeof(last(JuChrom.metricprefix(
-        big"136455347543543453485634875672536725423547234"))) <:Int
-    @test typeof(last(JuChrom.metricprefix(-Inf))) <:Int
-    @test typeof(last(JuChrom.metricprefix(+Inf))) <:Int
-    @test typeof(last(JuChrom.metricprefix(0))) <:Int
-    @test typeof(last(JuChrom.metricprefix(NaN))) <:Int
+    @test String == typeof(first(JuChrom.metricprefix(NaN)))
+
+    @test typeof(last(JuChrom.metricprefix(10^0))) <: Int
+    @test typeof(last(JuChrom.metricprefix(10^3))) <: Int
+    @test typeof(last(JuChrom.metricprefix(10^234))) <: Int
+    @test typeof(last(JuChrom.metricprefix(10^-234))) <: Int
+    @test typeof(last(JuChrom.metricprefix(-Inf))) <: Int
+    @test typeof(last(JuChrom.metricprefix(+Inf))) <: Int
+    @test typeof(last(JuChrom.metricprefix(NaN))) <: Int
+
 end
 
 
