@@ -1,6 +1,6 @@
 import BSplineKit
-import BSplineKit: extrapolate
-import BSplineKit: Linear as pt
+import BSplineKit: extrapolate, Smooth
+#import BSplineKit: Linear as pt
 
 
 function rt2ri(ts, timeunit, S, E)
@@ -83,7 +83,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     if isnothing(extrapolation)
        E = _ -> missing
     elseif extrapolation == :linear
-       E = extrapolate(S, pt())
+       E = extrapolate(S, Smooth())
     else
        throw(ArgumentError("invalid extrapolation method: $extrapolation"))
     end
