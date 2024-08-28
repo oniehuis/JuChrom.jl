@@ -156,9 +156,15 @@ julia> JuChrom.metricprefix(NaN)
 """
 function metricprefix(number::Real)
     (number == -Inf || number == 0 || number == +Inf || number === NaN) && return "", 0
-    i = findfirst(prefix -> BigInt(10)^Float64(last(prefix)) > 0.001 * abs(number), 
-        metricprefixes)
-    isnothing(i) ? last(metricprefixes) : metricprefixes[i]
+    exponent = log10(abs(number))
+    i = floor(Int, abs(exponent) / 3) * sign(exponent) + 11
+    if i < 1
+        metricprefixes[begin]
+    elseif i > 21
+        metricprefixes[end]
+    else
+        metricprefixes[i]
+    end
 end
 
 
