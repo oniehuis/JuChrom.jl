@@ -1,3 +1,94 @@
+function rt2ri(ts, timeunit, S, E)
+    rt::Unitful.Time -> begin
+        t = ustrip(timeunit, rt)
+        first(ts) ≤ t ≤ last(ts) ? S(t) : E(t)
+    end
+end
+
+
+"""
+    bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real};
+    extrapolation::Union{Nothing, Symbol}=nothing, bsplineorder::Int=4)
+
+Return a function that maps a retention time to a retention index using interpolation and, 
+optionally, extrapolation, with a B-spline computed from a vector of retention times and a
+corresponding vector of retention indices. For time values that fall outside the retention 
+time range used to compute the B-spline, the function returns missing by default. The 
+optional keyword argument `extrapolation` allows you to override this default behavior and 
+specify an extrapolation method. One method is currently supported: :Linear. The optional 
+keyword argument `bsplineorder` allows you to change the default B-spline order value (4, 
+which corresponds to cubic splines). For more details on the extrapolation method and the 
+B-spline order, see the [BSplineKit.jl](https://jipolanco.github.io/BSplineKit.jl) 
+documentation.
+
+See also [`scantimes`](@ref), [`retentionindices`](@ref).
+
+# Examples
+```jldoctest
+julia> rts, ris = [1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900];
+
+julia> rt2ri = bsplineinterpolation(rts, ris);
+
+julia> rt2ri(1u"s")
+1000.0
+
+julia> rt2ri(1.5u"s")
+1368.7499999999998
+
+julia> rt2ri((1//30)u"minute")
+1900.0000000000002
+
+julia> rt2ri(5u"s")
+missing
+
+julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=:Linear);
+
+julia> rt2ri(5u"s")
+4266.666666666666
+```
+"""
+function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real};
+    extrapolation::Union{Nothing, Symbol}=nothing, bsplineorder::Int=4)
+
+    # Sanity checks
+    bsplineorder > 1 || throw(ArgumentError(
+        "B-spline order must be larger than 1"))
+    length(retentiontimes) == length(retentionindices) || throw(ArgumentError(
+        "number of retention times and number of retention indices are different"))
+    length(retentiontimes) ≥ bsplineorder || throw(ArgumentError(string("the order of ", 
+        "the B-spline cannot exceed the number of retention time-retention index pairs ", 
+        "provided")))
+    length(Set(retentiontimes)) == length(retentiontimes) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentiontimes) || throw(ArgumentError(
+        "retention times not in ascending order"))
+    length(Set(retentionindices)) == length(retentionindices) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentionindices) || throw(ArgumentError(
+        "retention indices not in ascending order"))
+
+    # Extract and store the retention time unit and strip it from the retention times
+    timeunit = unit(eltype(retentiontimes))
+    ts = ustrip.(retentiontimes)
+
+    # Interpolation
+    S = interpolate(ts, retentionindices, BSplineOrder(bsplineorder))
+
+    # Extrapolation
+    if isnothing(extrapolation)
+       E = _ -> missing
+    elseif extrapolation == :Linear
+       E = extrapolate(S, Linear())
+    else
+       throw(ArgumentError("invalid extrapolation method: $extrapolation"))
+    end
+
+    rt2ri(ts, timeunit, S, E)
+end
+
+
 """
     JuChrom.copy_with_eltype(array::AbstractArray, elementtype::Type)
 

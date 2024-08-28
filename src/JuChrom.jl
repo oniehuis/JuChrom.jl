@@ -1,7 +1,11 @@
 module JuChrom
 
+import BSplineKit: BSplineOrder, Linear, extrapolate, interpolate
+using Reexport
 using Pkg.Artifacts
 using PrecompileTools: @setup_workload, @compile_workload
+
+@reexport using Unitful
 
 agilent = artifact"Agilent"
 andi = artifact"ANDI"
@@ -24,6 +28,7 @@ export LinearAscending
 export LinearDescending
 
 export binions
+export bsplineinterpolation
 export cosine
 export integer
 export intensities

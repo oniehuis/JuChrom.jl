@@ -16,6 +16,7 @@ IonScanOrder
 LinearAscending
 LinearDescending
 binions
+bsplineinterpolation
 cosine
 integer
 intensities(::AbstractGC; ::OrdinalRange{T, S}) where {T<:Integer, S<:Integer}

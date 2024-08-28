@@ -4,6 +4,7 @@ authors = ["Oliver Niehuis <oliver.niehuis@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+BSplineKit = "093aae92-e908-43d7-9660-e50ee39d5a0a"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"

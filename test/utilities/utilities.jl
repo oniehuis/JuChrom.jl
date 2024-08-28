@@ -1,6 +1,31 @@
 using JuChrom
 using Test
 
+############################################################################################
+# bsplineinterpolation
+############################################################################################
+@testset "copy_with_eltype" begin
+    rt2ri = bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900])
+    @test 1000 == rt2ri(1u"s")
+    @test 1368.7499999999998 == rt2ri(1.5u"s")
+    @test 1900.0000000000002 == rt2ri((1//30)u"minute")
+    @test missing === rt2ri(5u"s")
+    rt2ri = bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900], 
+        extrapolation=:Linear)
+    @test 1000 == rt2ri(1u"s")
+    @test 1368.7499999999998 == rt2ri(1.5u"s")
+    @test 1900.0000000000002 == rt2ri((1//30)u"minute")
+    @test 4266.666666666666 == rt2ri(5u"s")
+
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3]u"s", [1000, 1900, 3100], 
+        bsplineorder=4)
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4, 5]u"s", [1900, 1000, 3100, 3900])
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", [1900, 1000, 3100, 3900, 4000])
+    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", [1000, 1900, 3100, 3900])
+    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", [1000, 1900, 3100, 3900])
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1000, 3100, 3900])
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", [1900, 1000, 3100, 3900])
+end
 
 ############################################################################################
 # JuChrom.copy_with_eltype(array::AbstractArray, elementtype::Type)
