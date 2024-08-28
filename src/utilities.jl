@@ -41,11 +41,6 @@ true
 
 julia> rt2ri(5u"s")
 missing
-
-julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:Linear);
-
-julia> rt2ri(5u"s") ≈ 4266.666666666666
-true
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
@@ -79,7 +74,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     # Extrapolation
     if isnothing(extrapolation)
        E = _ -> missing
-    elseif extrapolation == :Linear
+    elseif extrapolation == :linear
        E = extrapolate(S, Linear())
     else
        throw(ArgumentError("invalid extrapolation method: $extrapolation"))
@@ -87,6 +82,12 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     rt2ri(ts, timeunit, S, E)
 end
+
+
+# julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:linear);
+
+# julia> rt2ri(5u"s") ≈ 4266.666666666666
+# true
 
 
 """
