@@ -1,6 +1,5 @@
 module JuChrom
 
-using BSplineKit
 using Reexport
 using Pkg.Artifacts
 using PrecompileTools: @setup_workload, @compile_workload
