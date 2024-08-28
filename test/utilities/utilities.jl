@@ -4,7 +4,7 @@ using Test
 ############################################################################################
 # bsplineinterpolation
 ############################################################################################
-@testset "copy_with_eltype" begin
+@testset "bsplineinterpolation" begin
     rt2ri = bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900])
     @test 1000 == rt2ri(1u"s")
     @test 1368.7499999999998 == rt2ri(1.5u"s")
