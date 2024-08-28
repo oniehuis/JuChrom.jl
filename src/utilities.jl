@@ -42,7 +42,7 @@ true
 julia> rt2ri(5u"s")
 missing
 
-julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=:Linear);
+julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:Linear);
 
 julia> rt2ri(5u"s") ≈ 4266.666666666666
 true
