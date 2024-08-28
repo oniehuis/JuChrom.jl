@@ -16,7 +16,7 @@ optionally, extrapolation, with a B-spline computed from a vector of retention t
 corresponding vector of retention indices. For time values that fall outside the retention 
 time range used to compute the B-spline, the function returns missing by default. The 
 optional keyword argument `extrapolation` allows you to override this default behavior and 
-specify an extrapolation method. One method is currently supported: :Linear. The optional 
+specify an extrapolation method. One method is currently supported: :linear. The optional 
 keyword argument `bsplineorder` allows you to change the default B-spline order value (4, 
 which corresponds to cubic splines). For more details on the extrapolation method and the 
 B-spline order, see the [BSplineKit.jl](https://jipolanco.github.io/BSplineKit.jl) 
@@ -72,13 +72,13 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     ts = ustrip.(retentiontimes)
 
     # Interpolation
-    S = interpolate(ts, retentionindices, BSplineOrder(bsplineorder))
+    S = BSplineKit.interpolate(ts, retentionindices, BSplineKit.BSplineOrder(bsplineorder))
 
     # Extrapolation
     if isnothing(extrapolation)
        E = _ -> missing
     elseif extrapolation == :linear
-       E = extrapolate(S, Linear())
+       E = BSplineKit.extrapolate(S, BSplineKit.Linear())
     else
        throw(ArgumentError("invalid extrapolation method: $extrapolation"))
     end
