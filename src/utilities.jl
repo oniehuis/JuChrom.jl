@@ -1,4 +1,5 @@
 import BSplineKit: extrapolate
+import BSplineKit
 
 function rt2ri(ts, timeunit, S, E)
     rt::Unitful.Time -> begin
