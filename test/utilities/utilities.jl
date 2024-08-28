@@ -185,7 +185,7 @@ end
     @test ("", 0) == JuChrom.metricprefix(1.0)
     @test ("m", -3) == JuChrom.metricprefix(prevfloat(1.0))
     @test ("", 0) == JuChrom.metricprefix(-1.0)
-    @test ("m", -3) == JuChrom.metricprefix(prevfloat(-1.0))
+    @test ("m", -3) == JuChrom.metricprefix(-prevfloat(1.0))
     @test ("R", 27) == JuChrom.metricprefix(-prevfloat(10.0^30))
     @test ("r", -27) == JuChrom.metricprefix(10.0^-27)
     @test ("q", -30) == JuChrom.metricprefix(prevfloat(10.0^-27))
