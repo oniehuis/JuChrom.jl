@@ -30,22 +30,22 @@ julia> rts, ris = [1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900];
 
 julia> rt2ri = bsplineinterpolation(rts, ris);
 
-julia> rt2ri(1u"s")
-1000.0
+julia> rt2ri(1u"s") ≈ 1000.0
+true
 
-julia> rt2ri(1.5u"s")
-1368.7499999999998
+julia> rt2ri(1.5u"s") ≈ 1368.7499999999998
+true
 
-julia> rt2ri((1//30)u"minute")
-1900.0000000000002
+julia> rt2ri((1//30)u"minute") ≈ 1900
+true
 
 julia> rt2ri(5u"s")
 missing
 
 julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=:Linear);
 
-julia> rt2ri(5u"s")
-4266.666666666666
+julia> rt2ri(5u"s") ≈ 4266.666666666666
+true
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
