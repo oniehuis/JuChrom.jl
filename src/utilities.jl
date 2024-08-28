@@ -1,5 +1,7 @@
-import BSplineKit: extrapolate
 import BSplineKit
+import BSplineKit: extrapolate
+import BSplineKit.SplineExtrapolations
+import BSplineKit.SplineExtrapolations: Linear
 
 function rt2ri(ts, timeunit, S, E)
     rt::Unitful.Time -> begin
