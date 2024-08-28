@@ -83,7 +83,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     if isnothing(extrapolation)
        E = _ -> missing
     elseif extrapolation == :linear
-       E = extrapolate(S, Smooth())
+       E = extrapolate(S, BSplineKit.SplineExtrapolations.Linear())
     else
        throw(ArgumentError("invalid extrapolation method: $extrapolation"))
     end
