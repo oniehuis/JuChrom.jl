@@ -1,9 +1,11 @@
 module JuChrom
 
 using Reexport
-using Pkg.Artifacts
-using PrecompileTools: @setup_workload, @compile_workload
 
+using LinearAlgebra
+using Pkg.Artifacts
+using Polynomials
+using PrecompileTools: @setup_workload, @compile_workload
 @reexport using Unitful
 
 agilent = artifact"Agilent"

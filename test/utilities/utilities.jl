@@ -5,24 +5,24 @@ using Test
 # bsplineinterpolation
 ############################################################################################
 @testset "bsplineinterpolation" begin
-    rt2ri = bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900])
+    rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s"
+    ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]
+    rt2ri = bsplineinterpolation(rts, ris)
     @test 1000 ≈ rt2ri(1u"s")
-    @test 1368.7499999999998 ≈ rt2ri(1.5u"s")
-    @test 1900.0000000000002 ≈ rt2ri((1//30)u"minute")
-    @test missing === rt2ri(5u"s")
-    rt2ri = bsplineinterpolation([1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900], 
-        extrapolation=:linear)
+    @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
+    @test 1800.0 ≈ rt2ri((1//30)u"minute")
+    @test missing === rt2ri(9.1u"s")
+    rt2ri = bsplineinterpolation(rts, ris, extrapolation=true)
     @test 1000 ≈ rt2ri(1u"s")
-    @test 1368.7499999999998 ≈ rt2ri(1.5u"s")
-    @test 1900.0000000000002 ≈ rt2ri((1//30)u"minute")
-    @test 4266.666666666666 ≈ rt2ri(5u"s")
+    @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
+    @test 1800.0 ≈ rt2ri((1//30)u"minute")
+    @test 7950.0 ≈ rt2ri(9.1u"s")
 
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3]u"s", [1000, 1900, 3100], 
-        bsplineorder=4)
+    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000])
     @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
-        [1900, 1000, 3100, 3900])
+        [1000, 1900, 3100, 3900])
     @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1900, 1000, 3100, 3900, 4000])
+        [1000, 1900, 3100, 3900, 4000])
     @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
         [1000, 1900, 3100, 3900])
     @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
@@ -31,8 +31,20 @@ using Test
         [1000, 1000, 3100, 3900])
     @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1900, 1000, 3100, 3900])
+    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000], 
+        extrapolation=true)
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
     @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900], extrapolation=:Smooth)
+        [1000, 1900, 3100, 3900, 4000], extrapolation=true)
+    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+        [1000, 1000, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+        [1900, 1000, 3100, 3900], extrapolation=true)
 end
 
 ############################################################################################

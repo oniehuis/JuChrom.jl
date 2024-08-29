@@ -1,67 +1,85 @@
-import BSplineKit
-import BSplineKit: extrapolate
-import BSplineKit: Linear
+function interextrapolate(t, timeunit, y, n, S)
+    time -> begin
+        x = ustrip(timeunit, time)
+        if x < t[1]
+            poly = first(S)
+            poly[0] - poly[1] * (t[1] - x)
+        elseif x > t[n+1]
+            poly = last(S)
+            Δt = t[end]-t[end-1]
+            poly(Δt) + (poly[1] + poly[2] * (Δt) + poly[3] * (Δt)^2) * (x - t[end])
+        elseif x == t[1]
+            return Float64(y[1])
+        else
+            k = findlast(x .> t)
+            return S[k](x - t[k])
+        end
+    end
+end
 
-function rt2ri(ts, timeunit, S, E)
-    rt::Unitful.Time -> begin
-        t = ustrip(timeunit, rt)
-        first(ts) ≤ t ≤ last(ts) ? S(t) : E(t)
+
+function interpolate(t, timeunit, y, n, S)
+    time -> begin
+        x = ustrip(timeunit, time)
+        if x < t[1] || x > t[n+1]
+            missing
+        elseif x==t[1]
+            Float64(y[1])
+        else
+            k = findlast(x .> t)
+            S[k](x - t[k])
+        end
     end
 end
 
 
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real};
-    extrapolation::Union{Nothing, Symbol}=nothing, bsplineorder::Int=4)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
 
 Return a function that maps a retention time to a retention index using interpolation and, 
-optionally, extrapolation, with a B-spline computed from a vector of retention times and a
-corresponding vector of retention indices. For time values that fall outside the retention 
-time range used to compute the B-spline, the function returns missing by default. The 
-optional keyword argument `extrapolation` allows you to override this default behavior and 
-specify an extrapolation method. One method is currently supported: :linear. The optional 
-keyword argument `bsplineorder` allows you to change the default B-spline order value (4, 
-which corresponds to cubic splines). For more details on the extrapolation method and the 
-B-spline order, see the [BSplineKit.jl](https://jipolanco.github.io/BSplineKit.jl) 
-documentation.
+optionally, extrapolation. This function uses a cubic natural B-spline calculated from a 
+vector of retention times and a corresponding vector of retention indices. For retention 
+time values that fall outside the range used to compute the B-spline, the function returns 
+missing by default. An optional keyword argument, `extrapolation`, allows you to enable 
+linear extrapolation for values outside the retention time range.
 
 See also [`scantimes`](@ref), [`retentionindices`](@ref).
 
 # Examples
 ```jldoctest
-julia> rts, ris = [1, 2, 3, 4]u"s", [1000, 1900, 3100, 3900];
+julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
+
+julia> ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
 
 julia> rt2ri = bsplineinterpolation(rts, ris);
 
 julia> rt2ri(1u"s") ≈ 1000.0
 true
 
-julia> rt2ri(1.5u"s") ≈ 1368.7499999999998
+julia> rt2ri(1.5u"s") ≈ 1333.7469941600825
 true
 
-julia> rt2ri((1//30)u"minute") ≈ 1900
+julia> rt2ri((1//30)u"minute") ≈ 1800.0
 true
 
-julia> rt2ri(5u"s")
+julia> rt2ri(9.1u"s")
 missing
 
-julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:linear);
+julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=true);
 
+julia> rt2ri(9.1u"s") ≈ 7950.0
+true
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real};
-    extrapolation::Union{Nothing, Symbol}=nothing, bsplineorder::Int=4)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false)
 
     # Sanity checks
-    bsplineorder > 1 || throw(ArgumentError(
-        "B-spline order must be larger than 1"))
     length(retentiontimes) == length(retentionindices) || throw(ArgumentError(
         "number of retention times and number of retention indices are different"))
-    length(retentiontimes) ≥ bsplineorder || throw(ArgumentError(string("the order of ", 
-        "the B-spline cannot exceed the number of retention time-retention index pairs ", 
-        "provided")))
+    length(retentiontimes) > 1 || throw(
+        ArgumentError("need at least two retention time-retention index pairs"))
     length(Set(retentiontimes)) == length(retentiontimes) || throw(ArgumentError(
         "retention times contain identical values"))
     issorted(retentiontimes) || throw(ArgumentError(
@@ -73,28 +91,54 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     # Extract and store the retention time unit and strip it from the retention times
     timeunit = unit(eltype(retentiontimes))
-    ts = ustrip.(retentiontimes)
+    t = ustrip.(retentiontimes)
+    y = retentionindices
 
-    # Interpolation
-    S = BSplineKit.interpolate(ts, retentionindices, BSplineKit.BSplineOrder(bsplineorder))
+    n = length(t) - 1
+    h = [t[k+1] - t[k] for k in 1:n]
 
-    # Extrapolation
-    if isnothing(extrapolation)
-       E = _ -> missing
-    elseif extrapolation == :linear
-       E = extrapolate(S, Linear())
-    else
-       throw(ArgumentError("invalid extrapolation method: $extrapolation"))
-    end
+    # Preliminary definitions.
+    In = I(n)
+    E = In[1:n-1, :]
+    Z = zeros(n, n)
+    J = diagm(0 => ones(n), 1 => -ones(n-1))
+    H = diagm(0 => h)
 
-    rt2ri(ts, timeunit, S, E)
+    # Continuity of first derivative at internal nodes
+    A1 = E * [Z J 2H 3H^2]
+    v1 = zeros(n-1)
+
+    # Continuity of second derivative at internal nodes
+    A2 = E * [Z Z J 3H]
+    v2 = zeros(n-1)
+
+    # Left endpoint interpolation:
+    AL = [In Z Z Z]
+    vL = y[1:n]
+
+    # Right endpoint interpolation:
+    AR = [In H H^2 H^3];
+    vR = y[2:n+1]
+
+    # Boundary conditions: natural spline
+    nsL = [zeros(1, 2n) [2 zeros(1, 2n - 1)] ]
+    nsR = [zeros(1, 2n) [zeros(1, n - 1)  1] [zeros(1, n - 1) 3H[end]]]
+
+    # Assemble and solve the full system.
+    A = [AL; AR; A1; A2; nsL; nsR]
+    v = [vL; vR; v1; v2; 0; 0]
+    z = A\v
+
+    # Break the coefficients into separate vectors
+    rows = 1:n
+    a = z[rows]
+    b = z[n .+ rows];  c = z[2n .+ rows];  d = z[3n .+ rows]
+    S = [Polynomial([a[k], b[k], c[k], d[k]]) for k in 1:n]
+
+    # Return desired interpolation function
+    (extrapolation === true ? interextrapolate(t, timeunit, y, n, S) 
+        : interpolate(t, timeunit, y, n, S))
 end
-
-
-# julia> rt2ri = bsplineinterpolation(rts, ris, extrapolation=:linear);
-
-# julia> rt2ri(5u"s") ≈ 4266.666666666666
-# true
 
 
 """
