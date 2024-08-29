@@ -11,11 +11,13 @@ using Test
     @test 1000 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
+    @test missing === rt2ri(0.5u"s")
     @test missing === rt2ri(9.1u"s")
     rt2ri = bsplineinterpolation(rts, ris, extrapolation=true)
     @test 1000 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
+    @test 688.3373411198901 ≈ rt2ri(0.5u"s")
     @test 7950.0 ≈ rt2ri(9.1u"s")
 
     @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000])
