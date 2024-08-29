@@ -33,16 +33,37 @@ function interpolate(t, timeunit, y, n, S)
 end
 
 
+function criticalpoints(polynomials::AbstractVector{<:Polynomial}, ts, timeunit)
+    cpoints = Vector{Tuple{<:Any, String}}()
+    for (i, polynomial) in enumerate(polynomials)
+        c, b, a = polynomial[1:3]
+        Δ₀ = b^2 - 3 * a * c
+        Δ₀ ≤ 0 && continue  # no critical point or inflection point
+        α, β = ts[i], ts[i+1]
+        x₀, x₁ = (-b + sqrt(Δ₀)) / 3a, (-b - sqrt(Δ₀)) / 3a
+        if polynomial(x₀) < polynomial(x₁)
+            α < α + x₀ < β && push!(cpoints, ((α + x₀) * timeunit, "local minimum"))
+            α < α + x₁ < β && push!(cpoints, ((α + x₁) * timeunit, "local maximum"))
+        else
+            α < α + x₀ < β && push!(cpoints, ((α + x₀) * timeunit, "local maximum"))
+            α < α + x₁ < β && push!(cpoints, ((α + x₁) * timeunit, "local minimum"))
+        end
+    end
+    cpoints
+end
+
+
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false)
 
 Return a function that maps a retention time to a retention index using interpolation and, 
 optionally, extrapolation. This function uses a cubic natural B-spline calculated from a 
 vector of retention times and a corresponding vector of retention indices. For retention 
 time values that fall outside the range used to compute the B-spline, the function returns 
-missing by default. An optional keyword argument, `extrapolation`, allows you to enable 
-linear extrapolation for values outside the retention time range.
+missing by default. However, an optional keyword argument, `extrapolation`, allows you to 
+enable linear extrapolation for values outside the retention time range.  The function will 
+throw an error if the derived B-spline is not a continuously increasing function.
 
 See also [`scantimes`](@ref), [`retentionindices`](@ref).
 
@@ -70,6 +91,14 @@ julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=true);
 
 julia> rt2ri(9.1u"s") ≈ 7950.0
 true
+
+julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
+
+julia> ris = [1000, 2000, 3050, 3360, 5500, 6600, 6900, 7400];
+
+julia> rt2ri = bsplineinterpolation(rts, ris)
+ERROR: the derived B-spline does not represent a continuously increasing function
+[...]
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
@@ -97,7 +126,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     n = length(t) - 1
     h = [t[k+1] - t[k] for k in 1:n]
 
-    # Preliminary definitions.
+    # Preliminary definitions
     In = I(n)
     E = In[1:n-1, :]
     Z = zeros(n, n)
@@ -112,11 +141,11 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     A2 = E * [Z Z J 3H]
     v2 = zeros(n-1)
 
-    # Left endpoint interpolation:
+    # Left endpoint interpolation
     AL = [In Z Z Z]
     vL = y[1:n]
 
-    # Right endpoint interpolation:
+    # Right endpoint interpolation
     AR = [In H H^2 H^3];
     vR = y[2:n+1]
 
@@ -124,7 +153,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     nsL = [zeros(1, 2n) [2 zeros(1, 2n - 1)] ]
     nsR = [zeros(1, 2n) [zeros(1, n - 1)  1] [zeros(1, n - 1) 3H[end]]]
 
-    # Assemble and solve the full system.
+    # Assemble and solve the full system
     A = [AL; AR; A1; A2; nsL; nsR]
     v = [vL; vR; v1; v2; 0; 0]
     z = A\v
@@ -134,6 +163,10 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     a = z[rows]
     b = z[n .+ rows];  c = z[2n .+ rows];  d = z[3n .+ rows]
     S = [Polynomial([a[k], b[k], c[k], d[k]]) for k in 1:n]
+
+    cpoint = criticalpoints(S, t, timeunit)
+    length(cpoint) == 0 || throw(ErrorException(string("the derived B-spline does not ", 
+        "represent a continuously increasing function")))
 
     # Return desired interpolation function
     (extrapolation === true ? interextrapolate(t, timeunit, y, n, S) 

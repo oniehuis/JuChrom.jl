@@ -47,6 +47,8 @@ using Test
         [1000, 1000, 3100, 3900], extrapolation=true)
     @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1900, 1000, 3100, 3900], extrapolation=true)
+    @test_throws ErrorException bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+        [1000, 2000, 3050, 3360, 5500, 6600, 6900, 7400])
 end
 
 ############################################################################################
