@@ -116,7 +116,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     length(Set(retentionindices)) == length(retentionindices) || throw(ArgumentError(
         "retention times contain identical values"))
     issorted(retentionindices) || throw(ArgumentError(
-        "retention indices not in ascending order"))
+       "retention indices not in ascending order"))
 
     # Extract and store the retention time unit and strip it from the retention times
     timeunit = unit(eltype(retentiontimes))
@@ -166,7 +166,16 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     cpoint = criticalpoints(S, t, timeunit)
     length(cpoint) == 0 || throw(ErrorException(string("the derived B-spline does not ", 
-        "represent a continuously increasing function")))
+       "represent a continuously increasing function")))
+
+    if extrapolation
+        # The slopes of both extrapolated lines must be greater than zero
+        slope₁ = first(S)[1]
+        Δt = t[end]-t[end-1]
+        slope₂ = last(S)[1] + last(S)[2] * (Δt) + last(S)[3] * (Δt)^2
+        slope₁ > 0 && slope₂ > 0 || throw(ErrorException(string("the derived B-spline ", 
+            "does not represent a continuously increasing function")))
+    end
 
     # Return desired interpolation function
     (extrapolation === true ? interextrapolate(t, timeunit, y, n, S) 
