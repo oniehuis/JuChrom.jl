@@ -1,4 +1,4 @@
-# Retention Indices
+# Retention indices
 
 ```@docs
 AbstractRiMapper

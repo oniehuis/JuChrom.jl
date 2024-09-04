@@ -1,5 +1,14 @@
+abstract type PolationMethod end
+
+
+struct NaturalCubicBSpline <: PolationMethod end 
+
+
+struct Linear <: PolationMethod end 
+
+
 struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
-    T3<:AbstractVector{<:Real}, T4<:AbstractString, T5<:Union{AbstractString, Nothing}
+    T3<:AbstractVector{<:Real}, T4<:PolationMethod, T5<:Union{<:PolationMethod, Nothing}
     } <: AbstractRiMapper
     retentionindexname::T1
     retentiontimes::T2
@@ -12,14 +21,11 @@ struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time},
         retentionindices::T3, interpolationmethod::T4, extrapolationmethod::T5, 
         rt2ri::Function, metadata::Dict
         ) where {T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
-        T3<:AbstractVector{<:Real}, T4<:AbstractString, T5<:Union{AbstractString, Nothing}}
+        T3<:AbstractVector{<:Real}, T4<:PolationMethod, 
+        T5<:Union{<:PolationMethod, Nothing}}
 
         length(retentionindexname) > 0 || throw(ArgumentError(
             "no retention index name provided"))
-        length(interpolationmethod) > 0 || throw(ArgumentError(
-            "interpolation method not specified"))
-        !isnothing(extrapolationmethod) && length(extrapolationmethod) == 0 && throw(
-            ArgumentError("extrapolation method not specified"))
         length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
             "number of retention times and number of retention indices are different"))
         length(retentiontimes) > 1 || throw(
@@ -88,22 +94,25 @@ function Base.show(io::IO, mapper::RiMapper)
 end
 
 
+
 """
     RiMapper(retentionindexname::AbstractString, 
     retentiontimes::AbstractVector{<:Unitful.Time},
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, 
+    retentionindices::AbstractVector{<:Real};
+    interpolationmethod::PolationMethod=NaturalCubicBSpline(), 
+    extrapolationmethod::Union{Nothing, <:PolationMethod}=Linear(),
     metadata::Dict=Dict())
 
-Construct an RiMapper object for mapping retention times to retention indices and vice 
-versa using interpolation and, if enabled (default), extrapolation. The function utilizes 
-a B-spline for interpolation, calculated from a vector of retention times and a 
-corresponding vector of retention indices. For retention time values outside the range 
-used to compute the B-spline, the function employs linear extrapolation to estimate a 
-retention index. An optional keyword argument, `extrapolation`, can be used to disable 
-extrapolation, in which case the function returns nothing for values outside the retention 
-time range. The function will raise an error if the resulting mapping function does not 
-produce continuously increasing values. Note that both retention times and 
-retention indices must be in ascending order.
+Construct an RiMapper object for mapping retention times to retention indices using 
+interpolation and, if enabled (default), extrapolation. The function utilizes as default 
+a ntural cubic B-spline for interpolation, calculated from a vector of retention times and 
+a corresponding vector of retention indices. For retention time values outside the range 
+used to compute the B-spline, the function employs as default linear extrapolation to 
+estimate a retention index. An optional keyword argument, `extrapolationmethod`, can be 
+used to disable extrapolation (nothing), in which case the function returns nothing for 
+values outside the retention time range. The function will raise an error if the resulting 
+mapping function does not produce continuously increasing values. Note that both retention 
+times and retention indices must be in ascending order.
 
 See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), 
 [`retentionindices`](@ref), [`retentiontimes`](@ref), [`interpolationmethod`](@ref),
@@ -116,8 +125,8 @@ julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
-interpolation method: natural cubic b-spline
-extrapolation method: linear
+interpolation method: NaturalCubicBSpline()
+extrapolation method: Linear()
 metadata: 0 entries
 
 julia> retentionindex(ld, 1u"minute") ≈ 1000.0
@@ -137,16 +146,16 @@ julia> retentiontimes(ld)
 (1:5) minute
 
 julia> interpolationmethod(ld)
-"natural cubic b-spline"
+NaturalCubicBSpline()
 
 julia> extrapolationmethod(ld)
-"linear"
+Linear()
 
-julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, extrapolation=false)
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, extrapolationmethod=nothing)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
-interpolation method: natural cubic b-spline
+interpolation method: NaturalCubicBSpline()
 extrapolation method: nothing
 metadata: 0 entries
 
@@ -157,16 +166,57 @@ julia> extrapolationmethod(ld) === nothing
 true
 ```
 """
-function RiMapper(retentionindexname::T1, retentiontimes::T2, retentionindices::T3;
-    extrapolation::Bool=true, metadata::Dict=Dict{Any, Any}()) where {T1<:AbstractString, 
-    T2<:AbstractVector{<:Unitful.Time}, T3<:AbstractVector{<:Real}}
-    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, 
-        extrapolation=extrapolation)
-    
-    interpolationmethod = "natural cubic b-spline"
-    extrapolationmethod = extrapolation ? "linear" : nothing
-    T4 = typeof(interpolationmethod)
-    T5 = typeof(extrapolationmethod)
+function RiMapper(
+    retentionindexname::T1,
+    retentiontimes::T2,
+    retentionindices::T3; 
+    interpolationmethod::PolationMethod=NaturalCubicBSpline(),
+    extrapolationmethod::Union{Nothing, PolationMethod}=Linear(),
+    metadata::Dict=Dict{Any, Any}()
+    ) where {
+        T1<:AbstractString,
+        T2<:AbstractVector{<:Unitful.Time}, 
+        T3<:AbstractVector{<:Real}}
+
+    RiMapper(retentionindexname, retentiontimes, retentionindices, interpolationmethod,
+        extrapolationmethod, metadata)
+end
+
+function RiMapper(
+    retentionindexname::T1,
+    retentiontimes::T2,
+    retentionindices::T3,
+    interpolationmethod::T4,
+    extrapolationmethod::T5,
+    metadata::Dict=Dict{Any, Any}()
+    ) where {
+        T1<:AbstractString,
+        T2<:AbstractVector{<:Unitful.Time}, 
+        T3<:AbstractVector{<:Real},
+        T4<:NaturalCubicBSpline,
+        T5<:Linear}
+
+    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=true)
+    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
+        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+end
+
+
+function RiMapper(
+    retentionindexname::T1,
+    retentiontimes::T2,
+    retentionindices::T3,
+    interpolationmethod::T4,
+    extrapolationmethod::T5,
+    metadata::Dict=Dict{Any, Any}()
+    ) where {
+        T1<:AbstractString,
+        T2<:AbstractVector{<:Unitful.Time}, 
+        T3<:AbstractVector{<:Real},
+        T4<:NaturalCubicBSpline,
+        T5<:Nothing}
+
+    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=false)
     RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
         interpolationmethod, extrapolationmethod, rt2ri, metadata)
 end
@@ -184,7 +234,7 @@ See also [`RiMapper`](@ref), [`extrapolationmethod`](@ref), [`retentionindex`](@
 julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
 
 julia> interpolationmethod(ld)
-"natural cubic b-spline"
+NaturalCubicBSpline()
 ```
 """
 interpolationmethod(mapper::RiMapper) = mapper.interpolationmethod
@@ -203,9 +253,9 @@ See also [`RiMapper`](@ref), [`interpolationmethod`](@ref), [`retentionindex`](@
 julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
 
 julia> extrapolationmethod(ld)
-"linear"
+Linear()
 
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"s", [100, 200, 300], extrapolation=false);
+julia> ld = RiMapper("Kovats", (1:2)u"s", 100:100:200, extrapolationmethod=nothing);
 
 julia> extrapolationmethod(ld) === nothing
 true
@@ -281,8 +331,8 @@ julia> ld = RiMapper("Kovats", (1:5)u"minute", 10:10:50, metadata=Dict(:id => 7)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 10, 20, 30, 40, 50
-interpolation method: natural cubic b-spline
-extrapolation method: linear
+interpolation method: NaturalCubicBSpline()
+extrapolation method: Linear()
 metadata: 1 entry
 
 julia> metadata(ld)
@@ -363,8 +413,8 @@ julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
 RiMapper {index name: Kovats, calibration points: 3}
 retention times: 1.2 minute, 2.4 minute, 3.8 minute
 retention indices: 1000, 2000, 3000
-interpolation method: natural cubic b-spline
-extrapolation method: linear
+interpolation method: NaturalCubicBSpline()
+extrapolation method: Linear()
 metadata: 0 entries
 
 julia> retentionindex(ld, 1.8u"minute") ≈ 1512.3626373626375

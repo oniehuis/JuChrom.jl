@@ -24,6 +24,9 @@ export LinearAscending
 export LinearDescending
 export AbstractRiMapper
 export RiMapper
+export PolationMethod
+export NaturalCubicBSpline
+export Linear
 
 export binions
 export bsplineinterpolation
