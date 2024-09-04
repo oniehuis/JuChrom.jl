@@ -94,10 +94,6 @@ Chrom {scan times: Int64, intensities: Int64}
 intensity range: 103 - 224
 metadata: 0 entries
 
-julia> file = joinpath(JuChrom.tmppath, "delimfile");
-
-julia> exportdata(chrom, file, DelimitedText());
-
 ```
 
 See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref).
@@ -106,6 +102,10 @@ function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::File
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
     exportdata(fileformat, chrom, file; timeunit, overwrite)
 end
+
+# julia> file = joinpath(JuChrom.tmppath, "delimfile");
+
+# julia> exportdata(chrom, file, DelimitedText());
 
 
 include(joinpath(".", "DelimitedText", "DelimitedTextWriter.jl"))
