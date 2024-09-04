@@ -96,6 +96,12 @@ Chrom {scan times: Int64, intensities: Int64}
 intensity range: 103 - 224
 metadata: 0 entries
 
+julia> tmppath = joinpath(joinpath(splitpath(pathof(JuChrom))[begin:end-2]), "tmp");
+
+julia> mkpath(tmppath);
+
+julia> exportdata(chrom, joinpath(tmppath, "delimtest"), DelimitedText(), overwrite=true);
+
 ```
 """
 function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
