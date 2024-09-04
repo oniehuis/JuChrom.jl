@@ -211,6 +211,8 @@ end
     @test 1512.3626373626375 ≈ retentionindex(ld, 1.8u"minute") 
     @test 913.9194139194141 ≈ retentionindex(ld, 1.1u"minute")
     @test 913.9194139194141 ≈ retentionindex(ld, 1.1u"minute", info=false)
+    @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
+    @test 3142.857142857143 ≈ retentionindex(ld, 4.0u"minute")
     @test [827.8388278388279, 1678.876678876679] ≈ retentionindex.(ld, [1, 2]u"minute")
 end
 
@@ -221,9 +223,11 @@ end
 @testset "retentionindex(::AbstractChromatogram, ...)" begin
     ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
     chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld)
-    @test 1512.3626373626375 ≈ retentionindex(chrom, 1.8u"minute") 
+    @test 1512.3626373626375 ≈ retentionindex(chrom, 1.8u"minute")
     @test 913.9194139194141 ≈ retentionindex(chrom, 1.1u"minute")
     @test 913.9194139194141 ≈ retentionindex(chrom, 1.1u"minute", info=false)
+    @test 1000.0 ≈ retentionindex(chrom, 1.2u"minute")
+    @test 3142.857142857143 ≈ retentionindex(chrom, 4.0u"minute")
     @test [827.8388278388279, 1678.876678876679] ≈ retentionindex.(chrom, [1, 2]u"minute")
 end
 
@@ -252,6 +256,7 @@ end
     @test [1.2, 2.4, 3.8]u"minute" ≈ retentiontimes(ld)
     @test [72, 144, 228]u"s" ≈ retentiontimes(ld, timeunit=u"s")
     @test [72, 144, 228] ≈ retentiontimes(ld, timeunit=u"s", ustripped=true)
+    @test [1.2, 2.4, 3.8] ≈ retentiontimes(ld, ustripped=true)
 end
 
 
