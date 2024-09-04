@@ -2,5 +2,6 @@
 
 ```@docs
 DelimitedText
+Excel
 exportdata
 ```
