@@ -53,7 +53,7 @@ function exportdata(fileformat::Excel, chrom::AbstractChrom, file::AbstractStrin
     XLSX.openxlsx(file, mode="w") do xf
         !isnothing(sheetname(fileformat)) && XLSX.rename!(xf[1], sheetname(fileformat))
         XLSX.writetable!(xf[1], columns, 
-            [string("scan time [", timeunit, "]"), "total intensity"])
+            [string("scan time [", timeunit, "]"), "intensity"])
     end
 end
 
