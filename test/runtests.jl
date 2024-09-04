@@ -14,3 +14,4 @@ using SafeTestsets
 @safetestset "IO AgilentFID" begin include("IO/AgilentFID.jl") end
 @safetestset "IO MassHunterMS" begin include("IO/MassHunterMS.jl") end
 @safetestset "IO ANDI" begin include("IO/ANDI.jl") end
+@safetestset "IO DelimitedTextWriter" begin include("IO/DelimitedTextWriter.jl") end
