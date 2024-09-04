@@ -4,7 +4,7 @@ using XLSX
 using Unitful
 
 import ...JuChrom: AbstractChrom, scantimes, intensities
-import ..InputOutput: FileExistsError, FileFormat, exportdata, DelimitedText
+import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export Excel
 
@@ -27,7 +27,7 @@ sheetname(fileformat::FileFormat) = fileformat.sheetname
 Returns an `Excel` file format object. The optional keyword argument `sheetname` allows you 
 to specify the name of the sheet to operate on.
 
-See also [`FileFormat`](@ref), [`exportdata`](@ref), [`DelimitedText`](@ref).
+See also [`FileFormat`](@ref), [`exportdata`](@ref).
 
 # Examples
 ```julia-repl
