@@ -1,6 +1,9 @@
 # Retention indices
 
 ```@docs
+PolationMethod
+Linear
+NaturalCubicBSpline
 AbstractRiMapper
 RiMapper
 extrapolationmethod
@@ -14,6 +17,4 @@ retentionindex
 retentionindexname
 retentionindices
 retentiontimes
-JuChrom.rt2ri
-bsplineinterpolation
 ```

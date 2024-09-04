@@ -267,46 +267,46 @@ end
 
 
 ############################################################################################
-# bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+# JuChrom.bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
 # retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
 ############################################################################################
 @testset "bsplineinterpolation" begin
-    rt2ri = bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+    rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
         [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400])
     @test 1000.0 ≈ rt2ri(1u"s")  
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
     @test 7950.0 ≈ rt2ri(9.1u"s")
     
-    rt2ri = bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+    rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
         [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=false)
     @test rt2ri(9.1u"s") === nothing
 
-    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000])
-    @test_throws DimensionMismatch bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1]u"s", [1000])
+    @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
         [1000, 1900, 3100, 3900])
-    @test_throws DimensionMismatch bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1000, 1900, 3100, 3900, 4000])
-    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 1, 3, 4]u"s", 
         [1000, 1900, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([2, 1, 3, 4]u"s", 
         [1000, 1900, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1000, 1000, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1900, 1000, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000], 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1]u"s", [1000], 
         extrapolation=true)
-    @test_throws DimensionMismatch bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
+    @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
         [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws DimensionMismatch bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1000, 1900, 3100, 3900, 4000], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 1, 3, 4]u"s", 
         [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([2, 1, 3, 4]u"s", 
         [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1000, 1000, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1900, 1000, 3100, 3900], extrapolation=true)
 end

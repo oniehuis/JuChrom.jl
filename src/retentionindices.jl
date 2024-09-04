@@ -1,10 +1,34 @@
+"""
+    PolationMethod
+
+Supertype for all data interpolation and extrapolation methods implemented for mapping 
+retention times to retention indices, and potentially vice versa.
+
+See also [`Linear`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
+"""
 abstract type PolationMethod end
 
 
+"""
+    Linear()
+
+PolationMethod type that specifies that data are linearly interpolated or extrapolated.
+
+See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
+"""
+struct Linear <: PolationMethod end 
+
+
+"""
+    NaturalCubicBSpline()
+
+PolationMethod type that specifies that data are interpolated or extrapolated using a 
+natural cubic B-spline.
+
+See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
+"""
 struct NaturalCubicBSpline <: PolationMethod end 
 
-
-struct Linear <: PolationMethod end 
 
 
 struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
@@ -103,16 +127,16 @@ end
     extrapolationmethod::Union{Nothing, <:PolationMethod}=Linear(),
     metadata::Dict=Dict())
 
-Construct an RiMapper object for mapping retention times to retention indices using 
-interpolation and, if enabled (default), extrapolation. The function utilizes as default 
-a ntural cubic B-spline for interpolation, calculated from a vector of retention times and 
-a corresponding vector of retention indices. For retention time values outside the range 
-used to compute the B-spline, the function employs as default linear extrapolation to 
-estimate a retention index. An optional keyword argument, `extrapolationmethod`, can be 
-used to disable extrapolation (nothing), in which case the function returns nothing for 
-values outside the retention time range. The function will raise an error if the resulting 
+Create an `RiMapper` object for mapping retention times to retention indices using 
+interpolation, and by default, extrapolation. The function defaults to using a natural 
+cubic B-spline for interpolation, derived from a vector of retention times and a 
+corresponding vector of retention indices. For retention time values outside the range 
+used to compute the B-spline, the function defaults to linear extrapolation to estimate 
+retention indices. An optional keyword argument, `extrapolationmethod`, can disable 
+extrapolation, in which case the function will return the value nothing for values 
+outside the retention time range. The function will raise an error if the resulting 
 mapping function does not produce continuously increasing values. Note that both retention 
-times and retention indices must be in ascending order.
+times and retention indices must be provided in ascending order.
 
 See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), 
 [`retentionindices`](@ref), [`retentiontimes`](@ref), [`interpolationmethod`](@ref),

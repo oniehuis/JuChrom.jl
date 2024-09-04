@@ -29,7 +29,6 @@ export NaturalCubicBSpline
 export Linear
 
 export binions
-export bsplineinterpolation
 export cosine
 export extrapolationmethod
 export integer
