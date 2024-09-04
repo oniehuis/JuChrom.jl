@@ -94,8 +94,8 @@ Chrom {scan times: Int64, intensities: Int64}
 intensity range: 103 - 224
 metadata: 0 entries
 
-julia> println(pwd())
-"/Users/oniehuis/Programming/MyJuliaPackages/JuChrom"
+julia> exportdata(chrom, "./tic", DelimitedText());  # writes data into "./tic.tsv" file
+
 ```
 
 See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref).

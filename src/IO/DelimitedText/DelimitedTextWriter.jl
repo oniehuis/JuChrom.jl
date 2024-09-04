@@ -22,7 +22,7 @@ delim(fileformat::DelimitedText) = fileformat.delim
 
 """
     
-    DelimitedText(; delim::Union{AbstractChar, AbstractString}="\t") <: Fileformat
+    DelimitedText(; delim::Union{AbstractChar, AbstractString}="\\t") <: Fileformat
 
 Return a `DelimitedText` file format object. The optional `delim` keyword argument allows 
 you to specify the column delimiter, which can be either a single character or a string. 
