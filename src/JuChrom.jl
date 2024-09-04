@@ -74,10 +74,10 @@ export FileFormat
 export AgilentFID
 export ANDI
 export ChemStationMS
-#export DelimitedText
+export DelimitedText
 #export Excel
 export MassHunterMS
-#export exportdata
+export exportdata
 export importdata
 
 end

@@ -8,16 +8,16 @@ export Path
 export IOError
 export FileExistsError
 
-# import ..JuChrom: AbstractChrom, scantimes
+import ..JuChrom: AbstractChrom, scantimes
 
 export FileFormat
 export AgilentFID
 export ANDI
 export ChemStationMS
-#export DelimitedText
+export DelimitedText
 #export Excel
 export MassHunterMS
-#export exportdata
+export exportdata
 export importdata
 
 include("./Utilities.jl")
@@ -74,36 +74,40 @@ include(joinpath(".", "ANDI", "ANDIReaders.jl"))
 using .ANDIReaders
 
 
-# """
-#     exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits, overwrite::Bool=false)
-
-# Write the scan times and associated intensity values of the AbstractChrom object to the file in the specified file format. The optional keyword argument
-# `timeunit` allows the scan times to be written in a specific time unit. All time units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)
-# (e.g., u"s", u"minute") are supported. The optional keyword argument `overwrite` allows to specify that an existing target file should be overwritten.
-
-# # Example
-# ```julia-repl
-# julia> chrom = Chrom([1u"s", 2u"s", 3u"s"], [123, 224, 103])
-
-# julia> exportdata(chrom, "/home/JuliaUser/chrom", Excel())
-# /home/JuliaUser/chrom.xlsx
-
-# julia> exportdata(chrom, "/home/JuliaUser/chrom", DelimitedText())
-# /home/JuliaUser/chrom.tsv"
-
-# julia> exportdata(chrom, "/home/JuliaUser/chrom", DelimitedText(), timeunit=u"minute", overwrite=true)
-# /home/JuliaUser/chrom.tsv"
-# ```
-
-# See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
-# """
-# function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gc))), overwrite::Bool=false)
-#     exportdata(fileformat, chrom, file; timeunit, overwrite)
-# end
+"""
+    exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
+    timeunit::Unitful.TimeUnits, overwrite::Bool=false)
 
 
-# include(joinpath(".", "DelimitedText", "DelimitedTextWriter.jl"))
-# using .DelimitedTextWriter
+Write the scan times and associated intensity values of the AbstractChrom object to a  
+file in the specified format. The optional parameter `timeunit` allows you 
+to specify the unit for the exported scan times. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `overwrite` allows to specify whether an existing 
+target file should be overwritten.
+
+# Examples
+```julia-repl
+julia> chrom = Chrom((1:3)u"minute", [123, 224, 103])
+Chrom {scan times: Int64, intensities: Int64}
+3 scans; scan times: 1 minute, 2 minute, 3 minute
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> println(pwd())
+"/Users/oniehuis/Programming/MyJuliaPackages/JuChrom"
+```
+
+See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref).
+"""
+function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
+    exportdata(fileformat, chrom, file; timeunit, overwrite)
+end
+
+
+include(joinpath(".", "DelimitedText", "DelimitedTextWriter.jl"))
+using .DelimitedTextWriter
 
 # include(joinpath(".", "Excel", "ExcelWriter.jl"))
 # using .ExcelWriter

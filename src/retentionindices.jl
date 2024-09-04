@@ -868,7 +868,7 @@ julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
 
 julia> ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
 
-julia> rt2ri = bsplineinterpolation(rts, ris);
+julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris);
 
 julia> rt2ri(1u"s") ≈ 1000.0
 true
@@ -882,7 +882,7 @@ true
 julia> rt2ri(9.1u"s") ≈ 7950.0
 true
 
-julia> rt2ri = bsplineinterpolation(rts, ris; extrapolation=false);
+julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=false);
 
 julia> rt2ri(9.1u"s") === nothing
 true

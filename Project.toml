@@ -4,6 +4,7 @@ authors = ["Oliver Niehuis <oliver.niehuis@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
