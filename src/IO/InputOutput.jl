@@ -96,7 +96,9 @@ Chrom {scan times: Int64, intensities: Int64}
 intensity range: 103 - 224
 metadata: 0 entries
 
-julia> exportdata(chrom, "./delimtest", DelimitedText(), overwrite=true);
+julia> exportdata(chrom, "./delimtest", DelimitedText());
+
+julia> exportdata(chrom, "./delimtest", Excel(sheetname="TIC"));
 
 ```
 """

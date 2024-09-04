@@ -6,7 +6,7 @@ using DelimitedFiles
     rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
     tmppath = joinpath(rootpath, "tmp")
     mkpath(tmppath)
-    file = joinpath(tmppath, "delimtest")
+    file = joinpath(tmppath, "./delimtest")
     chrom = Chrom((1:2)u"minute", [123, 224])
     exportdata(chrom, file, DelimitedText(), overwrite=true)
     data = readdlm(string(file, ".tsv"), '\t')

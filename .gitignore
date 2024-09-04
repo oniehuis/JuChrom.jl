@@ -3,6 +3,7 @@
 *.jl.mem
 
 .DS_Store
+.gitignore
 
 /docs/build
 /docs/site
