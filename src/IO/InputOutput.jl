@@ -15,7 +15,7 @@ export AgilentFID
 export ANDI
 export ChemStationMS
 export DelimitedText
-#export Excel
+export Excel
 export MassHunterMS
 export exportdata
 export importdata
@@ -86,6 +86,8 @@ to specify the unit for the exported scan times. All time units defined in the p
 supported. The optional keyword argument `overwrite` allows to specify whether an existing 
 target file should be overwritten.
 
+See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
+
 # Examples
 ```julia-repl
 julia> chrom = Chrom((1:3)u"minute", [123, 224, 103])
@@ -95,8 +97,6 @@ intensity range: 103 - 224
 metadata: 0 entries
 
 ```
-
-See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref).
 """
 function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
@@ -111,7 +111,7 @@ end
 include(joinpath(".", "DelimitedText", "DelimitedTextWriter.jl"))
 using .DelimitedTextWriter
 
-# include(joinpath(".", "Excel", "ExcelWriter.jl"))
-# using .ExcelWriter
+include(joinpath(".", "Excel", "ExcelWriter.jl"))
+using .ExcelWriter
 
 end  # module

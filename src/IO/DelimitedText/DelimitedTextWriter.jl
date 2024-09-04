@@ -28,7 +28,9 @@ Return a `DelimitedText` file format object. The optional `delim` keyword argume
 you to specify the column delimiter, which can be either a single character or a string. 
 If the provided filename lacks a suffix, an appropriate one will be automatically appended.
 
-# Example
+See also [`FileFormat`](@ref), [`exportdata`](@ref), [`Excel`](@ref).
+
+# Examples
 ```julia-repl
 julia> DelimitedText()
 DelimitedText{String}("\t")
@@ -36,8 +38,6 @@ DelimitedText{String}("\t")
 julia> DelimitedText(delim=';')
 DelimitedText{Char}(';')
 ```
-
-See also [`FileFormat`](@ref), [`exportdata`](@ref).
 """
 function DelimitedText(; delim::T="\t") where T<:Union{AbstractChar, AbstractString}
     DelimitedText{T}(delim)

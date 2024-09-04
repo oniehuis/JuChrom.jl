@@ -77,7 +77,7 @@ export AgilentFID
 export ANDI
 export ChemStationMS
 export DelimitedText
-#export Excel
+export Excel
 export MassHunterMS
 export exportdata
 export importdata
