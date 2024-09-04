@@ -3,9 +3,9 @@ using Test
 using DelimitedFiles
 
 @testset "DelimitedTextWriter" begin
-    # path = JuChrom.tmppath
-    rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
-    tmppath = joinpath(rootpath, "tmp")
+    path = JuChrom.tmppath
+    #rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
+    #tmppath = joinpath(rootpath, "tmp")
     path = tmppath
     mkpath(path)
     file = joinpath(path, "delimtest")
