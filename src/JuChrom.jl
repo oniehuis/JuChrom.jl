@@ -10,8 +10,6 @@ using PrecompileTools: @setup_workload, @compile_workload
 
 const agilent = artifact"Agilent"
 const andi = artifact"ANDI"
-rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
-tmppath = joinpath(rootpath, "tmp")
 
 include("base.jl")
 include("retentionindices.jl")
