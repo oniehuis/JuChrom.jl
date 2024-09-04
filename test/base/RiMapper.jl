@@ -5,7 +5,9 @@ using Unitful: 𝐓
 ############################################################################################
 # RiMapper(retentionindexname::AbstractString, 
 # retentiontimes::AbstractVector{<:Unitful.Time},
-# retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, 
+# retentionindices::AbstractVector{<:Real};
+# interpolationmethod::PolationMethod=NaturalCubicBSpline(), 
+# extrapolationmethod::Union{Nothing, <:PolationMethod}=Linear(),
 # metadata::Dict=Dict())
 ############################################################################################
 @testset "RiMapper outer constructor" begin
@@ -29,11 +31,11 @@ using Unitful: 𝐓
 
     # Interpolation method
     @test isa(RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000).interpolationmethod, 
-        AbstractString)
+        PolationMethod)
 
     # Extrapolation method
     @test isa(RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000).extrapolationmethod, 
-        AbstractString)
+        PolationMethod)
 
     # rt2ri
     @test isa(RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000).rt2ri, Function)
@@ -98,24 +100,24 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 2}\n",
         "retention times: 1 minute, 2 minute\n",
         "retention indices: 1000, 2000\n",
-        "interpolation method: natural cubic b-spline\n",
-        "extrapolation method: linear\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "extrapolation method: JuChrom.Linear()\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000))
     @test String(take!(io)) == string(
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: natural cubic b-spline\n",
-        "extrapolation method: linear\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "extrapolation method: JuChrom.Linear()\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1)))
     @test String(take!(io)) == string(
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: natural cubic b-spline\n",
-        "extrapolation method: linear\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "extrapolation method: JuChrom.Linear()\n",
         "metadata: 1 entry")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1, 
         :b => 2)))
@@ -123,8 +125,8 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: natural cubic b-spline\n",
-        "extrapolation method: linear\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "extrapolation method: JuChrom.Linear()\n",
         "metadata: 2 entries")
 end
 
@@ -133,7 +135,7 @@ end
 # interpolationmethod(mapper::RiMapper)
 ############################################################################################
 @testset "interpolationmethod" begin
-    @test "natural cubic b-spline" == interpolationmethod(RiMapper("Kovats", 
+    @test NaturalCubicBSpline() == interpolationmethod(RiMapper("Kovats", 
         (1:2)u"minute", 1:2))
 end
 
@@ -142,9 +144,9 @@ end
 # extrapolationmethod(mapper::RiMapper)
 ############################################################################################
 @testset "extrapolationmethod" begin
-    @test "linear" == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2))
     @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
-        extrapolation=false))
+        extrapolationmethod=nothing))
 end
 
 
