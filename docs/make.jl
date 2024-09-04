@@ -9,12 +9,11 @@ makedocs(
     modules = [JuChrom],
     pages = [
         "Home" => "index.md",
-        "Manual" => Any["man/installation.md",
+        "Manual" => Any[
             "man/basics.md",
+            "man/retentionindices.md",
             "man/import.md",
-            "man/export.md",
-            "man/explorer.md",
-            "man/deconvolution.md"],
+            "man/export.md"],
         "Developers" => Any["man/internals.md"],
         "Index" => "man/register.md"
     ]

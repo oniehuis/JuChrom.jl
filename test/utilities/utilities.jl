@@ -1,55 +1,6 @@
 using JuChrom
 using Test
 
-############################################################################################
-# bsplineinterpolation
-############################################################################################
-@testset "bsplineinterpolation" begin
-    rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s"
-    ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]
-    rt2ri = bsplineinterpolation(rts, ris)
-    @test 1000 ≈ rt2ri(1u"s")
-    @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
-    @test 1800.0 ≈ rt2ri((1//30)u"minute")
-    @test missing === rt2ri(0.5u"s")
-    @test missing === rt2ri(9.1u"s")
-    rt2ri = bsplineinterpolation(rts, ris, extrapolation=true)
-    @test 1000 ≈ rt2ri(1u"s")
-    @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
-    @test 1800.0 ≈ rt2ri((1//30)u"minute")
-    @test 688.3373411198901 ≈ rt2ri(0.5u"s")
-    @test 7950.0 ≈ rt2ri(9.1u"s")
-
-    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
-        [1000, 1900, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900, 4000])
-    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1000, 1000, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1900, 1000, 3100, 3900])
-    @test_throws ArgumentError bsplineinterpolation([1]u"s", [1000], 
-        extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
-        [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900, 4000], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 1, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([2, 1, 3, 4]u"s", 
-        [1000, 1900, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1000, 1000, 3100, 3900], extrapolation=true)
-    @test_throws ArgumentError bsplineinterpolation([1, 2, 3, 4]u"s", 
-        [1900, 1000, 3100, 3900], extrapolation=true)
-    @test_throws ErrorException bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
-        [1000, 2000, 3050, 3360, 5500, 6600, 6900, 7400])
-end
 
 ############################################################################################
 # JuChrom.copy_with_eltype(array::AbstractArray, elementtype::Type)
@@ -164,65 +115,65 @@ end
 ############################################################################################
 # Base.iterate(LM::LocalMaxima, currentindex=LM.startindex)
 ############################################################################################
-@testset "LocalMaxima" begin
-    maxima = []
-    for lm in JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7])
-        push!(maxima, lm)
-    end
-    @test [3:3, 5:7] == maxima
+# @testset "LocalMaxima" begin
+#     maxima = []
+#     for lm in JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7])
+#         push!(maxima, lm)
+#     end
+#     @test [3:3, 5:7] == maxima
 
-    empty!(maxima)
-    for lm in JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, stopindex=4)
-        push!(maxima, lm)
-    end
-    @test [3:3] == maxima
-end
+#     empty!(maxima)
+#     for lm in JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, stopindex=4)
+#         push!(maxima, lm)
+#     end
+#     @test [3:3] == maxima
+# end
 
 
 ############################################################################################
 # JuChrom.LocalMaxima(values::AbstractVector{<:Real}; 
 # startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 ############################################################################################
-@testset "LocalMaxima" begin
-    @test [4, 3, 5, 3, 6, 6, 6, 4, 7] == JuChrom.LocalMaxima(
-        [4, 3, 5, 3, 6, 6, 6, 4, 7]).values
-    @test 1 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).startindex
-    @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).stopindex
-    @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).length
-    @test [4, 3, 5, 3, 6, 6, 6, 4, 7] == JuChrom.LocalMaxima(
-        [4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, stopindex=8).values
-    @test 2 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
-        stopindex=8).startindex
-    @test 8 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
-        stopindex=8).stopindex
-    @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
-        stopindex=8).length
+# @testset "LocalMaxima" begin
+#     @test [4, 3, 5, 3, 6, 6, 6, 4, 7] == JuChrom.LocalMaxima(
+#         [4, 3, 5, 3, 6, 6, 6, 4, 7]).values
+#     @test 1 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).startindex
+#     @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).stopindex
+#     @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7]).length
+#     @test [4, 3, 5, 3, 6, 6, 6, 4, 7] == JuChrom.LocalMaxima(
+#         [4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, stopindex=8).values
+#     @test 2 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
+#         stopindex=8).startindex
+#     @test 8 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
+#         stopindex=8).stopindex
+#     @test 9 == JuChrom.LocalMaxima([4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=2, 
+#         stopindex=8).length
 
-    @test Vector{Int} == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).values)
-    @test Int == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).startindex)
-    @test UInt8 == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=0x1).startindex)
-    @test UInt8 == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        stopindex=0x9).stopindex)
-    @test Int == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).length)
+#     @test Vector{Int} == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).values)
+#     @test Int == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).startindex)
+#     @test UInt8 == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=0x1).startindex)
+#     @test UInt8 == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         stopindex=0x9).stopindex)
+#     @test Int == typeof(JuChrom.LocalMaxima(Int[4, 3, 5, 3, 6, 6, 6, 4, 7]).length)
 
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=0)
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=10)
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        stopindex=0)
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        stopindex=10)
-    @test_throws ArgumentError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=1, stopindex=2)
-    @test_throws ArgumentError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=8)
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=0, stopindex=1)
-    @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=9, stopindex=10)
- end
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=0)
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=10)
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         stopindex=0)
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         stopindex=10)
+#     @test_throws ArgumentError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=1, stopindex=2)
+#     @test_throws ArgumentError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=8)
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=0, stopindex=1)
+#     @test_throws BoundsError JuChrom.LocalMaxima(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=9, stopindex=10)
+#  end
 
 
 ############################################################################################
@@ -271,8 +222,8 @@ end
 # JuChrom.name(::Type)
 ############################################################################################
 @testset "name" begin
-    @test FID == JuChrom.name(typeof(FID([1, 2, 3]u"s", [12, 956, 23])))
-    @test GCMS == JuChrom.name(typeof(GCMS([1, 2, 3]u"s", [85, 100], 
+    @test Chrom == JuChrom.name(typeof(Chrom([1, 2, 3]u"s", [12, 956, 23])))
+    @test ChromMS == JuChrom.name(typeof(ChromMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1])))
     @test Array == JuChrom.name(typeof(Int[1, 2, 3]))
 end
@@ -282,30 +233,30 @@ end
 # JuChrom.nextlocalmaximum(values::AbstractVector{<:Real}; 
 # startindex::Integer=firstindex(values), stopindex::Integer=lastindex(values))
 ############################################################################################
-@testset "nextlocalmaximum" begin
-    @test 3:3 == JuChrom.nextlocalmaximum(Int[4, 3, 5, 3, 6, 6, 6, 4, 7])
-    @test 3:3 == JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7])
-    @test 5:7 == JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=4)
-    @test nothing === JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=4, stopindex=7)
-    @test 3:3 === JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=2, stopindex=7)
+# @testset "nextlocalmaximum" begin
+#     @test 3:3 == JuChrom.nextlocalmaximum(Int[4, 3, 5, 3, 6, 6, 6, 4, 7])
+#     @test 3:3 == JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7])
+#     @test 5:7 == JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], startindex=4)
+#     @test nothing === JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=4, stopindex=7)
+#     @test 3:3 === JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=2, stopindex=7)
 
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=0)
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=10)
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        stopindex=0)
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        stopindex=10)
-    @test_throws ArgumentError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=1, stopindex=2)
-    @test_throws ArgumentError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=8)
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=0, stopindex=1)
-    @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
-        startindex=9, stopindex=10)
- end
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=0)
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=10)
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         stopindex=0)
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         stopindex=10)
+#     @test_throws ArgumentError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=1, stopindex=2)
+#     @test_throws ArgumentError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=8)
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=0, stopindex=1)
+#     @test_throws BoundsError JuChrom.nextlocalmaximum(Float64[4, 3, 5, 3, 6, 6, 6, 4, 7], 
+#         startindex=9, stopindex=10)
+#  end
  

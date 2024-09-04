@@ -3,7 +3,7 @@ module ChemStationMSReaders
 using StringEncodings
 using Unitful
 
-import ...JuChrom: GCMS
+import ...JuChrom: ChromMS
 import ..InputOutput: FileFormat, File, Path, IOError, buildxic, importdata
 
 export ChemStationMS
@@ -42,8 +42,8 @@ ChemStationMS{String}("DATASIM.MS")
 
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
 
-julia> gcms = importdata(dfolder, ChemStationMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Int32}
+julia> chrom = importdata(dfolder, ChemStationMS())
+ChromMS {scan times: Float32, ions: Float32, intensities: Int32}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
@@ -51,8 +51,8 @@ metadata: 10 entries
 
 julia> datafile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D/data.ms");
 
-julia> gcms = importdata(datafile, ChemStationMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Int32}
+julia> chrom = importdata(datafile, ChemStationMS())
+ChromMS {scan times: Float32, ions: Float32, intensities: Int32}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
@@ -166,7 +166,7 @@ function readfile(::ChemStationMSV1, file::AbstractString)
         # Calculate intensity values
         @. intsvec = (intsvec & 16383) * 8^(intsvec >> 14)
         
-        GCMS(scantimes * 1u"ms", buildxic(pointcounts, ionvec, intsvec)..., metadata)
+        ChromMS(scantimes * 1u"ms", buildxic(pointcounts, ionvec, intsvec)..., metadata)
     end
 end
 

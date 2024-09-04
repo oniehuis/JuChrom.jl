@@ -8,7 +8,7 @@ export Path
 export IOError
 export FileExistsError
 
-# import ..JuChrom: AbstractGC, scantimes
+# import ..JuChrom: AbstractChrom, scantimes
 
 export FileFormat
 export AgilentFID
@@ -48,8 +48,8 @@ See also [`AgilentFID`](@ref), [`ANDI`](@ref), [`ChemStationMS`](@ref),
 ```jldoctest
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
 
-julia> gcms = importdata(dfolder, ChemStationMS())
-GCMS {scan times: Float32, ions: Float32, intensities: Int32}
+julia> chrom = importdata(dfolder, ChemStationMS())
+ChromMS {scan times: Float32, ions: Float32, intensities: Int32}
 2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms
 5176 ions; range: m/z 29.0 - 562.9
 intensity range: 0 - 1186816
@@ -75,30 +75,30 @@ using .ANDIReaders
 
 
 # """
-#     exportdata(gc::AbstractGC, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits, overwrite::Bool=false)
+#     exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits, overwrite::Bool=false)
 
-# Write the scan times and associated intensity values of the AbstractGC object to the file in the specified file format. The optional keyword argument
+# Write the scan times and associated intensity values of the AbstractChrom object to the file in the specified file format. The optional keyword argument
 # `timeunit` allows the scan times to be written in a specific time unit. All time units defined in the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl)
 # (e.g., u"s", u"minute") are supported. The optional keyword argument `overwrite` allows to specify that an existing target file should be overwritten.
 
 # # Example
 # ```julia-repl
-# julia> tic = TIC([1u"s", 2u"s", 3u"s"], [123, 224, 103])
+# julia> chrom = Chrom([1u"s", 2u"s", 3u"s"], [123, 224, 103])
 
-# julia> exportdata(tic, "/home/JuliaUser/tic", Excel())
-# /home/JuliaUser/tic.xlsx
+# julia> exportdata(chrom, "/home/JuliaUser/chrom", Excel())
+# /home/JuliaUser/chrom.xlsx
 
-# julia> exportdata(tic, "/home/JuliaUser/tic", DelimitedText())
-# /home/JuliaUser/tic.tsv"
+# julia> exportdata(chrom, "/home/JuliaUser/chrom", DelimitedText())
+# /home/JuliaUser/chrom.tsv"
 
-# julia> exportdata(tic, "/home/JuliaUser/tic", DelimitedText(), timeunit=u"minute", overwrite=true)
-# /home/JuliaUser/tic.tsv"
+# julia> exportdata(chrom, "/home/JuliaUser/chrom", DelimitedText(), timeunit=u"minute", overwrite=true)
+# /home/JuliaUser/chrom.tsv"
 # ```
 
-# See also [`AbstractGC`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
+# See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
 # """
-# function exportdata(gc::AbstractGC, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gc))), overwrite::Bool=false)
-#     exportdata(fileformat, gc, file; timeunit, overwrite)
+# function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; timeunit::Unitful.TimeUnits=unit(eltype(scantimes(gc))), overwrite::Bool=false)
+#     exportdata(fileformat, chrom, file; timeunit, overwrite)
 # end
 
 

@@ -72,45 +72,45 @@ end
 
 
 ############################################################################################
-# ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+# ionscantimeshift(chrom::AbstractChromMS, ionscanorder::IonScanOrder)
 ############################################################################################
 @testset "ionscantimeshift LinearAscending" begin
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending())(1)
-    @test 0u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test 0u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending())(2)
-    @test -0.25u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.25u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(start=0.5))(1)
-    @test 0u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test 0u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(start=0.5))(2)
-    @test -0.75u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.75u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(stop=0.5))(1)
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(stop=0.5))(2)
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(start=0.25, stop=0.75))(1)
-    @test -0.25u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.25u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearAscending(start=0.25, stop=0.75))(2)
 end
 
 ############################################################################################
-# ionscantimeshift(gcms::AbstractGCMS, ionscanorder::IonScanOrder)
+# ionscantimeshift(chrom::AbstractChromMS, ionscanorder::IonScanOrder)
 ############################################################################################
 @testset "ionscantimeshift LinearDescending" begin
-    @test -0u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending())(1)
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending())(2)
-    @test 0u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test 0u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(start=0.5))(1)
-    @test -0.25u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.25u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(start=0.5))(2)
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(stop=0.5))(1)
-    @test -0.75u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.75u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(stop=0.5))(2)
-    @test -0.25u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.25u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(start=0.25, stop=0.75))(1)
-    @test -0.5u"s" == ionscantimeshift(GCMS([1.0, 2.0, 3.0]u"s", [85, 100], 
+    @test -0.5u"s" == ionscantimeshift(ChromMS([1.0, 2.0, 3.0]u"s", [85, 100], 
         [0 12; 34 956; 23 1]), LinearDescending(start=0.25, stop=0.75))(2)
 end

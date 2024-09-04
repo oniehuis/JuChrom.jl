@@ -13,7 +13,7 @@ end
     io = IOBuffer()
     Base.show(io, fid)
     @test String(take!(io)) == string(
-        "JuChrom.FID {scan times: Float32, intensities: Float64}\n",
+        "JuChrom.Chrom {scan times: Float32, intensities: Float64}\n",
         "4151 scans; scan time range: 0.437f0 ms - 830000.44f0 ms\n",
         "intensity range: 0.0 - 1.0738316309895832e6\n",
         "metadata: 10 entries")
@@ -23,7 +23,7 @@ end
     io = IOBuffer()
     Base.show(io, fid)
     @test String(take!(io)) == string(
-        "JuChrom.FID {scan times: Float32, intensities: Float64}\n",
+        "JuChrom.Chrom {scan times: Float32, intensities: Float64}\n",
         "4151 scans; scan time range: 0.437f0 ms - 830000.44f0 ms\n",
         "intensity range: 0.0 - 1.0738316309895832e6\n",
         "metadata: 10 entries")

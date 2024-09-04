@@ -2,7 +2,7 @@ module MassHunterMSReaders
 
 using Unitful
 
-import ...JuChrom: GCMS
+import ...JuChrom: ChromMS
 import ..InputOutput: FileFormat, Path, IOError, buildxic, importdata
 
 export MassHunterMS
@@ -55,27 +55,27 @@ See also [`FileFormat`](@ref), [`importdata`](@ref), [`JuChrom.binions`](@ref).
 ```jldoctest
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_MassHunterMS.D");
 
-julia> gcms = importdata(dfolder, MassHunterMS())
-GCMS {scan times: Float64, ions: Float64, intensities: Float64}
+julia> chrom = importdata(dfolder, MassHunterMS())
+ChromMS {scan times: Float64, ions: Float64, intensities: Float64}
 2405 scans; scan time range: 191.941 s - 1899.047 s
 50275 ions; range: m/z 29.020000457763672 - 562.8900146484375
 intensity range: 0.0 - 1.1872475e6
 metadata: 2 entries
 
-julia> ions(gcms)[1:3]  # ion decimal digits suggest Float32
+julia> ions(chrom)[1:3]  # ion decimal digits suggest Float32
 3-element Vector{Float64}:
  29.020000457763672
  29.030000686645508
  29.040000915527344
 
-julia> gcms = importdata(dfolder, MassHunterMS(; iontype=Float32))
-GCMS {scan times: Float64, ions: Float32, intensities: Float64}
+julia> chrom = importdata(dfolder, MassHunterMS(; iontype=Float32))
+ChromMS {scan times: Float64, ions: Float32, intensities: Float64}
 2405 scans; scan time range: 191.941 s - 1899.047 s
 50275 ions; range: m/z 29.02 - 562.89
 intensity range: 0.0 - 1.1872475e6
 metadata: 2 entries
 
-julia> ions(gcms)[1:3]
+julia> ions(chrom)[1:3]
 3-element Vector{Float32}:
  29.02
  29.03
@@ -194,7 +194,7 @@ function mspeakdata(::MSPeakBinV1, file::AbstractString, fileformat::FileFormat,
     
     scantimes_converted_unitful = (T2 <: Nothing ? scantimes(scandata) * 60u"s" 
         : convert(Vector{T2}, scantimes(scandata)) * 60u"s")
-    GCMS(scantimes_converted_unitful, ions, xic, 
+    ChromMS(scantimes_converted_unitful, ions, xic, 
         Dict(:ScanMethodID => scanmethodid(fileformat), :ScanMethodIDs => scanmethodids))
 end
 

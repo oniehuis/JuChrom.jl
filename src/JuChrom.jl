@@ -12,28 +12,27 @@ agilent = artifact"Agilent"
 andi = artifact"ANDI"
 
 include("base.jl")
+include("retentionindices.jl")
 
 export AbstractChromatogram
-export AbstractFID
-export AbstractGC
-export AbstractGCMS
-export AbstractTIC
-export FID
-export RiFID
-export GCMS
-export RiGCMS
-export TIC
-export RiTIC
+export AbstractChrom
+export AbstractChromMS
+export Chrom
+export ChromMS
 export IonScanOrder
 export LinearAscending
 export LinearDescending
+export AbstractRiMapper
+export RiMapper
 
 export binions
 export bsplineinterpolation
 export cosine
+export extrapolationmethod
 export integer
 export intensities
 export intensity
+export interpolationmethod
 export ion
 export ioncount
 export ionindex
@@ -45,15 +44,19 @@ export ionscantimeshift
 export maxintensity
 export maxion
 export maxretentionindex
+export maxretentiontime
 export maxscantime
 export metadata
 export minintensity
 export minion
 export minretentionindex
+export minretentiontime
 export minscantime
 export retentionindex
 export retentionindices
 export retentionindexname
+export retentiontimes
+export rimapper
 export runduration
 export scancount
 export scanduration

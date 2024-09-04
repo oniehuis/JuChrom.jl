@@ -3,7 +3,7 @@ module ANDIReaders
 using NetCDF
 using Unitful
 
-import ...JuChrom: GCMS
+import ...JuChrom: ChromMS
 import ..InputOutput: File, FileFormat, IOError, buildxic, importdata
 
 export ANDI
@@ -38,14 +38,14 @@ ANDI{Nothing, Nothing, Nothing}(Nothing, Nothing, Nothing)
 
 julia> cdffile = joinpath(JuChrom.andi, "C7-C40_13_Nov_1.CDF");
 
-julia> gcms = importdata(cdffile, ANDI())
-GCMS {scan times: Float64, ions: Float32, intensities: Float32}
+julia> chrom = importdata(cdffile, ANDI())
+ChromMS {scan times: Float64, ions: Float32, intensities: Float32}
 5221 scans; scan time range: 191.942 s - 3898.719 s
 5248 ions; range: m/z 29.0 - 562.9
 intensity range: 0.0 - 1.051136e6
 metadata: 2 entries
 
-julia> scantimes(gcms)[6:11]
+julia> scantimes(chrom)[6:11]
 6-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
             195.493 s
             196.203 s
@@ -54,14 +54,14 @@ julia> scantimes(gcms)[6:11]
  198.33300000000003 s
             199.043 s
 
-julia> gcms = importdata(cdffile, ANDI(scantimetype=Float32))
-GCMS {scan times: Float32, ions: Float32, intensities: Float32}
+julia> chrom = importdata(cdffile, ANDI(scantimetype=Float32))
+ChromMS {scan times: Float32, ions: Float32, intensities: Float32}
 5221 scans; scan time range: 191.942f0 s - 3898.719f0 s
 5248 ions; range: m/z 29.0 - 562.9
 intensity range: 0.0 - 1.051136e6
 metadata: 2 entries
 
-julia> scantimes(gcms)[6:11]
+julia> scantimes(chrom)[6:11]
 6-element Vector{Quantity{Float32, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
  195.493f0 s
  196.203f0 s
@@ -129,7 +129,7 @@ function readfile(::ANDIV1, file::AbstractString, ::Type{T1}, ::Type{T2}, ::Type
     mzs = T2 <: Nothing ? ions : convert(Vector{T2}, ions)
     im = T3 <: Nothing ? xic : convert(Matrix{T3}, xic)
 
-    GCMS(scantimes_unitful, mzs, im, Dict(:ionunit => ionunit, 
+    ChromMS(scantimes_unitful, mzs, im, Dict(:ionunit => ionunit, 
         :intensityunit => intensityunit))
 
 end

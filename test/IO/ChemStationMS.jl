@@ -9,22 +9,22 @@ end
 
 @testset "importdata ChemStationMS()" begin
     dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
-    gcms = importdata(dfolder, ChemStationMS())
+    chrom = importdata(dfolder, ChemStationMS())
     io = IOBuffer()
-    Base.show(io, gcms)
+    Base.show(io, chrom)
     @test String(take!(io)) == string(
-        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
+        "JuChrom.ChromMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",
         "metadata: 10 entries")
 
     dfile = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
-    gcms = importdata(dfile, ChemStationMS())
+    chrom = importdata(dfile, ChemStationMS())
     io = IOBuffer()
-    Base.show(io, gcms)
+    Base.show(io, chrom)
     @test String(take!(io)) == string(
-        "JuChrom.GCMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
+        "JuChrom.ChromMS {scan times: Float32, ions: Float32, intensities: Int32}\n",
         "2405 scans; scan time range: 191941.0f0 ms - 1.899047f6 ms\n",
         "5176 ions; range: m/z 29.0 - 562.9\n",
         "intensity range: 0 - 1186816\n",

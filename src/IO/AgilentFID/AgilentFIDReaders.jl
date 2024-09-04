@@ -3,7 +3,7 @@ module AgilentFIDReaders
 using StringEncodings
 using Unitful
 
-import ...JuChrom: FID
+import ...JuChrom: Chrom
 import ..InputOutput: FileFormat, File, Path, IOError, importdata
 
 export AgilentFID
@@ -41,8 +41,8 @@ AgilentFID{String}("fid_data_20240611.ch")
 
 julia> dfolder = joinpath(JuChrom.agilent, "ZK_ONUBE_Mix1_11.D");
 
-julia> fid = importdata(dfolder, AgilentFID())
-FID {scan times: Float32, intensities: Float64}
+julia> chrom = importdata(dfolder, AgilentFID())
+Chrom {scan times: Float32, intensities: Float64}
 4151 scans; scan time range: 0.437f0 ms - 830000.44f0 ms
 intensity range: 0.0 - 1.0738316309895832e6
 metadata: 10 entries
@@ -122,7 +122,7 @@ function readfile(::AgilentFIDv179, file::AbstractString)
 
         intensities = [abs(signal * scalingfactor) for signal in signals]
 
-        FID(scantimes, intensities, metadata)
+        Chrom(scantimes, intensities, metadata)
     end
 end
 
