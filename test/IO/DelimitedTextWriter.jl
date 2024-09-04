@@ -3,8 +3,7 @@ using Test
 using DelimitedFiles
 
 @testset "DelimitedTextWriter" begin
-    rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
-    path = joinpath(rootpath, "tmp")
+    path = JuChrom.tmppath
     mkpath(path)
     file = joinpath(path, "delimtest")
     chrom = Chrom((1:2)u"minute", [123, 224])

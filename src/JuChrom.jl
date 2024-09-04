@@ -8,8 +8,10 @@ using Polynomials
 using PrecompileTools: @setup_workload, @compile_workload
 @reexport using Unitful
 
-agilent = artifact"Agilent"
-andi = artifact"ANDI"
+const agilent = artifact"Agilent"
+const andi = artifact"ANDI"
+const rootpath = joinpath(splitpath(pathof(JuChrom))[begin:end-2])
+const tmppath = joinpath(rootpath, "tmp")
 
 include("base.jl")
 include("retentionindices.jl")

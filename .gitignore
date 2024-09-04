@@ -7,5 +7,6 @@
 /docs/build
 /docs/site
 /utilities
+/tmp
 
 to_be_included.jl
