@@ -4,7 +4,7 @@ using XLSX
 using Unitful
 
 import ...JuChrom: AbstractChrom, scantimes, intensities
-import ..InputOutput: FileExistsError, FileFormat, exportdata
+import ..InputOutput: FileExistsError, FileFormat, exportdata, DelimitedText
 
 export Excel
 

@@ -4,7 +4,7 @@ using CSV
 using Unitful
 
 import ...JuChrom: AbstractChrom, scantimes, intensity
-import ..InputOutput: FileExistsError, FileFormat, exportdata
+import ..InputOutput: FileExistsError, FileFormat, exportdata, Excel
 
 export DelimitedText
 
