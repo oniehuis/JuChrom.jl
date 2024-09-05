@@ -743,7 +743,7 @@ end
 
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, force::Bool=false)
 
 Return a function that maps retention time to a retention index. The function uses a 
 B-spline for interpolation calculated from a vector of retention times and a corresponding 
@@ -752,7 +752,10 @@ compute the B-spline, the function employs linear extrapolation to estimate a re
 index. However, an optional keyword argument, `extrapolation`, can be used to disable 
 extrapolation, in which case the function returns nothing for values outside the retention 
 time range. The function will raise an error if the resulting mapping function does not 
-yield continuously increasing values.
+produce continuously increasing values. However, by setting the force keyword argument to 
+true, the function will return a mapping function even if it does not yield continuously 
+increasing values. This can be useful for identifying problematic or erroneous calibration 
+points.
 
 See also [`scantimes`](@ref), [`retentionindices`](@ref).
 
@@ -781,10 +784,13 @@ julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=false);
 julia> rt2ri(9.1u"s") === nothing
 ERROR: ArgumentError: retention time is outside the range for calculating the retention index
 [...]
+
+
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, 
+    force::Bool=false)
 
     # Sanity checks
     length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
@@ -807,9 +813,16 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     polynomials = naturalbesplinepolynomials(rts_ustripped, ris)
 
-    cpoint = criticalpoints(polynomials, rts_ustripped)
-    length(cpoint) == 0 || @warn string("the derived function does not yield continuously ",
-        "increasing values: $cpoint")
+    cpoints = criticalpoints(polynomials, rts_ustripped)
+    if length(cpoints) > 0
+        if force
+            @warn ("the derived function does not yield continuously increasing " * 
+                "values: $cpoints")
+        else
+            throw(ArgumentError("the derived function does not yield continuously " * 
+                "increasing values: $cpoints"))
+        end
+    end
 
     f3(_)::Float64 = first(ris)
     f4(rt_ustripped)::Float64 = begin
