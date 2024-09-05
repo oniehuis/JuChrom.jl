@@ -100,7 +100,7 @@ Base.broadcastable(chrom::ChromMS) = Ref(chrom)
 
 """
     ChromMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
-    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) 
+    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) <: AbstractChromMS
 
 Construct a `ChromMS` object that includes `scantimes`, `ions`, `intensities`, and `metadata`. 
 Note that `scantimes` and `ions` must be in ascending order, and `intensities` must not 
@@ -191,7 +191,7 @@ Base.broadcastable(chrom::Chrom) = Ref(chrom)
 """
     Chrom(scantimes::AbstractVector{<:Unitful.Time}, 
     intensities::AbstractVector{<:Real}, metadata::Dict=Dict{Any, Any}; 
-    rimapper::Union{AbstractRiMapper, Nothing}=nothing)
+    rimapper::Union{AbstractRiMapper, Nothing}=nothing) <: AbstractChrom
 
 Create a `Chrom` object that includes `scantimes`, `intensities`, and `metadata`. Ensure 
 that `scantimes` are in ascending order and that `intensities` contain no values less than 

@@ -234,13 +234,12 @@ end
     ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000], 
         extrapolationmethod=nothing)
     @test 1512.3626373626375 ≈ retentionindex(ld, 1.8u"minute") 
-    @test nothing === retentionindex(ld, 1.1u"minute")
-    @test nothing === retentionindex(ld, 1.1u"minute", info=false)
+    @test_throws ArgumentError retentionindex(ld, 1.1u"minute")
+    @test_throws ArgumentError retentionindex(ld, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test nothing === retentionindex(ld, 4.0u"minute")
-    rti = retentionindex.(ld, [1, 2]u"minute")
-    @test nothing === rti[1]
-    @test 1678.876678876679 ≈ rti[2]
+    @test_throws ArgumentError retentionindex(ld, 4.0u"minute")
+    @test [1257.7266483516485, 2000] ≈ retentionindex.(ld, [1.5, 2.4]u"minute")
+    @test_throws ArgumentError retentionindex.(ld, [1, 2]u"minute")
 end
 
 
@@ -261,13 +260,12 @@ end
         extrapolationmethod=nothing)
     chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld)
     @test 1512.3626373626375 ≈ retentionindex(chrom, 1.8u"minute") 
-    @test nothing === retentionindex(chrom, 1.1u"minute")
-    @test nothing === retentionindex(chrom, 1.1u"minute", info=false)
+    @test_throws ArgumentError retentionindex(chrom, 1.1u"minute")
+    @test_throws ArgumentError retentionindex(chrom, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(chrom, 1.2u"minute")
-    @test nothing === retentionindex(chrom, 4.0u"minute")
-    rti = retentionindex.(chrom, [1, 2]u"minute")
-    @test nothing === rti[1]
-    @test 1678.876678876679 ≈ rti[2]
+    @test_throws ArgumentError retentionindex(chrom, 4.0u"minute")
+    @test_throws ArgumentError retentionindex.(chrom, [1, 2]u"minute")
+    @test [1257.7266483516485, 2000] ≈ retentionindex.(chrom, [1.5, 2.4]u"minute")
 end
 
 
@@ -314,13 +312,12 @@ end
     ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000], 
         extrapolationmethod=nothing)
     @test 1526.7402376910018 ≈ retentionindex(ld, 1.8u"minute")
-    @test nothing === retentionindex(ld, 1.1u"minute")
-    @test nothing === retentionindex(ld, 1.1u"minute", info=false)
+    @test_throws ArgumentError retentionindex(ld, 1.1u"minute")
+    @test_throws ArgumentError retentionindex(ld, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test nothing === retentionindex(ld, 4.4u"minute")
-    rti = retentionindex.(ld, [1, 2]u"minute")
-    @test nothing === rti[1]
-    @test 1693.0767779664216 ≈ rti[2]
+    @test_throws ArgumentError retentionindex(ld, 4.4u"minute")
+    @test_throws ArgumentError retentionindex.(ld, [1, 2]u"minute")
+    @test [1266.712648556876, 2000] ≈ retentionindex.(ld, [1.5, 2.4]u"minute")
 end
 
 
@@ -344,11 +341,10 @@ end
     @test 1000.0 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
-    @test nothing === rt2ri(9.1u"s")
-    @test nothing === rt2ri(0.5u"s")
-    ris = rt2ri.([0.5, 1]u"s")
-    @test nothing === ris[1]
-    @test 1000 ≈ ris[2]
+    @test_throws ArgumentError rt2ri(9.1u"s")
+    @test_throws ArgumentError rt2ri(0.5u"s")
+    @test_throws ArgumentError rt2ri.([0.5, 1]u"s")
+    @test [1000.0, 1800.0] ≈ rt2ri.([1, 2]u"s")
 
     @test_throws ArgumentError JuChrom.bsplineinterpolation([1]u"s", [1000])
     @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4, 5]u"s", 

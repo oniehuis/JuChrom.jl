@@ -22,7 +22,7 @@ struct Linear <: PolationMethod end
 
 
 """
-    NaturalCubicBSpline()
+    NaturalCubicBSpline() <: PolationMethod
 
 PolationMethod type that specifies data is interpolated using a natural cubic B-spline. 
 Application of this type will raise an error if the resulting mapping function does not 
@@ -34,7 +34,7 @@ struct NaturalCubicBSpline <: PolationMethod end
 
 
 """
-    PiecewiseLinear()
+    PiecewiseLinear() <: PolationMethod
 
 PolationMethod type that specifies data is interpolated using a piecewise linear approach.
 
@@ -74,8 +74,6 @@ struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time},
             "retention times contain identical values"))
         issorted(retentionindices) || throw(ArgumentError(
             "retention indices not in ascending order"))
-
-        # testing inter und extrapolation?
 
         new(retentionindexname, retentiontimes, retentionindices, interpolationmethod, 
             extrapolationmethod, rt2ri, metadata)
@@ -195,7 +193,8 @@ extrapolation method: nothing
 metadata: 0 entries
 
 julia> retentionindex(ld, 11u"minute") === nothing
-true
+ERROR: ArgumentError: retention time is outside the range for calculating the retention index
+[...]
 
 julia> extrapolationmethod(ld) === nothing
 true
@@ -619,57 +618,6 @@ julia> retentionindices(ld)[:]  # a copy of these values
 retentionindices(mapper::RiMapper) = mapper.retentionindices
 
 
-# """
-#     retentiontime(mapper::RiMapper, retentionindex::Real; timeunit::Unitful.TimeUnits, 
-#     ustripped::Bool=false, info::Bool=false)
-
-# Return the retention time associated with a given retention index. If the return value is 
-# calculated through extrapolation, a message informing the user of this fact is displayed. 
-# The optional keyword argument `info` can be used to disable this message. The optional 
-# keyword parameter `timeunit` lets you specify the unit for the returned retention time. 
-# All time units defined in the package 
-# [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-# supported. The optional keyword argument `ustripped` lets you choose whether the unit is 
-# included in the returned value.
-
-# See also [`RiMapper`](@ref), [`retentiontimes`](@ref), [`maxretentiontime`](@ref), 
-# [`minretentiontime`](@ref).
-
-# # Examples
-# ```jldoctest
-# julia> ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000]);
-
-# julia> retentionindex(ld, 1.9u"minute") ≈ 1610.7750896057348
-# true
-
-# julia> retentiontime(ld, 1610.7750896057348) ≈ 1.8999999999999995u"minute"
-# true
-
-# julia> retentiontime(ld, 1610.7750896057348, ustripped=true) ≈ 1.8999999999999995
-
-# julia> retentiontime(ld, 900) ≈ 1.087987321711569u"minute"
-# [ Info: extrapolated value
-# true
-
-# julia> rts = retentiontime.(ld, [900, 1100]);  # broadcasting across multiple RI values
-# [ Info: extrapolated value
-
-# julia> rts ≈ [1.087987321711569, 1.3120777535153498]u"minute"
-# true
-# ```
-# """
-# function retentiontime(mapper::RiMapper, retentionindex::Real; 
-#     timeunit::Unitful.TimeUnits=unit(eltype(retentiontimes(mapper))), 
-#     ustripped::Bool=false, info::Bool=true)
-
-#     rt = ri2rt(mapper)(retentionindex)
-#     isnothing(rt) && (return rt)
-#     minretentionindex(mapper) ≤ retentionindex ≤ maxretentionindex(mapper) || (info && 
-#         @info "extrapolated value")
-#     ustripped ? ustrip(timeunit, rt) : uconvert(timeunit, rt)
-# end
-
-
 """
     retentiontimes(mapper::RiMapper; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
@@ -755,29 +703,6 @@ true
 rt2ri(mapper::RiMapper) = mapper.rt2ri
 
 
-# """
-#     ri2rt(mapper::RiMapper)
-
-# Return the function that maps a retention index to the corresponding retention time. Note 
-# that direct use of this function is discouraged; users are encouraged to use the more 
-# versatile function `retentiontime` instead.
-
-# See also [`RiMapper`](@ref), [`rt2ri`](@ref), [`retentiontime`](@ref).
-
-# # Example
-# ```jldoctest
-# julia> ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000]);
-
-# julia> rt2ri(ld)(1.9u"minute") ≈ 1610.7750896057348
-# true
-
-# julia> ri2rt(ld)(1610.7750896057348) ≈ 1.8999999999999995u"minute"
-# true
-# ```
-# """
-# ri2rt(mapper::RiMapper) = mapper.ri2rt
-
-
 function criticalpoints(polynomials::AbstractVector{<:Polynomial}, ts)
     cpoints = Vector{Tuple{<:Any, String}}()
     for (i, polynomial) in enumerate(polynomials)
@@ -799,110 +724,20 @@ function criticalpoints(polynomials::AbstractVector{<:Polynomial}, ts)
 end
 
 
-function interextrapolate(t, timeunit, y, n, polynomials, f₁, f₂)
-    time::Unitful.Time -> begin
-        x = ustrip(timeunit, time)
-        if x < t[1]
-            f₁(x)
-        elseif x > t[n+1]
-            f₂(x)
-        elseif x == t[1]
-            Float64(y[1])
+function polate(rts_ustripped, timeunit, f1, f2, f3, f4)
+    function f(rt)
+        rt_ustripped = ustrip(timeunit, rt)
+        if rt_ustripped < first(rts_ustripped)
+            f1(rt_ustripped)
+        elseif rt_ustripped > last(rts_ustripped)
+            f2(rt_ustripped)
+        elseif rt_ustripped == first(rts_ustripped)
+            f3(rt_ustripped)
         else
-            k = findlast(x .> t)
-            polynomials[k](x - t[k])
+            f4(rt_ustripped)
         end
     end
 end
-
-
-function interpolate(t, timeunit, y, n, polynomials)
-    time::Unitful.Time -> begin
-        x = ustrip(timeunit, time)
-        if x < t[1] || x > t[n+1]
-            nothing
-        elseif x==t[1]
-            Float64(y[1])
-        else
-            k = findlast(x .> t)
-            polynomials[k](x - t[k])
-        end
-    end
-end
-
-
-# function interextrapolate_ri(rts, timeunit, ris, n, polynomials, f₁_inverse, f₂_inverse)
-#     ri::Real -> begin
-#         if ri < ris[1]
-#             f₁_inverse(ri) * timeunit
-#         elseif ri > ris[n+1]
-#             f₂_inverse(ri) * timeunit
-#         elseif ri == ris[1]
-#             Float64(rts[1]) * timeunit
-#         else
-#             k = findlast(ri .> ris)
-#             d, cba = coeffs(polynomials[k])
-#             println(polynomials[k])
-#             println("ri: ", ri)
-#             println("ri interval: ", k, " ", ris[k])
-
-#             # Determine the roots of the polynomial
-#             # rs = PolynomialRoots.roots([d - ri, cba...])
-#             rs = roots(Polynomial([d - ri, cba...]))
-#             println(rs)
-
-#             # Consider only the roots with a zero imaginary part
-#             rs_im_zero = filter(x -> imag(x) == 0, rs)
-
-#             # Convert complex numbers to a real numbers
-#             rs_real = map(x -> real(x), rs_im_zero)
-
-#             # Only consider roots which fall in the kth rt interval
-#             Δt = rts[k+1] - rts[k]
-#             println(rts[k], " ", Δt, " ", rts[k+1])
-#             println(rts[k]+rs_real[1])
-#             t = filter(x -> 0 < x ≤ Δt || x ≈ Δt, rs_real)
-#             println(t)
-#             @assert length(t) == 1 "more than one solution found"
-
-#             (rts[k] + t[1]) * timeunit
-#         end
-#     end
-# end
-
-
-# function interpolate_ri(rts, timeunit, ris, n, polynomials)
-#     ri::Real -> begin
-#         if ri < ris[1]
-#             nothing
-#         elseif ri > ris[n+1]
-#             nothing
-#         elseif ri == ris[1]
-#             Float64(rts[1]) * timeunit
-#         else
-#             k = findlast(ri .> ris)
-#             d, cba = coeffs(polynomials[k])
-
-#             # Determine the roots of the polynomial
-#             rs = PolynomialRoots.roots([d - ri, cba...])
-
-#             # Consider only the roots with a zero imaginary part
-#             rs_im_zero = filter(x -> imag(x) == 0, rs)
-
-#             # Convert complex numbers to a real numbers
-#             rs_real = map(x -> real(x), rs_im_zero)
-
-#             # Only consider roots which fall in the kth rt interval
-#             Δt = rts[k+1] - rts[k]
-#             t = filter(x -> 0 < x ≤ Δt || x ≈ Δt, rs_real)
-#             @assert length(t) == 1 "more than one solution found"
-
-#             (rts[k] + t[1]) * timeunit
-#         end
-#     end
-# end
-
-
 
 
 """
@@ -943,7 +778,8 @@ true
 julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=false);
 
 julia> rt2ri(9.1u"s") === nothing
-true
+ERROR: ArgumentError: retention time is outside the range for calculating the retention index
+[...]
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
@@ -965,35 +801,43 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     # Extract and store the retention time unit and strip it from the retention times
     timeunit = unit(eltype(retentiontimes))
-    t = ustrip.(retentiontimes)
-    y = retentionindices
+    rts_ustripped = ustrip.(retentiontimes)
+    ris = retentionindices
 
-    polynomials = naturalbesplinepolynomials(t, y)
+    polynomials = naturalbesplinepolynomials(rts_ustripped, ris)
 
-    cpoint = criticalpoints(polynomials, t)
-    length(cpoint) == 0 || @warn string("the derived function does not ", 
-        "yield continuously increasing values: $cpoint")
+    cpoint = criticalpoints(polynomials, rts_ustripped)
+    length(cpoint) == 0 || @warn string("the derived function does not yield continuously ",
+        "increasing values: $cpoint")
 
-    n = length(t) - 1
+    f3(_)::Float64 = first(ris)
+    f4(rt_ustripped)::Float64 = begin
+        i = findlast(rt_ustripped .> rts_ustripped)
+        polynomials[i](rt_ustripped - rts_ustripped[i])
+    end
 
-    # Return desired interpolation function
     if extrapolation
+        slope1 = first(polynomials)[1]
+        Δrts_ustripped = rts_ustripped[end] - rts_ustripped[end-1]
+        slope2 = (last(polynomials)[1] + last(polynomials)[2] * (Δrts_ustripped) 
+            + last(polynomials)[3] * (Δrts_ustripped)^2)
+        slope1 > 0 && slope2 > 0 || @warn string("the derived function does not yield ", 
+            "continuously increasing values")
 
-        slope₁ = first(polynomials)[1]
-        f₁(rt) = first(polynomials)[0] - slope₁ * (t[1] - rt)
+        f1a(rt_ustripped)::Float64 = first(polynomials)[0] - slope1 * (first(rts_ustripped) 
+            - rt_ustripped)
+        f2a(rt_ustripped)::Float64 = last(polynomials)(Δrts_ustripped) + slope2 * 
+            (rt_ustripped - last(rts_ustripped))
 
-        Δrt = t[end]-t[end-1]
-        slope₂ = (last(polynomials)[1] + last(polynomials)[2] * (Δrt) 
-            + last(polynomials)[3] * (Δrt)^2)
-        f₂(rt) = last(polynomials)(Δrt) + slope₂ * (rt - t[end])
-
-        # The slopes of both extrapolated lines must be greater than zero
-        slope₁ > 0 && slope₂ > 0 || @warn string("the derived function ", 
-            "does not yield continuously increasing values")
-
-        interextrapolate(t, timeunit, y, n, polynomials, f₁, f₂)
+        polate(rts_ustripped, timeunit, f1a, f2a, f3, f4)        
     else
-        interpolate(t, timeunit, y, n, polynomials)
+
+        f1b(_) = throw(ArgumentError(
+            "retention time is outside the range for calculating the retention index"))
+        f2b(_) = throw(ArgumentError(
+            "retention time is outside the range for calculating the retention index"))
+
+        polate(rts_ustripped, timeunit, f1b, f2b, f3, f4)
     end
 end
 
@@ -1048,22 +892,6 @@ function piecewiselinearinterpolate(
         coeff[i].slope * (rt_ustripped - rts_ustripped[i]) + coeff[i].intercept
     end
     polate(rts_ustripped, timeunit, f1, f2, f3, f4)
-end
-
-
-function polate(rts_ustripped, timeunit, f1, f2, f3, f4)
-    function f(rt)
-        rt_ustripped = ustrip(timeunit, rt)
-        if rt_ustripped < first(rts_ustripped)
-            f1(rt_ustripped)
-        elseif rt_ustripped > last(rts_ustripped)
-            f2(rt_ustripped)
-        elseif rt_ustripped == first(rts_ustripped)
-            f3(rt_ustripped)
-        else
-            f4(rt_ustripped)
-        end
-    end
 end
 
 
