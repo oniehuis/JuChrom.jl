@@ -100,7 +100,7 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 2}\n",
         "retention times: 1 minute, 2 minute\n",
         "retention indices: 1000, 2000\n",
-        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
         "extrapolation method: JuChrom.Linear()\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000))
@@ -108,7 +108,7 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
         "extrapolation method: JuChrom.Linear()\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1)))
@@ -116,7 +116,7 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
         "extrapolation method: JuChrom.Linear()\n",
         "metadata: 1 entry")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1, 
@@ -125,7 +125,7 @@ end
         "JuChrom.RiMapper {index name: Kovats, calibration points: 11}\n",
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
-        "interpolation method: JuChrom.NaturalCubicBSpline()\n",
+        "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
         "extrapolation method: JuChrom.Linear()\n",
         "metadata: 2 entries")
 end
