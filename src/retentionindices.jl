@@ -21,16 +21,36 @@ See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@
 struct Linear <: PolationMethod end 
 
 
+struct NaturalCubicBSpline <: PolationMethod
+    force::Bool
+    NaturalCubicBSpline(force::Bool) = new(force)
+end
+
+
 """
-    NaturalCubicBSpline() <: PolationMethod
+    NaturalCubicBSpline(; force::Bool=false) <: PolationMethod
 
 PolationMethod type that specifies data is interpolated using a natural cubic B-spline. 
 Application of this type will raise an error if the resulting mapping function does not 
-produce continuously increasing values. 
+produce continuously increasing values. However, by setting the `force` keyword argument to 
+true, a mapping function will be returned even if it does not yield continuously increasing 
+values. This can be useful for identifying problematic or erroneous calibration points.
 
 See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
+
+# Examples
+```jldoctest
+julia> NaturalCubicBSpline()
+NaturalCubicBSpline(false)
+
+julia> NaturalCubicBSpline(; force=true)
+NaturalCubicBSpline(true)
+```
 """
-struct NaturalCubicBSpline <: PolationMethod end 
+NaturalCubicBSpline(; force::Bool=false) = NaturalCubicBSpline(force)
+
+
+force(obj::NaturalCubicBSpline) = obj.force
 
 
 """
@@ -152,13 +172,13 @@ See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), [`Linear`](@r
 [`retentiontimes`](@ref), [`interpolationmethod`](@ref), [`extrapolationmethod`](@ref), 
 [`rt2ri`](@ref), [`metadata`](@ref), [`retentionindex`](@ref).
 
-# Example
+# Examples
 ```jldoctest
 julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
-interpolation method: NaturalCubicBSpline()
+interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 0 entries
 
@@ -179,7 +199,7 @@ julia> retentiontimes(ld)
 (1:5) minute
 
 julia> interpolationmethod(ld)
-NaturalCubicBSpline()
+NaturalCubicBSpline(false)
 
 julia> extrapolationmethod(ld)
 Linear()
@@ -188,7 +208,7 @@ julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, extrapolationmeth
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
-interpolation method: NaturalCubicBSpline()
+interpolation method: NaturalCubicBSpline(false)
 extrapolation method: nothing
 metadata: 0 entries
 
@@ -234,7 +254,8 @@ function RiMapper(
         T4<:NaturalCubicBSpline,
         T5<:Linear}
 
-    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=true)
+    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=true, 
+        force=force(interpolationmethod))
     RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
         interpolationmethod, extrapolationmethod, rt2ri, metadata)
 end
@@ -254,7 +275,8 @@ function RiMapper(
         T4<:NaturalCubicBSpline,
         T5<:Nothing}
 
-    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=false)
+    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=false, 
+        force=force(interpolationmethod))
     RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
         interpolationmethod, extrapolationmethod, rt2ri, metadata)
 end
@@ -314,7 +336,7 @@ See also [`RiMapper`](@ref), [`extrapolationmethod`](@ref), [`retentionindex`](@
 julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
 
 julia> interpolationmethod(ld)
-NaturalCubicBSpline()
+NaturalCubicBSpline(false)
 ```
 """
 interpolationmethod(mapper::RiMapper) = mapper.interpolationmethod
@@ -411,7 +433,7 @@ julia> ld = RiMapper("Kovats", (1:5)u"minute", 10:10:50, metadata=Dict(:id => 7)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 10, 20, 30, 40, 50
-interpolation method: NaturalCubicBSpline()
+interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 1 entry
 
@@ -493,7 +515,7 @@ julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
 RiMapper {index name: Kovats, calibration points: 3}
 retention times: 1.2 minute, 2.4 minute, 3.8 minute
 retention indices: 1000, 2000, 3000
-interpolation method: NaturalCubicBSpline()
+interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 0 entries
 
@@ -816,11 +838,10 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     cpoints = criticalpoints(polynomials, rts_ustripped)
     if length(cpoints) > 0
         if force
-            @warn ("the derived function does not yield continuously increasing " * 
-                "values: $cpoints")
+            @warn "the interpolator does not produce continuously increasing values"
         else
-            throw(ArgumentError("the derived function does not yield continuously " * 
-                "increasing values: $cpoints"))
+            throw(ArgumentError("the interpolator does not produce continuously " * 
+                "increasing values"))
         end
     end
 
@@ -835,8 +856,8 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
         Δrts_ustripped = rts_ustripped[end] - rts_ustripped[end-1]
         slope2 = (last(polynomials)[1] + last(polynomials)[2] * (Δrts_ustripped) 
             + last(polynomials)[3] * (Δrts_ustripped)^2)
-        slope1 > 0 && slope2 > 0 || @warn string("the derived function does not yield ", 
-            "continuously increasing values")
+        slope1 > 0 && slope2 > 0 || @warn ("the interpolator does not produce " 
+            * "continuously increasing values")
 
         f1a(rt_ustripped)::Float64 = first(polynomials)[0] - slope1 * (first(rts_ustripped) 
             - rt_ustripped)

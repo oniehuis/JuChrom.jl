@@ -1506,7 +1506,7 @@ julia> rimapper(chrom)
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
-interpolation method: NaturalCubicBSpline()
+interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 0 entries
 ```
