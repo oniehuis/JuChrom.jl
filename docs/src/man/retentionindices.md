@@ -3,6 +3,7 @@
 ```@docs
 PolationMethod
 Linear
+PiecewiseLinear
 NaturalCubicBSpline
 AbstractRiMapper
 RiMapper

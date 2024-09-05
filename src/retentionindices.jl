@@ -10,9 +10,11 @@ abstract type PolationMethod end
 
 
 """
-    Linear()
+    Linear() <: PolationMethod
 
-PolationMethod type that specifies that data are linearly interpolated or extrapolated.
+PolationMethod type that specifies data is linearly extrapolated using the slope 
+calculated by the applied interpolator at the nearest retention time–retention index 
+calibration point.
 
 See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
 """
@@ -22,13 +24,23 @@ struct Linear <: PolationMethod end
 """
     NaturalCubicBSpline()
 
-PolationMethod type that specifies that data are interpolated or extrapolated using a 
-natural cubic B-spline.
+PolationMethod type that specifies data is interpolated using a natural cubic B-spline. 
+Application of this type will raise an error if the resulting mapping function does not 
+produce continuously increasing values. 
 
 See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
 """
 struct NaturalCubicBSpline <: PolationMethod end 
 
+
+"""
+    PiecewiseLinear()
+
+PolationMethod type that specifies data is interpolated using a piecewise linear approach.
+
+See also [`PolationMethod`](@ref), [`NaturalCubicBSpline`](@ref), [`RiMapper`](@ref).
+"""
+struct PiecewiseLinear <: PolationMethod end
 
 
 struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
@@ -127,21 +139,20 @@ end
     extrapolationmethod::Union{Nothing, <:PolationMethod}=Linear(),
     metadata::Dict=Dict())
 
-Create an `RiMapper` object for mapping retention times to retention indices using 
-interpolation, and by default, extrapolation. The function defaults to using a natural 
-cubic B-spline for interpolation, derived from a vector of retention times and a 
-corresponding vector of retention indices. For retention time values outside the range 
-used to compute the B-spline, the function defaults to linear extrapolation to estimate 
-retention indices. An optional keyword argument, `extrapolationmethod`, can disable 
-extrapolation, in which case the function will return the value nothing for values 
-outside the retention time range. The function will raise an error if the resulting 
-mapping function does not produce continuously increasing values. Note that both retention 
-times and retention indices must be provided in ascending order.
+Create an `RiMapper` object to map retention times to retention indices using 
+interpolation, and extrapolation by default. The optional keyword arguments 
+`interpolationmethod` and `extrapolationmethod` allow you to explicitly specify the 
+methods used. Currently, the available interpolators are `NaturalCubicBSpline()` (default) 
+and `PiecewiseLinear()`. The only available extrapolator is `Linear()`. If 
+`extrapolationmethod` is set to nothing, the function will raise an error for retention 
+time values outside the calibration range. Note that both retention times and retention 
+indices must be provided in ascending order. Additionally, the optional `metadata` keyword 
+argument allows you to associate metadata with the mapper.
 
-See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), 
-[`retentionindices`](@ref), [`retentiontimes`](@ref), [`interpolationmethod`](@ref),
-[`extrapolationmethod`](@ref), [`rt2ri`](@ref), [`metadata`](@ref), 
-[`retentionindex`](@ref).
+See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), [`Linear`](@ref), 
+[`NaturalCubicBSpline`](@ref), [`PiecewiseLinear`](@ref), [`retentionindices`](@ref), 
+[`retentiontimes`](@ref), [`interpolationmethod`](@ref), [`extrapolationmethod`](@ref), 
+[`rt2ri`](@ref), [`metadata`](@ref), [`retentionindex`](@ref).
 
 # Example
 ```jldoctest
@@ -188,19 +199,23 @@ true
 
 julia> extrapolationmethod(ld) === nothing
 true
+
+julia> ld = RiMapper("Kovats", (1:5)u"s", 10:10:50, interpolationmethod=PiecewiseLinear())
+RiMapper {index name: Kovats, calibration points: 5}
+retention times: 1 s, 2 s, 3 s, 4 s, 5 s
+retention indices: 10, 20, 30, 40, 50
+interpolation method: PiecewiseLinear()
+extrapolation method: Linear()
+metadata: 0 entries
 ```
 """
 function RiMapper(
-    retentionindexname::T1,
-    retentiontimes::T2,
-    retentionindices::T3; 
+    retentionindexname::AbstractString,
+    retentiontimes::AbstractVector{<:Unitful.Time},
+    retentionindices::AbstractVector{<:Real}; 
     interpolationmethod::PolationMethod=NaturalCubicBSpline(),
     extrapolationmethod::Union{Nothing, PolationMethod}=Linear(),
-    metadata::Dict=Dict{Any, Any}()
-    ) where {
-        T1<:AbstractString,
-        T2<:AbstractVector{<:Unitful.Time}, 
-        T3<:AbstractVector{<:Real}}
+    metadata::Dict=Dict{Any, Any}())
 
     RiMapper(retentionindexname, retentiontimes, retentionindices, interpolationmethod,
         extrapolationmethod, metadata)
@@ -241,6 +256,48 @@ function RiMapper(
         T5<:Nothing}
 
     rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=false)
+    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
+        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+end
+
+
+function RiMapper(
+    retentionindexname::T1,
+    retentiontimes::T2,
+    retentionindices::T3,
+    interpolationmethod::T4,
+    extrapolationmethod::T5,
+    metadata::Dict=Dict{Any, Any}()
+    ) where {
+        T1<:AbstractString,
+        T2<:AbstractVector{<:Unitful.Time}, 
+        T3<:AbstractVector{<:Real},
+        T4<:PiecewiseLinear,
+        T5<:Linear}
+
+    rt2ri = piecewiselinearinterpolation(retentiontimes, retentionindices, 
+        extrapolation=true)
+    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
+        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+end
+
+
+function RiMapper(
+    retentionindexname::T1,
+    retentiontimes::T2,
+    retentionindices::T3,
+    interpolationmethod::T4,
+    extrapolationmethod::T5,
+    metadata::Dict=Dict{Any, Any}()
+    ) where {
+        T1<:AbstractString,
+        T2<:AbstractVector{<:Unitful.Time}, 
+        T3<:AbstractVector{<:Real},
+        T4<:PiecewiseLinear,
+        T5<:Nothing}
+
+    rt2ri = piecewiselinearinterpolation(retentiontimes, retentionindices, 
+        extrapolation=false)
     RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
         interpolationmethod, extrapolationmethod, rt2ri, metadata)
 end
@@ -847,6 +904,7 @@ end
 
 
 
+
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
     retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
@@ -940,10 +998,138 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 end
 
 
-# julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
+function piecewiselinearinterpolate_datafit(
+    rts::AbstractVector{<:Unitful.Time}, 
+    ris::AbstractVector{<:Real})
+    
+    timeunit = unit(eltype(rts))
+    rts_ustripped = ustrip.(timeunit, rts)
+    n = length(rts_ustripped) - 1
+    Δrts_ustripped = [rts_ustripped[i+1] - rts_ustripped[i] for i in 1:n]
+    Δris = [ris[i+1] - ris[i] for i in 1:n]
+    coefficients = [(slope = Δris[i] / Δrts_ustripped[i], intercept = ris[i]) for i in 1:n]
+    coefficients, rts_ustripped, ris, timeunit
+end
 
-# julia> ris = [1000, 2000, 3050, 3360, 5500, 6600, 6900, 7400];
 
-# julia> rt2ri = bsplineinterpolation(rts, ris);
-# Warning: the derived function does not yield continuously increasing values: Tuple{Any, String}[(3.3848989851524127, "local minimum"), (3.3460161285522876, "local maximum")]
-# [...]
+function piecewiselinearinterextrapolate(
+    coeff::AbstractVector{@NamedTuple{slope::T1, intercept::T2}},
+    rts_ustripped::AbstractVector{<:Real}, 
+    ris::AbstractVector{<:Real},
+    timeunit::Unitful.TimeUnits) where {T1<:Real, T2<:Real}
+
+    n = length(rts_ustripped)
+    f1(rt_ustripped)::Float64 = first(coeff).slope * (rt_ustripped - first(rts_ustripped)
+        ) + first(coeff).intercept
+    f2(rt_ustripped)::Float64 = last(coeff).slope * (rt_ustripped - rts_ustripped[n-1]
+        ) + last(coeff).intercept
+    f3(_)::Float64 = first(ris)
+    f4(rt_ustripped)::Float64 = begin 
+        i = findlast(rt_ustripped .> rts_ustripped)
+        coeff[i].slope * (rt_ustripped - rts_ustripped[i]) + coeff[i].intercept
+    end
+    polate(rts_ustripped, timeunit, f1, f2, f3, f4)
+end
+
+
+function piecewiselinearinterpolate(
+    coeff::AbstractVector{@NamedTuple{slope::T1, intercept::T2}},
+    rts_ustripped::AbstractVector{<:Real}, 
+    ris::AbstractVector{<:Real},
+    timeunit::Unitful.TimeUnits) where {T1<:Real, T2<:Real}
+
+    f1(_) = throw(ArgumentError(
+        "retention time is outside the range for calculating the retention index"))
+    f2(_) = throw(ArgumentError(
+        "retention time is outside the range for calculating the retention index"))
+    f3(_)::Float64 = first(ris)
+    f4(rt_ustripped)::Float64 = begin 
+        i = findlast(rt_ustripped .> rts_ustripped)
+        coeff[i].slope * (rt_ustripped - rts_ustripped[i]) + coeff[i].intercept
+    end
+    polate(rts_ustripped, timeunit, f1, f2, f3, f4)
+end
+
+
+function polate(rts_ustripped, timeunit, f1, f2, f3, f4)
+    function f(rt)
+        rt_ustripped = ustrip(timeunit, rt)
+        if rt_ustripped < first(rts_ustripped)
+            f1(rt_ustripped)
+        elseif rt_ustripped > last(rts_ustripped)
+            f2(rt_ustripped)
+        elseif rt_ustripped == first(rts_ustripped)
+            f3(rt_ustripped)
+        else
+            f4(rt_ustripped)
+        end
+    end
+end
+
+
+"""
+    piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true) -> Float64
+
+Return a function that maps retention time to retention index using piecewise linear 
+interpolation based on a vector of retention times and a corresponding vector of retention 
+indices. For retention time values outside the interpolation range, the function applies 
+linear extrapolation to estimate the retention index. However, an optional extrapolation 
+keyword can disable extrapolation, in which case the function will raise an error for 
+values outside the retention time range.
+
+See also [`scantimes`](@ref), [`retentionindices`](@ref).
+
+# Examples
+```jldoctest
+julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
+
+julia> ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
+
+julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris);
+
+julia> rt2ri(1u"s") ≈ 1000.0
+true
+
+julia> rt2ri(1.5u"s") ≈ 1400.0
+true
+
+julia> rt2ri((1//30)u"minute") ≈ 1800.0
+true
+
+julia> rt2ri(9.1u"s") ≈ 7950.0
+true
+
+julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris; extrapolation=false);
+
+julia> rt2ri(9.1u"s")
+ERROR: ArgumentError: retention time is outside the range for calculating the retention index
+[...]
+```
+"""
+function piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
+
+    # Sanity checks
+    length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
+        "number of retention times and number of retention indices are different"))
+    length(retentiontimes) > 1 || throw(
+        ArgumentError("need at least two retention time-retention index pairs"))
+    length(Set(retentiontimes)) == length(retentiontimes) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentiontimes) || throw(ArgumentError(
+        "retention times not in ascending order"))
+    length(Set(retentionindices)) == length(retentionindices) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentionindices) || throw(ArgumentError(
+       "retention indices not in ascending order"))
+
+    datafit = piecewiselinearinterpolate_datafit(retentiontimes, retentionindices)
+
+    # Return desired interpolation function
+    if extrapolation
+        piecewiselinearinterextrapolate(datafit...)
+    else
+        piecewiselinearinterpolate(datafit...)
+    end
+end

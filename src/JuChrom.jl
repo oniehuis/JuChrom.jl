@@ -27,6 +27,7 @@ export RiMapper
 export PolationMethod
 export NaturalCubicBSpline
 export Linear
+export PiecewiseLinear
 
 export binions
 export cosine

@@ -137,6 +137,14 @@ end
 @testset "interpolationmethod" begin
     @test NaturalCubicBSpline() == interpolationmethod(RiMapper("Kovats", 
         (1:2)u"minute", 1:2))
+    @test NaturalCubicBSpline() == interpolationmethod(RiMapper("Kovats", 
+        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline()))
+    @test NaturalCubicBSpline() == interpolationmethod(RiMapper("Kovats", 
+        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline(), 
+        extrapolationmethod=Linear()))
+    @test NaturalCubicBSpline() == interpolationmethod(RiMapper("Kovats", 
+        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline(), 
+        extrapolationmethod=nothing))
 end
 
 
@@ -145,8 +153,16 @@ end
 ############################################################################################
 @testset "extrapolationmethod" begin
     @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+        interpolationmethod=NaturalCubicBSpline()))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+        interpolationmethod=PiecewiseLinear()))
     @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
         extrapolationmethod=nothing))
+    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+        interpolationmethod=NaturalCubicBSpline(), extrapolationmethod=nothing))
+    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+        interpolationmethod=PiecewiseLinear(), extrapolationmethod=nothing))
 end
 
 
@@ -360,5 +376,58 @@ end
     @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
         [1000, 1000, 3100, 3900], extrapolation=true)
     @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
+        [1900, 1000, 3100, 3900], extrapolation=true)
+end
+
+
+############################################################################################
+# JuChrom.piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+# retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
+############################################################################################
+@testset "piecewiselinearinterpolation" begin
+    rt2ri = JuChrom.piecewiselinearinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400])
+    @test 1000 ≈ rt2ri(1u"s")
+    @test 1400 ≈ rt2ri(1.5u"s")
+    @test 1800 ≈ rt2ri((1//30)u"minute")
+    @test 7950 ≈ rt2ri(9.1u"s")
+    @test 600 ≈ rt2ri(0.5u"s")
+    @test [1000, 2425] ≈ rt2ri.([1, 2.5]u"s")
+
+    rt2ri = JuChrom.piecewiselinearinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=false)
+    @test 1000 ≈ rt2ri(1u"s")
+    @test 1400 ≈ rt2ri(1.5u"s")
+    @test 1800 ≈ rt2ri((1//30)u"minute")
+    @test_throws ArgumentError rt2ri(9.1u"s")
+    @test_throws ArgumentError rt2ri(0.5u"s")
+    @test [1000, 2425] ≈ rt2ri.([1, 2.5]u"s")
+
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1]u"s", [1000])
+    @test_throws DimensionMismatch JuChrom.piecewiselinearinterpolation([1, 2, 3, 4, 5]u"s", 
+        [1000, 1900, 3100, 3900])
+    @test_throws DimensionMismatch JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900, 4000])
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900])
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([2, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900])
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
+        [1000, 1000, 3100, 3900])
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
+        [1900, 1000, 3100, 3900])
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1]u"s", [1000], 
+        extrapolation=true)
+    @test_throws DimensionMismatch JuChrom.piecewiselinearinterpolation([1, 2, 3, 4, 5]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
+    @test_throws DimensionMismatch JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900, 4000], extrapolation=true)
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([2, 1, 3, 4]u"s", 
+        [1000, 1900, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
+        [1000, 1000, 3100, 3900], extrapolation=true)
+    @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1, 2, 3, 4]u"s", 
         [1900, 1000, 3100, 3900], extrapolation=true)
 end
