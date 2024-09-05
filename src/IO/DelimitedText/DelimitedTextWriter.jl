@@ -3,7 +3,7 @@ module DelimitedTextWriter
 using CSV
 using Unitful
 
-import ...JuChrom: AbstractChrom, scantimes, intensity
+import ...JuChrom: AbstractChrom, scantimes, intensity, Excel
 import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export DelimitedText
@@ -28,8 +28,7 @@ Return a `DelimitedText` file format object. The optional `delim` keyword argume
 you to specify the column delimiter, which can be either a single character or a string. 
 If the provided filename lacks a suffix, an appropriate one will be automatically appended.
 
-See also [`FileFormat`](@ref), [`exportdata`](@ref), 
-[`JuChrom.InputOutput.ExcelWriter.Excel`](@ref).
+See also [`FileFormat`](@ref), [`exportdata`](@ref), [`Excel`](@ref).
 
 # Examples
 ```julia-repl
