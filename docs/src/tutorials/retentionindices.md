@@ -44,7 +44,7 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
 
 The variable data_cells refers to a matrix, which at this stage contains the following data:
 
-````
+```
 31×5 Matrix{Any}:
   3.394   600.0  100   742  "Hexane"
   4.154   900.0   98  1478  "Nonane"
