@@ -132,9 +132,9 @@ This will produce the following
 In the previous example, the computation of a natural cubic B-spline for calculating a 
 continuously increasing retention index worked as expected. However, this is not always 
 the case. If the computed B-spline contains critical points that would cause the retention 
-index to decrease as retention time increases, the creation of the RiMapper would result 
-in an error. Let's examine an example. The contents of the file `example2.CAL` are as 
-follows:
+index to decrease as retention time increases, the creation of the [`RiMapper`](@ref) would 
+result in an error. Let's examine an example. The contents of the file `example2.CAL` are 
+as follows:
 
 ```
 3.394 600.0 100 742 Hexane
@@ -150,11 +150,10 @@ follows:
 35.273 3800.0 85 493 Octatriacontane
 ```
 
-The data is similar to that in `example1.CAL`. In fact, the only difference between the 
-two files is that `example2.CAL` includes Hexane as an additional calibration point. Let's
-execute the same statements as in the previous example, except that specify a different 
-input file and placing the RiMapper call in a try/catch block, so that we can handle any 
-exception.
+The data is similar to that in `example1.CAL`, with the only difference being that 
+`example2.CAL` includes Hexane as an additional calibration point. We'll run the same 
+commands as in the previous example, but this time, we'll specify a different input file 
+and wrap the [`RiMapper`](@ref) call in a try/catch block to handle any exceptions.
 
 ```@example 2
 using DelimitedFiles
@@ -162,7 +161,7 @@ using JuChrom
 
 filename = "example2.CAL"
 file = joinpath(JuChrom.calibration, filename)
-data_cells = readdlm(file; header=false)  # set header=true if the file contains a header
+data_cells = readdlm(file; header=false)
 
 timeunit = u"minute"
 rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
@@ -171,6 +170,23 @@ ris = convert(Vector{Float64}, data_cells[:, 2])
 try
   ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
 catch e
-  println("an error occurred: $e")
+  println(e)
+end
+```
+
+As shown in the output, the creation of a natural cubic B-spline that predicts continuously 
+increasing retention indices with increasing retention time has failed. However, we can 
+still force the B-spline interpolator to be returned, even if it contains critical points 
+in one or more polynomials. This is achieved by explicitly specifying `NaturalCubicBSpline` 
+as the interpolator and setting the `force` option in its keyword argument to `true`. This 
+approach can be useful for identifying problematic or erroneous calibration points. Let's 
+give it a try.
+
+```@example 2
+try
+  ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
+    interpolationmethod=NaturalCubicBSpline(force=true))
+catch e
+  println(e)
 end
 ```
