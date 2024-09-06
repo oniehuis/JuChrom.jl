@@ -183,8 +183,6 @@ keyword argument to `true`. This approach can be useful for identifying problema
 erroneous calibration points. Let's give it a try.
 
 ```@example 2
-ld = nothing
-
 try
   ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
     interpolationmethod=NaturalCubicBSpline(force=true))
@@ -194,45 +192,56 @@ end
 ```
 
 Let's use the returned [`RiMapper`](@ref) object to plot the compromised mapping function 
-using the code from the previous example.
+using the code from the previous example wrapped into a function that we call from within 
+the `try` block.
 
 ```@example 2
 using CairoMakie
 
-# Create figure
-f = Figure(; size=(1200, 600))
+function saveplot(ld::RiMapper)
+  # Create figure
+  f = Figure(; size=(1200, 600))
 
-# Create axis in figure, including informative title and axis labels
-title = get(metadata(ld), :filename, "")
-ri_name = retentionindexname(ld)
-ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
-    ylabel="$ri_name retention index")
+  # Create axis in figure, including informative title and axis labels
+  title = get(metadata(ld), :filename, "")
+  ri_name = retentionindexname(ld)
+  ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
+      ylabel="$ri_name retention index")
 
-# Plot calibration points
-cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+  # Plot calibration points
+  cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
 
-# Plot interpolated values
-xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
-itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+  # Plot interpolated values
+  xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+  itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-# Calculate extrapolation range
-Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+  # Calculate extrapolation range
+  Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
 
-# Plot left-end extrapolation
-xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+  # Plot left-end extrapolation
+  xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+  etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 
-# Plot right-end extrapolation
-xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+  # Plot right-end extrapolation
+  xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
+  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
-# Add an informative legend
-axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
-    "left-end extrapolation", "right-end extrapolation"], position = :lt, 
-    orientation = :horizontal)
+  # Add an informative legend
+  axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
+      "left-end extrapolation", "right-end extrapolation"], position = :lt, 
+      orientation = :horizontal)
 
-# Save figure in svg file format
-save("rt2ri_2.svg", f)
+  # Save figure in svg file format
+  save("rt2ri_2.svg", f)
+end
+
+try
+  ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
+    interpolationmethod=NaturalCubicBSpline(force=true))
+  saveplot(ld)
+catch e
+  println(e)
+end
 ```
 
 This will produce the following 
