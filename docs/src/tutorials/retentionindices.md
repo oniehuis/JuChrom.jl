@@ -57,7 +57,7 @@ The variable data_cells refers to a matrix, which at this stage contains the fol
  29.366  3600.0   91   723  "Hexatriacontane"
  32.026  3700.0   88   602  "Heptatriacontane"
  35.273  3800.0   85   493  "Octatriacontane"
- ```
+```
 
 We will use slice notation to extract the values from the first and second columns. 
 Additionally, we will convert the element types to Float64 and Int, respectively. Finally, 
