@@ -78,7 +78,7 @@ using CairoMakie
 # Create figure
 f = Figure(; size=(1200, 600))
 
-# Create axis in figure, incl. informative title and axis lables
+# Create axis in figure, including informative title and axis labels
 title = get(metadata(ld), :filename, "")
 ri_name = retentionindexname(ld)
 ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
@@ -91,7 +91,7 @@ cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), col
 xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
 itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-# Calculate extend of extrapolation
+# Calculate extrapolation range
 Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
 
 # Plot left-end extrapolation
@@ -102,7 +102,7 @@ etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) +  Δt, 100)
 etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
-# Add informative legend
+# Add an informative legend
 axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
     "left-end extrapolation", "right-end extrapolation"], position = :lt, 
     orientation = :horizontal)
@@ -111,6 +111,6 @@ axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation
 save("rt2ri.svg", f);
 ```
 
-This generates the following scalable vector graphic (SVG) file:
+This will produce the following scalable vector graphics file:
 
 ![](rt2ri.svg)
