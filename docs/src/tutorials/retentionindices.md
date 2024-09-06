@@ -47,7 +47,7 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
 The output above displays the contents of the matrix referred to by the variable 
 `data_cells` at this point. We will use slice notation to extract the values from the 
 first and second columns. Additionally, we will convert these values to `Float64` and 
-append the minute time unit to the retention time values. The following two lines of code 
+append the minute time unit to the retention time values. The following three lines of code 
 will achieve this:
 
 ```@example 1
