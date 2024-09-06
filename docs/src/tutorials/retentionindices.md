@@ -113,4 +113,4 @@ save("rt2ri.svg", f);
 
 This generates the following scalable vector graphic (SVG) file:
 
-![](appingfunction.svg)
+![](rt2ri.svg)
