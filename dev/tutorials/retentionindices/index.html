@@ -34,7 +34,8 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
  27.204  3500.0   90   819  &quot;Pentatriacontane&quot;
  29.366  3600.0   91   723  &quot;Hexatriacontane&quot;
  32.026  3700.0   88   602  &quot;Heptatriacontane&quot;
- 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>The output above displays the contents of the matrix referred to by the variable  <code>data_cells</code> at this point. We will use slice notation to extract the values from the  first and second columns. Additionally, we will convert these values to <code>Float64</code> and  append the minute time unit to the retention time values. The following two lines of code  will achieve this:</p><pre><code class="language-julia hljs">rts = convert(Vector{Float64}, data_cells[:, 1]) * u&quot;minute&quot;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
+ 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>The output above displays the contents of the matrix referred to by the variable  <code>data_cells</code> at this point. We will use slice notation to extract the values from the  first and second columns. Additionally, we will convert these values to <code>Float64</code> and  append the minute time unit to the retention time values. The following two lines of code  will achieve this:</p><pre><code class="language-julia hljs">timeunit = u&quot;minute&quot;
+rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
   4.154 minute
   5.635 minute
   7.145 minute
@@ -81,8 +82,38 @@ interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 1 entry</code></pre><p>Since we did not explicitly specify an interpolation method or an extrapolation method,  the constructor defaulted to <code>NaturalCubicBSpline()</code> for interpolation and <code>Linear()</code> for  extrapolation.</p><p>We now have a retention index mapper that allows us to convert retention times into  retention indices. Let&#39;s use it to plot the mapping function. We will use the CairoMakie  package of the Makie visualization ecosystem.</p><pre><code class="language-julia hljs">using CairoMakie
 
-f = Figure()
-ax = Axis(f[1,1])
-scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
-save(&quot;appingfunction.svg&quot;, f)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
-</code></pre><p>This generate the following scalable vector graphic (svg) file: <img src="../appingfunction.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 15:00">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# Create figure
+f = Figure(; size=(1200, 600))
+
+# Create axis in figure, incl. informative title and axis lables
+title = get(metadata(ld), :filename, &quot;&quot;)
+ri_name = retentionindexname(ld)
+ax = Axis(f[1,1], title=title, xlabel=&quot;Scan time [$timeunit]&quot;,
+    ylabel=&quot;$ri_name retention index&quot;)
+
+# Plot calibration points
+cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+
+# Plot interpolated values
+xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+
+# Calculate extend of extrapolation
+Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+
+# Plot left-end extrapolation
+xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+
+# Plot right-end extrapolation
+xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) +  Δt, 100)
+etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+
+# Add informative legend
+axislegend(ax, [cal, itp, etpₗ, etpᵣ], [&quot;calibration points&quot;, &quot;interpolation&quot;,
+    &quot;left-end extrapolation&quot;, &quot;right-end extrapolation&quot;], position = :lt,
+    orientation = :horizontal)
+
+# Save figure in svg file format
+save(&quot;rt2ri.svg&quot;, f);</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
+</code></pre><p>This generates the following scalable vector graphic (SVG) file:</p><p><img src="../rt2ri.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 15:52">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
