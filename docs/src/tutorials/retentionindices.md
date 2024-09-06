@@ -42,7 +42,6 @@ using JuChrom
 filename = "example1.CAL"
 file = joinpath(JuChrom.calibration, filename)
 data_cells = readdlm(file; header=false)  # set header=true if the file contains a header
-nothing # hide
 ```
 
 The output above displays the contents of the matrix referred to by the variable 
@@ -69,6 +68,7 @@ calibration file as [`metadata`](@ref).
 
 ```@example 1
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
+nothing # hide
 ```
 
 Since we did not explicitly specify an interpolation method or an extrapolation method, 
