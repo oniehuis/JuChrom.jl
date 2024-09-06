@@ -14,6 +14,8 @@ makedocs(
             "man/retentionindices.md",
             "man/import.md",
             "man/export.md"],
+        "Tutorials" => Any[
+            "tutorials/retentionindices.md"],
         "Developers" => Any["man/internals.md"],
         "Index" => "man/register.md"
     ]
