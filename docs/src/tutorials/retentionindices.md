@@ -121,7 +121,7 @@ axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation
     orientation = :horizontal)
 
 # Save figure in svg file format
-save("rt2ri.svg", f);
+save("rt2ri.svg", f); nothing # hide
 ```
 
 This will produce the following 
