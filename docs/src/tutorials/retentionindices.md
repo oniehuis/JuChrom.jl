@@ -46,7 +46,8 @@ append the minute time unit to the retention time values. The following two line
 will achieve this:
 
 ```@example 1
-rts = convert(Vector{Float64}, data_cells[:, 1]) * u"minute"
+timeunit = u"minute"
+rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
 ```
 
 ```@example 1
@@ -74,14 +75,40 @@ package of the Makie visualization ecosystem.
 ```@example 1
 using CairoMakie
 
-f = Figure(; size=(1200:800))
-ax = Axis(f[1,1])
-scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
-start = minretentiontime(ld, ustripped=true) * 0.8
-stop = maxretentiontime(ld, ustripped=true) * 1.2
-xs = LinRange(start, stop, 1000)
-lines!(ax, xs, retentionindex.(xs * u"minute"))
-save("appingfunction.svg", f);
+# Create figure
+f = Figure(; size=(1200, 600))
+
+# Create axis in figure, incl. informative title and axis lables
+title = get(metadata(ld), :filename, "")
+ri_name = retentionindexname(ld)
+ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
+    ylabel="$ri_name retention index")
+
+# Plot calibration points
+cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+
+# Plot interpolated values
+xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+
+# Calculate extend of extrapolation
+Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+
+# Plot left-end extrapolation
+xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+
+# Plot right-end extrapolation
+xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) +  Δt, 100)
+etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+
+# Add informative legend
+axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
+    "left-end extrapolation", "right-end extrapolation"], position = :lt, 
+    orientation = :horizontal)
+
+# Save figure in svg file format
+save("rt2ri.svg", f);
 ```
 
 This generates the following scalable vector graphic (SVG) file:
