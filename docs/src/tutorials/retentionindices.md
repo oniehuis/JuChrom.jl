@@ -79,10 +79,11 @@ including the [`retentionindexname`](@ref) and the [`retentiontimes`](@ref) and
 [`retentionindices`](@ref) used as calibration points. It also provides the names of the 
 [`extrapolationmethod`](@ref) and the [`interpolationmethod`](@ref), along with the 
 [`metadata`](@ref). Most importantly, it allows us to calculate the 
-[`retentionindex`](@ref) for a given retention time of interest. Let's use this object to 
-plot the mapping function, utilizing the 
+[`retentionindex`](@ref) for a given retention time of interest. Let's use this to plot the 
+mapping function with the 
 [CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
-the [Makie visualization ecosystem](https://docs.makie.org)."
+the [Makie visualization ecosystem](https://docs.makie.org). If you haven't installed it 
+yet, you may need to do so.
 
 ```@example 1
 using CairoMakie
@@ -111,7 +112,7 @@ xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
 etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 
 # Plot right-end extrapolation
-xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) +  Δt, 100)
+xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
 etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
 # Add an informative legend
