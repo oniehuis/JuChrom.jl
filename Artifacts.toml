@@ -11,3 +11,10 @@ git-tree-sha1 = "fbb1cfc928d393c7b88470d38380a57185f7973f"
     [[ANDI.download]]
     url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/ANDI.tar.gz"
     sha256 = "fc781115eadba07853c2030fe64300d5569492e7cfa04374d4ab3e3edeb8d192"
+
+[calibration]
+git-tree-sha1 = "865d2cb7a5474f0315a4c8dc12bfcd6e527afa9d"
+
+    [[calibration.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/calibration.tar.gz"
+    sha256 = "40dbc971a3447633218a0bc925ce5696aa896f96948d9c59142c1a8618a9d112"

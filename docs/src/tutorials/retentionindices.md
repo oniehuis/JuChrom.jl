@@ -34,12 +34,8 @@ point as well.
 using DelimitedFiles
 using JuChrom
 
-path = "./"
 filename = "example1.CAL"
-file = joinpath(path, filename)
-```
-
-```julia
+file = joinpath(JuChrom.calibration, filename)
 data_cells = readdlm(file; header=false)  # set header=true if the file contains a header
 ```
 

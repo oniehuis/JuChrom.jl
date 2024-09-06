@@ -10,6 +10,7 @@ using PrecompileTools: @setup_workload, @compile_workload
 
 const agilent = artifact"Agilent"
 const andi = artifact"ANDI"
+const calibration = artifact"calibration"
 
 include("base.jl")
 include("retentionindices.jl")
