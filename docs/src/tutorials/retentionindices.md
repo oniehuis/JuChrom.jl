@@ -122,11 +122,55 @@ axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation
 
 # Save figure in svg file format
 save("rt2ri.svg", f)
-
-println()
 ```
 
 This will produce the following 
 [Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
 
 ![](rt2ri.svg)
+
+In the previous example, the computation of a natural cubic B-spline for calculating a 
+continuously increasing retention index worked as expected. However, this is not always 
+the case. If the computed B-spline contains critical points that would cause the retention 
+index to decrease as retention time increases, the creation of the RiMapper would result 
+in an error. Let's examine an example. The contents of the file `example2.CAL` are as 
+follows:
+
+```
+3.394 600.0 100 742 Hexane
+4.154 900.0 98 1478 Nonane
+5.635 1000.0 100 1215 Decane
+7.145 1100.0 95 1606 Undecane
+8.628 1200.0 100 1762 Dodecane
+  ⋮
+25.435 3400.0 92 920 Tetratriacontane
+27.204 3500.0 90 819 Pentatriacontane
+29.366 3600.0 91 723 Hexatriacontane
+32.026 3700.0 88 602 Heptatriacontane
+35.273 3800.0 85 493 Octatriacontane
+```
+
+The data is similar to that in `example1.CAL`. In fact, the only difference between the 
+two files is that `example2.CAL` includes Hexane as an additional calibration point. Let's
+execute the same statements as in the previous example, except that specify a different 
+input file and placing the RiMapper call in a try/catch block, so that we can handle any 
+exception.
+
+```@example 2
+using DelimitedFiles
+using JuChrom
+
+filename = "example2.CAL"
+file = joinpath(JuChrom.calibration, filename)
+data_cells = readdlm(file; header=false)  # set header=true if the file contains a header
+
+timeunit = u"minute"
+rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
+ris = convert(Vector{Float64}, data_cells[:, 2])
+
+try
+  ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
+catch e
+  println("an error occurred: $e")
+end
+```
