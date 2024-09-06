@@ -68,7 +68,6 @@ calibration file as [`metadata`](@ref).
 
 ```@example 1
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
-nothing # hide
 ```
 
 Since we did not explicitly specify an interpolation method or an extrapolation method, 
@@ -120,10 +119,11 @@ etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
     "left-end extrapolation", "right-end extrapolation"], position = :lt, 
     orientation = :horizontal)
+nothing # hide
+```
 
 # Save figure in svg file format
 save("rt2ri.svg", f)
-```
 
 This will produce the following 
 [Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
