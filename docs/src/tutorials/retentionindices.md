@@ -45,8 +45,7 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
 The variable data_cells refers to a matrix, which at this stage contains the following data:
 
 ```
-31×5 Matrix{Any}:
-  3.394   600.0  100   742  "Hexane"
+30×5 Matrix{Any}:
   4.154   900.0   98  1478  "Nonane"
   5.635  1000.0  100  1215  "Decane"
   7.145  1100.0   95  1606  "Undecane"
@@ -59,12 +58,57 @@ The variable data_cells refers to a matrix, which at this stage contains the fol
  35.273  3800.0   85   493  "Octatriacontane"
 ```
 
-We will use slice notation to extract the values from the first and second columns. 
-Additionally, we will convert the element types to Float64 and Int, respectively. Finally, 
-we'll attach the minute time unit to the retention time values. The following two lines of 
-code will accomplish this:
+We will use slice notation to extract the values from the first and second columns. Additionally, we will convert the element types to `Float64`. Finally, we'll attach the minute time unit to the retention time values. The following two lines of code will accomplish this:
 
 ```julia
 rts = convert(Vector{Float64}, data_cells[:, 1]) * u"minute"
-ris = convert(Vector{Int}, data_cells[:, 2])
+ris = convert(Vector{Float64}, data_cells[:, 2])
+```
+
+The contents of the rts vector is as follows:
+```
+30-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
+  3.394 minute
+  4.154 minute
+  5.635 minute
+  7.145 minute
+  8.628 minute
+             ⋮
+ 25.435 minute
+ 27.204 minute
+ 29.366 minute
+ 32.026 minute
+ 35.273 minute
+```
+
+The contents of the ris vector is as follows:
+```
+30-element Vector{Int64}:
+  900
+ 1000
+ 1100
+ 1200
+    ⋮
+ 3400
+ 3500
+ 3600
+ 3700
+ 3800
+```
+
+We can now create a `RiMapper` object by calling its constructor with the required arguments, along with any optional ones if needed. The mandatory arguments include the name of the retention index (in our case, `"Kovats"`), the retention time, and the corresponding retention indices. In this example, we also store the name of the calibration file as `metadata`.
+
+```julia
+ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
+```
+
+Since we did not explicitly specify an interpolation method or an extrapolation method, the constructor defaulted to `NaturalCubicBSpline()` for interpolation and `Linear()` for extrapolation. This is also show automatically, when following this tutorial in the REPL.
+
+```
+RiMapper {index name: Kovats, calibration points: 30}
+retention time range: 4.154 minute - 35.273 minute
+retention index range: 900 - 3800
+interpolation method: NaturalCubicBSpline(false)
+extrapolation method: Linear()
+metadata: 1 entry
 ```
