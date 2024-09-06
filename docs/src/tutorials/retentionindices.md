@@ -1,6 +1,6 @@
 # Retention Indices
 
-## Example: Creating a RI mapper using calibration points from a delimited file
+## Example: Calibration points from a delimited file
 
 Let's assume we have a set of calibration points for calculating the Kovats retention 
 index, stored in a delimited file. The first step is to read and format the data so it can 
