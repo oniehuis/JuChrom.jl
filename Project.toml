@@ -15,3 +15,6 @@ Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
 StringEncodings = "69024149-9ee7-55f6-a4c4-859efe599b68"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
+
+[compat]
+julia = "1.10"
