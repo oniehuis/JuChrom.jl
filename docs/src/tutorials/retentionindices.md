@@ -183,6 +183,8 @@ keyword argument to `true`. This approach can be useful for identifying problema
 erroneous calibration points. Let's give it a try.
 
 ```@example 2
+ld = nothing
+
 try
   ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
     interpolationmethod=NaturalCubicBSpline(force=true))
