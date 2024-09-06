@@ -83,17 +83,17 @@ The contents of the rts vector is as follows:
 
 The contents of the ris vector is as follows:
 ```
-30-element Vector{Int64}:
-  900
- 1000
- 1100
- 1200
-    ⋮
- 3400
- 3500
- 3600
- 3700
- 3800
+30-element Vector{Float64}:
+  900.0
+ 1000.0
+ 1100.0
+ 1200.0
+      ⋮
+ 3400.0
+ 3500.0
+ 3600.0
+ 3700.0
+ 3800.0
 ```
 
 We can now create a `RiMapper` object by calling its constructor with the required arguments, along with any optional ones if needed. The mandatory arguments include the name of the retention index (in our case, `"Kovats"`), the retention time, and the corresponding retention indices. In this example, we also store the name of the calibration file as `metadata`.
@@ -107,7 +107,7 @@ Since we did not explicitly specify an interpolation method or an extrapolation 
 ```
 RiMapper {index name: Kovats, calibration points: 30}
 retention time range: 4.154 minute - 35.273 minute
-retention index range: 900 - 3800
+retention index range: 900.0 - 3800.0
 interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
 metadata: 1 entry
