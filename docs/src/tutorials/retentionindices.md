@@ -55,18 +55,10 @@ ris = convert(Vector{Float64}, data_cells[:, 2])
 
 We can now create a `RiMapper` object by calling its constructor with the required arguments, along with any optional ones if needed. The mandatory arguments include the name of the retention index (in our case, `"Kovats"`), the retention time, and the corresponding retention indices. In this example, we also store the name of the calibration file as `metadata`.
 
-```julia
+```@example 1
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
 ```
 
-Since we did not explicitly specify an interpolation method or an extrapolation method, the constructor defaulted to `NaturalCubicBSpline()` for interpolation and `Linear()` for extrapolation. This is also show automatically, when following this tutorial in the REPL.
-
-```
-RiMapper {index name: Kovats, calibration points: 30}
-retention time range: 4.154 minute - 35.273 minute
-retention index range: 900.0 - 3800.0
-interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
-metadata: 1 entry
-```
-
+Since we did not explicitly specify an interpolation method or an extrapolation method, 
+the constructor defaulted to `NaturalCubicBSpline()` for interpolation and `Linear()` for 
+extrapolation.
