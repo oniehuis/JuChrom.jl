@@ -34,34 +34,42 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
  27.204  3500.0   90   819  &quot;Pentatriacontane&quot;
  29.366  3600.0   91   723  &quot;Hexatriacontane&quot;
  32.026  3700.0   88   602  &quot;Heptatriacontane&quot;
- 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>The variable data_cells refers to a matrix, which at this stage contains the following data:</p><pre><code class="nohighlight hljs">30×5 Matrix{Any}:
-  4.154   900.0   98  1478  &quot;Nonane&quot;
-  5.635  1000.0  100  1215  &quot;Decane&quot;
-  7.145  1100.0   95  1606  &quot;Undecane&quot;
-  8.628  1200.0  100  1762  &quot;Dodecane&quot;
- ...
- 25.435  3400.0   92   920  &quot;Tetratriacontane&quot;
- 27.204  3500.0   90   819  &quot;Pentatriacontane&quot;
- 29.366  3600.0   91   723  &quot;Hexatriacontane&quot;
- 32.026  3700.0   88   602  &quot;Heptatriacontane&quot;
- 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>We will use slice notation to extract the values from the first and second columns. Additionally, we will convert the element types to <code>Float64</code>. Finally, we&#39;ll attach the minute time unit to the retention time values. The following two lines of code will accomplish this:</p><pre><code class="language-julia hljs">rts = convert(Vector{Float64}, data_cells[:, 1]) * u&quot;minute&quot;
-ris = convert(Vector{Float64}, data_cells[:, 2])</code></pre><p>The contents of the rts vector is as follows:</p><pre><code class="nohighlight hljs">30-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
-  3.394 minute
+ 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>The output above displays the contents of the matrix referred to by the variable  <code>data_cells</code> at this point. We will use slice notation to extract the values from the  first and second columns. Additionally, we will convert these values to <code>Float64</code> and  append the minute time unit to the retention time values. The following two lines of code  will achieve this:</p><pre><code class="language-julia hljs">rts = convert(Vector{Float64}, data_cells[:, 1]) * u&quot;minute&quot;</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
   4.154 minute
   5.635 minute
   7.145 minute
   8.628 minute
+ 10.043 minute
+  11.39 minute
+ 12.667 minute
+ 13.877 minute
+ 14.876 minute
+ 15.608 minute
              ⋮
+ 21.026 minute
+  21.83 minute
+ 22.807 minute
+ 23.991 minute
  25.435 minute
  27.204 minute
  29.366 minute
  32.026 minute
- 35.273 minute</code></pre><p>The contents of the ris vector is as follows:</p><pre><code class="nohighlight hljs">30-element Vector{Float64}:
+ 35.273 minute</code></pre><pre><code class="language-julia hljs">ris = convert(Vector{Float64}, data_cells[:, 2])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30-element Vector{Float64}:
   900.0
  1000.0
  1100.0
  1200.0
-      ⋮
+ 1300.0
+ 1400.0
+ 1500.0
+ 1600.0
+ 1700.0
+ 1800.0
+    ⋮
+ 3000.0
+ 3100.0
+ 3200.0
+ 3300.0
  3400.0
  3500.0
  3600.0
@@ -71,4 +79,4 @@ retention time range: 4.154 minute - 35.273 minute
 retention index range: 900.0 - 3800.0
 interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
-metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 11:42">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 11:49">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
