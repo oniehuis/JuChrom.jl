@@ -74,11 +74,16 @@ package of the Makie visualization ecosystem.
 ```@example 1
 using CairoMakie
 
-f = Figure()
+f = Figure(; size=(1200:800))
 ax = Axis(f[1,1])
 scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
-save("appingfunction.svg", f)
+start = minretentiontime(ld, ustripped=true) * 0.8
+stop = maxretentiontime(ld, ustripped=true) * 1.2
+xs = LinRange(start, stop, 1000)
+lines!(ax, xs, retentionindex.(xs * u"minute"))
+save("appingfunction.svg", f);
 ```
 
-This generate the following scalable vector graphic (svg) file:
+This generates the following scalable vector graphic (SVG) file:
+
 ![](appingfunction.svg)
