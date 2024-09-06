@@ -122,7 +122,6 @@ axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation
 
 # Save figure in svg file format
 save("rt2ri.svg", f)
-nothing # hide
 ```
 
 This will produce the following 
