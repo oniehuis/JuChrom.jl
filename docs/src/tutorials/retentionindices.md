@@ -121,11 +121,3 @@ axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation
     orientation = :horizontal)
 nothing # hide
 ```
-
-# Save figure in svg file format
-save("rt2ri.svg", f)
-
-This will produce the following 
-[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
-
-# ![](rt2ri.svg)
