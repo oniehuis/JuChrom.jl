@@ -39,19 +39,19 @@ ris = convert(Vector{Float64}, data_cells[:, 2])</code></pre><p>The contents of 
  27.204 minute
  29.366 minute
  32.026 minute
- 35.273 minute</code></pre><p>The contents of the ris vector is as follows:</p><pre><code class="nohighlight hljs">30-element Vector{Int64}:
-  900
- 1000
- 1100
- 1200
-    ⋮
- 3400
- 3500
- 3600
- 3700
- 3800</code></pre><p>We can now create a <code>RiMapper</code> object by calling its constructor with the required arguments, along with any optional ones if needed. The mandatory arguments include the name of the retention index (in our case, <code>&quot;Kovats&quot;</code>), the retention time, and the corresponding retention indices. In this example, we also store the name of the calibration file as <code>metadata</code>.</p><pre><code class="language-julia hljs">ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename))</code></pre><p>Since we did not explicitly specify an interpolation method or an extrapolation method, the constructor defaulted to <code>NaturalCubicBSpline()</code> for interpolation and <code>Linear()</code> for extrapolation. This is also show automatically, when following this tutorial in the REPL.</p><pre><code class="nohighlight hljs">RiMapper {index name: Kovats, calibration points: 30}
+ 35.273 minute</code></pre><p>The contents of the ris vector is as follows:</p><pre><code class="nohighlight hljs">30-element Vector{Float64}:
+  900.0
+ 1000.0
+ 1100.0
+ 1200.0
+      ⋮
+ 3400.0
+ 3500.0
+ 3600.0
+ 3700.0
+ 3800.0</code></pre><p>We can now create a <code>RiMapper</code> object by calling its constructor with the required arguments, along with any optional ones if needed. The mandatory arguments include the name of the retention index (in our case, <code>&quot;Kovats&quot;</code>), the retention time, and the corresponding retention indices. In this example, we also store the name of the calibration file as <code>metadata</code>.</p><pre><code class="language-julia hljs">ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename))</code></pre><p>Since we did not explicitly specify an interpolation method or an extrapolation method, the constructor defaulted to <code>NaturalCubicBSpline()</code> for interpolation and <code>Linear()</code> for extrapolation. This is also show automatically, when following this tutorial in the REPL.</p><pre><code class="nohighlight hljs">RiMapper {index name: Kovats, calibration points: 30}
 retention time range: 4.154 minute - 35.273 minute
-retention index range: 900 - 3800
+retention index range: 900.0 - 3800.0
 interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
-metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 10:52">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 10:59">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
