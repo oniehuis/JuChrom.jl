@@ -12,9 +12,29 @@
 35.273 3800.0 85 493 Octatriacontane</code></pre><p>As we can see, the file contains whitespace-separated columns, but only the first two are  relevant for our purposes. The first column lists the retention times (in minutes), while  the second column provides the corresponding retention indices.</p><p>We will use a function from the <code>DelimitedFiles</code> package, included with Julia, to read the  file contents. Additionally, we need to attach the <code>minute</code> time unit to the time values.  Since JuChrom reexports the names from the <code>Unitful</code> package, we will load JuChrom at this  point as well.</p><pre><code class="language-julia hljs">using DelimitedFiles
 using JuChrom
 
-path = &quot;./&quot;
 filename = &quot;example1.CAL&quot;
-file = joinpath(path, filename)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">&quot;./example1.CAL&quot;</code></pre><pre><code class="language-julia hljs">data_cells = readdlm(file; header=false)  # set header=true if the file contains a header</code></pre><p>The variable data_cells refers to a matrix, which at this stage contains the following data:</p><pre><code class="nohighlight hljs">30×5 Matrix{Any}:
+file = joinpath(JuChrom.calibration, filename)
+data_cells = readdlm(file; header=false)  # set header=true if the file contains a header</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">30×5 Matrix{Any}:
+  4.154   900.0   98  1478  &quot;Nonane&quot;
+  5.635  1000.0  100  1215  &quot;Decane&quot;
+  7.145  1100.0   95  1606  &quot;Undecane&quot;
+  8.628  1200.0  100  1762  &quot;Dodecane&quot;
+ 10.043  1300.0  100  1782  &quot;Tridecane&quot;
+ 11.39   1400.0   91  1909  &quot;Tetradecane&quot;
+ 12.667  1500.0   96  1956  &quot;Pentadecane&quot;
+ 13.877  1600.0  100  1925  &quot;Hexadecane&quot;
+ 14.876  1700.0   99  2029  &quot;Heptadecane&quot;
+ 15.608  1800.0   95  2021  &quot;Octadecane&quot;
+  ⋮                         
+ 21.026  3000.0   86  1742  &quot;Triacontane&quot;
+ 21.83   3100.0   93  1134  &quot;Hentriacontane&quot;
+ 22.807  3200.0   92  1105  &quot;Dotriacontane&quot;
+ 23.991  3300.0   94  1020  &quot;Tritriacontane&quot;
+ 25.435  3400.0   92   920  &quot;Tetratriacontane&quot;
+ 27.204  3500.0   90   819  &quot;Pentatriacontane&quot;
+ 29.366  3600.0   91   723  &quot;Hexatriacontane&quot;
+ 32.026  3700.0   88   602  &quot;Heptatriacontane&quot;
+ 35.273  3800.0   85   493  &quot;Octatriacontane&quot;</code></pre><p>The variable data_cells refers to a matrix, which at this stage contains the following data:</p><pre><code class="nohighlight hljs">30×5 Matrix{Any}:
   4.154   900.0   98  1478  &quot;Nonane&quot;
   5.635  1000.0  100  1215  &quot;Decane&quot;
   7.145  1100.0   95  1606  &quot;Undecane&quot;
@@ -51,4 +71,4 @@ retention time range: 4.154 minute - 35.273 minute
 retention index range: 900.0 - 3800.0
 interpolation method: NaturalCubicBSpline(false)
 extrapolation method: Linear()
-metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 11:13">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+metadata: 1 entry</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 11:42">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
