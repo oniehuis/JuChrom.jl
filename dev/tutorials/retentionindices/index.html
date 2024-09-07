@@ -126,7 +126,7 @@ save(&quot;rt2ri.svg&quot;, f)</code></pre><pre class="documenter-example-output
 27.204 3500.0 90 819 Pentatriacontane
 29.366 3600.0 91 723 Hexatriacontane
 32.026 3700.0 88 602 Heptatriacontane
-35.273 3800.0 85 493 Octatriacontane</code></pre><p>The data is similar to that in <code>example1.CAL</code>, with the only difference being that  <code>example2.CAL</code> includes Hexane as an additional calibration point. We&#39;ll run the same  commands as in the previous example, but this time, we&#39;ll specify a different input file  and wrap the <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> call in a try/catch block to handle any exceptions.</p><pre><code class="language-julia hljs">using DelimitedFiles
+35.273 3800.0 85 493 Octatriacontane</code></pre><p>The data is similar to that in <code>example1.CAL</code>, with the only difference being that  <code>example2.CAL</code> includes the retention time and retention index of Hexane as an additional  calibration point. We&#39;ll run the same commands as in the previous example, but this time,  we&#39;ll specify a different input file and wrap the <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> call in a try/catch  block to handle any exceptions.</p><pre><code class="language-julia hljs">using DelimitedFiles
 using JuChrom
 
 filename = &quot;example2.CAL&quot;
@@ -141,60 +141,51 @@ try
   ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename))
 catch e
   println(e)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ArgumentError(&quot;the interpolator does not produce continuously increasing values&quot;)</code></pre><p>As shown in the output, the creation of a natural cubic B-spline that predicts continuously  increasing retention indices with increasing retention time has failed. However, we can  still force the B-spline interpolator to be returned, even if it contains critical points  in one or more polynomials. This is achieved by explicitly specifying  <a href="../../man/retentionindices/#JuChrom.NaturalCubicBSpline"><code>NaturalCubicBSpline</code></a> as interpolatormetod and setting the <code>force</code> option in its  keyword argument to <code>true</code>. This approach can be useful for identifying problematic or  erroneous calibration points. Let&#39;s give it a try.</p><pre><code class="language-julia hljs">try
-  ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename),
-    interpolationmethod=NaturalCubicBSpline(force=true))
-catch e
-  println(e)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RiMapper {index name: Kovats, calibration points: 31}
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">ArgumentError(&quot;the interpolator does not produce continuously increasing values&quot;)</code></pre><p>As shown in the output, the creation of a natural cubic B-spline that predicts continuously  increasing retention indices with increasing retention time has failed. However, we can  still force the B-spline interpolator to be returned, even if it contains critical points  in one or more polynomials. This is achieved by explicitly specifying  <a href="../../man/retentionindices/#JuChrom.NaturalCubicBSpline"><code>NaturalCubicBSpline</code></a> as interpolatormetod and setting the <code>force</code> option in its  keyword argument to <code>true</code>. This approach can be useful for identifying problematic or  erroneous calibration points. Let&#39;s give it a try.</p><pre><code class="language-julia hljs">ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename),
+  interpolationmethod=NaturalCubicBSpline(force=true))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RiMapper {index name: Kovats, calibration points: 31}
 retention time range: 3.394 minute - 35.273 minute
 retention index range: 600.0 - 3800.0
 interpolation method: NaturalCubicBSpline(true)
 extrapolation method: Linear()
-metadata: 1 entry</code></pre><p>Let&#39;s use the returned <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> object to plot the compromised mapping function  using the code from the previous example wrapped into a function that we call from within  the <code>try</code> block.</p><pre><code class="language-julia hljs">using CairoMakie
+metadata: 1 entry</code></pre><p>Let&#39;s use the returned <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> object to plot the compromised mapping function  using the code from the previous example.</p><pre><code class="language-julia hljs">using CairoMakie
 
-function saveplot(ld::RiMapper)
-  # Create figure
-  f = Figure(; size=(1200, 600))
+# Create figure
+f = Figure(; size=(1200, 600))
 
-  # Create axis in figure, including informative title and axis labels
-  title = get(metadata(ld), :filename, &quot;&quot;)
-  ri_name = retentionindexname(ld)
-  ax = Axis(f[1,1], title=title, xlabel=&quot;Scan time [$timeunit]&quot;,
-      ylabel=&quot;$ri_name retention index&quot;)
+# Create axis in figure, including informative title and axis labels
+title = get(metadata(ld), :filename, &quot;&quot;)
+ri_name = retentionindexname(ld)
+ax = Axis(f[1,1], title=title, xlabel=&quot;Scan time [$timeunit]&quot;,
+    ylabel=&quot;$ri_name retention index&quot;)
 
-  # Plot calibration points
-  cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+# Plot calibration points
+cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
 
-  # Plot interpolated values
-  xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
-  itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+# Plot interpolated values
+xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-  # Calculate extrapolation range
-  Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+# Calculate extrapolation range
+Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
 
-  # Plot left-end extrapolation
-  xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-  etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+# Plot left-end extrapolation
+xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 
-  # Plot right-end extrapolation
-  xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+# Plot right-end extrapolation
+xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
+etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
-  # Add an informative legend
-  axislegend(ax, [cal, itp, etpₗ, etpᵣ], [&quot;calibration points&quot;, &quot;interpolation&quot;,
-      &quot;left-end extrapolation&quot;, &quot;right-end extrapolation&quot;], position = :lt,
-      orientation = :horizontal)
+# Add an informative legend
+axislegend(ax, [cal, itp, etpₗ, etpᵣ], [&quot;calibration points&quot;, &quot;interpolation&quot;,
+    &quot;left-end extrapolation&quot;, &quot;right-end extrapolation&quot;], position = :lt,
+    orientation = :horizontal)
 
-  # Save figure in svg file format
-  save(&quot;rt2ri_2.svg&quot;, f)
-end
-
-try
-  ld = RiMapper(&quot;Kovats&quot;, rts, ris, metadata=Dict(:filename =&gt; filename),
-    interpolationmethod=NaturalCubicBSpline(force=true))
-  saveplot(ld)
-catch e
-  println(e)
-end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
-</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri_2.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Friday 6 September 2024 23:35">Friday 6 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+# Save figure in svg file format
+save(&quot;rt2ri_2.svg&quot;, f)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
+</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri_2.svg" alt/></p><p>As observed, the sharp increase in the retention index between minutes 3.394 and 4.154  resulted in the construction of a B-spline with two critical points in its second  polynomial. This outcome is not related to Hexane being an unsuitable calibration point.  Instead, the significant disparity in the RT-RI relationship in the first segment of the  B-spline, compared to the subsequent segments, causes the B-spline to oscillate. This  oscillation suggests that the available set of calibration points at the start of the run  is insufficient for reliable prediction of retention indices in this region using the  chosen interpolation method. It is entirely possible that a denser sampling of calibration  points at the beginning of the run could resolve this issue, particularly given the large  RI interval between Hexane and Nonane compared to subsequent calibration points. However,  if the RiMapper is primarily intended to interpolate values between, say, minutes 10 and  30, the simplest solution may be to simply omit this calibration point.</p><pre><code class="language-julia hljs">ld = RiMapper(&quot;Kovats&quot;, rts[2:end], ris[2:end], metadata=Dict(:filename =&gt; filename))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RiMapper {index name: Kovats, calibration points: 30}
+retention time range: 4.154 minute - 35.273 minute
+retention index range: 900.0 - 3800.0
+interpolation method: NaturalCubicBSpline(false)
+extrapolation method: Linear()
+metadata: 1 entry</code></pre><p>The resulting mapping function is identical to the one presented in the first example of  this tutorial.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Saturday 7 September 2024 08:21">Saturday 7 September 2024</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
