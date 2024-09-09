@@ -209,6 +209,7 @@ we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a `
 `catch` block to handle any exceptions.
 
 ```@example 3
+using CairoMakie
 using DelimitedFiles
 using JuChrom
 
@@ -216,8 +217,7 @@ filename = "example2.CAL"
 file = joinpath(JuChrom.calibration, filename)
 data_cells = readdlm(file; header=false)
 
-timeunit = u"minute"
-rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
+rts = convert(Vector{Float64}, data_cells[:, 1]) * u"minute"
 ris = convert(Vector{Float64}, data_cells[:, 2])
 
 try
@@ -244,42 +244,45 @@ Let's use the returned [`RiMapper`](@ref) object to plot the compromised mapping
 using the code from the previous example.
 
 ```@example 3
-using CairoMakie
+# <- Insert code of plotmappingfunction here
 
-# Create figure
-f = Figure(; size=(1200, 600))
+# using CairoMakie
 
-# Create axis in figure, including informative title and axis labels
-title = get(metadata(ld), :filename, "")
-ri_name = retentionindexname(ld)
-ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
-    ylabel="$ri_name retention index")
+# # Create figure
+# f = Figure(; size=(1200, 600))
 
-# Plot calibration points
-cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+# # Create axis in figure, including informative title and axis labels
+# title = get(metadata(ld), :filename, "")
+# ri_name = retentionindexname(ld)
+# ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
+#     ylabel="$ri_name retention index")
 
-# Plot interpolated values
-xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
-itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+# # Plot calibration points
+# cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
 
-# Calculate extrapolation range
-Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+# # Plot interpolated values
+# xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+# itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-# Plot left-end extrapolation
-xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+# # Calculate extrapolation range
+# Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
 
-# Plot right-end extrapolation
-xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+# # Plot left-end extrapolation
+# xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+# etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 
-# Add an informative legend
-axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
-    "left-end extrapolation", "right-end extrapolation"], position = :lt, 
-    orientation = :horizontal)
+# # Plot right-end extrapolation
+# xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
+# etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
-# Save figure in svg file format
-save("rt2ri_2.svg", f)
+# # Add an informative legend
+# axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
+#     "left-end extrapolation", "right-end extrapolation"], position = :lt, 
+#     orientation = :horizontal)
+
+# # Save figure in svg file format
+# save("rt2ri_2.svg", f)
+plotmappingfunction(ld, "rt2ri_2.svg")
 ```
 
 This will produce the following 
