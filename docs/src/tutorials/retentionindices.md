@@ -116,7 +116,7 @@ function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
 
   # Plot right-end extrapolation
   xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:lawngreen)
+  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:green)
 
   # Add an informative legend
   axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
@@ -221,7 +221,7 @@ rts = convert(Vector{Float64}, data_cells[:, 1]) * u"minute"
 ris = convert(Vector{Float64}, data_cells[:, 2])
 
 try
-  ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
+  global ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
 catch e
   println(e)
 end
