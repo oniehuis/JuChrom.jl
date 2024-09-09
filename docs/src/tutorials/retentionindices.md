@@ -246,7 +246,6 @@ using the code from the previous example.
 ```@example 1
 # <- Insert plotmappingfunction code here
 plotmappingfunction(ld, "rt2ri_2.svg")
-nothing # hide
 ```
 
 This will produce the following 
