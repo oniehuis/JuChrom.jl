@@ -52,12 +52,11 @@ data_cells = readdlm(file; header=false)  # set header=true if the file contains
 The output above displays the contents of the matrix referred to by the variable 
 `data_cells` at this point. We will use slice notation to extract the values from the 
 first and second columns. Additionally, we will convert these values to `Float64` and 
-append the minute time unit to the retention time values. The following three lines of code 
+append the minute time unit to the retention time values. The following two lines of code 
 will achieve this:
 
 ```@example 1
-timeunit = u"minute"
-rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
+rts = convert(Vector{Float64}, data_cells[:, 1]) * u"minute"
 ```
 
 ```@example 1
@@ -90,13 +89,14 @@ encapsulate the code for plotting the mapping function into a reusable function 
 called multiple times.
 
 ```@example 1
-function plotmappingfunction(rimap::RiMapper, outputfile::AbstractString)
+function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
   # Create figure
   f = Figure(; size=(1200, 600))
 
   # Create axis in figure, including informative title and axis labels
   title = get(metadata(ld), :filename, "")
   ri_name = retentionindexname(ld)
+  timeunit = unit(eltype(retentiontimes(ld)))
   ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
       ylabel="$ri_name retention index")
 
@@ -116,7 +116,7 @@ function plotmappingfunction(rimap::RiMapper, outputfile::AbstractString)
 
   # Plot right-end extrapolation
   xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:pink)
 
   # Add an informative legend
   axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
@@ -147,14 +147,9 @@ We will use the [XLSX.jl package](https://github.com/felipenoris/XLSX.jl) to rea
 contents of the Excel file. As in the previous example, we need to assign the time values a 
 unit of minutes. To accomplish this, we will import 
 [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl), which re-exports functionality from 
-the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl). To plot the inferred 
-mapping function, we will load the 
-[CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
-the [Makie visualization ecosystem](https://docs.makie.org) and reuse the plotting function 
-from the previous example.
+the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl).
 
 ```@example 2
-using CairoMakie
 using JuChrom
 import XLSX
 
@@ -166,10 +161,27 @@ excel_cells = "A1:B30"
 data_cells = XLSX.readdata(file, sheetname, excel_cells)
 ```
 
+The output above shows the contents of the matrix stored in the variable `data_cells` at 
+this point. As in the previous example, we will use slice notation to extract the values 
+from the first and second columns, convert them to `Float64`, and append the minute time 
+unit to the retention time values.
+
+```@example 2
+timeunit = u"minute"
+rts = convert(Vector{Float64}, data_cells[:, 1]) * timeunit
+ris = convert(Vector{Float64}, data_cells[:, 2])
+ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
+```
+
+We could reuse the plotting function from the first example to visualize the data. However, 
+we will refrain from doing so here, as the values in the Excel file are identical to those 
+in the delimited file. Instead, we will discuss an example where the imported calibration 
+points result in an error when inferring a [`NaturalCubicBSpline`](@ref) interpolant.
+
 
 ## Example: Error in Inferring NaturalCubicBSpline Interpolant
 
-In the previous example, the computation of a natural cubic B-spline for calculating a 
+In the two previous examples, the computation of a natural cubic B-spline for calculating a 
 continuously increasing retention index worked as expected. However, this is not always 
 the case. If the computed B-spline contains critical points that would cause the retention 
 index to decrease as retention time increases, the creation of the [`RiMapper`](@ref) would 
@@ -193,8 +205,8 @@ as follows:
 The data is similar to that in `example1.CAL`, with the only difference being that 
 `example2.CAL` includes the retention time and retention index of Hexane as an additional 
 calibration point. We'll run the same commands as in the previous example, but this time, 
-we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a try/catch 
-block to handle any exceptions.
+we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a `try`/
+`catch` block to handle any exceptions.
 
 ```@example 3
 using DelimitedFiles
