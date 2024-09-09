@@ -244,44 +244,7 @@ Let's use the returned [`RiMapper`](@ref) object to plot the compromised mapping
 using the code from the previous example.
 
 ```@example 1
-# <- Insert code of plotmappingfunction here
-
-# using CairoMakie
-
-# # Create figure
-# f = Figure(; size=(1200, 600))
-
-# # Create axis in figure, including informative title and axis labels
-# title = get(metadata(ld), :filename, "")
-# ri_name = retentionindexname(ld)
-# ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
-#     ylabel="$ri_name retention index")
-
-# # Plot calibration points
-# cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
-
-# # Plot interpolated values
-# xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
-# itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
-
-# # Calculate extrapolation range
-# Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
-
-# # Plot left-end extrapolation
-# xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-# etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
-
-# # Plot right-end extrapolation
-# xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-# etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
-
-# # Add an informative legend
-# axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
-#     "left-end extrapolation", "right-end extrapolation"], position = :lt, 
-#     orientation = :horizontal)
-
-# # Save figure in svg file format
-# save("rt2ri_2.svg", f)
+# <- Insert plotmappingfunction code here
 plotmappingfunction(ld, "rt2ri_2.svg")
 ```
 
