@@ -1,6 +1,6 @@
 # Retention Indices
 
-## Example: Calibration points from a delimited file
+## Example: Calibration Points from a Delimited File
 
 Let's assume we have a set of calibration points for calculating the 
 [Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index), 
@@ -28,14 +28,19 @@ relevant for our purposes. The first column lists the retention times (in minute
 the second column provides the corresponding retention indices.
 
 We will use a function from the 
-[DelimitedFiles.jl package](https://github.com/JuliaData/DelimitedFiles.jl), included with 
-[Julia](https://julialang.org), to read the 
-file contents. Additionally, we need to attach the minute time unit to the time values. 
-Since [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) reexports the names from the 
-[Unitful.jl package](https://painterqubits.github.io/Unitful.jl), we will load 
-[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) at this point as well.
+[DelimitedFiles.jl package](https://github.com/JuliaData/DelimitedFiles.jl), which comes 
+with [Julia](https://julialang.org), to read the file contents. Additionally, we need to 
+assign the minute time unit to the time values. 
+Since [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) re-exports names from the 
+[Unitful.jl package](https://painterqubits.github.io/Unitful.jl), we will also load 
+[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) at this stage. To plot the inferred 
+mapping function, we will further load the 
+[CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
+the [Makie visualization ecosystem](https://docs.makie.org). If you haven't installed it 
+yet, you may need to do so.
 
 ```@example 1
+using CairoMakie
 using DelimitedFiles
 using JuChrom
 
@@ -78,56 +83,91 @@ We now have a [`RiMapper`](@ref) object that enables us to retrieve various deta
 including the [`retentionindexname`](@ref) and the [`retentiontimes`](@ref) and
 [`retentionindices`](@ref) used as calibration points. It also provides the names of the 
 [`extrapolationmethod`](@ref) and the [`interpolationmethod`](@ref), along with the 
-[`metadata`](@ref). Most importantly, it allows us to calculate the 
-[`retentionindex`](@ref) for a given retention time of interest. Let's use this to plot the 
-mapping function with the 
-[CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
-the [Makie visualization ecosystem](https://docs.makie.org). If you haven't installed it 
-yet, you may need to do so.
+[`metadata`](@ref). Most importantly, this allows us to calculate the 
+[`retentionindex`](@ref) for a given retention time of interest. We'll use this to plot the 
+mapping function. Since we will be plotting additional mapping functions, we'll 
+encapsulate the code for plotting the mapping function into a reusable function that can be 
+called multiple times.
 
 ```@example 1
-using CairoMakie
+function plotmappingfunction(rimap::RiMapper, outputfile::AbstractString)
+  # Create figure
+  f = Figure(; size=(1200, 600))
 
-# Create figure
-f = Figure(; size=(1200, 600))
+  # Create axis in figure, including informative title and axis labels
+  title = get(metadata(ld), :filename, "")
+  ri_name = retentionindexname(ld)
+  ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
+      ylabel="$ri_name retention index")
 
-# Create axis in figure, including informative title and axis labels
-title = get(metadata(ld), :filename, "")
-ri_name = retentionindexname(ld)
-ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
-    ylabel="$ri_name retention index")
+  # Plot calibration points
+  cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
 
-# Plot calibration points
-cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
+  # Plot interpolated values
+  xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
+  itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-# Plot interpolated values
-xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
-itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
+  # Calculate extrapolation range
+  Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
 
-# Calculate extrapolation range
-Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
+  # Plot left-end extrapolation
+  xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
+  etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
 
-# Plot left-end extrapolation
-xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
+  # Plot right-end extrapolation
+  xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
+  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
 
-# Plot right-end extrapolation
-xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:magenta)
+  # Add an informative legend
+  axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
+      "left-end extrapolation", "right-end extrapolation"], position = :lt, 
+      orientation = :horizontal)
 
-# Add an informative legend
-axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
-    "left-end extrapolation", "right-end extrapolation"], position = :lt, 
-    orientation = :horizontal)
+  # Save figure in svg file format
+  save(outputfile, f)
+end
 
-# Save figure in svg file format
-save("rt2ri.svg", f)
+plotmappingfunction(ld, "rt2ri.svg")
 ```
 
 This will produce the following 
 [Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
 
 ![](rt2ri.svg)
+
+
+## Example: Calibration Points from an Excel File
+
+In this example, we assume that a set of calibration points for calculating the 
+[Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index), 
+has been stored in an Excel file, possibly as a result of a manual entry. The relevant 
+data can be found in the first sheet of the file `example1.xlsx`, named `Table1`. 
+
+We will use the [XLSX.jl package](https://github.com/felipenoris/XLSX.jl) to read the 
+contents of the Excel file. As in the previous example, we need to assign the time values a 
+unit of minutes. To accomplish this, we will import 
+[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl), which re-exports functionality from 
+the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl). To plot the inferred 
+mapping function, we will load the 
+[CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
+the [Makie visualization ecosystem](https://docs.makie.org) and reuse the plotting function 
+from the previous example.
+
+```@example 2
+using CairoMakie
+using JuChrom
+import XLSX
+
+filename = "example1.xlsx"
+file = joinpath(JuChrom.calibration, filename)
+sheetname = "Table1"
+excel_cells = "A1:B30"
+
+data_cells = XLSX.readdata(file, sheetname, excel_cells)
+```
+
+
+## Example: Error in Inferring NaturalCubicBSpline Interpolant
 
 In the previous example, the computation of a natural cubic B-spline for calculating a 
 continuously increasing retention index worked as expected. However, this is not always 
@@ -156,7 +196,7 @@ calibration point. We'll run the same commands as in the previous example, but t
 we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a try/catch 
 block to handle any exceptions.
 
-```@example 2
+```@example 3
 using DelimitedFiles
 using JuChrom
 
@@ -183,7 +223,7 @@ in one or more polynomials. This is achieved by explicitly specifying
 keyword argument to `true`. This approach can be useful for identifying problematic or 
 erroneous calibration points. Let's give it a try.
 
-```@example 2
+```@example 3
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
   interpolationmethod=NaturalCubicBSpline(force=true))
 ```
@@ -191,7 +231,7 @@ ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename),
 Let's use the returned [`RiMapper`](@ref) object to plot the compromised mapping function 
 using the code from the previous example.
 
-```@example 2
+```@example 3
 using CairoMakie
 
 # Create figure
@@ -235,23 +275,20 @@ This will produce the following
 
 ![](rt2ri_2.svg)
 
-As observed, the sharp increase in the retention index between minutes 3.394 and 4.154 
-resulted in the construction of a B-spline with two critical points in its second 
-polynomial. This outcome is not related to Hexane being an unsuitable calibration point. 
-Instead, the significant disparity in the RT-RI relationship in the first segment of the 
-B-spline, compared to the subsequent segments, causes the B-spline to oscillate. This 
-oscillation suggests that the available set of calibration points at the start of the run 
-is insufficient for reliable prediction of retention indices in this region using the 
-chosen interpolation method. It is entirely possible that a denser sampling of calibration 
-points at the beginning of the run could resolve this issue, particularly given the large 
-RI interval between Hexane and Nonane compared to subsequent calibration points. However, 
-if the RiMapper is primarily intended to interpolate values between, say, minutes 10 and 
-30, the simplest solution may be to simply omit this calibration point.
+As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes led 
+to the construction of a B-spline with two critical points in its second polynomial. This 
+outcome is not due to Hexane being incorrectly identified or associated with an incorrect 
+retention time. Instead, the pronounced disparity in the retention time–retention index 
+(RT-RI) relationship in the first segment of the B-spline, compared to the following 
+segments, causes the B-spline to oscillate. This oscillation suggests that the available 
+set of calibration points at the start of the run is insufficient for reliable prediction 
+of retention indices in this region using the chosen interpolation method. It is entirely 
+possible that a denser sampling of calibration points at the beginning of the run could 
+resolve this issue, particularly given the large RI interval between Hexane and Nonane 
+compared to subsequent calibration points. 
 
-
-```@example 2
-ld = RiMapper("Kovats", rts[2:end], ris[2:end], metadata=Dict(:filename => filename))
-```
-
-The resulting mapping function is identical to the one presented in the first example of 
-this tutorial.
+If the [`RiMapper`](@ref) is intended to interpolate values between, for example, minutes 
+10 and 30, the simplest solution might be to omit this calibration point. Alternatively, 
+one could choose the [`PiecewiseLinear`](@ref) interpolation method, which avoids 
+oscillations. However, it introduces discontinuities in its derivative, making it a less 
+desirable interpolation method.
