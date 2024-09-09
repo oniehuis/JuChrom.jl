@@ -253,17 +253,18 @@ This will produce the following
 
 ![](rt2ri_2.svg)
 
-As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes led 
-to the construction of a B-spline with two critical points in its second polynomial. This 
-outcome is not due to Hexane being incorrectly identified or associated with an incorrect 
-retention time. Instead, the pronounced disparity in the retention time–retention index 
-(RT-RI) relationship in the first segment of the B-spline, compared to the following 
-segments, causes the B-spline to oscillate. This oscillation suggests that the available 
-set of calibration points at the start of the run is insufficient for reliable prediction 
-of retention indices in this region using the chosen interpolation method. It is entirely 
-possible that a denser sampling of calibration points at the beginning of the run could 
-resolve this issue, particularly given the large RI interval between Hexane and Nonane 
-compared to subsequent calibration points. 
+As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes 
+prompted the creation of a B-spline featuring two critical points in its second polynomial: 
+a local maximum at 5.128 minutes and a local minimum at 5.526 minutes. This outcome is not 
+due to Hexane being incorrectly identified or associated with an incorrect retention time. 
+Instead, the pronounced disparity in the retention time–retention index relationship in the 
+first segment of the B-spline, compared to the following segments, causes the B-spline to 
+oscillate. This oscillation suggests that the available set of calibration points at the 
+start of the run is insufficient for reliable prediction of retention indices in this 
+region using the chosen interpolation method. It is entirely possible that a denser 
+sampling of calibration points at the beginning of the run could resolve this issue, 
+particularly given the large RI interval between Hexane and Nonane compared to subsequent 
+calibration points. 
 
 If the [`RiMapper`](@ref) is intended to interpolate values between, for example, minutes 
 10 and 30, the simplest solution might be to omit this calibration point. Alternatively, 

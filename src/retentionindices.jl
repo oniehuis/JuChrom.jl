@@ -726,22 +726,22 @@ rt2ri(mapper::RiMapper) = mapper.rt2ri
 
 
 function criticalpoints(polynomials::AbstractVector{<:Polynomial}, ts)
-    cpoints = Vector{Float64}()
+    cpoints = Vector{Tuple{Float64, String}}()
     for (i, polynomial) in enumerate(polynomials)
         c, b, a = polynomial[1:3]
         Δ₀ = b^2 - 3 * a * c
         Δ₀ ≤ 0 && continue  # no critical point or an inflection point
         α, β = ts[i], ts[i+1]
         x₀, x₁ = (-b + sqrt(Δ₀)) / 3a, (-b - sqrt(Δ₀)) / 3a
-        α < α + x₀ < β && push!(cpoints, α + x₀)
-        α < α + x₁ < β && push!(cpoints, α + x₀)
-        # if polynomial(x₀) < polynomial(x₁)
-        #     α < α + x₀ < β && push!(cpoints, (α + x₀, "local minimum"))
-        #     α < α + x₁ < β && push!(cpoints, (α + x₁, "local maximum"))
-        # else
-        #     α < α + x₀ < β && push!(cpoints, (α + x₀, "local maximum"))
-        #     α < α + x₁ < β && push!(cpoints, (α + x₁, "local minimum"))
-        # end
+        # α < α + x₀ < β && push!(cpoints, α + x₀)
+        # α < α + x₁ < β && push!(cpoints, α + x₀)
+        if polynomial(x₀) < polynomial(x₁)
+            α < α + x₀ < β && push!(cpoints, (α + x₀, "local minimum"))
+            α < α + x₁ < β && push!(cpoints, (α + x₁, "local maximum"))
+        else
+            α < α + x₀ < β && push!(cpoints, (α + x₀, "local maximum"))
+            α < α + x₁ < β && push!(cpoints, (α + x₁, "local minimum"))
+        end
     end
     cpoints
 end
@@ -836,6 +836,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     polynomials = naturalbesplinepolynomials(rts_ustripped, ris)
 
     cpoints = criticalpoints(polynomials, rts_ustripped)
+    # println(cpoints)
     if length(cpoints) > 0
         if force
             @warn "the interpolator does not produce continuously increasing values"
