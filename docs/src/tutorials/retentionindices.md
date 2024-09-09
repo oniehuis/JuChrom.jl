@@ -116,7 +116,7 @@ function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
 
   # Plot right-end extrapolation
   xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:pink)
+  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:lawngreen)
 
   # Add an informative legend
   axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
