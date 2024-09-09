@@ -208,7 +208,7 @@ calibration point. We'll run the same commands as in the previous example, but t
 we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a `try`/
 `catch` block to handle any exceptions.
 
-```@example 3
+```@example 1
 using CairoMakie
 using DelimitedFiles
 using JuChrom
@@ -235,7 +235,7 @@ in one or more polynomials. This is achieved by explicitly specifying
 keyword argument to `true`. This approach can be useful for identifying problematic or 
 erroneous calibration points. Let's give it a try.
 
-```@example 3
+```@example 1
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
   interpolationmethod=NaturalCubicBSpline(force=true))
 ```
@@ -243,7 +243,7 @@ ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename),
 Let's use the returned [`RiMapper`](@ref) object to plot the compromised mapping function 
 using the code from the previous example.
 
-```@example 3
+```@example 1
 # <- Insert code of plotmappingfunction here
 
 # using CairoMakie
