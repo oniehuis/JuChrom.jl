@@ -764,6 +764,7 @@ julia> ms₁ = MassSpectrum(Int64[80, 85, 90], Int64[100, 500, 250]);
 julia> ms₂ = MassSpectrum(Int32[80, 85], Int32[200, 1000]);
 
 julia> similarity(ms₁, ms₂, cosine) ≈ 1.0
+true
 
 julia> ms₁ = MassSpectrum(Float64[80, 85, 90], Float32[100, 500, 250]);
 
