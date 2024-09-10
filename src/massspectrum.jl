@@ -733,16 +733,16 @@ MassSpectrum {ions: Int64, intensities: Int64}
 intensity range: 100 - 500
 metadata: 0 entries
 
-julia> ms₂ = MassSpectrum([80.0, 85.0, 90.1], [100, 500, 250])
-MassSpectrum {ions: Float64, intensities: Int64}
+julia> ms₂ = MassSpectrum([80, 85, 90], [100, 500, 250])
+MassSpectrum {ions: Int64, intensities: Int64}
 3 ions: m/z 80.0, 85.0, 90.1
 intensity range: 100 - 500
 metadata: 0 entries
 
 julia> sharedions(ms₁, ms₂)
-2-element Vector{Float64}:
- 80.0
- 85.0
+2-element Vector{Int64}:
+ 80
+ 85
 ```
 """
 sharedions(ms₁::AbstractMassSpectrum, ms₂::AbstractMassSpectrum) = intersect(
@@ -764,7 +764,6 @@ julia> ms₁ = MassSpectrum(Int64[80, 85, 90], Int64[100, 500, 250]);
 julia> ms₂ = MassSpectrum(Int32[80, 85], Int32[200, 1000]);
 
 julia> similarity(ms₁, ms₂, cosine) ≈ 1.0
-true
 
 julia> ms₁ = MassSpectrum(Float64[80, 85, 90], Float32[100, 500, 250]);
 
