@@ -14,6 +14,7 @@ const calibration = artifact"calibration"
 
 include("base.jl")
 include("retentionindices.jl")
+include("massspectrum.jl")
 
 export AbstractChromatogram
 export AbstractChrom
@@ -29,6 +30,8 @@ export PolationMethod
 export NaturalCubicBSpline
 export Linear
 export PiecewiseLinear
+export AbstractMassSpectrum
+export MassSpectrum
 
 export binions
 export cosine
@@ -45,6 +48,7 @@ export ionscantime
 export ionscantimeindex
 export ionscantimes
 export ionscantimeshift
+export massspectrum
 export maxintensity
 export maxion
 export maxretentionindex
@@ -60,6 +64,7 @@ export retentionindex
 export retentionindices
 export retentionindexname
 export retentiontimes
+export retentiontime
 export rimapper
 export runduration
 export scancount
@@ -67,6 +72,8 @@ export scanduration
 export scantime
 export scantimeindex
 export scantimes
+export sharedions
+export similarity
 export totalionchromatogram
 
 include("IO/InputOutput.jl")

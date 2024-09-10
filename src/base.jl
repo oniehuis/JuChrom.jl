@@ -102,9 +102,12 @@ Base.broadcastable(chrom::ChromMS) = Ref(chrom)
     ChromMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
     intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) <: AbstractChromMS
 
-Construct a `ChromMS` object that includes `scantimes`, `ions`, `intensities`, and `metadata`. 
-Note that `scantimes` and `ions` must be in ascending order, and `intensities` must not 
-contain any values less than zero.
+Construct a `ChromMS` object that includes `scantimes`, `ions`, `intensities`, and 
+`metadata`. Ensure that both `scantimes` and `ions` are in ascending order, and that 
+`intensities` contain no negative values. The scan times must include a time unit. All time 
+units supported by the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl) 
+(e.g., `u"s"`, `u"minute"`) are accepted. You can optionally use the keyword argument 
+`rimapper` to include a retention index mapper.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractChromMS`](@ref), [`scantimes`](@ref), 
 [`ions`](@ref), [`intensities`](@ref), [`metadata`](@ref).
@@ -193,10 +196,12 @@ Base.broadcastable(chrom::Chrom) = Ref(chrom)
     intensities::AbstractVector{<:Real}, metadata::Dict=Dict{Any, Any}; 
     rimapper::Union{AbstractRiMapper, Nothing}=nothing) <: AbstractChrom
 
-Create a `Chrom` object that includes `scantimes`, `intensities`, and `metadata`. Ensure 
-that `scantimes` are in ascending order and that `intensities` contain no values less than 
-zero. You can optionally use the keyword argument `rimapper` to include a retention index 
-mapper.
+Construct a `Chrom` object that includes `scantimes`, `intensities`, and `metadata`. 
+Ensure that both `scantimes` and `ions` are in ascending order, and that `intensities` 
+contain no negative values. The scan times must include a time unit. All time 
+units supported by the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl) 
+(e.g., `u"s"`, `u"minute"`) are accepted. You can optionally use the keyword argument 
+`rimapper` to include a retention index mapper.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractChrom`](@ref), [`scantimes`](@ref), 
 [`intensities`](@ref), [`metadata`](@ref), [`rimapper`](@ref).
@@ -1311,7 +1316,6 @@ metadata: 1 entry
 ```
 """
 metadata(chrom::AbstractChromatogram) = chrom.metadata
-
 
 
 """

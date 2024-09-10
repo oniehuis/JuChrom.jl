@@ -12,6 +12,7 @@ makedocs(
         "Manual" => Any[
             "man/basics.md",
             "man/retentionindices.md",
+            "man/massspectra.md",
             "man/import.md",
             "man/export.md"],
         "Tutorials" => Any[

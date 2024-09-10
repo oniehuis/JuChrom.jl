@@ -110,7 +110,7 @@ function Base.show(io::IO, mapper::RiMapper)
     typename = name(type)
     samplecount = length(retentiontimes(mapper))
 
-    # Informan about the index and the number of ladder steps
+    # Information about the index and the number of ladder steps
     println(io, "$typename {index name: ", retentionindexname(mapper), 
         ", calibration points: ", samplecount, "}") 
     

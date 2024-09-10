@@ -14,8 +14,9 @@ maxretentiontime
 metadata(::AbstractRiMapper)
 minretentionindex
 minretentiontime
-retentionindex
-retentionindexname
+retentionindex(::RiMapper, ::Unitful.Time; ::Bool)
+retentionindex(::AbstractChromatogram, ::Unitful.Time; ::Bool)
+retentionindexname(::RiMapper)
 retentionindices
 retentiontimes
 ```
