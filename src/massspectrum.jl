@@ -733,9 +733,9 @@ MassSpectrum {ions: Int64, intensities: Int64}
 intensity range: 100 - 500
 metadata: 0 entries
 
-julia> ms₂ = MassSpectrum([80, 85, 90], [100, 500, 250])
+julia> ms₂ = MassSpectrum([80, 85], [100, 500])
 MassSpectrum {ions: Int64, intensities: Int64}
-3 ions: m/z 80.0, 85.0, 90.1
+2 ions: m/z 80, 85
 intensity range: 100 - 500
 metadata: 0 entries
 
