@@ -1,4 +1,4 @@
-# Retention indices
+# Retention Indices
 
 ```@docs
 PolationMethod

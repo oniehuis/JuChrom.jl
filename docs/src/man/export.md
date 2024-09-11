@@ -1,4 +1,4 @@
-# Data export
+# Data Export
 
 ```@docs
 DelimitedText

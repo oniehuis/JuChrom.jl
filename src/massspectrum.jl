@@ -5,7 +5,7 @@ Supertype for all mass spectrum implementations. All subtypes (e.g., `MassSpectr
 include fields to store ions, their associated intensities, and optionally, retention time, 
 retention index, and metadata.
 
-See also [`MassSpectrum`](@ref), [`ChromMS`](@ref).
+See also [`MassSpectrum`](@ref).
 """
 abstract type AbstractMassSpectrum end
 
@@ -116,7 +116,9 @@ All time units supported by the
 [Unitful.jl package](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
 are accepted.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref), 
+[`retentiontime`](@ref), [`retentionindexname`](@ref), [`retentionindex`](@ref), 
+[`metadata`](@ref), [`sharedions`](@ref), [`similarity`](@ref).
 
 # Examples
 ```jldoctest
@@ -170,8 +172,8 @@ end
 
 Return the intensities.
 
-See also [`AbstractMassSpectrum`](@ref).
-
+See also [`AbstractMassSpectrum`](@ref), [`intensity`](@ref), [`maxintensity`](@ref), 
+[`minintensity`](@ref).
 
 # Example
 ```jldoctest
@@ -196,7 +198,8 @@ intensities(ms::AbstractMassSpectrum) = ms.intensities
 
 Return the intensity for an ion by specifying its index.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`intensities`](@ref), [`maxintensity`](@ref), 
+[`minintensity`](@ref).
 
 # Examples
 ```jldoctest
@@ -225,6 +228,9 @@ intensity(ms::AbstractMassSpectrum, ionindex::Integer) = intensities(ms)[ioninde
     ion(gcms::AbstractMassSpectrum, ionindex::Integer)
 
 Return the ion at the specified `ionindex`.
+
+See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`maxion`](@ref), 
+[`minion`](@ref), [`ioncount`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
 
 # Examples
 ```jldoctest
@@ -268,6 +274,9 @@ end
 Return the index of the `ion`. If the `ion` is not present in the mass spectrum, an error 
 is raised.
 
+See also [`AbstractMassSpectrum`](@ref), [`ion`](@ref), [`ions`](@ref), [`ioncount`](@ref), 
+[`maxion`](@ref), [`minion`](@ref).
+
 # Example
 ```jldoctest
 julia> ms = MassSpectrum([85.1, 112.0, 124.2], Int64[13, 0, 67])
@@ -299,7 +308,8 @@ end
 
 Return the ions.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ion`](@ref), [`maxion`](@ref), [`minion`](@ref), 
+[`ioncount`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
 
 # Example
 ```jldoctest
@@ -324,7 +334,8 @@ ions(ms::AbstractMassSpectrum) = ms.ions
 
 Return the number of ions.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref),  [`ion`](@ref), [`maxion`](@ref), 
+[`minion`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
 
 # Example
 ```jldoctest
@@ -346,7 +357,8 @@ ioncount(ms::AbstractMassSpectrum) = length(ions(ms))
 
 Return a MassSpectrum with the intensity values for all ions at the specified scan index.
 
-See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref).
+See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions`](@ref), 
+[`intensities`](@ref), [`retentiontime`](@ref).
 
 # Examples
 ```jldoctest
@@ -404,7 +416,8 @@ supported. In case of a tie, the larger scan time is selected. If the optional p
 `precisetime` is set to true, the specified time must match exactly, otherwise an error 
 will be thrown.
 
-See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref).
+See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions`](@ref), 
+[`intensities`](@ref), [`retentiontime`](@ref).
 
 # Examples
 ```jldoctest
@@ -451,7 +464,8 @@ end
 
 Return the maximum intensity.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`minintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
 
 # Example
 ```jldoctest
@@ -473,7 +487,8 @@ maxintensity(ms::AbstractMassSpectrum) = maximum(intensities(ms))
 
 Return the largest ion.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`minion`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref), [`ion`](@ref), [`ionindex`](@ref).
 
 # Example
 ```jldoctest
@@ -554,7 +569,8 @@ metadata(ms::AbstractMassSpectrum) = ms.metadata
 
 Return the minimum intensity.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`maxintensity`](@ref), [`intensities`](@ref), 
+[`intensity`](@ref).
 
 # Example
 ```jldoctest
@@ -576,7 +592,8 @@ minintensity(ms::AbstractMassSpectrum) = minimum(intensities(ms))
 
 Return the smallest ion.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`maxion`](@ref), [`ions`](@ref), 
+[`ioncount`](@ref), [`ion`](@ref), [`ionindex`](@ref).
 
 # Example
 ```jldoctest
@@ -599,7 +616,7 @@ minion(ms::AbstractMassSpectrum) = first(ions(ms))
 Return the retention index. If no retention index is associated with the mass spectrum, the 
 function returns the value nothing.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`retentionindexname`](@ref).
 
 # Example
 ```jldoctest
@@ -632,7 +649,7 @@ retentionindex(ms::AbstractMassSpectrum) = ms.retentionindex
 Return the retention index name. If the mass spectrum has no associated retention index, 
 the function returns the value nothing.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`retentionindex`](@ref).
 
 # Example
 ```jldoctest
@@ -670,7 +687,7 @@ change the unit of the returned scan time. All time units defined in the package
 supported. The optional keyword argument `ustripped` lets you choose whether to include the 
 unit in the returned value.
 
-See also [`AbstractMassSpectrum`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`massspectrum`](@ref).
 
 # Examples
 ```jldoctest
@@ -723,7 +740,7 @@ end
 
 Return the set of ions present in both mass spectra.
 
-See also [`MassSpectrum`](@ref), [`ions`](@ref).
+See also [`MassSpectrum`](@ref), [`ions`](@ref), [`ion`](@ref), [`ioncount`](@ref).
 
 # Example
 ```jldoctest
@@ -755,7 +772,8 @@ sharedions(ms₁::AbstractMassSpectrum, ms₂::AbstractMassSpectrum) = intersect
 Compute the similarity between the two mass spectra by applying the similarity function `f` 
 (e.g., `cosine`) to the intensity values of the ions shared between `ms₁` and `ms₂`.
 
-See also [`AbstractMassSpectrum`](@ref), [`cosine`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`cosine`](@ref), [`sharedions`](@ref), 
+[`ions`](@ref), [`intensities`](@ref).
 
 # Examples
 ```jldoctest

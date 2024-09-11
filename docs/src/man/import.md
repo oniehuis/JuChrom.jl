@@ -1,4 +1,4 @@
-# Data import
+# Data Import
 
 ```@docs
 FileFormat
