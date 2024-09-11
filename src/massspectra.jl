@@ -257,7 +257,7 @@ intensity(ms::AbstractMassSpectrum, ionindex::Integer) = intensities(ms)[ioninde
 
 
 """
-    ion(gcms::AbstractMassSpectrum, ionindex::Integer)
+    ion(chrom::AbstractMassSpectrum, ionindex::Integer)
 
 Return the ion at the specified `ionindex`.
 
@@ -298,6 +298,29 @@ function ion(ms::AbstractMassSpectrum, ionindex::Integer)
         BoundsError(ions(ms), ionindex))
     ions(ms)[ionindex]
 end
+
+
+"""
+    ioncount(ms::AbstractMassSpectrum) -> Int
+
+Return the number of ions.
+
+See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref),  [`ion`](@ref), [`maxion`](@ref), 
+[`minion`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
+
+# Example
+```jldoctest
+julia> ms = MassSpectrum(Int64[85, 112, 124], Int64[13, 0, 67])
+MassSpectrum {ions: Int64, intensities: Int64}
+3 ions: m/z 85, 112, 124
+intensity range: 0 - 67
+metadata: 0 entries
+
+julia> ioncount(ms)
+3
+```
+"""
+ioncount(ms::AbstractMassSpectrum) = length(ions(ms))
 
 
 """
@@ -362,32 +385,16 @@ ions(ms::AbstractMassSpectrum) = ms.ions
 
 
 """
-    ioncount(ms::AbstractMassSpectrum) -> Int
+    massspectrum(chrom::AbstractChromMS, scanindex::Integer; 
+    retentionindexname::Union{AbstractString, Nothing}=nothing,
+    retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict())
 
-Return the number of ions.
-
-See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref),  [`ion`](@ref), [`maxion`](@ref), 
-[`minion`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
-
-# Example
-```jldoctest
-julia> ms = MassSpectrum(Int64[85, 112, 124], Int64[13, 0, 67])
-MassSpectrum {ions: Int64, intensities: Int64}
-3 ions: m/z 85, 112, 124
-intensity range: 0 - 67
-metadata: 0 entries
-
-julia> ioncount(ms)
-3
-```
-"""
-ioncount(ms::AbstractMassSpectrum) = length(ions(ms))
-
-
-"""
-    massspectrum(gcms::AbstractChromMS, scanindex::Integer)
-
-Return a MassSpectrum with the intensity values for all ions at the specified scan index.
+Returns a `MassSpectrum` containing the intensity values for all ions at the specified 
+scan index. The optional keyword arguments, `retentionindexname` and `retentionindex`, 
+allow the mass spectrum to be associated with a retention index. Note that both 
+`retentionindexname` and `retentionindex` must always be provided together. The optional 
+keyword argument `metadata` allows the mass spectrum to be associated with additional 
+metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions`](@ref), 
 [`intensities`](@ref), [`retentiontime`](@ref).
@@ -430,7 +437,7 @@ Dict{Any, Any} with 1 entry:
 """
 function massspectrum(chrom::AbstractChromMS, scanindex::Integer;  
     retentionindexname::Union{AbstractString, Nothing}=nothing,
-    retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict(),)
+    retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict())
     1 ≤ scanindex ≤ scancount(chrom) || throw(BoundsError(scantimes, scanindex))
     MassSpectrum(ions(chrom), intensities(chrom)[scanindex, :], 
         retentionindexname=retentionindexname, retentionindex=retentionindex,
@@ -439,14 +446,20 @@ end
 
 
 """
-    massspectrum(gcms::AbstractChromMS, time::Unitful.Time; precisetime::Bool=false)
+    massspectrum(chrom::AbstractChromMS, time::Unitful.Time; precisetime::Bool=false, 
+    retentionindexname::Union{AbstractString, Nothing}=nothing,
+    retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict())
 
 Return a MassSpectrum containing the intensity values for all ions in the scan with a 
 scan time closest to the specified `time``. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., u"s", u"minute") are 
 supported. In case of a tie, the larger scan time is selected. If the optional parameter 
 `precisetime` is set to true, the specified time must match exactly, otherwise an error 
-will be thrown.
+will be thrown. The optional keyword arguments, `retentionindexname` and `retentionindex`, 
+allow the mass spectrum to be associated with a retention index. Note that both 
+`retentionindexname` and `retentionindex` must always be provided together. The optional 
+keyword argument `metadata` allows the mass spectrum to be associated with additional 
+metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions`](@ref), 
 [`intensities`](@ref), [`retentiontime`](@ref).
@@ -484,10 +497,33 @@ metadata: 0 entries
 julia> massspectrum(chrom, 2.1u"s", precisetime=true)
 ERROR: ArgumentError: scantime 2.1 s does not exist
 [...]
+
+julia> massspectrum(chrom, 2.5u"s", retentionindexname="Kovats", retentionindex=123.21)
+MassSpectrum {ions: Int64, intensities: Int64}
+2 ions: m/z 85, 100
+intensity range: 1 - 23
+retention time: 3 s
+retention index: 123.21 (Kovats)
+metadata: 0 entries
+
+julia> ms = massspectrum(chrom, 2.5u"s", metadata=Dict(:compound => "hexane"))
+MassSpectrum {ions: Int64, intensities: Int64}
+2 ions: m/z 85, 100
+intensity range: 1 - 23
+retention time: 3 s
+metadata: 1 entry
+
+julia> metadata(ms)
+Dict{Any, Any} with 1 entry:
+  :compound => "hexane"
 ```
 """
-function massspectrum(chrom::AbstractChromMS, time::Unitful.Time; precisetime::Bool=false)
-    massspectrum(chrom, scantimeindex(chrom, time; precisetime=precisetime))
+function massspectrum(chrom::AbstractChromMS, time::Unitful.Time; precisetime::Bool=false, 
+    retentionindexname::Union{AbstractString, Nothing}=nothing,
+    retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict())
+    massspectrum(chrom, scantimeindex(chrom, time; precisetime=precisetime), 
+    retentionindexname=retentionindexname, retentionindex=retentionindex, 
+    metadata=metadata)
 end
 
 
@@ -770,7 +806,7 @@ end
 """
     sharedions(ms₁::AbstractMassSpectrum, ms₂::AbstractMassSpectrum)
 
-Return the set of ions present in both mass spectra.
+Return the ions present in both mass spectra.
 
 See also [`MassSpectrum`](@ref), [`ions`](@ref), [`ion`](@ref), [`ioncount`](@ref).
 

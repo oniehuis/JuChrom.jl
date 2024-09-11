@@ -347,7 +347,7 @@ end
 
     # Same return container and element type as used to construct the object
     @test Dict{Any, Any} == typeof(metadata(ChromMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1], Dict(:id => 4, :name => "sample"))))   
+    [0 12; 34 956; 23 1], Dict(:id => 4, :name => "sample"))))   
 end
 
 
