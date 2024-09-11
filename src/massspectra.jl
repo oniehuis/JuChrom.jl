@@ -451,7 +451,7 @@ end
     retentionindex::Union{Real, Nothing}=nothing, metadata::Dict=Dict())
 
 Return a MassSpectrum containing the intensity values for all ions in the scan with a 
-scan time closest to the specified `time``. All time units defined in the package 
+scan time closest to the specified `time`. All time units defined in the package 
 [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., u"s", u"minute") are 
 supported. In case of a tie, the larger scan time is selected. If the optional parameter 
 `precisetime` is set to true, the specified time must match exactly, otherwise an error 
