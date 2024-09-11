@@ -15,4 +15,6 @@ JuChrom.InputOutput.Source
 JuChrom.InputOutput.File
 JuChrom.InputOutput.Path
 JuChrom.InputOutput.buildxic
+JuChrom.LocalMaxima
+JuChrom.nextlocalmaximum
 ```
