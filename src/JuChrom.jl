@@ -14,7 +14,7 @@ const calibration = artifact"calibration"
 
 include("base.jl")
 include("retentionindices.jl")
-include("massspectrum.jl")
+include("MassSpectrum.jl")
 
 export AbstractChromatogram
 export AbstractChrom
