@@ -426,6 +426,7 @@ function binions(chrom::ChromMS; ionbin::Function=integer)
 end
 
 
+
 """
     integer(value:::Real; start::Real=0.7) -> Int
 
