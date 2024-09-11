@@ -7,7 +7,7 @@ using SafeTestsets
 @safetestset "base AbstractChromatogram" begin include("base/AbstractChromatogram.jl") end
 @safetestset "base RiMapper" begin include("base/RiMapper.jl") end
 @safetestset "base IonScanOrder" begin include("base/IonScanOrder.jl") end
-# @safetestset "base MassSpectrum" begin include("base/MassSpectrum.jl") end
+@safetestset "base MassSpectrum" begin include("base/MassSpectrum.jl") end
 @safetestset "base Utilities" begin include("utilities/utilities.jl") end
 
 @safetestset "IO Utilities" begin include("IO/utilities.jl") end
