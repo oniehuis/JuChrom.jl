@@ -459,8 +459,14 @@ end
 @testset "retentiontime(ms)" begin
     # Same return values as those provided as arguments to construct the object
     @test nothing === retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67]))
-    @test 123.2u"s" == retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
+    @test 123.2u"s" ≈ retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
         retentiontime=123.2u"s"))
+    @test 2.0533333333333332u"minute" ≈ retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
+        retentiontime=123.2u"s"), timeunit=u"minute")
+    @test 2.0533333333333332 ≈ retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
+        retentiontime=123.2u"s"), timeunit=u"minute", ustripped=true)
+    @test 123.2 ≈ retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
+        retentiontime=123.2u"s"), ustripped=true)
 
     # Same element type as used to construct the object
     @test Nothing == typeof(retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67])))
@@ -470,6 +476,8 @@ end
     @test Unitful.Quantity{Int64, 𝐓, Unitful.FreeUnits{(Unitful.Unit{:Minute, 𝐓}(0, 
         1//1),), 𝐓, nothing}} == typeof(retentiontime(MassSpectrum([85.1, 112.2, 124.1], 
         [13, 0, 67], retentiontime=Int(123)*u"minute")))
+    @test Int == typeof(retentiontime(MassSpectrum([85.1, 112.2, 124.1], [13, 0, 67], 
+        retentiontime=Int(123)*u"minute"), ustripped=true))
 end
 
 
