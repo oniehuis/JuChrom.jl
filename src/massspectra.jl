@@ -117,9 +117,10 @@ All time units supported by the
 are accepted.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
-[`intensities(::AbstractMassSpectrum))`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), 
 [`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref), 
-[`retentionindexname`](@ref), [`retentionindex`](@ref), [`metadata`](@ref), 
+[`retentionindexname(::AbstractMassSpectrum)`](@ref), 
+[`retentionindex(::AbstractMassSpectrum)`](@ref), [`metadata`](@ref), 
 [`sharedions`](@ref), [`similarity`](@ref).
 
 # Examples
@@ -400,7 +401,7 @@ metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`retentiontime`](@ref).
+[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref).
 
 # Examples
 ```jldoctest
@@ -466,7 +467,7 @@ metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`retentiontime`](@ref).
+[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref).
 
 # Examples
 ```jldoctest
@@ -688,7 +689,8 @@ minion(ms::AbstractMassSpectrum) = first(ions(ms))
 Return the retention index. If no retention index is associated with the mass spectrum, the 
 function returns the value nothing.
 
-See also [`AbstractMassSpectrum`](@ref), [`retentionindexname`](@ref).
+See also [`AbstractMassSpectrum`](@ref), 
+[`retentionindexname(::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
@@ -721,7 +723,7 @@ retentionindex(ms::AbstractMassSpectrum) = ms.retentionindex
 Return the retention index name. If the mass spectrum has no associated retention index, 
 the function returns the value nothing.
 
-See also [`AbstractMassSpectrum`](@ref), [`retentionindex`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`retentionindex(::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
