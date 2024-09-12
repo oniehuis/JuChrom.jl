@@ -116,7 +116,7 @@ All time units supported by the
 [Unitful.jl package](https://painterqubits.github.io/Unitful.jl)(e.g., `u"s"`, `u"minute"`) 
 are accepted.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`intensities`](@ref), 
 [`retentiontime`](@ref), [`retentionindexname`](@ref), [`retentionindex`](@ref), 
 [`metadata`](@ref), [`sharedions`](@ref), [`similarity`](@ref).
 
@@ -461,7 +461,7 @@ allow the mass spectrum to be associated with a retention index. Note that both
 keyword argument `metadata` allows the mass spectrum to be associated with additional 
 metadata.
 
-See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions`](@ref), 
+See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
 [`intensities`](@ref), [`retentiontime`](@ref).
 
 # Examples
