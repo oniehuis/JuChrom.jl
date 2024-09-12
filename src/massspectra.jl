@@ -118,10 +118,12 @@ are accepted.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
 [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref), 
+[`retentiontime(::AbstractMassSpectrum; ::Unitful.TimeUnits, ::Bool)`](@ref), 
 [`retentionindexname(::AbstractMassSpectrum)`](@ref), 
-[`retentionindex(::AbstractMassSpectrum)`](@ref), [`metadata`](@ref), 
-[`sharedions`](@ref), [`similarity`](@ref).
+[`retentionindex(::AbstractMassSpectrum)`](@ref), 
+[`metadata(::AbstractMassSpectrum)`](@ref), 
+[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref), 
+[`similarity(::AbstractMassSpectrum, ::AbstractMassSpectrum, ::Function)`](@ref).
 
 # Examples
 ```jldoctest
@@ -176,7 +178,7 @@ end
 Return the angle between two non-zero vectors, which can be considered a measure of the
 similarity (i.e., `cosine` similarity) between the two vectors.
 
-See also [`similarity`](@ref).
+See also [`similarity(::AbstractMassSpectrum, ::AbstractMassSpectrum, ::Function)`](@ref).
 
 # Examples
 ```jldoctest
@@ -265,7 +267,8 @@ intensity(ms::AbstractMassSpectrum, ionindex::Integer) = intensities(ms)[ioninde
 Return the ion at the specified `ionindex`.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`maxion`](@ref), 
-[`minion`](@ref), [`ioncount`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
+[`minion`](@ref), [`ioncount`](@ref), [`ionindex`](@ref), 
+[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
 
 # Examples
 ```jldoctest
@@ -309,7 +312,8 @@ end
 Return the number of ions.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref),  [`ion`](@ref), [`maxion`](@ref), 
-[`minion`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
+[`minion`](@ref), [`ionindex`](@ref), 
+[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
@@ -367,7 +371,8 @@ end
 Return the ions.
 
 See also [`AbstractMassSpectrum`](@ref), [`ion`](@ref), [`maxion`](@ref), [`minion`](@ref), 
-[`ioncount`](@ref), [`ionindex`](@ref), [`sharedions`](@ref).
+[`ioncount`](@ref), [`ionindex`](@ref), 
+[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)](@ref).
 
 # Example
 ```jldoctest
@@ -401,7 +406,7 @@ metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref).
+[`retentiontime(::AbstractMassSpectrum; ::Unitful.TimeUnits, ::Bool)`](@ref).
 
 # Examples
 ```jldoctest
@@ -467,7 +472,7 @@ metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref).
+[`retentiontime(::AbstractMassSpectrum; ::Unitful.TimeUnits, ::Bool)`](@ref).
 
 # Examples
 ```jldoctest
@@ -846,7 +851,8 @@ sharedions(ms₁::AbstractMassSpectrum, ms₂::AbstractMassSpectrum) = intersect
 Compute the similarity between the two mass spectra by applying the similarity function `f` 
 (e.g., `cosine`) to the intensity values of the ions shared between `ms₁` and `ms₂`.
 
-See also [`AbstractMassSpectrum`](@ref), [`cosine`](@ref), [`sharedions`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`cosine`](@ref), 
+[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref).
 
 # Examples
