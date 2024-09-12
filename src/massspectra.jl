@@ -117,7 +117,8 @@ All time units supported by the
 are accepted.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
-[`intensities(::AbstractMassSpectrum))`](@ref), [`retentiontime`](@ref), 
+[`intensities(::AbstractMassSpectrum))`](@ref), 
+[`retentiontime(::AbstractMassSpectrum, ::Unitful.TimeUnits, ::Bool)`](@ref), 
 [`retentionindexname`](@ref), [`retentionindex`](@ref), [`metadata`](@ref), 
 [`sharedions`](@ref), [`similarity`](@ref).
 
@@ -231,7 +232,7 @@ intensities(ms::AbstractMassSpectrum) = ms.intensities
 
 Return the intensity for an ion by specifying its index.
 
-See also [`AbstractMassSpectrum`](@ref), [`intensities()::AbstractMassSpectrum)`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
 [`maxintensity`](@ref), [`minintensity`](@ref).
 
 # Examples
@@ -464,7 +465,7 @@ keyword argument `metadata` allows the mass spectrum to be associated with addit
 metadata.
 
 See also [`AbstractChromMS`](@ref), [`MassSpectrum`](@ref), 
-[`ions(::AbstractMassSpectrum)`](@ref), [`intensities()::AbstractMassSpectrum)`](@ref), 
+[`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
 [`retentiontime`](@ref).
 
 # Examples
