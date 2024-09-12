@@ -122,8 +122,8 @@ See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref),
 [`retentionindexname(::AbstractMassSpectrum)`](@ref), 
 [`retentionindex(::AbstractMassSpectrum)`](@ref), 
 [`metadata(::AbstractMassSpectrum)`](@ref), 
-[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref), 
-[`similarity(::AbstractMassSpectrum, ::AbstractMassSpectrum, ::Function)`](@ref).
+[`sharedions`](@ref), 
+[`similarity`](@ref).
 
 # Examples
 ```jldoctest
@@ -178,7 +178,7 @@ end
 Return the angle between two non-zero vectors, which can be considered a measure of the
 similarity (i.e., `cosine` similarity) between the two vectors.
 
-See also [`similarity(::AbstractMassSpectrum, ::AbstractMassSpectrum, ::Function)`](@ref).
+See also [`similarity`](@ref).
 
 # Examples
 ```jldoctest
@@ -272,7 +272,7 @@ Return the ion at the specified `ionindex`.
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
 [`maxion(::AbstractMassSpectrum)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
 [`ioncount(::AbstractMassSpectrum)`](@ref), [`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
-[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
+[`sharedions`](@ref).
 
 # Examples
 ```jldoctest
@@ -326,7 +326,7 @@ See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref),
 [`ioncount(::AbstractMassSpectrum)`](@ref)`](@ref), 
 [`minion(::AbstractMassSpectrum)`](@ref), 
 [`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
-[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
+[`sharedions`](@ref).
 
 # Example
 ```jldoctest
@@ -390,7 +390,7 @@ See also [`AbstractMassSpectrum`](@ref), [`ion(::AbstractMassSpectrum, ::Integer
 [`maxion(::AbstractMassSpectrum)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
 [`ioncount(::AbstractMassSpectrum)`](@ref), 
 [`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
-[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)](@ref).
+[`sharedions`](@ref).
 
 # Example
 ```jldoctest
@@ -878,7 +878,7 @@ Compute the similarity between the two mass spectra by applying the similarity f
 (e.g., `cosine`) to the intensity values of the ions shared between `ms₁` and `ms₂`.
 
 See also [`AbstractMassSpectrum`](@ref), [`cosine`](@ref), 
-[`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref), 
+[`sharedions`](@ref), 
 [`ions(::AbstractMassSpectrum)`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref).
 
 # Examples
