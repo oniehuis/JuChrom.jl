@@ -209,8 +209,10 @@ end
 
 Return the intensities.
 
-See also [`AbstractMassSpectrum`](@ref), [`intensity`](@ref), [`maxintensity`](@ref), 
-[`minintensity`](@ref).
+See also [`AbstractMassSpectrum`](@ref), 
+[`intensity(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`maxintensity(::AbstractMassSpectrum)`](@ref), 
+[`minintensity(::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
@@ -236,7 +238,8 @@ intensities(ms::AbstractMassSpectrum) = ms.intensities
 Return the intensity for an ion by specifying its index.
 
 See also [`AbstractMassSpectrum`](@ref), [`intensities(::AbstractMassSpectrum)`](@ref), 
-[`maxintensity`](@ref), [`minintensity`](@ref).
+[`maxintensity(::AbstractMassSpectrum)`](@ref), 
+[`minintensity(::AbstractMassSpectrum)`](@ref).
 
 # Examples
 ```jldoctest
@@ -262,12 +265,13 @@ intensity(ms::AbstractMassSpectrum, ionindex::Integer) = intensities(ms)[ioninde
 
 
 """
-    ion(chrom::AbstractMassSpectrum, ionindex::Integer)
+    ion(ms::AbstractMassSpectrum, ionindex::Integer)
 
 Return the ion at the specified `ionindex`.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`maxion`](@ref), 
-[`minion`](@ref), [`ioncount`](@ref), [`ionindex`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
+[`ioncount(::AbstractMassSpectrum)`](@ref), [`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
 [`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
 
 # Examples
@@ -297,7 +301,10 @@ julia> ion.(ms, 1:2)  # broadcasting across multiple ion indices
  112
 ```
 
-See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`ionindex`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
+[`minion(::AbstractMassSpectrum)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), [`ioncount(::AbstractMassSpectrum)`](@ref).
 """
 function ion(ms::AbstractMassSpectrum, ionindex::Integer)
     firstindex(ions(ms)) ≤ ionindex ≤ lastindex(ions(ms)) || throw(
@@ -311,8 +318,14 @@ end
 
 Return the number of ions.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref),  [`ion`](@ref), [`maxion`](@ref), 
-[`minion`](@ref), [`ionindex`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
+[`minion(::AbstractMassSpectrum)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), 
+[`ioncount(::AbstractMassSpectrum)`](@ref)`](@ref), 
+[`minion(::AbstractMassSpectrum)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
 [`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)`](@ref).
 
 # Example
@@ -336,8 +349,9 @@ ioncount(ms::AbstractMassSpectrum) = length(ions(ms))
 Return the index of the `ion`. If the `ion` is not present in the mass spectrum, an error 
 is raised.
 
-See also [`AbstractMassSpectrum`](@ref), [`ion`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`ioncount`](@ref), 
-[`maxion`](@ref), [`minion`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ions(::AbstractMassSpectrum)`](@ref), [`ioncount(::AbstractMassSpectrum)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
@@ -355,7 +369,9 @@ ERROR: ArgumentError: ion 124 does not exist
 [...]
 ```
 
-See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`ion`](@ref), [`minion`](@ref), [`maxion`](@ref), [`ioncount`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), [`ioncount(::AbstractMassSpectrum)`](@ref).
 """
 function ionindex(chrom::AbstractMassSpectrum, ion::Real)
     for (index, element) in enumerate(ions(chrom))
@@ -370,8 +386,10 @@ end
 
 Return the ions.
 
-See also [`AbstractMassSpectrum`](@ref), [`ion`](@ref), [`maxion`](@ref), [`minion`](@ref), 
-[`ioncount`](@ref), [`ionindex`](@ref), 
+See also [`AbstractMassSpectrum`](@ref), [`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`maxion(::AbstractMassSpectrum)`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
+[`ioncount(::AbstractMassSpectrum)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
 [`sharedions(::AbstractMassSpectrum, ::AbstractMassSpectrum)](@ref).
 
 # Example
@@ -542,8 +560,9 @@ end
 
 Return the maximum intensity.
 
-See also [`AbstractMassSpectrum`](@ref), [`minintensity`](@ref), 
-[`intensities(::AbstractMassSpectrum)`](@ref), [`intensity`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`minintensity(::AbstractMassSpectrum)`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), 
+[`intensity(::AbstractMassSpectrum, ::Integer)`](@ref)`](@ref).
 
 # Example
 ```jldoctest
@@ -565,8 +584,10 @@ maxintensity(ms::AbstractMassSpectrum) = maximum(intensities(ms))
 
 Return the largest ion.
 
-See also [`AbstractMassSpectrum`](@ref), [`minion`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
-[`ioncount`](@ref), [`ion`](@ref), [`ionindex`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`minion(::AbstractMassSpectrum)`](@ref), 
+[`ions(::AbstractMassSpectrum)`](@ref), [`ioncount(::AbstractMassSpectrum)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref).
 
 # Example
 ```jldoctest
@@ -647,8 +668,9 @@ metadata(ms::AbstractMassSpectrum) = ms.metadata
 
 Return the minimum intensity.
 
-See also [`AbstractMassSpectrum`](@ref), [`maxintensity`](@ref), 
-[`intensities(::AbstractMassSpectrum)`](@ref), [`intensity`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`maxintensity(::AbstractMassSpectrum)`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), 
+[`intensity(::AbstractMassSpectrum, ::Integer)`](@ref)`](@ref).
 
 # Example
 ```jldoctest
@@ -670,8 +692,10 @@ minintensity(ms::AbstractMassSpectrum) = minimum(intensities(ms))
 
 Return the smallest ion.
 
-See also [`AbstractMassSpectrum`](@ref), [`maxion`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
-[`ioncount`](@ref), [`ion`](@ref), [`ionindex`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`maxion(::AbstractMassSpectrum)`](@ref), 
+[`ions(::AbstractMassSpectrum)`](@ref), [`ioncount(::AbstractMassSpectrum)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref).
 
 # Example
 ```jldoctest
@@ -819,7 +843,9 @@ end
 
 Return the ions present in both mass spectra.
 
-See also [`MassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), [`ion`](@ref), [`ioncount`](@ref).
+See also [`MassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ioncount(::AbstractMassSpectrum)`](@ref).
 
 # Example
 ```jldoctest
