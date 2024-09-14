@@ -288,7 +288,7 @@ mpr4cal # hide
 ```@example 3
 chroms = []
 for run in keys(cal4run)
-    runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", run)
+    runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs")
     #chrom = importdata(runfolder, ChemStationMS())
     #rimapper(chrom, mpr4cal[cal4run[run]])
     push!(chroms, cd(readdir, runfolder))
