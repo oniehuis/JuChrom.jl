@@ -40,9 +40,7 @@ the [Makie visualization ecosystem](https://docs.makie.org). If you haven't inst
 yet, you may need to do so.
 
 ```@example 1
-using CairoMakie
-using DelimitedFiles
-using JuChrom
+using CairoMakie, DelimitedFiles, JuChrom
 
 filename = "example1.CAL"
 file = joinpath(JuChrom.calibration, filename)
@@ -198,9 +196,7 @@ we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a `
 `catch` block to handle any exceptions.
 
 ```@example 1
-using CairoMakie
-using DelimitedFiles
-using JuChrom
+using CairoMakie, DelimitedFiles, JuChrom
 
 filename = "example2.CAL"
 file = joinpath(JuChrom.calibration, filename)
@@ -235,6 +231,7 @@ using the code from the previous example.
 ```@example 1
 # <- Insert plotmappingfunction code here
 plotmappingfunction(ld, "rt2ri_2.svg")
+nothing # hide
 ```
 
 This will produce the following 
