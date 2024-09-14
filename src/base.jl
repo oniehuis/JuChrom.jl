@@ -53,7 +53,7 @@ See also [`AbstractChromatogram`](@ref), [`AbstractChromMS`](@ref), [`ChromMS`](
 abstract type AbstractChromMS <: AbstractChromatogram end
 
 
-mutable struct ChromMS{
+struct ChromMS{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real},
     T3<:AbstractMatrix{<:Real},
@@ -153,7 +153,7 @@ function ChromMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{A
 end
 
 
-mutable struct Chrom{
+struct Chrom{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real}
     } <: AbstractChrom
