@@ -89,7 +89,7 @@ metadata: 1 entry</code></pre><p>Since we did not explicitly specify an interpol
   ri_name = retentionindexname(ld)
   timeunit = unit(eltype(retentiontimes(ld)))
   ax = Axis(f[1,1], title=title, xlabel=&quot;Scan time [$timeunit]&quot;,
-      ylabel=&quot;$ri_name retention index&quot;)
+    ylabel=&quot;$ri_name retention index&quot;)
 
   # Plot calibration points
   cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
@@ -98,224 +98,15 @@ metadata: 1 entry</code></pre><p>Since we did not explicitly specify an interpol
   xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
   itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-  # Calculate extrapolation range
-  Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
-
-  # Plot left-end extrapolation
-  xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-  etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
-
-  # Plot right-end extrapolation
-  xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:green)
-
   # Add an informative legend
-  axislegend(ax, [cal, itp, etpₗ, etpᵣ], [&quot;calibration points&quot;, &quot;interpolation&quot;,
-      &quot;left-end extrapolation&quot;, &quot;right-end extrapolation&quot;], position = :lt,
-      orientation = :horizontal)
+  axislegend(ax, [cal, itp], [&quot;calibration points&quot;, &quot;interpolation&quot;], position = :lt,
+    orientation = :horizontal)
 
   # Save figure in svg file format
   save(outputfile, f)
 end
 
-plotmappingfunction(ld, &quot;rt2ri.svg&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value
-extrapolated value</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri.svg" alt/></p><h2 id="Example:-Calibration-Points-from-an-Excel-File"><a class="docs-heading-anchor" href="#Example:-Calibration-Points-from-an-Excel-File">Example: Calibration Points from an Excel File</a><a id="Example:-Calibration-Points-from-an-Excel-File-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Calibration-Points-from-an-Excel-File" title="Permalink"></a></h2><p>In this example, we assume that a set of calibration points for calculating the  <a href="https://en.wikipedia.org/wiki/Kovats_retention_index">Kovats retention index</a>,  has been stored in an Excel file, possibly as a result of a manual entry. The relevant  data can be found in the first sheet of the file <code>example1.xlsx</code>, named <code>Table1</code>. </p><p>We will use the <a href="https://github.com/felipenoris/XLSX.jl">XLSX.jl package</a> to read the  contents of the Excel file. As in the previous example, we need to assign the time values a  unit of minutes. To accomplish this, we will import  <a href="https://github.com/oniehuis/JuChrom.jl">JuChrom.jl</a>, which re-exports functionality from  the <a href="https://painterqubits.github.io/Unitful.jl">Unitful.jl package</a>.</p><pre><code class="language-julia hljs">using JuChrom
+plotmappingfunction(ld, &quot;rt2ri.svg&quot;)</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri.svg" alt/></p><h2 id="Example:-Calibration-Points-from-an-Excel-File"><a class="docs-heading-anchor" href="#Example:-Calibration-Points-from-an-Excel-File">Example: Calibration Points from an Excel File</a><a id="Example:-Calibration-Points-from-an-Excel-File-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Calibration-Points-from-an-Excel-File" title="Permalink"></a></h2><p>In this example, we assume that a set of calibration points for calculating the  <a href="https://en.wikipedia.org/wiki/Kovats_retention_index">Kovats retention index</a>,  has been stored in an Excel file, possibly as a result of a manual entry. The relevant  data can be found in the first sheet of the file <code>example1.xlsx</code>, named <code>Table1</code>. </p><p>We will use the <a href="https://github.com/felipenoris/XLSX.jl">XLSX.jl package</a> to read the  contents of the Excel file. As in the previous example, we need to assign the time values a  unit of minutes. To accomplish this, we will import  <a href="https://github.com/oniehuis/JuChrom.jl">JuChrom.jl</a>, which re-exports functionality from  the <a href="https://painterqubits.github.io/Unitful.jl">Unitful.jl package</a>.</p><pre><code class="language-julia hljs">using JuChrom
 import XLSX
 
 filename = &quot;example1.xlsx&quot;
@@ -384,4 +175,4 @@ interpolation method: NaturalCubicBSpline(true)
 extrapolation method: Linear()
 metadata: 1 entry</code></pre><p>Let&#39;s use the returned <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> object to plot the compromised mapping function  using the code from the previous example.</p><pre><code class="language-julia hljs"># &lt;- Insert plotmappingfunction code here
 plotmappingfunction(ld, &quot;rt2ri_2.svg&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
-</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri_2.svg" alt/></p><p>As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes  prompted the creation of a B-spline featuring two critical points in its second polynomial:  a local maximum at 5.128 minutes and a local minimum at 5.526 minutes. This outcome is not  due to Hexane being incorrectly identified or associated with an incorrect retention time.  Instead, the pronounced disparity in the retention time–retention index relationship in the  first segment of the B-spline, compared to the following segments, causes the B-spline to  oscillate. This oscillation suggests that the available set of calibration points at the  start of the run is insufficient for reliable prediction of retention indices in this  region using the chosen interpolation method. It is entirely possible that a denser  sampling of calibration points at the beginning of the run could resolve this issue,  particularly given the large RI interval between Hexane and Nonane compared to subsequent  calibration points. </p><p>If the <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> is intended to interpolate values between, for example, minutes  10 and 30, the simplest solution might be to omit this calibration point. Alternatively,  one could choose the <a href="../../man/retentionindices/#JuChrom.PiecewiseLinear"><code>PiecewiseLinear</code></a> interpolation method, which avoids  oscillations. However, it introduces discontinuities in its derivative, making it a less  desirable interpolation method.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data Export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Saturday 14 September 2024 19:30">Saturday 14 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="../rt2ri_2.svg" alt/></p><p>As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes  prompted the creation of a B-spline featuring two critical points in its second polynomial:  a local maximum at 5.128 minutes and a local minimum at 5.526 minutes. This outcome is not  due to Hexane being incorrectly identified or associated with an incorrect retention time.  Instead, the pronounced disparity in the retention time–retention index relationship in the  first segment of the B-spline, compared to the following segments, causes the B-spline to  oscillate. This oscillation suggests that the available set of calibration points at the  start of the run is insufficient for reliable prediction of retention indices in this  region using the chosen interpolation method. It is entirely possible that a denser  sampling of calibration points at the beginning of the run could resolve this issue,  particularly given the large RI interval between Hexane and Nonane compared to subsequent  calibration points. </p><p>If the <a href="../../man/retentionindices/#JuChrom.RiMapper"><code>RiMapper</code></a> is intended to interpolate values between, for example, minutes  10 and 30, the simplest solution might be to omit this calibration point. Alternatively,  one could choose the <a href="../../man/retentionindices/#JuChrom.PiecewiseLinear"><code>PiecewiseLinear</code></a> interpolation method, which avoids  oscillations. However, it introduces discontinuities in its derivative, making it a less  desirable interpolation method.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data Export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Saturday 14 September 2024 20:07">Saturday 14 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
