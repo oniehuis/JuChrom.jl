@@ -153,7 +153,7 @@ function ChromMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{A
 end
 
 
-struct Chrom{
+mutable struct Chrom{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real}
     } <: AbstractChrom
