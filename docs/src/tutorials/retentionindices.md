@@ -128,6 +128,7 @@ function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
 end
 
 plotmappingfunction(ld, "rt2ri.svg")
+nothing # hide
 ```
 
 This will produce the following 
