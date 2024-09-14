@@ -189,7 +189,7 @@ julia> retentionindex(ld, 1.5u"minute") ≈ 1500.0
 true
 
 julia> retentionindex(ld, 11u"minute") ≈ 11000.0
-[ Info: extrapolated value
+extrapolated value
 true
 
 julia> retentionindices(ld)
@@ -523,14 +523,14 @@ julia> retentionindex(ld, 1.8u"minute") ≈ 1512.3626373626375
 true
 
 julia> retentionindex(ld, 1.1u"minute") ≈ 913.9194139194141
-[ Info: extrapolated value
+extrapolated value
 true
 
 julia> retentionindex(ld, 1.1u"minute", info=false) ≈ 913.9194139194141
 true
 
 julia> ris = retentionindex.(ld, [1, 2]u"minute");  # broadcasting across multiple RT values
-[ Info: extrapolated value
+extrapolated value
 
 julia> ris ≈ [827.8388278388279, 1678.876678876679]
 true
@@ -566,14 +566,14 @@ julia> retentionindex(chrom, 1.8u"minute") ≈ 1512.3626373626375
 true
 
 julia> retentionindex(chrom, 1.1u"minute") ≈ 913.9194139194141
-[ Info: extrapolated value
+extrapolated value
 true
 
 julia> retentionindex(chrom, 1.1u"minute", info=false) ≈ 913.9194139194141
 true
 
 julia> ris = retentionindex.(chrom, [1, 2]u"minute");  # broadcasting across multiple RT values
-[ Info: extrapolated value
+extrapolated value
 
 julia> ris ≈ [827.8388278388279, 1678.876678876679]
 true
@@ -718,7 +718,7 @@ julia> JuChrom.rt2ri(ld)(1u"minute") ≈ 821.4487832484438
 true
 
 julia> retentionindex(ld, 1u"minute") ≈ 821.44878324844389
-[ Info: extrapolated value
+extrapolated value
 true
 ```
 """
