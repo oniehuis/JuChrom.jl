@@ -309,9 +309,9 @@ for chrom in chroms
     ld = rimapper(tic)
     ris, ints = [], []
     for i in 1:scancount(tic)
-        t = scantime(tic, i)
-        if minretentiontime(ld) ≤ t ≤ maxretentiontime(ld)
-            push!(ris, retentionindex(ld, t))
+        rt = scantime(tic, i)
+        if minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld)
+            push!(ris, retentionindex(ld, rt))
             push!(ints, intensity(tic, i))
         end
     end
@@ -323,7 +323,45 @@ save("tics_in_one_axis.svg", f)
 nothing # hide
 ```
 
-This will produce the following 
-[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
+This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
+
+![](tics_in_one_axis.svg)
+
+```@example 3
+
+alpha_figure = 1
+alpha_axes = 1
+alpha_lines = 0.5
+f = Figure(size=(1200, 400), backgroundcolor=(:white, alpha_figure))
+ax1 = Axis(f[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance", 
+  backgroundcolor = (:white, alpha_axes))
+ax2 = Axis(f[2,1], limits = (nothing, nothing, 0, nothing), 
+  xlabel="Kovats retention index", ylabel="Abundance", 
+  backgroundcolor=(:white, alpha_axes), yreversed=true)
+
+linkxaxes!(ax1, ax2)
+rowgap!(f.layout, 0)
+hidexdecorations!(ax1, grid=false)
+
+for chrom in chroms
+    tic = totalionchromatogram(chrom)
+    ris, ints = [], []
+    for i in 1:scancount(tic)
+        rt = scantime(tic, i)
+        if minretentiontime(rimapper(tic)) ≤ rt ≤ maxretentiontime(rimapper(tic))
+            push!(ris, retentionindex(rimapper(tic), rt))
+            push!(ints, intensity(tic, i))
+        end
+    end
+    group = endswith(metadata(chrom)[:sample], "R") ? 1 : 2
+    group == (1 ? lines!(ax1, ris, ints, color=(:blue, alpha_lines)) 
+      : lines!(ax2, ris, ints, color=(:red, alpha_lines)))
+end
+
+save("tics_in_two_axes.svg", f)
+nothing # hide
+```
+
+This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ![](tics_in_one_axis.svg)
