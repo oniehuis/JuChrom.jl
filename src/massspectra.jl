@@ -269,8 +269,9 @@ intensity(ms::AbstractMassSpectrum, ionindex::Integer) = intensities(ms)[ioninde
 Return the intensity difference for each ion in ms₁ and ms₂, with any negative results set 
 to zero. This function assumes both mass spectra contain data for the same set of ions.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref), 
-[`intensitysums`](@ref), [`meanintensities`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), [`intensitysums`](@ref), 
+[`meanintensities`](@ref).
 
 # Examples
 ```jldoctest
@@ -317,8 +318,8 @@ end
 Return the intensity sums for each ion in ms₁ and ms₂. This function assumes that both mass 
 spectra contain data for the same set of ions.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref), 
-[`meanintensities`](@ref), .
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), [`meanintensities`](@ref).
 
 # Examples
 ```jldoctest
@@ -695,8 +696,9 @@ maxion(ms::AbstractMassSpectrum) = last(ions(ms))
 Return a vector of the average intensities for all ions in the provided mass spectra. This 
 function assumes that each mass spectrum contains data for the same set of ions.
 
-See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref), 
-[`intensitydifferences`](@ref), [`intensitysums`](@ref).
+See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
+[`intensities(::AbstractMassSpectrum)`](@ref), [`intensitydifferences`](@ref), 
+[`intensitysums`](@ref).
 
 # Example
 ```jldoctest
