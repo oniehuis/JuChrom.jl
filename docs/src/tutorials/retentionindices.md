@@ -294,35 +294,3 @@ for run in keys(cal4run)
     push!(chroms, chrom)
 end
 ```
-
-```@example 3
-chroms # hide
-```
-
-```@example 3
-f = Figure(size=(1200, 600))
-ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
-
-alpha_lines = 0.5
-for chrom in chroms
-    tic = totalionchromatogram(chrom)
-    ris, ints = [], []
-    for i in 1:scancount(tic)
-        t = scantime(tic, i)
-        if minretentiontime(rimapper(tic)) ≤ t ≤ maxretentiontime(rimapper(tic))
-            push!(ris, retentionindex(rimapper(tic), t))
-            push!(ints, intensity(tic, i))
-        end
-    end
-    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines) 
-    lines!(ax, ris, ints, color=c)
-end
-
-save("tics_in_one_axis.svg", f)
-nothing # hide
-```
-
-This will produce the following 
-[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
-
-![](tics_in_one_axis.svg)
