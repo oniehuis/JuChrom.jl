@@ -54,6 +54,7 @@ export maxion
 export maxretentionindex
 export maxretentiontime
 export maxscantime
+export meanintensities
 export metadata
 export minintensity
 export minion

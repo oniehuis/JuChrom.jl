@@ -902,3 +902,36 @@ function similarity(ms₁::AbstractMassSpectrum, ms₂::AbstractMassSpectrum, f:
     ions = sharedions(ms₁, ms₂)
     f(intensity.(ms₁, ionindex.(ms₁, ions)), intensity.(ms₂, ionindex.(ms₂, ions)))
 end
+
+
+"""
+    meanintensities(mss::AbstractVector{<:AbstractMassSpectrum}) -> Vector{Float64}
+
+Return a vector of the average intensities for all ions in the provided mass spectra. This 
+function requires that each mass spectrum contains data for the same set of ions.
+
+See also [`AbstractMassSpectrum`](@ref), [`ions`](@ref), [`intensities`](@ref).
+
+# Example
+```jldoctest
+julia> ms₁ = MassSpectrum([80, 85, 90], [0, 10, 0]);
+
+julia> ms₂ = MassSpectrum([80, 85, 90], [10, 80, 5]);
+
+julia> meanintensities([ms₁, ms₂]) ≈ Float64[5.0, 45.0, 2.5]
+true
+```
+"""
+function meanintensities(mss::AbstractVector{<:AbstractMassSpectrum})::Vector{Float64}
+    mscount = length(mss)
+    mscount > 0 || throw(ArgumentError("cannot iterate over empty container"))
+    mscount == 1 && (return intensities(first(mss)))
+    mzs = ions(first(mss))
+    sums = zeros(Float64, length(mzs))
+    for ms in mss
+        count(mzs .== ions(ms)) == ioncount(ms) || throw(ArgumentError(
+            "mass spectra differ in ions"))
+        sums .+= intensities(ms)
+    end
+    sums / mscount
+end

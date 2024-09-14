@@ -373,6 +373,36 @@ end
 
 
 ############################################################################################
+# meanintensities(mss::AbstractVector{<:AbstractMassSpectrum})
+############################################################################################
+@testset "meanintensities(::AbstractVector{<:AbstractMassSpectrum})" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [5.0, 45.0, 2.5] ≈ meanintensities([MassSpectrum([80, 85, 90], [0, 10, 0]), 
+        MassSpectrum([80, 85, 90], [10, 80, 5])])
+    @test [5.0, 45.0, 2.5] ≈ meanintensities([MassSpectrum([80, 85, 90], [0, 10, 0]), 
+        MassSpectrum([80, 85, 90], Float64[10, 80, 5])])
+    @test [5.0] ≈ meanintensities([MassSpectrum([80], [0]), MassSpectrum([80], [10])])
+    @test [5.0] ≈ meanintensities([MassSpectrum([80], [0]), MassSpectrum([80], 
+        Float64[10])])
+
+    # Same element type as used to construct the object
+    @test Vector{Float64} == typeof(meanintensities([MassSpectrum([80, 85, 90], 
+        [0, 10, 0]), MassSpectrum([80, 85, 90], [10, 80, 5])]))
+    @test Vector{Float64} == typeof(meanintensities([MassSpectrum([80, 85, 90], 
+        [0, 10, 0]), MassSpectrum([80, 85, 90], Float64[10, 80, 5])]))
+    @test Vector{Float64} == typeof(meanintensities([MassSpectrum([80], [0]), 
+        MassSpectrum([80], [10])]))
+    @test Vector{Float64} == typeof(meanintensities([MassSpectrum([80], [0]), 
+        MassSpectrum([80], Float64[10])]))
+
+    @test_throws ArgumentError meanintensities([MassSpectrum([80, 85, 90], [0, 10, 0]), 
+        MassSpectrum([80, 84, 90], [10, 80, 5])])
+    @test_throws ArgumentError meanintensities([MassSpectrum([80], [0]), 
+        MassSpectrum([81], [10])])
+end
+
+
+############################################################################################
 # metadata(ms::AbstractMassSpectrum)
 ############################################################################################
 @testset "metadata(ms)" begin

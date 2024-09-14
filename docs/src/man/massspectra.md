@@ -13,6 +13,7 @@ ioncount(::AbstractMassSpectrum)
 massspectrum
 maxintensity(::AbstractMassSpectrum)
 maxion(::AbstractMassSpectrum)
+meanintensities
 metadata(::AbstractMassSpectrum) 
 minintensity(::AbstractMassSpectrum)
 minion(::AbstractMassSpectrum)
