@@ -25,10 +25,15 @@ using Unitful: 𝐓
     @test Dict(:id => 4, "name" => "sample") == Chrom([1, 2, 3]u"s", [12, 956, 23], 
         Dict(:id => 4, "name" => "sample")).metadata
 
-    # RiMapper
+    # RiMapper, incl. its mutability
     @test isa(Chrom([1, 2, 3]u"s", [12, 956, 23]).rimapper, Nothing)
     @test isa(Chrom([1, 2, 3]u"s", [12, 956, 23], rimapper=RiMapper("Kovats", 
         (1:5)u"minute", 1000:1000:5000)).rimapper, JuChrom.AbstractRiMapper)
+
+    chrom = Chrom([1, 2, 3]u"s", [12, 956, 23])
+    @test nothing === chrom.rimapper
+    chrom.rimapper = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
+    @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
 
     # Check the associated supertypes
     @test isa(Chrom([1, 2, 3]u"s", [12, 956, 23]), AbstractChromatogram)

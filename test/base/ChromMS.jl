@@ -53,10 +53,15 @@ using Unitful: 𝐓
     @test Dict(:id => 4, "name" => "sample") == ChromMS([1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1], Dict(:id => 4, "name" => "sample")).metadata
 
-    # RiMapper
+    # RiMapper, incl. its mutability
     @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).rimapper, Nothing)
     @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1], rimapper=RiMapper(
         "Kovats", (1:5)u"minute", 1000:1000:5000)).rimapper, JuChrom.AbstractRiMapper)
+
+    chrom = ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+    @test nothing === chrom.rimapper
+    chrom.rimapper = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
+    @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
 
     # Check the associated supertypes
     @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)

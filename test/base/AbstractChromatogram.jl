@@ -598,6 +598,36 @@ end
 
 
 ############################################################################################
+# rimapper(chrom::AbstractChromatogram)
+############################################################################################
+@testset "rimapper(::AbstractChromatogram)" begin
+    @test nothing === rimapper(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]))
+    @test isa(rimapper(Chrom([1, 2, 3]u"s", [12, 956, 23], rimapper=RiMapper("Kovats", 
+        (1:5)u"minute", 1000:1000:5000))), JuChrom.AbstractRiMapper)
+    @test nothing === rimapper(Chrom([1, 2, 3]u"s", [12, 956, 23]))
+    @test isa(rimapper(Chrom([1, 2, 3]u"s", [12, 956, 23], rimapper=RiMapper("Kovats", 
+            (1:5)u"minute", 1000:1000:5000))), JuChrom.AbstractRiMapper)
+end
+
+
+############################################################################################
+# rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
+############################################################################################
+@testset "rimapper(::AbstractChromatogram, ::AbstractRiMapper)" begin
+    chrom = Chrom([1, 2, 3]u"s", [12, 956, 23])
+    ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
+    @test nothing === chrom.rimapper
+    rimapper(chrom, ld)
+    @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
+
+    chrom = ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
+    @test nothing === chrom.rimapper
+    rimapper(chrom, ld)
+    @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
+end
+
+
+############################################################################################
 # runduration(chrom::AbstractChromatogram; timeunit::Unitful.TimeUnits, 
 # ustripped::Bool=false)
 ############################################################################################
