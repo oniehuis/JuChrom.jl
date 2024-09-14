@@ -1,6 +1,6 @@
 # Retention Indices
 
-## Example: Calibration Points from a Delimited File
+## Example 1: Calibration Points from a Delimited File
 
 Let's assume we have a set of calibration points for calculating the 
 [Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index), 
@@ -123,7 +123,7 @@ This will produce the following
 ![](rt2ri.svg)
 
 
-## Example: Calibration Points from an Excel File
+## Example 2: Calibration Points from an Excel File
 
 In this example, we assume that a set of calibration points for calculating the 
 [Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index), 
@@ -166,7 +166,7 @@ in the delimited file. Instead, we will discuss an example where the imported ca
 points result in an error when inferring a [`NaturalCubicBSpline`](@ref) interpolant.
 
 
-## Example: Error in Inferring NaturalCubicBSpline Interpolant
+## Example 3: Error in Inferring NaturalCubicBSpline Interpolant
 
 In the two previous examples, the computation of a natural cubic B-spline for calculating a 
 continuously increasing retention index worked as expected. However, this is not always 
@@ -257,3 +257,29 @@ If the [`RiMapper`](@ref) is intended to interpolate values between, for example
 one could choose the [`PiecewiseLinear`](@ref) interpolation method, which avoids 
 oscillations. However, it introduces discontinuities in its derivative, making it a less 
 desirable interpolation method.
+
+## Example 4: Plotting multiple TICs against Kovats RI
+
+```@example 2
+using CairoMakie, DelimitedFiles, JuChrom
+import XLSX
+
+file = joinpath(JuChrom.calibration, "empirical_data", "run_calfilename_relation.xlsx")
+data_cells = XLSX.readdata(file, "Table1", "A1:B4")
+cal4run = Dict(data_cells[row, 1] => data_cells[row, 2] for row in axes(data_cells, 1))
+```
+
+```@example 2
+mpr4cal = Dict()
+for calfilename in unique(values(cal4run))
+    calfile = joinpath(JuChrom.calibration, "empirical_data", "calfiles", calfilename)
+    cells = readdlm(calfile; header=false)
+    rts = convert(Vector{Float64}, cells[:, 1]) * u"minute"
+    ris = convert(Vector{Float64}, cells[:, 2])
+    mpr4cal[calfilename] = RiMapper("Kovats", rts, ris)
+end
+```
+
+```@example 2
+mpr4cal # hide
+```
