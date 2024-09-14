@@ -58,10 +58,10 @@ mutable struct ChromMS{
     T2<:AbstractVector{<:Real},
     T3<:AbstractMatrix{<:Real},
     } <: AbstractChromMS
-    const scantimes::T1 # const
-    ions::T2 # const
-    intensities::T3 # const
-    metadata::Dict{Any, Any} # const
+    const scantimes::T1
+    const ions::T2
+    const intensities::T3
+    const metadata::Dict{Any, Any}
     rimapper::Union{AbstractRiMapper, Nothing}
     function ChromMS{T1, T2, T3}(
         scantimes::T1,
@@ -157,9 +157,9 @@ struct Chrom{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real}
     } <: AbstractChrom
-    scantimes::T1 # const
-    intensities::T2 # 
-    metadata::Dict{Any, Any}
+    const scantimes::T1
+    const intensities::T2
+    const metadata::Dict{Any, Any}
     rimapper::Union{AbstractRiMapper, Nothing}
     function Chrom{T1, T2}(
         scantimes::T1,
@@ -1483,37 +1483,37 @@ metadata: 0 entries
 rimapper(chrom::AbstractChromatogram) = chrom.rimapper
 
 
-# """
-#     rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
+"""
+    rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
 
-# Assign an retention index mapper to the AbstractChromatogram object.
+Assign an retention index mapper to the AbstractChromatogram object.
 
-# See also [`AbstractChromatogram`](@ref), [`AbstractRiMapper`](@ref), [`RiMapper`](@ref).
+See also [`AbstractChromatogram`](@ref), [`AbstractRiMapper`](@ref), [`RiMapper`](@ref).
 
-# # Example
-# ```jldoctest
-# julia> chrom = Chrom([1, 2, 3, 4, 5]u"s", [12, 956, 23, 45, 25]);
+# Example
+```jldoctest
+julia> chrom = Chrom([1, 2, 3, 4, 5]u"s", [12, 956, 23, 45, 25]);
 
-# julia> rimapper(chrom) === nothing
-# true
+julia> rimapper(chrom) === nothing
+true
 
-# julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
-# julia> rimapper(chrom, ld);
+julia> rimapper(chrom, ld);
 
-# julia> rimapper(chrom)
-# RiMapper {index name: Kovats, calibration points: 5}
-# retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
-# retention indices: 1000, 2000, 3000, 4000, 5000
-# interpolation method: NaturalCubicBSpline(false)
-# extrapolation method: Linear()
-# metadata: 0 entries
+julia> rimapper(chrom)
+RiMapper {index name: Kovats, calibration points: 5}
+retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
+retention indices: 1000, 2000, 3000, 4000, 5000
+interpolation method: NaturalCubicBSpline(false)
+extrapolation method: Linear()
+metadata: 0 entries
 
-# julia> retentionindex(chrom, 2.2u"minute") ≈ 2200.0
-# true
-# ```
-# """
-# rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper) = chrom.rimapper = rim
+julia> retentionindex(chrom, 2.2u"minute") ≈ 2200.0
+true
+```
+"""
+rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper) = chrom.rimapper = rim
 
 
 """
