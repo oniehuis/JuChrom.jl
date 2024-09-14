@@ -98,7 +98,7 @@ function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
   ri_name = retentionindexname(ld)
   timeunit = unit(eltype(retentiontimes(ld)))
   ax = Axis(f[1,1], title=title, xlabel="Scan time [$timeunit]", 
-      ylabel="$ri_name retention index")
+    ylabel="$ri_name retention index")
 
   # Plot calibration points
   cal = scatter!(ax, retentiontimes(ld, ustripped=true), retentionindices(ld), color=:red)
@@ -107,21 +107,9 @@ function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
   xs = LinRange(minretentiontime(ld), maxretentiontime(ld), 1000)
   itp = lines!(ax, ustrip(xs), retentionindex.(ld, xs), color=:blue)
 
-  # Calculate extrapolation range
-  Δt = (maxretentiontime(ld) - minretentiontime(ld)) / length(retentiontimes(ld))
-
-  # Plot left-end extrapolation
-  xs1 = LinRange(minretentiontime(ld) - Δt, minretentiontime(ld), 100)
-  etpₗ = lines!(ax, ustrip(xs1), retentionindex.(ld, xs1), color=:magenta)
-
-  # Plot right-end extrapolation
-  xs2 = LinRange(maxretentiontime(ld), maxretentiontime(ld) + Δt, 100)
-  etpᵣ = lines!(ax, ustrip(xs2), retentionindex.(ld, xs2), color=:green)
-
   # Add an informative legend
-  axislegend(ax, [cal, itp, etpₗ, etpᵣ], ["calibration points", "interpolation", 
-      "left-end extrapolation", "right-end extrapolation"], position = :lt, 
-      orientation = :horizontal)
+  axislegend(ax, [cal, itp], ["calibration points", "interpolation"], position = :lt, 
+    orientation = :horizontal)
 
   # Save figure in svg file format
   save(outputfile, f)
