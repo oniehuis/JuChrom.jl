@@ -296,8 +296,8 @@ end
 ```
 
 ```@example 3
-f = Figure(size=(1200, 600))
-ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
+f1 = Figure(size=(1200, 600))
+ax = Axis(f1[1,1], xlabel="Kovats retention index", ylabel="Abundance")
 
 alpha_lines = 0.5
 for chrom in chroms
@@ -315,7 +315,7 @@ for chrom in chroms
   lines!(ax, ris, ints, color=c)
 end
 
-save("tics_in_one_axis.svg", f)
+save("tics_in_one_axis.svg", f1)
 nothing # hide
 ```
 
@@ -325,18 +325,14 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ```@example 3
 
-alpha_figure = 0.8
-alpha_axes = 0.9
 alpha_lines = 0.5
-f = Figure(size=(1200, 600), backgroundcolor=(:white, alpha_figure))
-ax1 = Axis(f[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance", 
-  backgroundcolor = (:white, alpha_axes))
-ax2 = Axis(f[2,1], limits = (nothing, nothing, 0, nothing), 
-  xlabel="Kovats retention index", ylabel="Abundance", 
-  backgroundcolor=(:white, alpha_axes), yreversed=true)
+f2 = Figure(size=(1200, 600))
+ax1 = Axis(f2[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance")
+ax2 = Axis(f2[2,1], limits = (nothing, nothing, 0, nothing), 
+  xlabel="Kovats retention index", ylabel="Abundance", yreversed=true)
 
 linkxaxes!(ax1, ax2)
-rowgap!(f.layout, 0)
+rowgap!(f2.layout, 0)
 hidexdecorations!(ax1, grid=false)
 
 for chrom in chroms
@@ -356,7 +352,7 @@ for chrom in chroms
   end
 end
 
-save("tics_in_two_axes.svg", f)
+save("tics_in_two_axes.svg", f2)
 nothing # hide
 ```
 
