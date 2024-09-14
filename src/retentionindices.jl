@@ -538,7 +538,7 @@ true
 """
 function retentionindex(mapper::RiMapper, retentiontime::Unitful.Time; info::Bool=true)
     minretentiontime(mapper) ≤ retentiontime ≤ maxretentiontime(mapper) || (
-        info && !isnothing(extrapolationmethod(mapper)) && @info "extrapolated value")
+        info && !isnothing(extrapolationmethod(mapper)) && println("extrapolated value"))
     rt2ri(mapper)(retentiontime)
 end
 
@@ -839,7 +839,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     # println(cpoints)
     if length(cpoints) > 0
         if force
-            @warn "the interpolator does not produce continuously increasing values"
+            println("the interpolator does not produce continuously increasing values")
         else
             throw(ArgumentError("the interpolator does not produce continuously " * 
                 "increasing values"))
@@ -857,7 +857,7 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
         Δrts_ustripped = rts_ustripped[end] - rts_ustripped[end-1]
         slope2 = (last(polynomials)[1] + last(polynomials)[2] * (Δrts_ustripped) 
             + last(polynomials)[3] * (Δrts_ustripped)^2)
-        slope1 > 0 && slope2 > 0 || @warn ("the interpolator does not produce " 
+        slope1 > 0 && slope2 > 0 || println("the interpolator does not produce " 
             * "continuously increasing values")
 
         f1a(rt_ustripped)::Float64 = first(polynomials)[0] - slope1 * (first(rts_ustripped) 
