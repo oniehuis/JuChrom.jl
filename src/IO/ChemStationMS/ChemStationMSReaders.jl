@@ -67,7 +67,7 @@ end
 datafilename(fileformat::ChemStationMS) = fileformat.datafilename
 
 
-function readmetadata(f::IOStream, positionof::Dict{String, Int}, stepwidth::Integer)
+function readmetadata(f::IOStream, positionof::Dict{Symbol, Int}, stepwidth::Integer)
     metadata = Dict{Any, Any}()
     for (feature, pos) in pairs(positionof)
         seek(f, pos)
@@ -87,14 +87,14 @@ struct ChemStationMSV1 end
 function readfile(::ChemStationMSV1, file::AbstractString)
 
     # Location of string type metadata
-    positionof = Dict{String, Int}(
-        "sample"      =>  24,
-        "description" =>  86,
-        "operator"    => 148,
-        "datetime"    => 178,
-        "type"        => 208,
-        "inlet"       => 218,
-        "method"      => 228)
+    positionof = Dict{Symbol, Int}(
+        :sample      =>  24,
+        :description =>  86,
+        :operator    => 148,
+        :datetime    => 178,
+        :type        => 208,
+        :inlet       => 218,
+        :method      => 228)
 
     open(file, "r") do f
 
@@ -117,9 +117,9 @@ function readfile(::ChemStationMSV1, file::AbstractString)
 
         # Extract integer type metadata
         seek(f, 252)
-        metadata["sequence"] = convert(Int, ntoh(read(f, Int16)))
-        metadata["vial"] = convert(Int, ntoh(read(f, Int16)))
-        metadata["replicate"] = convert(Int, ntoh(read(f, Int16)))
+        metadata[:sequence] = convert(Int, ntoh(read(f, Int16)))
+        metadata[:vial] = convert(Int, ntoh(read(f, Int16)))
+        metadata[:replicate] = convert(Int, ntoh(read(f, Int16)))
 
         # Scan count
         seek(f, 278)

@@ -60,8 +60,8 @@ datafilename(fileformat::AgilentFID) = fileformat.datafilename
 struct AgilentFIDv179 end
 
 
-function readmetadata(f::IOStream, positionof::Dict{String, Int}, stepwidth::Integer)
-    metadata = Dict{String, Union{String, Nothing}}()
+function readmetadata(f::IOStream, positionof::Dict{Symbol, Int}, stepwidth::Integer)
+    metadata = Dict{Symbol, Union{String, Nothing}}()
     for (feature, pos) in pairs(positionof)
         seek(f, pos)
         bytes = ltoh.(read(f, ltoh(read(f, UInt8)) * stepwidth))[begin:stepwidth:end]
@@ -75,16 +75,16 @@ end
 function readfile(::AgilentFIDv179, file::AbstractString)
 
     # Location of string type metadata
-    positionof = Dict{String, Int}(
-        "sample"      =>  858,
-        "description" => 1369,
-        "operator"    => 1880,
-        "datetime"    => 2391,
-        "inlet"       => 2492,
-        "type"        => 2533,
-        "method"      => 2574,
-        "software"    => 3089,
-        "signal"      => 4213)
+    positionof = Dict{Symbol, Int}(
+        :sample      =>  858,
+        :description => 1369,
+        :operator    => 1880,
+        :datetime    => 2391,
+        :inlet       => 2492,
+        :type        => 2533,
+        :method      => 2574,
+        :software    => 3089,
+        :signal      => 4213)
 
     open(file, "r") do f
 
@@ -110,7 +110,7 @@ function readfile(::AgilentFIDv179, file::AbstractString)
         # Signal unit
         seek(f, 4172)
         signalunit = decode(ltoh.(read(f, ltoh(read(f, UInt8)) * 2))[begin:2:end], encoding)
-        metadata["signal unit"] = signalunit
+        metadata[:signal_unit] = signalunit
 
         # Signal scaling factor
         seek(f, 4732)

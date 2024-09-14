@@ -53,28 +53,26 @@ See also [`AbstractChromatogram`](@ref), [`AbstractChromMS`](@ref), [`ChromMS`](
 abstract type AbstractChromMS <: AbstractChromatogram end
 
 
-struct ChromMS{
+mutable struct ChromMS{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real},
     T3<:AbstractMatrix{<:Real},
-    T4<:Union{AbstractRiMapper, Nothing}
     } <: AbstractChromMS
-    scantimes::T1
-    ions::T2
-    intensities::T3
-    metadata::Dict{Any, Any}
-    rimapper::T4
-    function ChromMS{T1, T2, T3, T4}(
+    const scantimes::T1
+    const ions::T2
+    const intensities::T3
+    const metadata::Dict{Any, Any}
+    rimapper::Union{AbstractRiMapper, Nothing}
+    function ChromMS{T1, T2, T3}(
         scantimes::T1,
         ions::T2,
         intensities::T3,
         metadata::Dict, 
-        rimapper::T4
+        rimapper::Union{AbstractRiMapper, Nothing}
         ) where {
             T1<:AbstractVector{<:Unitful.Time},
             T2<:AbstractVector{<:Real},
-            T3<:AbstractMatrix{<:Real},
-            T4<:Union{AbstractRiMapper, Nothing}}
+            T3<:AbstractMatrix{<:Real}}
         length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(ions) > 0 || throw(ArgumentError("no ion(s) provided"))
@@ -100,7 +98,8 @@ Base.broadcastable(chrom::ChromMS) = Ref(chrom)
 
 """
     ChromMS(scantimes::AbstractVector{<:Unitful.Time}, ions::AbstractVector{<:Real}, 
-    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}()) <: AbstractChromMS
+    intensities::AbstractMatrix{<:Real}; metadata::Dict=Dict{Any, Any}(), 
+    rimapper::Union{AbstractRiMapper, Nothing}=nothing) <: AbstractChromMS
 
 Construct a `ChromMS` object that includes `scantimes`, `ions`, `intensities`, and 
 `metadata`. Ensure that both `scantimes` and `ions` are in ascending order, and that 
@@ -145,34 +144,31 @@ ERROR: ArgumentError: intensity values contain at least one value less than zero
 ```
 """
 function ChromMS(scantimes::T1, ions::T2, intensities::T3, metadata::Dict=Dict{Any, Any}();
-    rimapper::T4=nothing
+    rimapper::Union{AbstractRiMapper, Nothing}=nothing
     ) where {
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real},
-    T3<:AbstractMatrix{<:Real},
-    T4<:Union{AbstractRiMapper, Nothing}}
-    ChromMS{T1, T2, T3, T4}(scantimes, ions, intensities, metadata, rimapper)
+    T3<:AbstractMatrix{<:Real}}
+    ChromMS{T1, T2, T3}(scantimes, ions, intensities, metadata, rimapper)
 end
 
 
-struct Chrom{
+mutable struct Chrom{
     T1<:AbstractVector{<:Unitful.Time},
-    T2<:AbstractVector{<:Real},
-    T3<:Union{AbstractRiMapper, Nothing}
+    T2<:AbstractVector{<:Real}
     } <: AbstractChrom
-    scantimes::T1
-    intensities::T2
+    const scantimes::T1
+    const intensities::T2
     metadata::Dict{Any, Any}
-    rimapper::T3
-    function Chrom{T1, T2, T3}(
+    rimapper::Union{AbstractRiMapper, Nothing}
+    function Chrom{T1, T2}(
         scantimes::T1,
         intensities::T2, 
         metadata::Dict,
-        rimapper::T3
+        rimapper::Union{AbstractRiMapper, Nothing}
         ) where { 
             T1<:AbstractVector{<:Unitful.Time}, 
-            T2<:AbstractVector{<:Real},
-            T3<:Union{AbstractRiMapper, Nothing}}
+            T2<:AbstractVector{<:Real}}
         length(scantimes) > 0 || throw(ArgumentError("no scan time(s) provided"))
         length(intensities) > 0 || throw(ArgumentError("no intensity value(s) provided"))
         length(intensities) == length(scantimes) || throw(
@@ -233,9 +229,9 @@ ERROR: ArgumentError: intensity values contain at least one value less than zero
 ```
 """
 function Chrom(scantimes::T1, intensities::T2, metadata::Dict=Dict{Any, Any}();
-    rimapper::T3=nothing) where {T1<:AbstractVector{<:Unitful.Time}, 
-    T2<:AbstractVector{<:Real}, T3<:Union{AbstractRiMapper, Nothing}}
-    Chrom{T1, T2, T3}(scantimes, intensities, metadata, rimapper)
+    rimapper::Union{AbstractRiMapper, Nothing}=nothing) where {
+        T1<:AbstractVector{<:Unitful.Time}, T2<:AbstractVector{<:Real}}
+    Chrom{T1, T2}(scantimes, intensities, metadata, rimapper)
 end
 
 
@@ -1485,6 +1481,39 @@ metadata: 0 entries
 ```
 """
 rimapper(chrom::AbstractChromatogram) = chrom.rimapper
+
+
+"""
+    rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
+
+Assign an retention index mapper to the AbstractChromatogram object.
+
+See also [`AbstractChromatogram`](@ref), [`AbstractRiMapper`](@ref), [`RiMapper`](@ref).
+
+# Example
+```jldoctest
+julia> chrom = Chrom([1, 2, 3, 4, 5]u"s", [12, 956, 23, 45, 25]);
+
+julia> rimapper(chrom) === nothing
+true
+
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
+
+julia> rimapper(chrom, ld);
+
+julia> rimapper(chrom)
+RiMapper {index name: Kovats, calibration points: 5}
+retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
+retention indices: 1000, 2000, 3000, 4000, 5000
+interpolation method: NaturalCubicBSpline(false)
+extrapolation method: Linear()
+metadata: 0 entries
+
+julia> retentionindex(chrom, 2.2u"minute") ≈ 2200.0
+true
+```
+"""
+rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper) = chrom.rimapper = rim
 
 
 """
