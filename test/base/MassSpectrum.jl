@@ -213,6 +213,57 @@ end
 
 
 ############################################################################################
+# intensitydifferences(::AbstractMassSpectrum, ::AbstractMassSpectrum)
+############################################################################################
+@testset "intensitydifferences(::AbstractMassSpectrum, ::AbstractMassSpectrum)" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [10, 70, 5] == intensitydifferences(MassSpectrum([80, 85, 90], [10, 80, 5]), 
+        MassSpectrum([80, 85, 90], [0, 10, 0]))
+    @test [0, 0, 0] == intensitydifferences(MassSpectrum([80, 85, 90], [0, 10, 0]), 
+        MassSpectrum([80, 85, 90], [10, 80, 5]))
+    @test [4.5, 59.9, 0.0] == intensitydifferences(MassSpectrum([80, 85, 90], [10, 80, 5]), 
+        MassSpectrum([80, 85, 90], [5.5, 20.1, 5]))
+
+    # Same element type as used to construct the object
+    @test Vector{Int} == typeof(intensitydifferences(MassSpectrum([80, 85, 90], 
+        [10, 80, 5]), MassSpectrum(Int[80, 85, 90], Int[0, 10, 0])))
+    @test Vector{Int} == typeof(intensitydifferences(MassSpectrum([80, 85, 90], 
+        [0, 10, 0]), MassSpectrum(Int[80, 85, 90], Int[10, 80, 5])))
+    @test Vector{Float64}== typeof(intensitydifferences(MassSpectrum([80, 85, 90], 
+        [10, 80, 5]), MassSpectrum(Int[80, 85, 90], Float64[5.5, 20.1, 5])))
+
+    # Provoke a BoundsError by specifying an index that does not exist
+    @test_throws ArgumentError intensitydifferences(MassSpectrum([80], [5]), 
+        MassSpectrum([81], [5]))
+end
+
+
+############################################################################################
+# intensitysums(::AbstractMassSpectrum, ::AbstractMassSpectrum)
+############################################################################################
+@testset "intensitysums(::AbstractMassSpectrum, ::AbstractMassSpectrum)" begin
+    # Same return values as those provided as arguments to construct the object
+    @test [10, 90, 5] == intensitysums(MassSpectrum([80, 85, 90], [10, 80, 5]), 
+        MassSpectrum([80, 85, 90], [0, 10, 0]))
+    @test [10, 90, 5] == intensitysums(MassSpectrum([80, 85, 90], [0, 10, 0]), 
+        MassSpectrum([80, 85, 90], [10, 80, 5]))
+    @test [15.5, 100.1, 10.0] == intensitysums(MassSpectrum([80, 85, 90], [10, 80, 5]), 
+        MassSpectrum([80, 85, 90], [5.5, 20.1, 5]))
+
+    # Same element type as used to construct the object
+    @test Vector{Int} == typeof(intensitysums(MassSpectrum([80, 85, 90], 
+        [10, 80, 5]), MassSpectrum(Int[80, 85, 90], Int[0, 10, 0])))
+    @test Vector{Int} == typeof(intensitysums(MassSpectrum([80, 85, 90], 
+        [0, 10, 0]), MassSpectrum(Int[80, 85, 90], Int[10, 80, 5])))
+    @test Vector{Float64}== typeof(intensitysums(MassSpectrum([80, 85, 90], 
+        [10, 80, 5]), MassSpectrum(Int[80, 85, 90], Float64[5.5, 20.1, 5])))
+
+    # Provoke a BoundsError by specifying an index that does not exist
+    @test_throws ArgumentError intensitysums(MassSpectrum([80], [5]), 
+        MassSpectrum([81], [5]))
+end
+
+############################################################################################
 # ion(gcms::AbstractMassSpectrum, ionindex::Integer)
 ############################################################################################
 @testset "ion(gcms, ionindex)" begin

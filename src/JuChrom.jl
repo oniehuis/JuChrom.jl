@@ -39,6 +39,8 @@ export extrapolationmethod
 export integer
 export intensities
 export intensity
+export intensitydifferences
+export intensitysums
 export interpolationmethod
 export ion
 export ioncount

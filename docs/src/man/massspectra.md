@@ -6,6 +6,8 @@ MassSpectrum
 cosine
 intensities(::AbstractMassSpectrum)
 intensity(::AbstractMassSpectrum, ::Integer)
+intensitydifferences
+intensitysums
 ion(::AbstractMassSpectrum, ::Integer)
 ionindex(::AbstractMassSpectrum, ::Real)
 ions(::AbstractMassSpectrum)
