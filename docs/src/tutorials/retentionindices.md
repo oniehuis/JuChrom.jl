@@ -325,8 +325,8 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ```@example 3
 
-alpha_figure = 1
-alpha_axes = 1
+alpha_figure = 0.5
+alpha_axes = 0.5
 alpha_lines = 0.5
 f = Figure(size=(1200, 400), backgroundcolor=(:white, alpha_figure))
 ax1 = Axis(f[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance", 
@@ -359,4 +359,4 @@ nothing # hide
 
 This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
-![](tics_in_one_axis.svg)
+![](tics_in_two_axes.svg)
