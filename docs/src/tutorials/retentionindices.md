@@ -258,9 +258,10 @@ one could choose the [`PiecewiseLinear`](@ref) interpolation method, which avoid
 oscillations. However, it introduces discontinuities in its derivative, making it a less 
 desirable interpolation method.
 
+
 ## Example 4: Plotting multiple TICs against Kovats RI
 
-```@example 2
+```@example 3
 using CairoMakie, DelimitedFiles, JuChrom
 import XLSX
 
@@ -269,7 +270,7 @@ data_cells = XLSX.readdata(file, "Table1", "A1:B4")
 cal4run = Dict(data_cells[row, 1] => data_cells[row, 2] for row in axes(data_cells, 1))
 ```
 
-```@example 2
+```@example 3
 mpr4cal = Dict()
 for calfilename in unique(values(cal4run))
     calfile = joinpath(JuChrom.calibration, "empirical_data", "calfiles", calfilename)
@@ -280,6 +281,48 @@ for calfilename in unique(values(cal4run))
 end
 ```
 
-```@example 2
+```@example 3
 mpr4cal # hide
 ```
+
+```@example 3
+chroms = []
+for run in keys(cal4run)
+    runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", run)
+    chrom = importdata(runfolder, ChemStationMS())
+    rimapper(chrom, mpr4cal[cal4run[run]])
+    push!(chroms, chrom)
+end
+```
+
+```@example 3
+chroms # hide
+```
+
+```@example 3
+f = Figure(size=(1200, 600))
+ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
+
+alpha_lines = 0.5
+for chrom in chroms
+    tic = totalionchromatogram(chrom)
+    ris, ints = [], []
+    for i in 1:scancount(tic)
+        t = scantime(tic, i)
+        if minretentiontime(rimapper(tic)) ≤ t ≤ maxretentiontime(rimapper(tic))
+            push!(ris, retentionindex(rimapper(tic), t))
+            push!(ints, intensity(tic, i))
+        end
+    end
+    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines) 
+    lines!(ax, ris, ints, color=c)
+end
+
+save("tics_in_one_axis.svg", f)
+nothing # hide
+```
+
+This will produce the following 
+[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
+
+![](tics_in_one_axis.svg)
