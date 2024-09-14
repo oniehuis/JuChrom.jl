@@ -58,10 +58,10 @@ mutable struct ChromMS{
     T2<:AbstractVector{<:Real},
     T3<:AbstractMatrix{<:Real},
     } <: AbstractChromMS
-    const scantimes::T1
-    const ions::T2
-    const intensities::T3
-    const metadata::Dict{Any, Any}
+    scantimes::T1 # const
+    ions::T2 # const
+    intensities::T3 # const
+    metadata::Dict{Any, Any} # const
     rimapper::Union{AbstractRiMapper, Nothing}
     function ChromMS{T1, T2, T3}(
         scantimes::T1,
@@ -157,8 +157,8 @@ mutable struct Chrom{
     T1<:AbstractVector{<:Unitful.Time},
     T2<:AbstractVector{<:Real}
     } <: AbstractChrom
-    const scantimes::T1
-    const intensities::T2
+    scantimes::T1 # const
+    intensities::T2 # 
     metadata::Dict{Any, Any}
     rimapper::Union{AbstractRiMapper, Nothing}
     function Chrom{T1, T2}(
