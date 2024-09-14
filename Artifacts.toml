@@ -13,8 +13,8 @@ git-tree-sha1 = "fbb1cfc928d393c7b88470d38380a57185f7973f"
     sha256 = "fc781115eadba07853c2030fe64300d5569492e7cfa04374d4ab3e3edeb8d192"
 
 [calibration]
-git-tree-sha1 = "abd9d7e0bb9e12278ca7e487c8c62781a29b6f4d"
+git-tree-sha1 = "c7cd9162c1843733eb71b371c027a52643f69953"
 
     [[calibration.download]]
     url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/calibration.tar.gz"
-    sha256 = "dcf76e9abb4d5bd0bdd56aebcab3d9e59752c33bd4fdd5f702a91072e2051fbc"
+    sha256 = "839ce3b84596ccaa9f82f292c60f9292563d3805799cce3f1ec9b82dd03743f8"
