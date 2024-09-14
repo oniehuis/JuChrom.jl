@@ -296,10 +296,6 @@ end
 ```
 
 ```@example 3
-chroms # hide
-```
-
-```@example 3
 f = Figure(size=(1200, 600))
 ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
 
@@ -354,8 +350,7 @@ for chrom in chroms
         end
     end
     group = endswith(metadata(chrom)[:sample], "R") ? 1 : 2
-    group == (1 ? lines!(ax1, ris, ints, color=(:blue, alpha_lines)) 
-      : lines!(ax2, ris, ints, color=(:red, alpha_lines)))
+    group == 1 ? lines!(ax1, ris, ints, color=(:blue, alpha_lines)) : lines!(ax2, ris, ints, color=(:red, alpha_lines))
 end
 
 save("tics_in_two_axes.svg", f)
