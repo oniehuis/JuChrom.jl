@@ -301,18 +301,18 @@ ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
 
 alpha_lines = 0.5
 for chrom in chroms
-    tic = totalionchromatogram(chrom)
-    ld = rimapper(tic)
-    ris, ints = [], []
-    for i in 1:scancount(tic)
-        rt = scantime(tic, i)
-        if minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld)
-            push!(ris, retentionindex(ld, rt))
-            push!(ints, intensity(tic, i))
-        end
+  tic = totalionchromatogram(chrom)
+  ld = rimapper(tic)
+  ris, ints = [], []
+  for i in 1:scancount(tic)
+    rt = scantime(tic, i)
+    if minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld)
+      push!(ris, retentionindex(ld, rt))
+      push!(ints, intensity(tic, i))
     end
-    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines) 
-    lines!(ax, ris, ints, color=c)
+  end
+  c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines) 
+  lines!(ax, ris, ints, color=c)
 end
 
 save("tics_in_one_axis.svg", f)
@@ -325,10 +325,10 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ```@example 3
 
-alpha_figure = 0.5
-alpha_axes = 0.5
+alpha_figure = 0.8
+alpha_axes = 0.9
 alpha_lines = 0.5
-f = Figure(size=(1200, 400), backgroundcolor=(:white, alpha_figure))
+f = Figure(size=(1200, 600), backgroundcolor=(:white, alpha_figure))
 ax1 = Axis(f[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance", 
   backgroundcolor = (:white, alpha_axes))
 ax2 = Axis(f[2,1], limits = (nothing, nothing, 0, nothing), 
@@ -340,17 +340,20 @@ rowgap!(f.layout, 0)
 hidexdecorations!(ax1, grid=false)
 
 for chrom in chroms
-    tic = totalionchromatogram(chrom)
-    ris, ints = [], []
-    for i in 1:scancount(tic)
-        rt = scantime(tic, i)
-        if minretentiontime(rimapper(tic)) ≤ rt ≤ maxretentiontime(rimapper(tic))
-            push!(ris, retentionindex(rimapper(tic), rt))
-            push!(ints, intensity(tic, i))
-        end
+  tic = totalionchromatogram(chrom)
+  ris, ints = [], []
+  for i in 1:scancount(tic)
+    rt = scantime(tic, i)
+    if minretentiontime(rimapper(tic)) ≤ rt ≤ maxretentiontime(rimapper(tic))
+      push!(ris, retentionindex(rimapper(tic), rt))
+      push!(ints, intensity(tic, i))
     end
-    group = endswith(metadata(chrom)[:sample], "R") ? 1 : 2
-    group == 1 ? lines!(ax1, ris, ints, color=(:blue, alpha_lines)) : lines!(ax2, ris, ints, color=(:red, alpha_lines))
+  end
+  if endswith(metadata(chrom)[:sample], "R")
+    lines!(ax1, ris, ints, color=(:blue, alpha_lines))
+  else
+    lines!(ax2, ris, ints, color=(:red, alpha_lines))
+  end
 end
 
 save("tics_in_two_axes.svg", f)
