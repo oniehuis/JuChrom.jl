@@ -194,8 +194,8 @@ for run in keys(cal4run)
   chrom = importdata(runfolder, ChemStationMS())
   rimapper(chrom, mpr4cal[cal4run[run]])
   push!(chroms, chrom)
-end</code></pre><pre><code class="language-julia hljs">f = Figure(size=(1200, 600))
-ax = Axis(f[1,1], xlabel=&quot;Kovats retention index&quot;, ylabel=&quot;Abundance&quot;)
+end</code></pre><pre><code class="language-julia hljs">f1 = Figure(size=(1200, 600))
+ax = Axis(f1[1,1], xlabel=&quot;Kovats retention index&quot;, ylabel=&quot;Abundance&quot;)
 
 alpha_lines = 0.5
 for chrom in chroms
@@ -213,18 +213,14 @@ for chrom in chroms
   lines!(ax, ris, ints, color=c)
 end
 
-save(&quot;tics_in_one_axis.svg&quot;, f)</code></pre><p>This will produce the following <a href="https://en.wikipedia.org/wiki/SVG">SVG</a> file:</p><p><img src="../tics_in_one_axis.svg" alt/></p><pre><code class="language-julia hljs">alpha_figure = 0.8
-alpha_axes = 0.9
-alpha_lines = 0.5
-f = Figure(size=(1200, 600), backgroundcolor=(:white, alpha_figure))
-ax1 = Axis(f[1,1], limits = (nothing, nothing, 0, nothing), ylabel=&quot;Abundance&quot;,
-  backgroundcolor = (:white, alpha_axes))
-ax2 = Axis(f[2,1], limits = (nothing, nothing, 0, nothing),
-  xlabel=&quot;Kovats retention index&quot;, ylabel=&quot;Abundance&quot;,
-  backgroundcolor=(:white, alpha_axes), yreversed=true)
+save(&quot;tics_in_one_axis.svg&quot;, f1)</code></pre><p>This will produce the following <a href="https://en.wikipedia.org/wiki/SVG">SVG</a> file:</p><p><img src="../tics_in_one_axis.svg" alt/></p><pre><code class="language-julia hljs">alpha_lines = 0.5
+f2 = Figure(size=(1200, 600))
+ax1 = Axis(f2[1,1], limits = (nothing, nothing, 0, nothing), ylabel=&quot;Abundance&quot;)
+ax2 = Axis(f2[2,1], limits = (nothing, nothing, 0, nothing),
+  xlabel=&quot;Kovats retention index&quot;, ylabel=&quot;Abundance&quot;, yreversed=true)
 
 linkxaxes!(ax1, ax2)
-rowgap!(f.layout, 0)
+rowgap!(f2.layout, 0)
 hidexdecorations!(ax1, grid=false)
 
 for chrom in chroms
@@ -244,4 +240,4 @@ for chrom in chroms
   end
 end
 
-save(&quot;tics_in_two_axes.svg&quot;, f)</code></pre><p>This will produce the following <a href="https://en.wikipedia.org/wiki/SVG">SVG</a> file:</p><p><img src="../tics_in_two_axes.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data Export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Saturday 14 September 2024 23:15">Saturday 14 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+save(&quot;tics_in_two_axes.svg&quot;, f2)</code></pre><p>This will produce the following <a href="https://en.wikipedia.org/wiki/SVG">SVG</a> file:</p><p><img src="../tics_in_two_axes.svg" alt/></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../../man/export/">« Data Export</a><a class="docs-footer-nextpage" href="../../man/internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.7.0 on <span class="colophon-date" title="Saturday 14 September 2024 23:23">Saturday 14 September 2024</span>. Using Julia version 1.10.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
