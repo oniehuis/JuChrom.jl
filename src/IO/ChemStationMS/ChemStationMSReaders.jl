@@ -210,13 +210,14 @@ end
 
 
 function importdata(fileformat::ChemStationMS, source::AbstractString)
-    if isdir(source)
-        importdata(Path(), fileformat, source)
-    elseif isfile(source)
-        importdata(File(), fileformat, source)
-    else
-        throw(IOError("unsupported source for ChemStationMS data import"))
-    end
+    importdata(Path(), fileformat, source)
+    # if isdir(source)
+    #     importdata(Path(), fileformat, source)
+    # elseif isfile(source)
+    #     importdata(File(), fileformat, source)
+    # else
+    #     throw(IOError("unsupported source for ChemStationMS data import"))
+    # end
 end
 
 end # module
