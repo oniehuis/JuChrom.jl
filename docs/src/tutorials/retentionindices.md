@@ -273,11 +273,11 @@ cal4run = Dict(data_cells[row, 1] => data_cells[row, 2] for row in axes(data_cel
 ```@example 3
 mpr4cal = Dict()
 for calfilename in unique(values(cal4run))
-    calfile = joinpath(JuChrom.calibration, "empirical_data", "calfiles", calfilename)
-    cells = readdlm(calfile; header=false)
-    rts = convert(Vector{Float64}, cells[:, 1]) * u"minute"
-    ris = convert(Vector{Float64}, cells[:, 2])
-    mpr4cal[calfilename] = RiMapper("Kovats", rts, ris)
+  calfile = joinpath(JuChrom.calibration, "empirical_data", "calfiles", calfilename)
+  cells = readdlm(calfile; header=false)
+  rts = convert(Vector{Float64}, cells[:, 1]) * u"minute"
+  ris = convert(Vector{Float64}, cells[:, 2])
+  mpr4cal[calfilename] = RiMapper("Kovats", rts, ris)
 end
 ```
 
@@ -288,14 +288,10 @@ mpr4cal # hide
 ```@example 3
 chroms = []
 for run in keys(cal4run)
-  push!(chroms, run)
-  if run == "ON16150_April17_2024_I.D"
-
-    runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", "ON16150_April17_2024_I.D")
-
-    #chrom = importdata(runfolder, ChemStationMS())
-    #rimapper(chrom, mpr4cal[cal4run[run]])
-    push!(chroms, cd(readdir, runfolder))
+  runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", run)
+  chrom = importdata(runfolder, ChemStationMS())
+  rimapper(chrom, mpr4cal[cal4run[run]])
+  push!(chroms, chrom)
   end
 end
 ```
