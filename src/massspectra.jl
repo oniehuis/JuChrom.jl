@@ -405,12 +405,9 @@ end
 Return the number of ions.
 
 See also [`AbstractMassSpectrum`](@ref), [`ions(::AbstractMassSpectrum)`](@ref), 
-[`ion(::AbstractMassSpectrum, ::Integer)`](@ref), 
+[`ion(::AbstractMassSpectrum, ::Integer)`](@ref),
 [`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
-[`minion(::AbstractMassSpectrum)`](@ref), 
-[`maxion(::AbstractMassSpectrum)`](@ref),
-[`minion(::AbstractMassSpectrum)`](@ref), 
-[`ionindex(::AbstractMassSpectrum, ::Real)`](@ref), 
+[`minion(::AbstractMassSpectrum)`](@ref), [`maxion(::AbstractMassSpectrum)`](@ref),
 [`sharedions`](@ref).
 
 # Example
