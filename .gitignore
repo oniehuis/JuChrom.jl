@@ -4,10 +4,10 @@
 
 .DS_Store
 
+Manifest.toml
+
 /docs/build
 /docs/site
 /utilities
 /tmp
 /experimental
-
-to_be_included.jl
