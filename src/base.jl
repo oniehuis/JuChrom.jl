@@ -1,6 +1,5 @@
 include("utilities.jl")
 
-
 """
     AbstractRiMapper
 
