@@ -17,3 +17,5 @@ using SafeTestsets
 @safetestset "IO ANDI" begin include("IO/ANDI.jl") end
 @safetestset "IO DelimitedTextWriter" begin include("IO/DelimitedTextWriter.jl") end
 @safetestset "IO Excel" begin include("IO/Excel.jl") end
+
+# @safetestset "Deconvolution deconvolution" begin include("deconvolution/deconvolution.jl") end

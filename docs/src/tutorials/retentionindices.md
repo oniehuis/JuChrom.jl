@@ -324,8 +324,7 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 ![](tics_in_one_axis.svg)
 
 ```@example 3
-
-ri_range_of_interest = 900:1800
+ri_min, ri_max = 900, 1800
 
 alpha_lines = 0.5
 f2 = Figure(size=(1200, 600))
@@ -344,7 +343,7 @@ for chrom in chroms
     rt = scantime(tic, i)
     if minretentiontime(rimapper(tic)) ≤ rt ≤ maxretentiontime(rimapper(tic))
       ri = retentionindex(rimapper(tic), rt)
-      ri in ri_range_of_interest || continue
+      ri_min ≤ ri ≤ ri_max || continue
       push!(ris, ri)
       push!(ints, intensity(tic, i))
     end
