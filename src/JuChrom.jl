@@ -92,4 +92,10 @@ export MassHunterMS
 export exportdata
 export importdata
 
+# include("Deconvolution/Deconvolution.jl")
+# using .Deconvolution
+
+# export deconvolute
+# export deconvolute_parallel
+
 end

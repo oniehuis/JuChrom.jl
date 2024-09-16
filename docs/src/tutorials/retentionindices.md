@@ -325,6 +325,8 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ```@example 3
 
+ri_range_of_interest = 900:1800
+
 alpha_lines = 0.5
 f2 = Figure(size=(1200, 600))
 ax1 = Axis(f2[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance")
@@ -341,7 +343,9 @@ for chrom in chroms
   for i in 1:scancount(tic)
     rt = scantime(tic, i)
     if minretentiontime(rimapper(tic)) ≤ rt ≤ maxretentiontime(rimapper(tic))
-      push!(ris, retentionindex(rimapper(tic), rt))
+      ri = retentionindex(rimapper(tic), rt)
+      ri in ri_range_of_interest || continue
+      push!(ris, ri)
       push!(ints, intensity(tic, i))
     end
   end
