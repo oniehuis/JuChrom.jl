@@ -312,7 +312,6 @@ points, avoiding the extrapolation of retention indices. Additionally, we allow 
 restriction of the retention index range to be plotted in the figure.
 
 ```@example 4
-
 ri_min, ri_max = 900, 1800
 
 f = Figure(size=(1200, 600))
@@ -340,6 +339,30 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ## Example 5: Plotting multiple TICs against RI
 
+In some experimental designs, it is useful to plot the intensity values of different runs 
+against retention index values in a single figure. In this example, we assume two treatment 
+groups, labeled 'I' and 'R', with two replicates for each group. The experimental data were 
+analyzed using gas chromatography-mass spectrometry (GC-MS).
+
+We aim to plot the total ion chromatogram (TIC) intensities from the corresponding gas 
+chromatography-mass spectrometry (GC-MS) runs against Kovats retention indices. In this 
+example, the run files are again stored in the ChemStationMS data format. The corresponding 
+calibration files, which contain retention time and retention index value pairs, are in 
+the AMDIS .CAL file format (see Examples 1, 3, and 4 above). To automatically process this 
+data, we need a table indicating which calibration file is associated with each run. This 
+information is stored in the `run_calfilename_relation.xlsx` file in Excel format.
+
+As in Example 4, we require functionality from the CairoMakie, DelimitedFiles, and 
+JuChrom packages. Additionally, we need the XLSX package to read the Excel file. Note that 
+you may need to install the `CairoMakie` and `XLSX` packages if they are not already 
+installed.
+
+The relevant data in the Excel file is located in the sheet labeled `Table1`. Column `A` 
+contains the names of the run folders, and column `B` contains the names of the 
+corresponding .CAL files. Since we have four runs and no headers, the area of interest 
+is A1:B4. We'll read these cells and store the data in a dictionary, using the run names 
+as keys to retrieve the associated .CAL file names.
+
 ```@example 5
 using CairoMakie, DelimitedFiles, JuChrom
 import XLSX
@@ -348,6 +371,10 @@ file = joinpath(JuChrom.calibration, "empirical_data", "run_calfilename_relation
 data_cells = XLSX.readdata(file, "Table1", "A1:B4")
 cal4run = Dict(data_cells[row, 1] => data_cells[row, 2] for row in axes(data_cells, 1))
 ```
+
+Since two runs are associated with each .CAL file, it makes sense to first process the 
+.CAL files and create a dictionary from which we can retrieve the `RiMapper` generated from 
+a given .CAL file.
 
 ```@example 5
 mpr4cal = Dict()
@@ -364,6 +391,10 @@ end
 mpr4cal # hide
 ```
 
+Next, we read the GC-MS data and store a reference to the corresponding RiMapper object 
+in the resulting ChromMS object. The ChromMS objects are then collected in a list for 
+further processing.
+
 ```@example 5
 chroms = []
 for run in keys(cal4run)
@@ -374,11 +405,19 @@ for run in keys(cal4run)
 end
 ```
 
-```@example 5
-f1 = Figure(size=(1200, 600))
-ax = Axis(f1[1,1], xlabel="Kovats retention index", ylabel="Abundance")
+We now have all the data needed to generate a figure that plots the TIC from each run 
+against the Kovats retention index. Since the plotted lines will overlap, we will make 
+them transparent by setting the alpha channel to a value less than one. The treatment 
+group is indicated by the letters 'I' and 'R' at the end of the run folder name, which 
+is stored in the metadata. We will use this information to plot the TICs of the two groups 
+in different colors.
 
+```@example 5
+ri_min, ri_max = 900, 1800
 alpha_lines = 0.5
+
+f = Figure(size=(1200, 600))
+ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
 for chrom in chroms
   tic = totalionchromatogram(chrom)
   ld = rimapper(tic)
@@ -386,15 +425,17 @@ for chrom in chroms
   for i in 1:scancount(tic)
     rt = scantime(tic, i)
     if minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld)
-      push!(ris, retentionindex(ld, rt))
+      ri = retentionindex(rimapper(tic), rt)
+      ri_min ≤ ri ≤ ri_max || continue
+      push!(ris, ri)
       push!(ints, intensity(tic, i))
     end
   end
-  c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines) 
-  lines!(ax, ris, ints, color=c)
+  c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines)
+  length(ris) ≥ 2 && lines!(ax, ris, ints, color=c)
 end
 
-save("tics_in_one_axis.svg", f1)
+save("tics_in_one_axis.svg", f)
 nothing # hide
 ```
 
@@ -402,10 +443,16 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ![](tics_in_one_axis.svg)
 
+Although the TICs for the two treatment groups are plotted in different colors, it can 
+still be difficult to visually discern systematic differences between them. Furthermore, 
+if each treatment group contains more runs, the plot can become cluttered and overloaded. 
+Therefore, it may be helpful to plot the TICs for the two treatment groups on separate, 
+mirrored axes along the x-axis. The following lines of code generate such a figure.
+
 ```@example 5
 ri_min, ri_max = 900, 1800
-
 alpha_lines = 0.5
+
 f2 = Figure(size=(1200, 600))
 ax1 = Axis(f2[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance")
 ax2 = Axis(f2[2,1], limits = (nothing, nothing, 0, nothing), 
