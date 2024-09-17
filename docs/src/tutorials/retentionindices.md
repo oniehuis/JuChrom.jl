@@ -259,9 +259,88 @@ oscillations. However, it introduces discontinuities in its derivative, making i
 desirable interpolation method.
 
 
-## Example 4: Plotting multiple TICs against Kovats RI
+## Example 4: Plotting TIC against RI
 
-```@example 3
+It is often preferred to plot chromatographic intensity values against retention index 
+values rather than scan time. This requires chromatographic run data and corresponding 
+calibration data, which allow the calculation of an RiMapper for converting retention times 
+into retention indices. 
+
+Let's assume we wish to plot total ion chromatogram (TIC) intensities from a gas 
+chromatography/mass spectrometry (GCMS) run against Kovats retention indices. In this 
+example, the run file is stored in the `ChemStationMS` data format in the folder 
+`ON16150_April17_2024_I.D`. The corresponding calibration file, 
+`2024-04-11_C7-C40_11_APR_24_V09.CAL`, contains retention time and retention index value 
+pairs in the AMDIS .CAL file format (see Examples 1 and 3 above).
+
+To load the calibration file data, we will again use the `DelimitedFiles` package, which 
+comes with Julia. We will need the `JuChrom` package to read the ChemStation MS run data 
+and to process and apply the calibration file data. Finally, we will use the `CairoMakie` 
+package to generate the desired figure. Note that you may need to install the `CairoMakie` 
+package if you haven't done so already.
+
+We begin by reading and processing the calibration file data to create an `RiMapper` 
+object, following the general procedure outlined in Example 1.
+
+```@example 4
+using CairoMakie, DelimitedFiles, JuChrom
+
+calpath = joinpath(JuChrom.calibration, "empirical_data", "calfiles")
+calfile = joinpath(calpath, "2024-04-11_C7-C40_11_APR_24_V09.CAL")
+
+cells = readdlm(calfile; header=false)
+rts = convert(Vector{Float64}, cells[:, 1]) * u"minute"
+ris = convert(Vector{Float64}, cells[:, 2])
+ld = RiMapper("Kovats", rts, ris)
+```
+
+As indicated by the output, the computation of the RiMapper was successful (refer to 
+Example 3 for handling errors). We can now proceed with reading and processing the GCMS 
+run data.
+
+```@example 4
+runpath = joinpath(JuChrom.calibration, "empirical_data", "runs")
+runfolder = joinpath(runpath, "ON16150_April17_2024_I.D")
+chrom = importdata(runfolder, ChemStationMS())
+rimapper(chrom, ld)  # stores a reference to the RiMapper in ChromMS object
+tic = totalionchromatogram(chrom)
+```
+
+We now have everything set to generate the desired figure. In this specific example, we 
+only map intensities at retention times that fall within the range of the calibration 
+points, avoiding the extrapolation of retention indices. Additionally, we allow further 
+restriction of the retention index range to be plotted in the figure.
+
+```@example 4
+
+ri_min, ri_max = 900, 1800
+
+f = Figure(size=(1200, 600))
+ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
+ris, ints = [], []
+for i in 1:scancount(tic)
+  rt = scantime(tic, i)
+  if minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld)
+    ri = retentionindex(rimapper(tic), rt)
+    ri_min ≤ ri ≤ ri_max || continue
+    push!(ris, ri)
+    push!(ints, intensity(tic, i))
+  end
+end
+length(ris) ≥ 2 && lines!(ax, ris, ints, color=:blue)
+
+save("tic_against_ri.svg", f)
+nothing # hide
+```
+
+This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
+
+![](tic_against_ri.svg)
+
+
+## Example 5: Plotting multiple TICs against RI
+
+```@example 5
 using CairoMakie, DelimitedFiles, JuChrom
 import XLSX
 
@@ -270,7 +349,7 @@ data_cells = XLSX.readdata(file, "Table1", "A1:B4")
 cal4run = Dict(data_cells[row, 1] => data_cells[row, 2] for row in axes(data_cells, 1))
 ```
 
-```@example 3
+```@example 5
 mpr4cal = Dict()
 for calfilename in unique(values(cal4run))
   calfile = joinpath(JuChrom.calibration, "empirical_data", "calfiles", calfilename)
@@ -281,11 +360,11 @@ for calfilename in unique(values(cal4run))
 end
 ```
 
-```@example 3
+```@example 5
 mpr4cal # hide
 ```
 
-```@example 3
+```@example 5
 chroms = []
 for run in keys(cal4run)
   runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", run)
@@ -295,7 +374,7 @@ for run in keys(cal4run)
 end
 ```
 
-```@example 3
+```@example 5
 f1 = Figure(size=(1200, 600))
 ax = Axis(f1[1,1], xlabel="Kovats retention index", ylabel="Abundance")
 
@@ -323,7 +402,7 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 ![](tics_in_one_axis.svg)
 
-```@example 3
+```@example 5
 ri_min, ri_max = 900, 1800
 
 alpha_lines = 0.5
