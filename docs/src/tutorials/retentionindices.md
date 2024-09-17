@@ -348,10 +348,12 @@ for chrom in chroms
       push!(ints, intensity(tic, i))
     end
   end
-  if endswith(metadata(chrom)[:sample], "R")
-    lines!(ax1, ris, ints, color=(:blue, alpha_lines))
-  else
-    lines!(ax2, ris, ints, color=(:red, alpha_lines))
+  if length(ris) ≥ 2
+    if endswith(metadata(chrom)[:sample], "R")
+      lines!(ax1, ris, ints, color=(:blue, alpha_lines))
+    else
+      lines!(ax2, ris, ints, color=(:red, alpha_lines))
+    end
   end
 end
 

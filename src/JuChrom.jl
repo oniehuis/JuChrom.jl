@@ -97,5 +97,8 @@ export importdata
 
 # export deconvolute
 # export deconvolute_parallel
+# export saveplot
+#export nextlocalmaximum
+#export LocalMaxima
 
 end
