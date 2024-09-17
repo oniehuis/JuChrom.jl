@@ -477,8 +477,11 @@ for chrom in chroms
     end
   end
   if length(ris) ≥ 2
-    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha) : (:red, alpha)
-    lines!(ax1, ris, ints, color=c)
+    if endswith(metadata(chrom)[:sample], "R")
+      lines!(ax1, ris, ints, color=(:blue, alpha))
+    else
+      lines!(ax2, ris, ints, color=(:red, alpha))
+    end
   end
 end
 
