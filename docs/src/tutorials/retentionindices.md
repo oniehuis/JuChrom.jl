@@ -344,13 +344,13 @@ against retention index values in a single figure. In this example, we assume tw
 groups, labeled 'I' and 'R', with two replicates for each group. The experimental data were 
 analyzed using gas chromatography-mass spectrometry (GC-MS).
 
-We aim to plot the total ion chromatogram (TIC) intensities from the corresponding gas 
-chromatography-mass spectrometry (GC-MS) runs against Kovats retention indices. In this 
-example, the run files are again stored in the ChemStationMS data format. The corresponding 
-calibration files, which contain retention time and retention index value pairs, are in 
-the AMDIS .CAL file format (see Examples 1, 3, and 4 above). To automatically process this 
-data, we need a table indicating which calibration file is associated with each run. This 
-information is stored in the `run_calfilename_relation.xlsx` file in Excel format.
+We aim to plot the total ion chromatogram (TIC) intensities from the corresponding GC-MS 
+runs against Kovats retention indices. In this example, the run files are again stored in 
+the ChemStationMS data format. The corresponding calibration files, which contain retention 
+time and retention index value pairs, are in the AMDIS .CAL file format (see Examples 1, 3, 
+and 4 above). To automatically process this data, we need a table indicating which 
+calibration file is associated with each run. This information is stored in the 
+`run_calfilename_relation.xlsx` file in Excel format.
 
 As in Example 4, we require functionality from the CairoMakie, DelimitedFiles, and 
 JuChrom packages. Additionally, we need the XLSX package to read the Excel file. Note that 
@@ -414,7 +414,7 @@ in different colors.
 
 ```@example 5
 ri_min, ri_max = 900, 1800
-alpha_lines = 0.5
+alpha = 0.5
 
 f = Figure(size=(1200, 600))
 ax = Axis(f[1,1], xlabel="Kovats retention index", ylabel="Abundance")
@@ -431,8 +431,10 @@ for chrom in chroms
       push!(ints, intensity(tic, i))
     end
   end
-  c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha_lines) : (:red, alpha_lines)
-  length(ris) ≥ 2 && lines!(ax, ris, ints, color=c)
+  if length(ris) ≥ 2
+    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha) : (:red, alpha)
+    lines!(ax, ris, ints, color=c)
+  end
 end
 
 save("tics_in_one_axis.svg", f)
@@ -451,7 +453,7 @@ mirrored axes along the x-axis. The following lines of code generate such a figu
 
 ```@example 5
 ri_min, ri_max = 900, 1800
-alpha_lines = 0.5
+alpha = 0.5
 
 f2 = Figure(size=(1200, 600))
 ax1 = Axis(f2[1,1], limits = (nothing, nothing, 0, nothing), ylabel="Abundance")
@@ -475,11 +477,8 @@ for chrom in chroms
     end
   end
   if length(ris) ≥ 2
-    if endswith(metadata(chrom)[:sample], "R")
-      lines!(ax1, ris, ints, color=(:blue, alpha_lines))
-    else
-      lines!(ax2, ris, ints, color=(:red, alpha_lines))
-    end
+    c = endswith(metadata(tic)[:sample], "R") ? (:blue, alpha) : (:red, alpha)
+    lines!(ax1, ris, ints, color=c)
   end
 end
 
