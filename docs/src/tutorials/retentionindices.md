@@ -36,7 +36,7 @@ assign the minute time unit to the time values. Since
 [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) at this stage. To plot the inferred 
 mapping function, we will further load the 
 [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package from 
-the [Makie](https://docs.makie.org) visualization ecosystem. If you haven't installed it 
+the [Makie](https://docs.makie.org) visualization ecosystem. If you haven't installed them 
 yet, you may need to do so.
 
 ```@example 1
@@ -277,11 +277,11 @@ file format (see Examples 1 and 3 above).
 
 To load the calibration file data, we will again use the 
 [DelimitedFiles.jl](https://github.com/JuliaData/DelimitedFiles.jl) package, which comes 
-with [Julia](https://julialang.org). We will need the `JuChrom` package to read the 
-ChemStation MS run data and to process and apply the calibration file data. Finally, we 
-will use the [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) 
-packageto generate the desired figure. Note that you may need to install the 
-[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package if 
+with [Julia](https://julialang.org). We will need the 
+[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) package to read the ChemStation MS 
+run data and to process and apply the calibration file data. Finally, we will use the 
+[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package to 
+generate the desired figure. Note that you may need to install these packages if 
 you haven't done so already.
 
 We begin by reading and processing the calibration file data to create an 
@@ -353,10 +353,10 @@ We aim to plot the total ion chromatogram (TIC) intensities from the correspondi
 runs against Kovats retention indices. In this example, the run files are again stored in 
 the ChemStationMS data format. The corresponding calibration files, which contain retention 
 time and retention index value pairs, are in the 
-[AMDIS](https://chemdata.nist.gov/dokuwiki/doku.php?id=chemdata:amdis) .CAL file format (see Examples 1, 3, 
-and 4 above). To automatically process this data, we need a table indicating which 
-calibration file is associated with each run. This information is stored in the 
-`run_calfilename_relation.xlsx` file in Excel format.
+[AMDIS](https://chemdata.nist.gov/dokuwiki/doku.php?id=chemdata:amdis) .CAL file format 
+(see Examples 1, 3, and 4 above). To automatically process this data, we need a table 
+indicating which calibration file is associated with each run. This information is stored 
+in the `run_calfilename_relation.xlsx` file in Excel format.
 
 As in Example 4, we require functionality from the 
 [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie), 
