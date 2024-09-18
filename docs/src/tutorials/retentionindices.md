@@ -361,11 +361,9 @@ in the `run_calfilename_relation.xlsx` file in Excel format.
 As in Example 4, we require functionality from the 
 [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie), 
 [DelimitedFiles.jl](https://github.com/JuliaData/DelimitedFiles.jl), and 
-JuChrom packages. Additionally, we need the 
+[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) packages. Additionally, we need the 
 [XLSX.jl](https://github.com/felipenoris/XLSX.jl) package to read the Excel file. Note that 
-you may need to install the `CairoMakie` and 
-[XLSX.jl](https://github.com/felipenoris/XLSX.jl) packages if they are not already 
-installed.
+you need to install these packages if they are not already installed.
 
 The relevant data in the Excel file is located in the sheet labeled `Table1`. Column `A` 
 contains the names of the run folders, and column `B` contains the names of the 
