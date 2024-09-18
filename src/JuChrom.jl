@@ -96,9 +96,8 @@ export importdata
 # using .Deconvolution
 
 # export deconvolute
-# export deconvolute_parallel
 # export saveplot
-#export nextlocalmaximum
-#export LocalMaxima
+# export nextlocalmaximum
+# export LocalMaxima
 
 end

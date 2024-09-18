@@ -28,15 +28,15 @@ relevant for our purposes. The first column lists the retention times (in minute
 the second column provides the corresponding retention indices.
 
 We will use a function from the 
-[DelimitedFiles.jl package](https://github.com/JuliaData/DelimitedFiles.jl), which comes 
+[DelimitedFiles.jl](https://github.com/JuliaData/DelimitedFiles.jl) package, which comes 
 with [Julia](https://julialang.org), to read the file contents. Additionally, we need to 
-assign the minute time unit to the time values. 
-Since [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) re-exports names from the 
-[Unitful.jl package](https://painterqubits.github.io/Unitful.jl), we will also load 
+assign the minute time unit to the time values. Since 
+[JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) re-exports names from the 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) package, we will also load 
 [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl) at this stage. To plot the inferred 
 mapping function, we will further load the 
-[CairoMakie.jl package](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) from 
-the [Makie visualization ecosystem](https://docs.makie.org). If you haven't installed it 
+[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package from 
+the [Makie](https://docs.makie.org) visualization ecosystem. If you haven't installed it 
 yet, you may need to do so.
 
 ```@example 1
@@ -64,8 +64,8 @@ ris = convert(Vector{Float64}, data_cells[:, 2])
 We can now create a [`RiMapper`](@ref) object by calling its constructor with the required 
 arguments, along with any optional ones if needed. The mandatory arguments include the 
 name of the retention index (in our case, 
-[Kovats](https://en.wikipedia.org/wiki/Kovats_retention_index)), the retention time, and the 
-corresponding retention indices. In this example, we also store the name of the 
+[Kovats](https://en.wikipedia.org/wiki/Kovats_retention_index)), the retention time, and 
+the corresponding retention indices. In this example, we also store the name of the 
 calibration file as [`metadata`](@ref).
 
 ```@example 1
@@ -130,11 +130,11 @@ In this example, we assume that a set of calibration points for calculating the
 has been stored in an Excel file, possibly as a result of a manual entry. The relevant 
 data can be found in the first sheet of the file `example1.xlsx`, named `Table1`. 
 
-We will use the [XLSX.jl package](https://github.com/felipenoris/XLSX.jl) to read the 
+We will use the [XLSX.jl](https://github.com/felipenoris/XLSX.jl) package to read the 
 contents of the Excel file. As in the previous example, we need to assign the time values a 
 unit of minutes. To accomplish this, we will import 
 [JuChrom.jl](https://github.com/oniehuis/JuChrom.jl), which re-exports functionality from 
-the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl).
+the [Unitful.jl](https://painterqubits.github.io/Unitful.jl) package.
 
 ```@example 2
 using JuChrom
@@ -267,20 +267,25 @@ calibration data, which allow the calculation of an RiMapper for converting rete
 into retention indices. 
 
 Let's assume we wish to plot total ion chromatogram (TIC) intensities from a gas 
-chromatography/mass spectrometry (GCMS) run against Kovats retention indices. In this 
-example, the run file is stored in the `ChemStationMS` data format in the folder 
-`ON16150_April17_2024_I.D`. The corresponding calibration file, 
+chromatography/mass spectrometry (GCMS) run against 
+[Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index) values. 
+In this example, the run file is stored in the [`ChemStationMS`](@ref) data format in the 
+folder `ON16150_April17_2024_I.D`. The corresponding calibration file, 
 `2024-04-11_C7-C40_11_APR_24_V09.CAL`, contains retention time and retention index value 
-pairs in the AMDIS .CAL file format (see Examples 1 and 3 above).
+pairs in the [AMDIS](https://chemdata.nist.gov/dokuwiki/doku.php?id=chemdata:amdis) .CAL 
+file format (see Examples 1 and 3 above).
 
-To load the calibration file data, we will again use the `DelimitedFiles` package, which 
-comes with Julia. We will need the `JuChrom` package to read the ChemStation MS run data 
-and to process and apply the calibration file data. Finally, we will use the `CairoMakie` 
-package to generate the desired figure. Note that you may need to install the `CairoMakie` 
-package if you haven't done so already.
+To load the calibration file data, we will again use the 
+[DelimitedFiles.jl](https://github.com/JuliaData/DelimitedFiles.jl) package, which comes 
+with [Julia](https://julialang.org). We will need the `JuChrom` package to read the 
+ChemStation MS run data and to process and apply the calibration file data. Finally, we 
+will use the [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) 
+packageto generate the desired figure. Note that you may need to install the 
+[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package if 
+you haven't done so already.
 
-We begin by reading and processing the calibration file data to create an `RiMapper` 
-object, following the general procedure outlined in Example 1.
+We begin by reading and processing the calibration file data to create an 
+[`RiMapper`](@ref) object, following the general procedure outlined in Example 1.
 
 ```@example 4
 using CairoMakie, DelimitedFiles, JuChrom
@@ -294,8 +299,8 @@ ris = convert(Vector{Float64}, cells[:, 2])
 ld = RiMapper("Kovats", rts, ris)
 ```
 
-As indicated by the output, the computation of the RiMapper was successful (refer to 
-Example 3 for handling errors). We can now proceed with reading and processing the GCMS 
+As indicated by the output, the computation of the [`RiMapper`](@ref) was successful (refer 
+to Example 3 for handling errors). We can now proceed with reading and processing the GCMS 
 run data.
 
 ```@example 4
@@ -341,20 +346,25 @@ This will produce the following [SVG](https://en.wikipedia.org/wiki/SVG) file:
 
 In some experimental designs, it is useful to plot the intensity values of different runs 
 against retention index values in a single figure. In this example, we assume two treatment 
-groups, labeled 'I' and 'R', with two replicates for each group. The experimental data were 
-analyzed using gas chromatography-mass spectrometry (GC-MS).
+groups, labeled `I` and `R`, with two replicates for each group. The experimental data were 
+analyzed using gas chromatography/mass spectrometry (GCMS).
 
-We aim to plot the total ion chromatogram (TIC) intensities from the corresponding GC-MS 
+We aim to plot the total ion chromatogram (TIC) intensities from the corresponding GCMS 
 runs against Kovats retention indices. In this example, the run files are again stored in 
 the ChemStationMS data format. The corresponding calibration files, which contain retention 
-time and retention index value pairs, are in the AMDIS .CAL file format (see Examples 1, 3, 
+time and retention index value pairs, are in the 
+[AMDIS](https://chemdata.nist.gov/dokuwiki/doku.php?id=chemdata:amdis) .CAL file format (see Examples 1, 3, 
 and 4 above). To automatically process this data, we need a table indicating which 
 calibration file is associated with each run. This information is stored in the 
 `run_calfilename_relation.xlsx` file in Excel format.
 
-As in Example 4, we require functionality from the CairoMakie, DelimitedFiles, and 
-JuChrom packages. Additionally, we need the XLSX package to read the Excel file. Note that 
-you may need to install the `CairoMakie` and `XLSX` packages if they are not already 
+As in Example 4, we require functionality from the 
+[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie), 
+[DelimitedFiles.jl](https://github.com/JuliaData/DelimitedFiles.jl), and 
+JuChrom packages. Additionally, we need the 
+[XLSX.jl](https://github.com/felipenoris/XLSX.jl) package to read the Excel file. Note that 
+you may need to install the `CairoMakie` and 
+[XLSX.jl](https://github.com/felipenoris/XLSX.jl) packages if they are not already 
 installed.
 
 The relevant data in the Excel file is located in the sheet labeled `Table1`. Column `A` 
@@ -391,7 +401,7 @@ end
 mpr4cal # hide
 ```
 
-Next, we read the GC-MS data and store a reference to the corresponding RiMapper object 
+Next, we read the GCMS data and store a reference to the corresponding RiMapper object 
 in the resulting ChromMS object. The ChromMS objects are then collected in a list for 
 further processing.
 
@@ -406,11 +416,11 @@ end
 ```
 
 We now have all the data needed to generate a figure that plots the TIC from each run 
-against the Kovats retention index. Since the plotted lines will overlap, we will make 
-them transparent by setting the alpha channel to a value less than one. The treatment 
-group is indicated by the letters 'I' and 'R' at the end of the run folder name, which 
-is stored in the metadata. We will use this information to plot the TICs of the two groups 
-in different colors.
+against the [Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index). 
+Since the plotted lines will overlap, we will make them transparent by setting the alpha 
+channel to a value less than one. The treatment group is indicated by the letters `I` and 
+`R` at the end of the run folder name, which is stored in the [`metadata`](@ref). We will 
+use this information to plot the TICs of the two groups in different colors.
 
 ```@example 5
 ri_min, ri_max = 900, 1800
