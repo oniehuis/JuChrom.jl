@@ -103,8 +103,7 @@ end
 
 
 """
-    MassSpectrum(MassSpectrum(ions::AbstractVector{<:Real}, 
-    intensities::AbstractVector{<:Real};
+    MassSpectrum(ions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real};
     retentiontime::Union{Unitful.Time, Nothing}=nothing,
     retentionindexname::Union{AbstractString, Nothing}=nothing,
     retentionindex::Union{<:Real, Nothing}=nothing, metadata::Dict=Dict())

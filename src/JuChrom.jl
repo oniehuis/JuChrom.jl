@@ -92,11 +92,19 @@ export MassHunterMS
 export exportdata
 export importdata
 
+# include("NNLS/NNLS.jl")
+# import .NNLS
+
 # include("Deconvolution/Deconvolution.jl")
 # using .Deconvolution
 
 # export deconvolute
+# export deconvolute_p
 # export saveplot
+# export deconvolutedtic
+# export componentbins
+# export componentpeakmodels
+# export massspectra
 # export nextlocalmaximum
 # export LocalMaxima
 

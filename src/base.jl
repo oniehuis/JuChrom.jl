@@ -1054,7 +1054,7 @@ julia> δtᵢ(2)
 -0.5 s
 ```
 """
-ionscantimeshift(chrom::AbstractChromMS, ionscanorder::IonScanOrder, error::Real=0.001
+ionscantimeshift(chrom::AbstractChromMS, ionscanorder::IonScanOrder, error::Real=0.01
     ) = ionscantimeshift(ionscanorder, chrom, error)
 
 
@@ -1572,7 +1572,7 @@ scancount(chrom::AbstractChromatogram) = length(scantimes(chrom))
 
 
 """
-    scanduration(chrom::AbstractChromatogram; error::Real=0.001, 
+    scanduration(chrom::AbstractChromatogram; error::Real=0.01, 
     timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 
 Calculates the periodicity with which the scans were recorded over time. The optional 
@@ -1601,14 +1601,14 @@ julia> scanduration(chrom, timeunit=u"minute", ustripped=true)
 0.016666666666666666
 
 julia> scanduration(Chrom([1.0, 1.99, 3.0]u"s", [12, 956, 1]))
-ERROR: ArgumentError: maximum scan duration variation above threshold: 0.010000000000000009 > 0.001
+ERROR: ArgumentError: maximum scan duration variation above threshold: 0.010000000000000009 > 0.01
 [...]
 
 julia> scanduration(Chrom([1.0, 1.99, 3.0]u"s", [12, 956, 1]), error=0.02)
 1.0 s
 ```
 """
-function scanduration(chrom::AbstractChromatogram; error::Real=0.001,
+function scanduration(chrom::AbstractChromatogram; error::Real=0.01,
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), ustripped::Bool=false)
     scancount(chrom) > 1 || throw(
         ArgumentError("cannot calculate the scan duration from a single scan"))
