@@ -5,7 +5,8 @@ using Unitful: 𝐓
 @testset "ChromMS constructor" begin
     # Verify object construction and field types depending on constructor arguments
     # Scantimes
-    @test [1, 2, 3]u"s" == ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]).scantimes
+    @test [1, 2, 3]u"s" == ChromMS([1, 2, 3]u"s", [85, 100], 
+        [0 12; 34 956; 23 1]).scantimes
     @test Vector{Quantity{Int64, 𝐓 , Unitful.FreeUnits{(Unitful.Unit{:Second, 𝐓}(0, 
         1//1),), 𝐓 , nothing}}} == typeof(ChromMS(Int64[1, 2, 3]u"s", [85, 100], 
         [0 12; 34 956; 23 1]).scantimes)
@@ -22,7 +23,8 @@ using Unitful: 𝐓
     @test Vector{Float64} == typeof(ChromMS([1, 2, 3]u"s", Float64[85, 100], 
         [0 12; 34 956; 23 1]).ions)
     
-    @test UnitRange{Int64} == typeof(ChromMS([1, 2, 3]u"s", 85:86, [0 12; 34 956; 23 1]).ions)
+    @test UnitRange{Int64} == typeof(ChromMS([1, 2, 3]u"s", 85:86, 
+        [0 12; 34 956; 23 1]).ions)
     @test UnitRange{Int64} == typeof(ChromMS([1, 2, 3]u"s", 85:85, 
         reshape([0, 956, 1], (:,1))).ions)
     
@@ -64,7 +66,8 @@ using Unitful: 𝐓
     @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
 
     # Check the associated supertypes
-    @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromatogram)
+    @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), 
+        AbstractChromatogram)
     @test isa(ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1]), AbstractChromMS)
 
     # Scan time vector accepts only time values
@@ -95,7 +98,8 @@ using Unitful: 𝐓
 
     # Check size compatibility of intensities, scantimes, and ions
     # Too many scan times in comparison to intensity matrix
-    @test_throws DimensionMismatch ChromMS([1, 2, 3, 4]u"s", [85, 100], [0 12; 34 956; 23 1])
+    @test_throws DimensionMismatch ChromMS([1, 2, 3, 4]u"s", [85, 100], 
+        [0 12; 34 956; 23 1])
     # Too few scan times in comparison to intensity matrix
     @test_throws DimensionMismatch ChromMS([1, 2]u"s", [85, 100], [0 12; 34 956; 23 1])
     # Too many ions in comparison to intensity matrix
@@ -112,12 +116,9 @@ using Unitful: 𝐓
     @test_throws ArgumentError ChromMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
     @test_throws ArgumentError ChromMS([1, 2, 3]u"s", [85, 85], [0 12; 34 956; 23 1])
 
-    # Intensity values cannot be less than zero
-    @test_throws ArgumentError ChromMS([1, 2, 3]u"s", [85, 100], [-1 12; 34 956; 23 1])
-
     # ChromMS is broadcastable
-    @test [1, 2]u"s" == ((chrom, i) -> chrom.scantimes[i]).(ChromMS([1, 2, 3]u"s", [85, 100], 
-        [0 12; 34 956; 23 1]), [1, 2])
+    @test [1, 2]u"s" == ((chrom, i) -> chrom.scantimes[i]).(ChromMS([1, 2, 3]u"s", 
+        [85, 100], [0 12; 34 956; 23 1]), [1, 2])
 end
 
 

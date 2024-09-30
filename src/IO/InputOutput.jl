@@ -17,6 +17,7 @@ export ChemStationMS
 export DelimitedText
 export Excel
 export MassHunterMS
+export ShimadzuMS
 export exportdata
 export importdata
 
@@ -64,14 +65,17 @@ end
 include(joinpath(".", "AgilentFID", "AgilentFIDReaders.jl"))
 using .AgilentFIDReaders
 
+include(joinpath(".", "ANDI", "ANDIReaders.jl"))
+using .ANDIReaders
+
 include(joinpath(".", "ChemStationMS", "ChemStationMSReaders.jl"))
 using .ChemStationMSReaders
 
 include(joinpath(".", "MassHunterMS", "MassHunterMSReaders.jl"))
 using .MassHunterMSReaders
 
-include(joinpath(".", "ANDI", "ANDIReaders.jl"))
-using .ANDIReaders
+include(joinpath(".", "ShimadzuMS", "ShimadzuMSReaders.jl"))
+using .ShimadzuMSReaders
 
 
 """
@@ -106,10 +110,6 @@ function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::File
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
     exportdata(fileformat, chrom, file; timeunit, overwrite)
 end
-
-# julia> file = joinpath(JuChrom.tmppath, "delimfile");
-
-# julia> exportdata(chrom, file, DelimitedText());
 
 
 include(joinpath(".", "DelimitedText", "DelimitedTextWriter.jl"))

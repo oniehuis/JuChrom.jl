@@ -67,9 +67,6 @@ using Unitful: 𝐓
     @test_throws ArgumentError Chrom([2, 1, 3]u"s", [12, 956, 23])
     @test_throws ArgumentError Chrom([2, 2, 3]u"s", [12, 956, 23])
 
-    # Intensity values cannot be less than zero
-    @test_throws ArgumentError Chrom([1, 2, 3]u"s", [-12, 956, 23])
-
     # Chrom is broadcastable
     @test [1, 2]u"s" == ((chrom, i) -> chrom.scantimes[i]).(Chrom([1, 2, 3]u"s", 
         [12, 956, 23]), [1, 2])

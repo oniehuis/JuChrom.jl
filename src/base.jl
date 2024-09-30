@@ -85,8 +85,6 @@ mutable struct ChromMS{
         length(Set(ions)) == length(ions) || throw(
             ArgumentError("ions contain identical values"))
         issorted(ions) || throw(ArgumentError("ions not in ascending order"))
-        count(i -> i < 0, intensities) == 0 || throw(ArgumentError(
-            "intensity values contain at least one value less than zero"))
         new(scantimes, ions, intensities, metadata, rimapper)
     end
 end
@@ -101,9 +99,9 @@ Base.broadcastable(chrom::ChromMS) = Ref(chrom)
     rimapper::Union{AbstractRiMapper, Nothing}=nothing) <: AbstractChromMS
 
 Construct a `ChromMS` object that includes `scantimes`, `ions`, `intensities`, and 
-`metadata`. Ensure that both `scantimes` and `ions` are in ascending order, and that 
-`intensities` contain no negative values. The scan times must include a time unit. All time 
-units supported by the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl) 
+`metadata`. Ensure that both `scantimes` and `ions` are in ascending order. The scan times 
+must include a time unit. All time units supported by the 
+[Unitful.jl package](https://painterqubits.github.io/Unitful.jl) 
 (e.g., `u"s"`, `u"minute"`) are accepted. You can optionally use the keyword argument 
 `rimapper` to include a retention index mapper.
 
@@ -135,10 +133,6 @@ ERROR: ArgumentError: scan times not in ascending order
 
 julia> ChromMS([1, 2, 3]u"s", [100, 85], [0 12; 34 956; 23 1])
 ERROR: ArgumentError: ions not in ascending order
-[...]
-
-julia> ChromMS([1, 2, 3]u"s", [85, 100], [0 -12; 34 956; 23 1])
-ERROR: ArgumentError: intensity values contain at least one value less than zero
 [...]
 ```
 """
@@ -176,8 +170,6 @@ mutable struct Chrom{
             ArgumentError("scan times contain identical values"))
         issorted(scantimes) || throw(
             ArgumentError("scan times not in ascending order"))
-        count(i -> i < 0, intensities) == 0 || throw(
-            ArgumentError("intensity values contain at least one value less than zero"))
         new(scantimes, intensities, metadata, rimapper)
     end
 end
@@ -192,11 +184,11 @@ Base.broadcastable(chrom::Chrom) = Ref(chrom)
     rimapper::Union{AbstractRiMapper, Nothing}=nothing) <: AbstractChrom
 
 Construct a `Chrom` object that includes `scantimes`, `intensities`, and `metadata`. 
-Ensure that both `scantimes` and `ions` are in ascending order, and that `intensities` 
-contain no negative values. The scan times must include a time unit. All time 
-units supported by the [Unitful.jl package](https://painterqubits.github.io/Unitful.jl) 
-(e.g., `u"s"`, `u"minute"`) are accepted. You can optionally use the keyword argument 
-`rimapper` to include a retention index mapper.
+Ensure that both `scantimes` and `ions` are in ascending order. The scan times must 
+include a time unit. All time units supported by the 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) package (e.g., `u"s"`, 
+`u"minute"`) are accepted. You can optionally use the keyword argument `rimapper` to 
+include a retention index mapper.
 
 See also [`AbstractChromatogram`](@ref), [`AbstractChrom`](@ref), [`scantimes`](@ref), 
 [`intensities`](@ref), [`metadata`](@ref), [`rimapper`](@ref).
@@ -220,10 +212,6 @@ metadata: 1 entry
 
 julia> Chrom([2, 1, 3]u"s", [12.0, 956.0, 1.0])
 ERROR: ArgumentError: scan times not in ascending order
-[...]
-
-julia> Chrom([1, 2, 3]u"s", [-12.0, 956.0, 1.0])
-ERROR: ArgumentError: intensity values contain at least one value less than zero
 [...]
 ```
 """

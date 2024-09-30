@@ -6,5 +6,6 @@ AgilentFID
 ANDI
 ChemStationMS
 MassHunterMS
+ShimadzuMS
 importdata
 ```

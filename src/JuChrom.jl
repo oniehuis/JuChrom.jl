@@ -11,6 +11,7 @@ using Polynomials
 const agilent = artifact"Agilent"
 const andi = artifact"ANDI"
 const calibration = artifact"calibration"
+const shimadzu = artifact"Shimadzu"
 
 include("base.jl")
 include("retentionindices.jl")
@@ -89,17 +90,17 @@ export ChemStationMS
 export DelimitedText
 export Excel
 export MassHunterMS
+export ShimadzuMS
 export exportdata
 export importdata
 
-# include("NNLS/NNLS.jl")
-# import .NNLS
+include("NNLS/NNLS.jl")
+import .NNLS
 
 # include("Deconvolution/Deconvolution.jl")
 # using .Deconvolution
 
-# export deconvolute
-# export deconvolute_p
+# export candidatepeaks
 # export saveplot
 # export deconvolutedtic
 # export componentbins
@@ -107,5 +108,7 @@ export importdata
 # export massspectra
 # export nextlocalmaximum
 # export LocalMaxima
+# export deconvolute
+# export sigma
 
 end
