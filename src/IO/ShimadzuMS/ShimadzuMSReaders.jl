@@ -1,7 +1,7 @@
 __precompile__()
 module ShimadzuMSReaders
 
-ENV["PYTHON"]=""
+# ENV["PYTHON"]=""
 using PyCall
 using Unitful
 
