@@ -94,8 +94,8 @@ export ShimadzuMS
 export exportdata
 export importdata
 
-include("NNLS/NNLS.jl")
-import .NNLS
+# include("NNLS/NNLS.jl")
+# import .NNLS
 
 # include("Deconvolution/Deconvolution.jl")
 # using .Deconvolution

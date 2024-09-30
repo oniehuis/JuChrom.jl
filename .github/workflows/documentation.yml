@@ -21,8 +21,6 @@ jobs:
         with:
           version: '1.10'
       - uses: julia-actions/cache@v2
-      - name: Install PyCall and olefile
-        run: julia -e 'using Pkg; ENV["PYTHON"]=""; py="PyCall"; Pkg.add(py); Pkg.build()'
       - name: Install dependencies
         run: julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: Build and deploy
