@@ -77,11 +77,14 @@ function readfile(::ShimadzuMS, file::AbstractString)
     # Read MS Raw Data from OLE file
     olefile.isOleFile(file) || throw(IOError("not an OLE file: $file"))
     ole::PyObject = olefile.OleFileIO(file)
-    stream = ["GCMS Raw Data", "MS Raw Data"] 
-    ole.exists(stream)::Bool || throw(IOError("file does not contain stream $stream"))
-    msrawdatastream::PyObject = ole.openstream(stream)
-    msrawdata::String = msrawdatastream.read()
-    ole.close()
+    msrawdata::String = try
+        stream = ["GCMS Raw Data", "MS Raw Data"] 
+        ole.exists(stream)::Bool || throw(IOError("file does not contain stream $stream"))
+        msrawdatastream::PyObject = ole.openstream(stream)
+        msrawdatastream.read()
+    finally
+        ole.close()
+    end
 
     # Transcode the data into a byte string
     bytesting::Base.CodeUnits{UInt8, String} = transcode(UInt8, msrawdata)
