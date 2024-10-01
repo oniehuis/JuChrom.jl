@@ -47,10 +47,11 @@ function extractdata(bytesting)
     scantimes = Vector{Int32}()
     pointcounts = Vector{Int16}()
     mzvec = Vector{Float64}()
-    intsvec = Vector{UInt32}()
+    intsvec = Vector{Int64}()
     while i < length(bytesting)
         push!(scantimes, ltoh.(reinterpret(Int32, bytesting[i+4:i+7]))[1])
         bytecount = ltoh.(reinterpret(Int16, bytesting[i+20:i+21]))[1]
+        @assert 1 ≤ bytecount ≤ 4 "unexpected byte count: $bytecount"
         pointcount = ltoh.(reinterpret(Int16, bytesting[i+22:i+23]))[1]
         push!(pointcounts, pointcount)
         start = i + 32
@@ -60,17 +61,9 @@ function extractdata(bytesting)
         scanints = Vector{UInt32}(undef, pointcount)
         for (s, z) in enumerate(start:stepwidth:stop)
             scanmzs[s] = ltoh.(reinterpret(Int16, bytesting[z:z+1]))[1] / 20
-            intbytes = bytesting[z+2:z+1+bytecount]
-            if bytecount == 2
-                int = convert(UInt32, ltoh.(reinterpret(UInt16, intbytes))[1])
-            elseif bytecount == 3
-                push!(intbytes, 0x00)
-                int = ltoh.(reinterpret(UInt32, intbytes))[1]
-            elseif bytecount == 4
-                int = ltoh.(reinterpret(UInt32, intbytes))[1]
-            else
-                throw("unhandeled byte count: $bytecount")
-            end
+            intbytes = zeros(UInt8, 4)
+            intbytes[1:bytecount] = bytesting[z+2:z+1+bytecount]
+            int = ltoh.(reinterpret(UInt32, intbytes))[1]
             scanints[s] = int
         end
         append!(mzvec, scanmzs)
