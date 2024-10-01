@@ -47,7 +47,7 @@ function extractdata(bytesting)
     scantimes = Vector{Int32}()
     pointcounts = Vector{Int16}()
     mzvec = Vector{Float64}()
-    intsvec = Vector{Int64}()
+    intsvec = Vector{UInt32}()
     while i < length(bytesting)
         push!(scantimes, ltoh.(reinterpret(Int32, bytesting[i+4:i+7]))[1])
         bytecount = ltoh.(reinterpret(Int16, bytesting[i+20:i+21]))[1]
@@ -61,7 +61,7 @@ function extractdata(bytesting)
         scanints = Vector{UInt32}(undef, pointcount)
         for (s, z) in enumerate(start:stepwidth:stop)
             scanmzs[s] = ltoh.(reinterpret(Int16, bytesting[z:z+1]))[1] / 20
-            intbytes = zeros(UInt8, 4)
+            intbytes = zeros(UInt8, 4) 
             intbytes[1:bytecount] = bytesting[z+2:z+1+bytecount]
             int = ltoh.(reinterpret(UInt32, intbytes))[1]
             scanints[s] = int
