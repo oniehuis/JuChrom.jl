@@ -1463,7 +1463,7 @@ RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 0 entries
 ```
 """
@@ -1493,7 +1493,7 @@ RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 0 entries
 
 julia> retentionindex(chrom, 2.2u"minute") ≈ 2200.0

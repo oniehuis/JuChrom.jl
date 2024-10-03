@@ -1,45 +1,45 @@
-function naturalbesplinepolynomials(xs, ys)
-    n = length(xs) - 1
-    h = [xs[k+1] - xs[k] for k in 1:n]
+# function naturalbesplinepolynomials(xs, ys)
+#     n = length(xs) - 1
+#     h = [xs[k+1] - xs[k] for k in 1:n]
 
-    # Preliminary definitions
-    In = I(n)
-    E = In[1:n-1, :]
-    Z = zeros(n, n)
-    J = diagm(0 => ones(n), 1 => -ones(n-1))
-    H = diagm(0 => h)
+#     # Preliminary definitions
+#     In = I(n)
+#     E = In[1:n-1, :]
+#     Z = zeros(n, n)
+#     J = diagm(0 => ones(n), 1 => -ones(n-1))
+#     H = diagm(0 => h)
 
-    # Continuity of first derivative at internal nodes
-    A1 = E * [Z J 2H 3H^2]
-    v1 = zeros(n-1)
+#     # Continuity of first derivative at internal nodes
+#     A1 = E * [Z J 2H 3H^2]
+#     v1 = zeros(n-1)
 
-    # Continuity of second derivative at internal nodes
-    A2 = E * [Z Z J 3H]
-    v2 = zeros(n-1)
+#     # Continuity of second derivative at internal nodes
+#     A2 = E * [Z Z J 3H]
+#     v2 = zeros(n-1)
 
-    # Left endpoint interpolation
-    AL = [In Z Z Z]
-    vL = ys[1:n]
+#     # Left endpoint interpolation
+#     AL = [In Z Z Z]
+#     vL = ys[1:n]
 
-    # Right endpoint interpolation
-    AR = [In H H^2 H^3];
-    vR = ys[2:n+1]
+#     # Right endpoint interpolation
+#     AR = [In H H^2 H^3];
+#     vR = ys[2:n+1]
 
-    # Boundary conditions: natural spline
-    nsL = [zeros(1, 2n) [2 zeros(1, 2n - 1)] ]
-    nsR = [zeros(1, 2n) [zeros(1, n - 1)  1] [zeros(1, n - 1) 3H[end]]]
+#     # Boundary conditions: natural spline
+#     nsL = [zeros(1, 2n) [2 zeros(1, 2n - 1)] ]
+#     nsR = [zeros(1, 2n) [zeros(1, n - 1)  1] [zeros(1, n - 1) 3H[end]]]
 
-    # Assemble and solve the full system
-    A = [AL; AR; A1; A2; nsL; nsR]
-    v = [vL; vR; v1; v2; 0; 0]
-    z = A\v
+#     # Assemble and solve the full system
+#     A = [AL; AR; A1; A2; nsL; nsR]
+#     v = [vL; vR; v1; v2; 0; 0]
+#     z = A\v
 
-    # Break the coefficients into separate vectors
-    rows = 1:n
-    a = z[rows]
-    b = z[n .+ rows];  c = z[2n .+ rows];  d = z[3n .+ rows]
-    [Polynomial([a[k], b[k], c[k], d[k]]) for k in 1:n]
-end
+#     # Break the coefficients into separate vectors
+#     rows = 1:n
+#     a = z[rows]
+#     b = z[n .+ rows];  c = z[2n .+ rows];  d = z[3n .+ rows]
+#     [Polynomial([a[k], b[k], c[k], d[k]]) for k in 1:n]
+# end
 
 
 """

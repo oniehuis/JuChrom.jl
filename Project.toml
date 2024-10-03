@@ -4,6 +4,7 @@ authors = ["Oliver Niehuis <oliver.niehuis@gmail.com> and contributors"]
 version = "1.0.0-DEV"
 
 [deps]
+BSplineKit = "093aae92-e908-43d7-9660-e50ee39d5a0a"
 BasicInterpolators = "26cce99e-4866-4b6d-ab74-862489e035e0"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
@@ -12,7 +13,6 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
-Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"

@@ -2,9 +2,11 @@ module JuChrom
 
 using Reexport
 
-using LinearAlgebra
+# using LinearAlgebra
 using Pkg.Artifacts
-using Polynomials
+# using Polynomials
+import BasicInterpolators
+import BSplineKit
 # using PrecompileTools: @setup_workload, @compile_workload
 @reexport using Unitful
 

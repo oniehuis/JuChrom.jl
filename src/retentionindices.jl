@@ -154,7 +154,7 @@ end
     retentiontimes::AbstractVector{<:Unitful.Time},
     retentionindices::AbstractVector{<:Real};
     interpolationmethod::PolationMethod=NaturalCubicBSpline(), 
-    extrapolationmethod::Union{Nothing, <:PolationMethod}=Linear(),
+    extrapolationmethod::Union{Nothing, <:PolationMethod}=nothing,
     metadata::Dict=Dict())
 
 Create an `RiMapper` object to map retention times to retention indices using 
@@ -162,10 +162,10 @@ interpolation, and extrapolation by default. The optional keyword arguments
 `interpolationmethod` and `extrapolationmethod` allow you to explicitly specify the 
 methods used. Currently, the available interpolators are `NaturalCubicBSpline()` (default) 
 and `PiecewiseLinear()`. The only available extrapolator is `Linear()`. If 
-`extrapolationmethod` is set to nothing, the function will raise an error for retention 
-time values outside the calibration range. Note that both retention times and retention 
-indices must be provided in ascending order. Additionally, the optional `metadata` keyword 
-argument allows you to associate metadata with the mapper.
+`extrapolationmethod` is set to nothing (default), the function will raise an error for 
+retention time values outside the calibration range. Note that both retention times and 
+retention indices must be provided in ascending order. Additionally, the optional 
+`metadata` keyword argument allows you to associate metadata with the mapper.
 
 See also [`AbstractRiMapper`](@ref), [`retentionindexname`](@ref), [`Linear`](@ref), 
 [`NaturalCubicBSpline`](@ref), [`PiecewiseLinear`](@ref), [`retentionindices`](@ref), 
@@ -179,7 +179,7 @@ RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 0 entries
 
 julia> retentionindex(ld, 1u"minute") ≈ 1000.0
@@ -189,8 +189,8 @@ julia> retentionindex(ld, 1.5u"minute") ≈ 1500.0
 true
 
 julia> retentionindex(ld, 11u"minute") ≈ 11000.0
-extrapolated value
-true
+ERROR: ArgumentError: retention time outside range for calculating retention index
+[...]
 
 julia> retentionindices(ld)
 1000:1000:5000
@@ -201,30 +201,29 @@ julia> retentiontimes(ld)
 julia> interpolationmethod(ld)
 NaturalCubicBSpline(false)
 
-julia> extrapolationmethod(ld)
-Linear()
+julia> extrapolationmethod(ld) === nothing
+true
 
-julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, extrapolationmethod=nothing)
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, extrapolationmethod=Linear())
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
 retention indices: 1000, 2000, 3000, 4000, 5000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: nothing
+extrapolation method: Linear()
 metadata: 0 entries
 
-julia> retentionindex(ld, 11u"minute") === nothing
-ERROR: ArgumentError: retention time is outside the range for calculating the retention index
-[...]
-
-julia> extrapolationmethod(ld) === nothing
+julia> retentionindex(ld, 11u"minute") === 11000.000000000011
 true
+
+julia> extrapolationmethod(ld)
+Linear()
 
 julia> ld = RiMapper("Kovats", (1:5)u"s", 10:10:50, interpolationmethod=PiecewiseLinear())
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 s, 2 s, 3 s, 4 s, 5 s
 retention indices: 10, 20, 30, 40, 50
 interpolation method: PiecewiseLinear()
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 0 entries
 ```
 """
@@ -233,7 +232,7 @@ function RiMapper(
     retentiontimes::AbstractVector{<:Unitful.Time},
     retentionindices::AbstractVector{<:Real}; 
     interpolationmethod::PolationMethod=NaturalCubicBSpline(),
-    extrapolationmethod::Union{Nothing, PolationMethod}=Linear(),
+    extrapolationmethod::Union{Nothing, PolationMethod}=nothing,
     metadata::Dict=Dict{Any, Any}())
 
     RiMapper(retentionindexname, retentiontimes, retentionindices, interpolationmethod,
@@ -333,7 +332,7 @@ See also [`RiMapper`](@ref), [`extrapolationmethod`](@ref), [`retentionindex`](@
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
 julia> interpolationmethod(ld)
 NaturalCubicBSpline(false)
@@ -352,15 +351,17 @@ See also [`RiMapper`](@ref), [`interpolationmethod`](@ref), [`retentionindex`](@
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> rts, ris = (1:5)u"minute", 1000:1000:5000;
 
-julia> extrapolationmethod(ld)
-Linear()
-
-julia> ld = RiMapper("Kovats", (1:2)u"s", 100:100:200, extrapolationmethod=nothing);
+julia> ld = RiMapper("Kovats", rts, ris);
 
 julia> extrapolationmethod(ld) === nothing
 true
+
+julia> ld = RiMapper("Kovats", rts, ris, extrapolationmethod=Linear());
+
+julia> extrapolationmethod(ld)
+Linear()
 ```
 """
 extrapolationmethod(mapper::RiMapper) = mapper.extrapolationmethod
@@ -375,10 +376,10 @@ See also [`RiMapper`](@ref), [`minretentionindex`](@ref), [`retentionindices`](@
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
 julia> maxretentionindex(ld)
-3000
+5000
 ```
 """
 maxretentionindex(mapper::RiMapper) = last(retentionindices(mapper))
@@ -399,15 +400,15 @@ See also [`RiMapper`](@ref), [`maxretentiontime`](@ref), [`retentiontimes`](@ref
 
 # Examples
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
-julia> maxretentiontime(ld) ≈ 3.8u"minute"
+julia> maxretentiontime(ld) ≈ 5u"minute"
 true
 
-julia> maxretentiontime(ld, timeunit=u"s") ≈ 228.0u"s"
+julia> maxretentiontime(ld, timeunit=u"s") ≈ 300u"s"
 true
 
-julia> maxretentiontime(ld, timeunit=u"s", ustripped=true) ≈ 228.0
+julia> maxretentiontime(ld, timeunit=u"s", ustripped=true) ≈ 300
 true
 ```
 """
@@ -429,12 +430,12 @@ See also [`AbstractRiMapper`](@ref), [`RiMapper`](@ref).
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", (1:5)u"minute", 10:10:50, metadata=Dict(:id => 7))
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000, metadata=Dict(:id => 7))
 RiMapper {index name: Kovats, calibration points: 5}
 retention times: 1 minute, 2 minute, 3 minute, 4 minute, 5 minute
-retention indices: 10, 20, 30, 40, 50
+retention indices: 1000, 2000, 3000, 4000, 5000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 1 entry
 
 julia> metadata(ld)
@@ -454,10 +455,10 @@ See also [`RiMapper`](@ref), [`maxretentionindex`](@ref), [`retentionindices`](@
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
 julia> maxretentionindex(ld)
-3000
+5000
 ```
 """
 minretentionindex(mapper::RiMapper) = first(retentionindices(mapper))
@@ -478,15 +479,15 @@ See also [`RiMapper`](@ref), [`maxretentiontime`](@ref), [`retentiontimes`](@ref
 
 # Examples
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
-julia> minretentiontime(ld) ≈ 1.2u"minute"
+julia> minretentiontime(ld) ≈ 1u"minute"
 true
 
-julia> minretentiontime(ld, timeunit=u"s") ≈ 72.0u"s"
+julia> minretentiontime(ld, timeunit=u"s") ≈ 60u"s"
 true
 
-julia> minretentiontime(ld, timeunit=u"s", ustripped=true) ≈ 72.0
+julia> minretentiontime(ld, timeunit=u"s", ustripped=true) ≈ 60
 true
 ```
 """
@@ -500,82 +501,68 @@ end
 
 
 """
-    retentionindex(mapper::RiMapper, retentiontime::Unitful.Time; info::Bool=false)
+    retentionindex(mapper::RiMapper, retentiontime::Unitful.Time)
 
-Return the retention index associated with a given retention time. If the return value is 
-calculated through extrapolation, a message informing the user of this fact is displayed. 
-The optional keyword argument `info` can be used to disable this message.
+Return the retention index associated with a given retention time.
 
 See also [`RiMapper`](@ref), [`retentionindices`](@ref), [`maxretentionindex`](@ref), 
 [`minretentionindex`](@ref).
 
 # Examples
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
-RiMapper {index name: Kovats, calibration points: 3}
-retention times: 1.2 minute, 2.4 minute, 3.8 minute
-retention indices: 1000, 2000, 3000
+julia> rts, ris = [1.2, 2.4, 3.8, 5.0]u"minute", [1000, 2000, 3000, 4000];
+
+julia> ld = RiMapper("Kovats", rts, ris)
+RiMapper {index name: Kovats, calibration points: 4}
+retention times: 1.2 minute, 2.4 minute, 3.8 minute, 5.0 minute
+retention indices: 1000, 2000, 3000, 4000
 interpolation method: NaturalCubicBSpline(false)
-extrapolation method: Linear()
+extrapolation method: nothing
 metadata: 0 entries
 
-julia> retentionindex(ld, 1.8u"minute") ≈ 1512.3626373626375
+julia> retentionindex(ld, 1.8u"minute") ≈ 1516.9172932330828
 true
 
 julia> retentionindex(ld, 1.1u"minute") ≈ 913.9194139194141
-extrapolated value
-true
+ERROR: ArgumentError: retention time outside range for calculating retention index
+[...]
 
-julia> retentionindex(ld, 1.1u"minute", info=false) ≈ 913.9194139194141
-true
+julia> ris = retentionindex.(ld, [2, 3]u"minute");  # broadcasting across multiple RT values
 
-julia> ris = retentionindex.(ld, [1, 2]u"minute");  # broadcasting across multiple RT values
-extrapolated value
-
-julia> ris ≈ [827.8388278388279, 1678.876678876679]
+julia> ris ≈ [1683.3751044277362, 2430.719656283566]
 true
 ```
 """
-function retentionindex(mapper::RiMapper, retentiontime::Unitful.Time; info::Bool=true)
-    minretentiontime(mapper) ≤ retentiontime ≤ maxretentiontime(mapper) || (
-        info && !isnothing(extrapolationmethod(mapper)) && println("extrapolated value"))
-    rt2ri(mapper)(retentiontime)
-end
+retentionindex(mapper::RiMapper, retentiontime::Unitful.Time) = rt2ri(mapper)(retentiontime)
 
 
 """
     retentionindex(chrom::AbstractChromatogram, retentiontime::Unitful.Time; 
     info::Bool=false)
 
-Return the retention index corresponding to a given retention time. If the value is 
-calculated through extrapolation, a message will notify the user of this. To suppress this 
-message, use the optional keyword argument `info`. The function will raise an error if the 
-chromatogram does not contain a retention index mapper with the required functionality 
-implemented.
+Return the retention index corresponding to a given retention time.
 
 See also [`RiMapper`](@ref), [`retentionindices`](@ref), [`maxretentionindex`](@ref), 
 [`minretentionindex`](@ref).
 
 # Examples
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> rts, ris = [1.2, 2.4, 3.8, 5.0]u"minute", [1000, 2000, 3000, 4000];
+
+julia> ld = RiMapper("Kovats", rts, ris);
 
 julia> chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld);
 
-julia> retentionindex(chrom, 1.8u"minute") ≈ 1512.3626373626375
+julia> retentionindex(chrom, 1.8u"minute") ≈ 1516.9172932330828
 true
 
 julia> retentionindex(chrom, 1.1u"minute") ≈ 913.9194139194141
-extrapolated value
-true
+ERROR: ArgumentError: retention time outside range for calculating retention index
+[...]
 
-julia> retentionindex(chrom, 1.1u"minute", info=false) ≈ 913.9194139194141
-true
+julia> ris = retentionindex.(chrom, [2, 3]u"minute");  # broadcasting across multiple RT values
 
-julia> ris = retentionindex.(chrom, [1, 2]u"minute");  # broadcasting across multiple RT values
-extrapolated value
-
-julia> ris ≈ [827.8388278388279, 1678.876678876679]
+julia> ris ≈ [1683.3751044277362, 2430.719656283566]
 true
 
 julia> chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1]);
@@ -585,11 +572,10 @@ ERROR: ArgumentError: no retention index mapper implemented
 [...]
 ```
 """
-function retentionindex(chrom::AbstractChromatogram, 
-    retentiontime::Unitful.Time; info::Bool=true)
+function retentionindex(chrom::AbstractChromatogram, retentiontime::Unitful.Time)
     isnothing(rimapper(chrom)) && throw(ArgumentError(
         "no retention index mapper implemented"))
-    retentionindex(rimapper(chrom), retentiontime, info=info)    
+    retentionindex(rimapper(chrom), retentiontime)
 end
 
 
@@ -622,19 +608,23 @@ See also [`RiMapper`](@ref), [`maxretentionindex`](@ref), [`minretentionindex`](
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> rts, ris = [1.2, 2.4, 3.8, 5.0]u"minute", [1000, 2000, 3000, 4000];
+
+julia> ld = RiMapper("Kovats", rts, ris);
 
 julia> retentionindices(ld)  # reference to the data structure
-3-element Vector{Int64}:
+4-element Vector{Int64}:
  1000
  2000
  3000
+ 4000
 
 julia> retentionindices(ld)[:]  # a copy of these values
-3-element Vector{Int64}:
+4-element Vector{Int64}:
  1000
  2000
  3000
+ 4000
 ```
 """
 retentionindices(mapper::RiMapper) = mapper.retentionindices
@@ -656,31 +646,37 @@ See also [`RiMapper`](@ref), [`maxretentiontime`](@ref), [`minretentiontime`](@r
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+julia> rts, ris = [1.2, 2.4, 3.8, 5.0]u"minute", [1000, 2000, 3000, 4000];
+
+julia> ld = RiMapper("Kovats", rts, ris);
 
 julia> retentiontimes(ld)  # reference to the data structure
-3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
+4-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
  1.2 minute
  2.4 minute
  3.8 minute
+ 5.0 minute
 
 julia> retentiontimes(ld)[:]  # a copy of these values
-3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
+4-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(minute,), 𝐓, nothing}}}:
  1.2 minute
  2.4 minute
  3.8 minute
+ 5.0 minute
 
 julia> retentiontimes(ld, timeunit=u"s")
-3-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
+4-element Vector{Quantity{Float64, 𝐓, Unitful.FreeUnits{(s,), 𝐓, nothing}}}:
   72.0 s
  144.0 s
  228.0 s
+ 300.0 s
 
 julia> retentiontimes(ld, timeunit=u"s", ustripped=true)
-3-element Vector{Float64}:
+4-element Vector{Float64}:
   72.0
  144.0
  228.0
+ 300.0
 ```
 """
 function retentiontimes(mapper::RiMapper;
@@ -709,63 +705,24 @@ See also [`RiMapper`](@ref), [`retentionindex`](@ref).
 
 # Example
 ```jldoctest
-julia> ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000]);
+julia> rts, ris = [1.2, 2.4, 3.8, 5.0]u"minute", [1000, 2000, 3000, 4000];
 
-julia> JuChrom.rt2ri(ld)(1.5u"minute") ≈ 1266.712648556876
+julia> ld = RiMapper("Kovats", rts, ris);
+
+julia> JuChrom.rt2ri(ld)(1.5u"minute") ≈ 1260.5733082706768
 true
 
 julia> JuChrom.rt2ri(ld)(1u"minute") ≈ 821.4487832484438
-true
-
-julia> retentionindex(ld, 1u"minute") ≈ 821.44878324844389
-extrapolated value
-true
+ERROR: ArgumentError: retention time outside range for calculating retention index
+[...]
 ```
 """
 rt2ri(mapper::RiMapper) = mapper.rt2ri
 
 
-function criticalpoints(polynomials::AbstractVector{<:Polynomial}, ts)
-    cpoints = Vector{Tuple{Float64, String}}()
-    for (i, polynomial) in enumerate(polynomials)
-        c, b, a = polynomial[1:3]
-        Δ₀ = b^2 - 3 * a * c
-        Δ₀ ≤ 0 && continue  # no critical point or an inflection point
-        α, β = ts[i], ts[i+1]
-        x₀, x₁ = (-b + sqrt(Δ₀)) / 3a, (-b - sqrt(Δ₀)) / 3a
-        # α < α + x₀ < β && push!(cpoints, α + x₀)
-        # α < α + x₁ < β && push!(cpoints, α + x₀)
-        if polynomial(x₀) < polynomial(x₁)
-            α < α + x₀ < β && push!(cpoints, (α + x₀, "local minimum"))
-            α < α + x₁ < β && push!(cpoints, (α + x₁, "local maximum"))
-        else
-            α < α + x₀ < β && push!(cpoints, (α + x₀, "local maximum"))
-            α < α + x₁ < β && push!(cpoints, (α + x₁, "local minimum"))
-        end
-    end
-    cpoints
-end
-
-
-function polate(rts_ustripped, timeunit, f1, f2, f3, f4)
-    function f(rt)
-        rt_ustripped = ustrip(timeunit, rt)
-        if rt_ustripped < first(rts_ustripped)
-            f1(rt_ustripped)
-        elseif rt_ustripped > last(rts_ustripped)
-            f2(rt_ustripped)
-        elseif rt_ustripped == first(rts_ustripped)
-            f3(rt_ustripped)
-        else
-            f4(rt_ustripped)
-        end
-    end
-end
-
-
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, force::Bool=false)
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false, force::Bool=false)
 
 Return a function that maps retention time to a retention index. The function uses a 
 B-spline for interpolation calculated from a vector of retention times and a corresponding 
@@ -783,9 +740,7 @@ See also [`scantimes`](@ref), [`retentionindices`](@ref).
 
 # Examples
 ```jldoctest
-julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
-
-julia> ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
+julia> rts, ris = (1:8)*u"s", [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
 
 julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris);
 
@@ -799,20 +754,100 @@ julia> rt2ri((1//30)u"minute") ≈ 1800.0
 true
 
 julia> rt2ri(9.1u"s") ≈ 7950.0
-true
-
-julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=false);
-
-julia> rt2ri(9.1u"s") === nothing
-ERROR: ArgumentError: retention time is outside the range for calculating the retention index
+ERROR: ArgumentError: retention time outside range for calculating retention index
 [...]
 
+julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=true);
 
+julia> rt2ri(9.1u"s") ≈ 8053.1226382686355
+true
 ```
 """
 function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true, 
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false, 
     force::Bool=false)
+
+    # Sanity checks
+    length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
+        "number of retention times and number of retention indices are different"))
+    length(retentiontimes) ≥ 4 || throw(
+        ArgumentError("need at least four retention time-retention index pairs"))
+    length(Set(retentiontimes)) == length(retentiontimes) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentiontimes) || throw(ArgumentError(
+        "retention times not in ascending order"))
+    length(Set(retentionindices)) == length(retentionindices) || throw(ArgumentError(
+        "retention times contain identical values"))
+    issorted(retentionindices) || throw(ArgumentError(
+       "retention indices not in ascending order"))
+
+    # Extract and store the retention time unit and strip it from the retention times
+    timeunit = unit(eltype(retentiontimes))    
+    rts_ustripped = convert(Vector{Float64}, ustrip.(retentiontimes))
+    ris = retentionindices
+
+    S = BSplineKit.interpolate(rts_ustripped, ris, BSplineKit.BSplineOrder(4),
+        BSplineKit.Natural()) 
+
+    if extrapolation
+        return rt::Unitful.Time -> begin
+            rt_ustripped = ustrip(timeunit, rt)
+            BSplineKit.extrapolate(S, BSplineKit.Linear())(rt_ustripped)
+        end
+    else
+        return rt::Unitful.Time -> begin
+            rt_ustripped = ustrip(timeunit, rt)
+            if first(retentiontimes) ≤ rt ≤ last(retentiontimes)
+                S(rt_ustripped)
+            else
+                throw(ArgumentError("retention time outside range for calculating "
+                    * "retention index"))
+            end
+        end
+    end
+end
+
+
+"""
+    piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false) -> Float64
+
+Return a function that maps retention time to retention index using piecewise linear 
+interpolation based on a vector of retention times and a corresponding vector of retention 
+indices. For retention time values outside the interpolation range, the function applies 
+linear extrapolation to estimate the retention index. However, an optional extrapolation 
+keyword can disable extrapolation, in which case the function will raise an error for 
+values outside the retention time range.
+
+See also [`scantimes`](@ref), [`retentionindices`](@ref).
+
+# Examples
+```jldoctest
+julia> rts, ris = (1:8)*u"s", [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
+
+julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris);
+
+julia> rt2ri(1u"s") ≈ 1000.0
+true
+
+julia> rt2ri(1.5u"s") ≈ 1400.0
+true
+
+julia> rt2ri((1//30)u"minute") ≈ 1800.0
+true
+
+julia> rt2ri(9.1u"s")
+ERROR: ArgumentError: retention time outside range for calculating retention index
+[...]
+
+julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris; extrapolation=true);
+
+julia> rt2ri(9.1u"s") ≈ 7950.0
+true
+```
+"""
+function piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
+    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false)
 
     # Sanity checks
     length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
@@ -833,167 +868,29 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     rts_ustripped = ustrip.(retentiontimes)
     ris = retentionindices
 
-    polynomials = naturalbesplinepolynomials(rts_ustripped, ris)
-
-    cpoints = criticalpoints(polynomials, rts_ustripped)
-    # println(cpoints)
-    if length(cpoints) > 0
-        if force
-            println("the interpolator does not produce continuously increasing values")
-        else
-            throw(ArgumentError("the interpolator does not produce continuously " * 
-                "increasing values"))
-        end
-    end
-
-    f3(_)::Float64 = first(ris)
-    f4(rt_ustripped)::Float64 = begin
-        i = findlast(rt_ustripped .> rts_ustripped)
-        polynomials[i](rt_ustripped - rts_ustripped[i])
-    end
-
-    if extrapolation
-        slope1 = first(polynomials)[1]
-        Δrts_ustripped = rts_ustripped[end] - rts_ustripped[end-1]
-        slope2 = (last(polynomials)[1] + last(polynomials)[2] * (Δrts_ustripped) 
-            + last(polynomials)[3] * (Δrts_ustripped)^2)
-        slope1 > 0 && slope2 > 0 || println("the interpolator does not produce " 
-            * "continuously increasing values")
-
-        f1a(rt_ustripped)::Float64 = first(polynomials)[0] - slope1 * (first(rts_ustripped) 
-            - rt_ustripped)
-        f2a(rt_ustripped)::Float64 = last(polynomials)(Δrts_ustripped) + slope2 * 
-            (rt_ustripped - last(rts_ustripped))
-
-        polate(rts_ustripped, timeunit, f1a, f2a, f3, f4)        
-    else
-
-        f1b(_) = throw(ArgumentError(
-            "retention time is outside the range for calculating the retention index"))
-        f2b(_) = throw(ArgumentError(
-            "retention time is outside the range for calculating the retention index"))
-
-        polate(rts_ustripped, timeunit, f1b, f2b, f3, f4)
-    end
-end
-
-
-function piecewiselinearinterpolate_datafit(
-    rts::AbstractVector{<:Unitful.Time}, 
-    ris::AbstractVector{<:Real})
-    
-    timeunit = unit(eltype(rts))
-    rts_ustripped = ustrip.(timeunit, rts)
-    n = length(rts_ustripped) - 1
-    Δrts_ustripped = [rts_ustripped[i+1] - rts_ustripped[i] for i in 1:n]
-    Δris = [ris[i+1] - ris[i] for i in 1:n]
-    coefficients = [(slope = Δris[i] / Δrts_ustripped[i], intercept = ris[i]) for i in 1:n]
-    coefficients, rts_ustripped, ris, timeunit
-end
-
-
-function piecewiselinearinterextrapolate(
-    coeff::AbstractVector{@NamedTuple{slope::T1, intercept::T2}},
-    rts_ustripped::AbstractVector{<:Real}, 
-    ris::AbstractVector{<:Real},
-    timeunit::Unitful.TimeUnits) where {T1<:Real, T2<:Real}
-
-    n = length(rts_ustripped)
-    f1(rt_ustripped)::Float64 = first(coeff).slope * (rt_ustripped - first(rts_ustripped)
-        ) + first(coeff).intercept
-    f2(rt_ustripped)::Float64 = last(coeff).slope * (rt_ustripped - rts_ustripped[n-1]
-        ) + last(coeff).intercept
-    f3(_)::Float64 = first(ris)
-    f4(rt_ustripped)::Float64 = begin 
-        i = findlast(rt_ustripped .> rts_ustripped)
-        coeff[i].slope * (rt_ustripped - rts_ustripped[i]) + coeff[i].intercept
-    end
-    polate(rts_ustripped, timeunit, f1, f2, f3, f4)
-end
-
-
-function piecewiselinearinterpolate(
-    coeff::AbstractVector{@NamedTuple{slope::T1, intercept::T2}},
-    rts_ustripped::AbstractVector{<:Real}, 
-    ris::AbstractVector{<:Real},
-    timeunit::Unitful.TimeUnits) where {T1<:Real, T2<:Real}
-
-    f1(_) = throw(ArgumentError(
-        "retention time is outside the range for calculating the retention index"))
-    f2(_) = throw(ArgumentError(
-        "retention time is outside the range for calculating the retention index"))
-    f3(_)::Float64 = first(ris)
-    f4(rt_ustripped)::Float64 = begin 
-        i = findlast(rt_ustripped .> rts_ustripped)
-        coeff[i].slope * (rt_ustripped - rts_ustripped[i]) + coeff[i].intercept
-    end
-    polate(rts_ustripped, timeunit, f1, f2, f3, f4)
-end
-
-
-"""
-    piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true) -> Float64
-
-Return a function that maps retention time to retention index using piecewise linear 
-interpolation based on a vector of retention times and a corresponding vector of retention 
-indices. For retention time values outside the interpolation range, the function applies 
-linear extrapolation to estimate the retention index. However, an optional extrapolation 
-keyword can disable extrapolation, in which case the function will raise an error for 
-values outside the retention time range.
-
-See also [`scantimes`](@ref), [`retentionindices`](@ref).
-
-# Examples
-```jldoctest
-julia> rts = [1, 2, 3, 4, 5, 6, 7, 8]*u"s";
-
-julia> ris = [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
-
-julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris);
-
-julia> rt2ri(1u"s") ≈ 1000.0
-true
-
-julia> rt2ri(1.5u"s") ≈ 1400.0
-true
-
-julia> rt2ri((1//30)u"minute") ≈ 1800.0
-true
-
-julia> rt2ri(9.1u"s") ≈ 7950.0
-true
-
-julia> rt2ri = JuChrom.piecewiselinearinterpolation(rts, ris; extrapolation=false);
-
-julia> rt2ri(9.1u"s")
-ERROR: ArgumentError: retention time is outside the range for calculating the retention index
-[...]
-```
-"""
-function piecewiselinearinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
-    retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
-
-    # Sanity checks
-    length(retentiontimes) == length(retentionindices) || throw(DimensionMismatch(
-        "number of retention times and number of retention indices are different"))
-    length(retentiontimes) > 1 || throw(
-        ArgumentError("need at least two retention time-retention index pairs"))
-    length(Set(retentiontimes)) == length(retentiontimes) || throw(ArgumentError(
-        "retention times contain identical values"))
-    issorted(retentiontimes) || throw(ArgumentError(
-        "retention times not in ascending order"))
-    length(Set(retentionindices)) == length(retentionindices) || throw(ArgumentError(
-        "retention times contain identical values"))
-    issorted(retentionindices) || throw(ArgumentError(
-       "retention indices not in ascending order"))
-
-    datafit = piecewiselinearinterpolate_datafit(retentiontimes, retentionindices)
-
     # Return desired interpolation function
     if extrapolation
-        piecewiselinearinterextrapolate(datafit...)
+        L = BasicInterpolators.LinearInterpolator(rts_ustripped, ris, 
+            BasicInterpolators.NoBoundaries())
     else
-        piecewiselinearinterpolate(datafit...)
+        L = BasicInterpolators.LinearInterpolator(rts_ustripped, ris, 
+            BasicInterpolators.StrictBoundaries())
+    end
+
+    if extrapolation
+        return rt::Unitful.Time -> begin
+            rt_ustripped = ustrip(timeunit, rt)
+            L(rt_ustripped)
+        end
+    else
+        return rt::Unitful.Time -> begin
+            rt_ustripped = ustrip(timeunit, rt)
+            if first(retentiontimes) ≤ rt ≤ last(retentiontimes)
+                L(rt_ustripped)
+            else
+                throw(ArgumentError("retention time outside range for calculating "
+                    * "retention index"))
+            end
+        end
     end
 end

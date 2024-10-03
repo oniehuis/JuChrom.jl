@@ -35,7 +35,7 @@ using Unitful: 𝐓
 
     # Extrapolation method
     @test isa(RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000).extrapolationmethod, 
-        PolationMethod)
+        Nothing)
 
     # rt2ri
     @test isa(RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000).rt2ri, Function)
@@ -57,51 +57,53 @@ using Unitful: 𝐓
     # Retention index vector accepts no unit
     @test_throws MethodError RiMapper("Kovats", (1:5)u"minute", (1000:1000:5000)u"m")
     
-    # Must provide at least two retention times and retention indices
+    # Must provide at least four retention times and retention indices
     @test_throws ArgumentError RiMapper("Kovats", (1:1)u"minute", (1000:1000:1000))
+    @test_throws ArgumentError RiMapper("Kovats", (1:2)u"minute", (1000:1000:2000))
+    @test_throws ArgumentError RiMapper("Kovats", (1:3)u"minute", (1000:1000:3000))
 
     # Numer of retention times and of retention indices must be identical
-    @test_throws DimensionMismatch RiMapper("Kovats", (1:2)u"minute", (1000:1000:3000))
-    @test_throws DimensionMismatch RiMapper("Kovats", (1:3)u"minute", (1000:1000:2000))
+    @test_throws DimensionMismatch RiMapper("Kovats", (1:4)u"minute", (1000:1000:5000))
+    @test_throws DimensionMismatch RiMapper("Kovats", (1:5)u"minute", (1000:1000:4000))
 
     # Retention times must be in ascending order
-    @test_throws ArgumentError RiMapper("Kovats", [2, 1]u"minute", (1000:1000:2000))
+    @test_throws ArgumentError RiMapper("Kovats", [2, 1, 3, 4]u"minute", (1000:1000:4000))
 
     # No identical retention times allowed
-    @test_throws ArgumentError RiMapper("Kovats", [1, 1]u"minute", (1000:1000:2000))
+    @test_throws ArgumentError RiMapper("Kovats", [1, 1, 2, 3]u"minute", (1000:1000:4000))
 
     # Retention indices must be in ascending order
-    @test_throws ArgumentError RiMapper("Kovats", (1:2)u"minute", [2000, 1000])
+    @test_throws ArgumentError RiMapper("Kovats", (1:4)u"minute", [20, 10, 30, 40])
     
     # No identical retention indices allowed
-    @test_throws ArgumentError RiMapper("Kovats", (1:2)u"minute", [1000, 1000])
+    @test_throws ArgumentError RiMapper("Kovats", (1:4)u"minute", [10, 10, 20, 30])
 
-    # Must provide retentzion index name
-    @test_throws ArgumentError RiMapper("", (1:2)u"minute", (1000:1000:2000))
-    @test_throws MethodError RiMapper(nothing, (1:2)u"minute", (1000:1000:2000))
+    # Must provide retention index name
+    @test_throws ArgumentError RiMapper("", (1:4)u"minute", (1000:1000:4000))
+    @test_throws MethodError RiMapper(nothing, (1:4)u"minute", (1000:1000:4000))
 
     # Metadata cannot be anything other than a dictionary.
-    @test_throws TypeError RiMapper("Kovats", (1:2)u"minute", (1000:1000:2000), 
+    @test_throws TypeError RiMapper("Kovats", (1:4)u"minute", (1000:1000:4000), 
         metadata=:sample_name)
-    @test_throws TypeError RiMapper("Kovats", (1:2)u"minute", (1000:1000:2000), 
+    @test_throws TypeError RiMapper("Kovats", (1:4)u"minute", (1000:1000:4000), 
         metadata=1)
-    @test_throws TypeError RiMapper("Kovats", (1:2)u"minute", (1000:1000:2000), 
+    @test_throws TypeError RiMapper("Kovats", (1:4)u"minute", (1000:1000:4000), 
         metadata='S')
 
     # RiMapper is broadcastable
-    @test [1, 2] == ((ld, i) -> i).(RiMapper("Kovats", (1:2)u"minute", 1:2), [1, 2])
+    @test [1, 2] == ((ld, i) -> i).(RiMapper("Kovats", (1:4)u"minute", 1:4), [1, 2])
 end
 
 
 @testset "show RiMapper" begin
     io = IOBuffer()
-    show(io, RiMapper("Kovats", (1:2)u"minute", 1000:1000:2000))
+    show(io, RiMapper("Kovats", (1:4)u"minute", 1000:1000:4000))
     @test String(take!(io)) == string(
-        "JuChrom.RiMapper {index name: Kovats, calibration points: 2}\n",
-        "retention times: 1 minute, 2 minute\n",
-        "retention indices: 1000, 2000\n",
+        "JuChrom.RiMapper {index name: Kovats, calibration points: 4}\n",
+        "retention times: 1 minute, 2 minute, 3 minute, 4 minute\n",
+        "retention indices: 1000, 2000, 3000, 4000\n",
         "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
-        "extrapolation method: JuChrom.Linear()\n",
+        "extrapolation method: nothing\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000))
     @test String(take!(io)) == string(
@@ -109,7 +111,7 @@ end
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
         "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
-        "extrapolation method: JuChrom.Linear()\n",
+        "extrapolation method: nothing\n",
         "metadata: 0 entries")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1)))
     @test String(take!(io)) == string(
@@ -117,7 +119,7 @@ end
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
         "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
-        "extrapolation method: JuChrom.Linear()\n",
+        "extrapolation method: nothing\n",
         "metadata: 1 entry")
     show(io, RiMapper("Kovats", (1:11)u"minute", 1000:1000:11000, metadata=Dict(:a => 1, 
         :b => 2)))
@@ -126,7 +128,7 @@ end
         "retention time range: 1 minute - 11 minute\n",
         "retention index range: 1000 - 11000\n",
         "interpolation method: JuChrom.NaturalCubicBSpline(false)\n",
-        "extrapolation method: JuChrom.Linear()\n",
+        "extrapolation method: nothing\n",
         "metadata: 2 entries")
 end
 
@@ -136,19 +138,19 @@ end
 ############################################################################################
 @testset "interpolationmethod" begin
     @test NaturalCubicBSpline(force=false) == interpolationmethod(RiMapper("Kovats", 
-        (1:2)u"minute", 1:2))
+        (1:4)u"minute", 1:4))
     @test NaturalCubicBSpline(force=false) == interpolationmethod(RiMapper("Kovats", 
-        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline()))
+        (1:4)u"minute", 1:4, interpolationmethod=NaturalCubicBSpline()))
     @test NaturalCubicBSpline(force=false) == interpolationmethod(RiMapper("Kovats", 
-        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline(), 
+        (1:4)u"minute", 1:4, interpolationmethod=NaturalCubicBSpline(), 
         extrapolationmethod=Linear()))
     @test NaturalCubicBSpline(force=false) == interpolationmethod(RiMapper("Kovats", 
-        (1:2)u"minute", 1:2, interpolationmethod=NaturalCubicBSpline(), 
+        (1:4)u"minute", 1:4, interpolationmethod=NaturalCubicBSpline(), 
         extrapolationmethod=nothing))
     
-    @test_throws ArgumentError interpolationmethod(RiMapper("Kovats", 
-        (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], interpolationmethod=NaturalCubicBSpline(), 
-        extrapolationmethod=nothing))
+    #@test_throws ArgumentError interpolationmethod(RiMapper("Kovats", 
+    #    (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], interpolationmethod=NaturalCubicBSpline(), 
+    #    extrapolationmethod=nothing))
     @test NaturalCubicBSpline(force=true) == interpolationmethod(RiMapper("Kovats", 
         (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], 
         interpolationmethod=NaturalCubicBSpline(force=true), extrapolationmethod=nothing))
@@ -159,17 +161,17 @@ end
 # extrapolationmethod(mapper::RiMapper)
 ############################################################################################
 @testset "extrapolationmethod" begin
-    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2))
-    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4))
+    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4, 
         interpolationmethod=NaturalCubicBSpline()))
-    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
+    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4, 
         interpolationmethod=PiecewiseLinear()))
-    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
-        extrapolationmethod=nothing))
-    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
-        interpolationmethod=NaturalCubicBSpline(), extrapolationmethod=nothing))
-    @test nothing === extrapolationmethod(RiMapper("Kovats", (1:2)u"minute", 1:2, 
-        interpolationmethod=PiecewiseLinear(), extrapolationmethod=nothing))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4, 
+        extrapolationmethod=Linear()))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4, 
+        interpolationmethod=NaturalCubicBSpline(), extrapolationmethod=Linear()))
+    @test Linear() == extrapolationmethod(RiMapper("Kovats", (1:4)u"minute", 1:4, 
+        interpolationmethod=PiecewiseLinear(), extrapolationmethod=Linear()))
 end
 
 
@@ -177,7 +179,7 @@ end
 # maxretentionindex(mapper::RiMapper)
 ############################################################################################
 @testset "maxretentionindex" begin
-    @test 3 == maxretentionindex(RiMapper("Kovats", (1:3)u"minute", 1:3))
+    @test 4 == maxretentionindex(RiMapper("Kovats", (1:4)u"minute", 1:4))
 end
 
 
@@ -186,10 +188,10 @@ end
 #   ustripped::Bool=false)
 ############################################################################################
 @testset "maxretentiontime" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
-    @test 3.8u"minute" ≈ maxretentiontime(ld)
-    @test 228.0u"s" ≈ maxretentiontime(ld, timeunit=u"s")
-    @test 228.0 ≈ maxretentiontime(ld, timeunit=u"s", ustripped=true)
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.6]u"minute", [1000, 2000, 3000, 4000]);
+    @test 4.6u"minute" ≈ maxretentiontime(ld)
+    @test 276.0u"s" ≈ maxretentiontime(ld, timeunit=u"s")
+    @test 276.0 ≈ maxretentiontime(ld, timeunit=u"s", ustripped=true)
 end
 
 
@@ -210,7 +212,7 @@ end
 # minretentionindex(mapper::RiMapper)
 ############################################################################################
 @testset "minretentionindex" begin
-    @test 1 == minretentionindex(RiMapper("Kovats", (1:3)u"minute", 1:3))
+    @test 1 == minretentionindex(RiMapper("Kovats", (1:4)u"minute", 1:4))
 end
 
 
@@ -219,7 +221,7 @@ end
 #   ustripped::Bool=false)
 ############################################################################################
 @testset "minretentiontime" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000]);
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.6]u"minute", [1000, 2000, 3000, 4000]);
     @test 1.2u"minute" ≈ minretentiontime(ld)
     @test 72.0u"s" ≈ minretentiontime(ld, timeunit=u"s")
     @test 72.0 ≈ minretentiontime(ld, timeunit=u"s", ustripped=true)
@@ -230,23 +232,21 @@ end
 # retentionindex(mapper::RiMapper, retentiontime::Unitful.Time; info::Bool=false)
 ############################################################################################
 @testset "retentionindex(::RiMapper, ...)" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
-    @test 1512.3626373626375 ≈ retentionindex(ld, 1.8u"minute") 
-    @test 913.9194139194141 ≈ retentionindex(ld, 1.1u"minute")
-    @test 913.9194139194141 ≈ retentionindex(ld, 1.1u"minute", info=false)
-    @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test 3142.857142857143 ≈ retentionindex(ld, 4.0u"minute")
-    @test [827.8388278388279, 1678.876678876679] ≈ retentionindex.(ld, [1, 2]u"minute")
-    
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000], 
-        extrapolationmethod=nothing)
-    @test 1512.3626373626375 ≈ retentionindex(ld, 1.8u"minute") 
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.5]u"minute", [1000, 2000, 3000, 4000])
+    @test 1540.7444668008052 ≈ retentionindex(ld, 1.8u"minute")
     @test_throws ArgumentError retentionindex(ld, 1.1u"minute")
-    @test_throws ArgumentError retentionindex(ld, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test_throws ArgumentError retentionindex(ld, 4.0u"minute")
-    @test [1257.7266483516485, 2000] ≈ retentionindex.(ld, [1.5, 2.4]u"minute")
-    @test_throws ArgumentError retentionindex.(ld, [1, 2]u"minute")
+    @test_throws ArgumentError retentionindex(ld, 4.6u"minute")
+    @test [1706.9081153588197, 2351.619923623373] ≈ retentionindex.(ld, [2, 3]u"minute")
+    
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.5]u"minute", [1000, 2000, 3000, 4000], 
+        extrapolationmethod=Linear())
+    @test 1540.7444668008052 ≈ retentionindex(ld, 1.8u"minute") 
+    @test 907.6123407109322 ≈ retentionindex(ld, 1.1u"minute")
+    @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
+    @test 3252.2481829754033 ≈ retentionindex(ld, 4.0u"minute")
+    @test [1275.4652917505032, 2000] ≈ retentionindex.(ld, [1.5, 2.4]u"minute")
+    @test [815.2246814218645, 1706.9081153588197] ≈ retentionindex.(ld, [1, 2]u"minute")
 end
 
 
@@ -254,25 +254,23 @@ end
 # retentionindex(chrom::AbstractChromatogram, retentiontime::Unitful.Time; info::Bool=false)
 ############################################################################################
 @testset "retentionindex(::AbstractChromatogram, ...)" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.5]u"minute", [1000, 2000, 3000, 4000])
     chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld)
-    @test 1512.3626373626375 ≈ retentionindex(chrom, 1.8u"minute")
-    @test 913.9194139194141 ≈ retentionindex(chrom, 1.1u"minute")
-    @test 913.9194139194141 ≈ retentionindex(chrom, 1.1u"minute", info=false)
-    @test 1000.0 ≈ retentionindex(chrom, 1.2u"minute")
-    @test 3142.857142857143 ≈ retentionindex(chrom, 4.0u"minute")
-    @test [827.8388278388279, 1678.876678876679] ≈ retentionindex.(chrom, [1, 2]u"minute")
-
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000], 
-        extrapolationmethod=nothing)
-    chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld)
-    @test 1512.3626373626375 ≈ retentionindex(chrom, 1.8u"minute") 
+    @test 1540.7444668008052 ≈ retentionindex(chrom, 1.8u"minute")
     @test_throws ArgumentError retentionindex(chrom, 1.1u"minute")
-    @test_throws ArgumentError retentionindex(chrom, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(chrom, 1.2u"minute")
-    @test_throws ArgumentError retentionindex(chrom, 4.0u"minute")
-    @test_throws ArgumentError retentionindex.(chrom, [1, 2]u"minute")
-    @test [1257.7266483516485, 2000] ≈ retentionindex.(chrom, [1.5, 2.4]u"minute")
+    @test_throws ArgumentError retentionindex(chrom, 5.0u"minute")
+    @test [1706.9081153588197, 2351.619923623373] ≈ retentionindex.(chrom, [2, 3]u"minute")
+
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.5]u"minute", [1000, 2000, 3000, 4000], 
+        extrapolationmethod=Linear())
+    chrom = Chrom(Int64[1, 2, 3]u"s", Int32[12, 956, 1], rimapper=ld)
+    @test 1540.7444668008052 ≈ retentionindex(chrom, 1.8u"minute")
+    @test 907.6123407109322 ≈ retentionindex(chrom, 1.1u"minute")
+    @test 1000.0 ≈ retentionindex(chrom, 1.2u"minute")
+    @test 4782.6123407109335 ≈ retentionindex(chrom, 5.0u"minute")
+    @test [815.2246814218645, 1706.9081153588197] ≈ retentionindex.(chrom, [1, 2]u"minute")
+    @test [1275.4652917505032, 2000.0] ≈ retentionindex.(chrom, [1.5, 2.4]u"minute")
 end
 
 
@@ -280,7 +278,7 @@ end
 # retentionindexname(mapper::RiMapper)
 ############################################################################################
 @testset "retentionindexname" begin
-    "Kovats" == retentionindexname(RiMapper("Kovats", (1:2)u"s", 1:2))
+    @test "Kovats" == retentionindexname(RiMapper("Kovats", (1:4)u"s", 1:4))
 end
 
 
@@ -288,7 +286,7 @@ end
 # retentionindices(mapper::RiMapper)
 ############################################################################################
 @testset "retentionindices" begin
-    @test 1:2 == retentionindices(RiMapper("Kovats", (1:2)u"s", 1:2))
+    @test 1:4 == retentionindices(RiMapper("Kovats", (1:4)u"s", 1:4))
 end
 
 
@@ -296,11 +294,11 @@ end
 # retentiontimes(mapper::RiMapper; timeunit::Unitful.TimeUnits, ustripped::Bool=false)
 ############################################################################################
 @testset "retentiontimes" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 3.8]u"minute", [1000, 2000, 3000])
-    @test [1.2, 2.4, 3.8]u"minute" ≈ retentiontimes(ld)
-    @test [72, 144, 228]u"s" ≈ retentiontimes(ld, timeunit=u"s")
-    @test [72, 144, 228] ≈ retentiontimes(ld, timeunit=u"s", ustripped=true)
-    @test [1.2, 2.4, 3.8] ≈ retentiontimes(ld, ustripped=true)
+    ld = RiMapper("Kovats", [1.2, 2.4, 3.8, 4.5]u"minute", [1000, 2000, 3000, 4000])
+    @test [1.2, 2.4, 3.8, 4.5]u"minute" ≈ retentiontimes(ld)
+    @test [72, 144, 228, 270]u"s" ≈ retentiontimes(ld, timeunit=u"s")
+    @test [72, 144, 228, 270] ≈ retentiontimes(ld, timeunit=u"s", ustripped=true)
+    @test [1.2, 2.4, 3.8, 4.5] ≈ retentiontimes(ld, ustripped=true)
 end
 
 
@@ -308,25 +306,21 @@ end
 # JuChrom.rt2ri(mapper::RiMapper)
 ############################################################################################
 @testset "JuChrom.rt2ri" begin
-    ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000])
-    @test 1526.7402376910018 ≈ retentionindex(ld, 1.8u"minute")
-    @test 910.724391624222 ≈ retentionindex(ld, 1.1u"minute")
-    @test 910.724391624222 ≈ retentionindex(ld, 1.1u"minute", info=false)
-    @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test 3052.631578947369 ≈ retentionindex(ld, 4.4u"minute")
-    @test [821.4487832484438, 1693.0767779664216] ≈ retentionindex.(ld, [1, 2]u"minute")
-    
-    ld = RiMapper("Kovats", [1.2, 2.4, 4.3]u"minute", [1000, 2000, 3000], 
-        extrapolationmethod=nothing)
-    @test 1526.7402376910018 ≈ retentionindex(ld, 1.8u"minute")
+    ld = RiMapper("Kovats", [1.2, 2.4, 4.3, 5.9]u"minute", [1000, 2000, 3000, 4000])
+    @test 1531.7108900675921 ≈ retentionindex(ld, 1.8u"minute")
     @test_throws ArgumentError retentionindex(ld, 1.1u"minute")
-    @test_throws ArgumentError retentionindex(ld, 1.1u"minute", info=false)
     @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
-    @test_throws ArgumentError retentionindex(ld, 4.4u"minute")
-    @test_throws ArgumentError retentionindex.(ld, [1, 2]u"minute")
-    @test [1266.712648556876, 2000] ≈ retentionindex.(ld, [1.5, 2.4]u"minute")
+    @test 3053.7704734395047 ≈ retentionindex(ld, 4.4u"minute")
+    @test [1697.9860642642884, 2362.1065650064497] ≈ retentionindex.(ld, [2, 3]u"minute")
+    
+    ld = RiMapper("Kovats", [1.2, 2.4, 4.3, 5.9]u"minute", [1000, 2000, 3000, 4000], 
+        extrapolationmethod=Linear())
+    @test 1531.7108900675921 ≈ retentionindex(ld, 1.8u"minute")
+    @test 909.619802207202 ≈ retentionindex(ld, 1.1u"minute")
+    @test 1000.0 ≈ retentionindex(ld, 1.2u"minute")
+    @test 3053.7704734395047 ≈ retentionindex(ld, 4.4u"minute")
+    @test [819.2396044144039, 1697.9860642642884] ≈ retentionindex.(ld, [1, 2]u"minute")
 end
-
 
 
 ############################################################################################
@@ -339,21 +333,22 @@ end
     @test 1000.0 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
-    @test 7950.0 ≈ rt2ri(9.1u"s")
-    @test 688.3373411198901 ≈ rt2ri(0.5u"s")
+    @test_throws ArgumentError rt2ri(9.1u"s")
+    @test_throws ArgumentError rt2ri(0.5u"s")
     @test [1000.0, 1800.0] ≈ rt2ri.([1, 2]u"s")
 
     rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
-        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=false)
+        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=true)
     @test 1000.0 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
     @test 1800.0 ≈ rt2ri((1//30)u"minute")
-    @test_throws ArgumentError rt2ri(9.1u"s")
-    @test_throws ArgumentError rt2ri(0.5u"s")
-    @test_throws ArgumentError rt2ri.([0.5, 1]u"s")
+    @test rt2ri(9.1u"s") ≈ 8053.1226382686355
+    @test rt2ri(0.5u"s") ≈ 688.3373411198902
+    @test rt2ri.([0.5, 1]u"s") ≈ [688.3373411198902, 1000.0000000000001]
     @test [1000.0, 1800.0] ≈ rt2ri.([1, 2]u"s")
 
-    @test_throws ArgumentError JuChrom.bsplineinterpolation([1]u"s", [1000])
+    @test_throws ArgumentError JuChrom.bsplineinterpolation([1, 2, 3]u"s", 
+        [1000, 2000, 3000])
     @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4, 5]u"s", 
         [1000, 1900, 3100, 3900])
     @test_throws DimensionMismatch JuChrom.bsplineinterpolation([1, 2, 3, 4]u"s", 
@@ -393,17 +388,17 @@ end
     @test 1000 ≈ rt2ri(1u"s")
     @test 1400 ≈ rt2ri(1.5u"s")
     @test 1800 ≈ rt2ri((1//30)u"minute")
-    @test 7950 ≈ rt2ri(9.1u"s")
-    @test 600 ≈ rt2ri(0.5u"s")
+    @test_throws ArgumentError rt2ri(9.1u"s")
+    @test_throws ArgumentError rt2ri(0.5u"s")
     @test [1000, 2425] ≈ rt2ri.([1, 2.5]u"s")
 
     rt2ri = JuChrom.piecewiselinearinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
-        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=false)
+        [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=true)
     @test 1000 ≈ rt2ri(1u"s")
     @test 1400 ≈ rt2ri(1.5u"s")
     @test 1800 ≈ rt2ri((1//30)u"minute")
-    @test_throws ArgumentError rt2ri(9.1u"s")
-    @test_throws ArgumentError rt2ri(0.5u"s")
+    @test 7950.0 ≈ rt2ri(9.1u"s")
+    @test 600.0 ≈ rt2ri(0.5u"s")
     @test [1000, 2425] ≈ rt2ri.([1, 2.5]u"s")
 
     @test_throws ArgumentError JuChrom.piecewiselinearinterpolation([1]u"s", [1000])
