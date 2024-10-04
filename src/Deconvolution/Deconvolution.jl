@@ -1,7 +1,7 @@
 module Deconvolution
 
 include("../NNLS/NNLS.jl")
-import .NNLS: nnls
+import NNLS: nnls
 export nnls
 
 export ls_fit
