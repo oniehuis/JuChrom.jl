@@ -2,12 +2,12 @@ module JuChrom
 
 using Reexport
 
-# using LinearAlgebra
 using Pkg.Artifacts
-# using Polynomials
 import BasicInterpolators
-import BSplineKit
-# using PrecompileTools: @setup_workload, @compile_workload
+import Optim
+import BSplineKit: diff
+import Roots
+
 @reexport using Unitful
 
 const agilent = artifact"Agilent"

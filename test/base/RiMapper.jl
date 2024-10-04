@@ -148,9 +148,9 @@ end
         (1:4)u"minute", 1:4, interpolationmethod=NaturalCubicBSpline(), 
         extrapolationmethod=nothing))
     
-    #@test_throws ArgumentError interpolationmethod(RiMapper("Kovats", 
-    #    (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], interpolationmethod=NaturalCubicBSpline(), 
-    #    extrapolationmethod=nothing))
+    @test_throws ArgumentError interpolationmethod(RiMapper("Kovats", 
+       (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], interpolationmethod=NaturalCubicBSpline(), 
+       extrapolationmethod=nothing))
     @test NaturalCubicBSpline(force=true) == interpolationmethod(RiMapper("Kovats", 
         (1:6)u"s", [1, 2, 2.1, 5, 5.1, 9], 
         interpolationmethod=NaturalCubicBSpline(force=true), extrapolationmethod=nothing))

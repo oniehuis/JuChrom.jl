@@ -720,6 +720,22 @@ ERROR: ArgumentError: retention time outside range for calculating retention ind
 rt2ri(mapper::RiMapper) = mapper.rt2ri
 
 
+function criticalpoints(spline, nodes, ϵ)
+    S′ = diff(spline, BSplineKit.Derivative(1))
+    S″ = diff(spline, BSplineKit.Derivative(2))
+    critical_points = Vector{Float64}()
+    for i in 1:(length(nodes)-1)
+        result = Roots.find_zeros(S′, nodes[i], nodes[i+1])
+        for x in result
+            if abs(S″(x)) > ϵ
+                push!(critical_points, x)
+            end
+        end
+    end
+    critical_points
+end
+
+
 """
     bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time}, 
     retentionindices::AbstractVector{<:Real}; extrapolation::Bool=false, force::Bool=false)
@@ -788,6 +804,14 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
 
     S = BSplineKit.interpolate(rts_ustripped, ris, BSplineKit.BSplineOrder(4),
         BSplineKit.Natural()) 
+
+    # Check for critical points
+    ϵ = (maximum(retentionindices) - minimum(retentionindices)) * 1e-10
+    cpoints = criticalpoints(S, rts_ustripped, ϵ)
+    if length(cpoints) > 0 && !force
+        throw(ArgumentError(
+            "computed Bspline contains critical point(s): $cpoints * $timeunit"))
+    end
 
     if extrapolation
         return rt::Unitful.Time -> begin
