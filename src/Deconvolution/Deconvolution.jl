@@ -1,10 +1,10 @@
 module Deconvolution
 
 include("../NNLS/NNLS.jl")
-import NNLS: nnls
-export nnls
+import .NNLS: nnls
 
 export ls_fit
+export nnls
 
 function ls_fit(xs, ys)
     if length(xs) ≠ length(ys)
