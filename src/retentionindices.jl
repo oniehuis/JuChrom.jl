@@ -721,15 +721,13 @@ rt2ri(mapper::RiMapper) = mapper.rt2ri
 
 
 function criticalpoints(spline, nodes, ϵ)
-    S′ = diff(spline, BSplineKit.Derivative(1))
-    S″ = diff(spline, BSplineKit.Derivative(2))
+    S′ = BSplineKit.diff(spline, BSplineKit.Derivative(1))
+    S″ = BSplineKit.diff(spline, BSplineKit.Derivative(2))
     critical_points = Vector{Float64}()
     for i in 1:(length(nodes)-1)
         result = Roots.find_zeros(S′, nodes[i], nodes[i+1])
         for x in result
-            if abs(S″(x)) > ϵ
-                push!(critical_points, x)
-            end
+            abs(S″(x)) > ϵ && push!(critical_points, x)
         end
     end
     critical_points
