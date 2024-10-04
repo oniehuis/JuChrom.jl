@@ -5,3 +5,5 @@ using Pkg
 Pkg.add("PyCall")
 ENV["PYTHON"] = ""
 Pkg.build("PyCall")
+
+Pkg.add("https://github.com/rdeits/NNLS.jl.git")
