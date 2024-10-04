@@ -206,14 +206,14 @@ mutable struct NNLSWorkspace{T, I <: Integer}
     end
 end
 
-function Base.resize!(work::NNLSWorkspace{T}, m::Integer, n::Integer) where T
-    work.QA = Matrix{T}(undef, m, n)
-    work.Qb = Vector{T}(undef, m)
-    resize!(work.x, n)
-    resize!(work.w, n)
-    resize!(work.zz, m)
-    resize!(work.idx, n)
-end
+# function Base.resize!(work::NNLSWorkspace{T}, m::Integer, n::Integer) where T
+#     work.QA = Matrix{T}(undef, m, n)
+#     work.Qb = Vector{T}(undef, m)
+#     resize!(work.x, n)
+#     resize!(work.w, n)
+#     resize!(work.zz, m)
+#     resize!(work.idx, n)
+# end
 
 function load!(work::NNLSWorkspace{T}, A::AbstractMatrix{T}, b::AbstractVector{T}) where T
     m, n = size(A)
@@ -226,9 +226,9 @@ function load!(work::NNLSWorkspace{T}, A::AbstractMatrix{T}, b::AbstractVector{T
     work
 end
 
-NNLSWorkspace(m::Integer, n::Integer,
-              eltype::Type{T}=Float64,
-              indextype::Type{I}=Int) where {T, I} = NNLSWorkspace{T, I}(m, n)
+# NNLSWorkspace(m::Integer, n::Integer,
+#               eltype::Type{T}=Float64,
+#               indextype::Type{I}=Int) where {T, I} = NNLSWorkspace{T, I}(m, n)
 
 function NNLSWorkspace(A::Matrix{T}, b::Vector{T}, indextype::Type{I}=Int) where {T, I}
     m, n = size(A)
@@ -278,7 +278,7 @@ end
 # Fallback for non-contiguous arrays, for which UnsafeVectorView does not make
 # sense.
 # """
-fastview(parent::AbstractArray, start_ind::Integer, len::Integer) = @view(parent[start_ind:(start_ind + len - 1)])
+# fastview(parent::AbstractArray, start_ind::Integer, len::Integer) = @view(parent[start_ind:(start_ind + len - 1)])
 
 @noinline function checkargs(work::NNLSWorkspace)
     m, n = size(work.QA)
@@ -577,11 +577,11 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     return work.x
 end
 
-function solve!(work::NNLSWorkspace{T}, A::AbstractMatrix{T}, b::AbstractVector{T}, max_iter=(3 * size(A, 2))) where T
-    load!(work, A, b)
-    solve!(work, max_iter)
-    work.x
-end
+# function solve!(work::NNLSWorkspace{T}, A::AbstractMatrix{T}, b::AbstractVector{T}, max_iter=(3 * size(A, 2))) where T
+#     load!(work, A, b)
+#     solve!(work, max_iter)
+#     work.x
+# end
 
 function nnls(A::DenseMatrix{T}, b::DenseVector{T}, max_iter=(3 * size(A, 2))) where T
     work = NNLSWorkspace(A, b)
@@ -605,59 +605,59 @@ const AllColsSubArray{T} = SubArray{T,2,Array{T,2},Tuple{UnitRange{Int},Base.Sli
 # Minimize ``\\frac{1}{2} z' Q z + c' z``
 # Subject to ``G z \\leq g``
 # """
-struct QP{T}
-    Q::Matrix{T}
-    c::Vector{T}
-    G::Matrix{T}
-    g::Vector{T}
+# struct QP{T}
+#     Q::Matrix{T}
+#     c::Vector{T}
+#     G::Matrix{T}
+#     g::Vector{T}
 
-    function QP{T}(Q::Matrix, c::Vector, G::Matrix, g::Vector) where T
-        @boundscheck begin
-            LinearAlgebra.checksquare(Q)
-            length(c) == size(Q, 1) || throw(DimensionMismatch())
-            size(G, 1) == length(g) || throw(DimensionMismatch())
-            size(G, 2) == size(Q, 1) || throw(DimensionMismatch())
-        end
-        new{T}(Q, c, G, g)
-    end
+#     function QP{T}(Q::Matrix, c::Vector, G::Matrix, g::Vector) where T
+#         @boundscheck begin
+#             LinearAlgebra.checksquare(Q)
+#             length(c) == size(Q, 1) || throw(DimensionMismatch())
+#             size(G, 1) == length(g) || throw(DimensionMismatch())
+#             size(G, 2) == size(Q, 1) || throw(DimensionMismatch())
+#         end
+#         new{T}(Q, c, G, g)
+#     end
 
-    QP(Q::Matrix{T}, c::Vector{T}, G::Matrix{T}, g::Vector{T}) where {T} = QP{T}(Q, c, G, g)
-    QP{T}(qp::QP) where {T} = QP{T}(qp.Q, qp.c, qp.G, qp.g)
-end
+#     QP(Q::Matrix{T}, c::Vector{T}, G::Matrix{T}, g::Vector{T}) where {T} = QP{T}(Q, c, G, g)
+#     QP{T}(qp::QP) where {T} = QP{T}(qp.Q, qp.c, qp.G, qp.g)
+# end
 
-mutable struct QPWorkspace{T, I} # TODO: consider not having `I` as a parameter
-    # Variables from paper:
-    L::Matrix{T}
-    c::Vector{T}
-    G::Matrix{T}
-    g::Vector{T}
-    M::Matrix{T}
-    d::Vector{T}
-    r::Vector{T}
+# mutable struct QPWorkspace{T, I} # TODO: consider not having `I` as a parameter
+#     # Variables from paper:
+#     L::Matrix{T}
+#     c::Vector{T}
+#     G::Matrix{T}
+#     g::Vector{T}
+#     M::Matrix{T}
+#     d::Vector{T}
+#     r::Vector{T}
 
-    # Additional variables:
-    e::Vector{T} # intermediate variable
-    A::Matrix{T} # 'A'-matrix of NNLS problem
-    AM::AllColsSubArray{T} # upper block of A
-    Ad::AllColsSubArray{T} # last row of A
-    b::Vector{T} # 'b'-vector of NNLS problem
-    nnlswork::NNLSWorkspace{T, I}
-    status::Symbol
+#     # Additional variables:
+#     e::Vector{T} # intermediate variable
+#     A::Matrix{T} # 'A'-matrix of NNLS problem
+#     AM::AllColsSubArray{T} # upper block of A
+#     Ad::AllColsSubArray{T} # last row of A
+#     b::Vector{T} # 'b'-vector of NNLS problem
+#     nnlswork::NNLSWorkspace{T, I}
+#     status::Symbol
 
-    function QPWorkspace{T, I}(q::Integer, n::Integer) where {T, I}
-        work = new{T, I}()
-        resize!(work, q, n)
-    end
-end
+#     function QPWorkspace{T, I}(q::Integer, n::Integer) where {T, I}
+#         work = new{T, I}()
+#         resize!(work, q, n)
+#     end
+# end
 
-QPWorkspace(q::Integer, n::Integer) = QPWorkspace{Float64, Int}(q, n)
+# QPWorkspace(q::Integer, n::Integer) = QPWorkspace{Float64, Int}(q, n)
 
-function Base.convert(::Type{QP{T1}}, qp::QP{T2}) where {T1, T2}
-    QP(convert(Matrix{T1}, qp.Q),
-       convert(Vector{T1}, qp.c),
-       convert(Matrix{T1}, qp.G),
-       convert(Vector{T1}, qp.g))
-end
+# function Base.convert(::Type{QP{T1}}, qp::QP{T2}) where {T1, T2}
+#     QP(convert(Matrix{T1}, qp.Q),
+#        convert(Vector{T1}, qp.c),
+#        convert(Matrix{T1}, qp.G),
+#        convert(Vector{T1}, qp.g))
+# end
 
 # THE FOLLOWING 8 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -668,29 +668,29 @@ end
 # Minimize ``\\frac{1}{2} z' Q z + c' z``
 # Subject to ``G z \\leq g``
 # """
-function QPWorkspace(qp::QP{T}) where T
-    work = QPWorkspace{T, Int}(size(qp.G, 1), size(qp.G, 2))
-    load!(work, qp.Q, qp.c, qp.G, qp.g)
-    work
-end
+# function QPWorkspace(qp::QP{T}) where T
+#     work = QPWorkspace{T, Int}(size(qp.G, 1), size(qp.G, 2))
+#     load!(work, qp.Q, qp.c, qp.G, qp.g)
+#     work
+# end
 
-function Base.resize!(work::QPWorkspace{T}, q::Integer, n::Integer) where T
-    work.L = Matrix{T}(undef, n, n)
-    work.c = Vector{T}(undef, n)
-    work.G = Matrix{T}(undef, q, n)
-    work.g = Vector{T}(undef, q)
-    work.M = Matrix{T}(undef, q, n)
-    work.d = Vector{T}(undef, q)
-    work.r = Vector{T}(undef, n + 1)
-    work.e = Vector{T}(undef, n)
-    work.A = Matrix{T}(undef, n + 1, q)
-    work.AM = view(work.A, 1 : n, :)
-    work.Ad = view(work.A, n + 1 : n + 1, :)
-    work.b = Vector{T}(undef, n + 1)
-    work.nnlswork = NNLSWorkspace{T, Int}(size(work.A)...)
-    work.status = :Unsolved
-    work
-end
+# function Base.resize!(work::QPWorkspace{T}, q::Integer, n::Integer) where T
+#     work.L = Matrix{T}(undef, n, n)
+#     work.c = Vector{T}(undef, n)
+#     work.G = Matrix{T}(undef, q, n)
+#     work.g = Vector{T}(undef, q)
+#     work.M = Matrix{T}(undef, q, n)
+#     work.d = Vector{T}(undef, q)
+#     work.r = Vector{T}(undef, n + 1)
+#     work.e = Vector{T}(undef, n)
+#     work.A = Matrix{T}(undef, n + 1, q)
+#     work.AM = view(work.A, 1 : n, :)
+#     work.Ad = view(work.A, n + 1 : n + 1, :)
+#     work.b = Vector{T}(undef, n + 1)
+#     work.nnlswork = NNLSWorkspace{T, Int}(size(work.A)...)
+#     work.status = :Unsolved
+#     work
+# end
 
 # THE FOLLOWING 8 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -701,17 +701,17 @@ end
 # Minimize ``\\frac{1}{2} z' Q z + c' z``
 # Subject to ``G z \\leq g``
 # """
-function load!(work::QPWorkspace{T}, Q::AbstractMatrix{T}, c::AbstractVector{T}, G::AbstractMatrix{T}, g::AbstractVector{T}) where T
-    work.L .= Q
-    work.c .= c
-    work.G .= G
-    work.g .= g
-    work.status = :Unsolved
-    nothing
-end
+# function load!(work::QPWorkspace{T}, Q::AbstractMatrix{T}, c::AbstractVector{T}, G::AbstractMatrix{T}, g::AbstractVector{T}) where T
+#     work.L .= Q
+#     work.c .= c
+#     work.G .= G
+#     work.g .= g
+#     work.status = :Unsolved
+#     nothing
+# end
 
-load!(work::QPWorkspace{T}, qp::QP{T}) where {T} = load!(work, qp.Q, qp.c, qp.G, qp.g)
-checkunsolved(work::QPWorkspace) = work.status == :Unsolved || error("Problem was already solved.")
+# load!(work::QPWorkspace{T}, qp::QP{T}) where {T} = load!(work, qp.Q, qp.c, qp.G, qp.g)
+# checkunsolved(work::QPWorkspace) = work.status == :Unsolved || error("Problem was already solved.")
 
 # THE FOLLOWING 6 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -720,140 +720,140 @@ checkunsolved(work::QPWorkspace) = work.status == :Unsolved || error("Problem wa
 # Solve the QP that was loaded into `work` using `load!`. Returns the primal
 # solution ``z`` and the dual solution ``λ``.
 # """
-function solve!(work::QPWorkspace{T}, eps_infeasible = 1e-4) where T<:LinearAlgebra.BlasFloat
-    checkunsolved(work)
+# function solve!(work::QPWorkspace{T}, eps_infeasible = 1e-4) where T<:LinearAlgebra.BlasFloat
+#     checkunsolved(work)
 
-    L = work.L
-    c = work.c
-    G = work.G
-    g = work.g
-    M = work.M
-    d = work.d
-    e = work.e
-    A = work.A
-    AM = work.AM
-    Ad = work.Ad
-    b = work.b
-    r = work.r
-    nnlswork = work.nnlswork
+#     L = work.L
+#     c = work.c
+#     G = work.G
+#     g = work.g
+#     M = work.M
+#     d = work.d
+#     e = work.e
+#     A = work.A
+#     AM = work.AM
+#     Ad = work.Ad
+#     b = work.b
+#     r = work.r
+#     nnlswork = work.nnlswork
 
-    # Compute M
-    LinearAlgebra.LAPACK.potrf!('U', L) # L <- upper cholesky factor of Q
-    M .= G
-    LinearAlgebra.BLAS.trsm!('R', 'U', 'N', 'N', one(T), L, M) # M <- G L⁻¹
+#     # Compute M
+#     LinearAlgebra.LAPACK.potrf!('U', L) # L <- upper cholesky factor of Q
+#     M .= G
+#     LinearAlgebra.BLAS.trsm!('R', 'U', 'N', 'N', one(T), L, M) # M <- G L⁻¹
 
-    # Compute d
-    e .= c
-    LinearAlgebra.LAPACK.potrs!('U', L, e) # e <- Q⁻¹ c
+#     # Compute d
+#     e .= c
+#     LinearAlgebra.LAPACK.potrs!('U', L, e) # e <- Q⁻¹ c
 
-    d .= g
-    LinearAlgebra.BLAS.gemv!('N', one(T), G, e, one(T), d) # d <- g + G Q⁻¹ c
+#     d .= g
+#     LinearAlgebra.BLAS.gemv!('N', one(T), G, e, one(T), d) # d <- g + G Q⁻¹ c
 
-    # Populate A
-    transpose!(AM, M)
-    transpose!(Ad, d)
-    rmul!(A, -1)
+#     # Populate A
+#     transpose!(AM, M)
+#     transpose!(Ad, d)
+#     rmul!(A, -1)
 
-    # Populate b
-    γ = one(T)
-    b .= 0
-    b[end] = γ
+#     # Populate b
+#     γ = one(T)
+#     b .= 0
+#     b[end] = γ
 
-    # Solve the NNLS
-    load!(nnlswork, A, b)
-    solve!(nnlswork)
-    y = nnlswork.x
+#     # Solve the NNLS
+#     load!(nnlswork, A, b)
+#     solve!(nnlswork)
+#     y = nnlswork.x
 
-    # Compute the residual
-    r = b
-    LinearAlgebra.BLAS.gemv!('N', one(T), A, y, -one(T), r) # r <- A * y - b
+#     # Compute the residual
+#     r = b
+#     LinearAlgebra.BLAS.gemv!('N', one(T), A, y, -one(T), r) # r <- A * y - b
 
-    # Check for feasibility
-    work.status = sum(abs, r) < eps_infeasible ? :Infeasible : :Optimal
+#     # Check for feasibility
+#     work.status = sum(abs, r) < eps_infeasible ? :Infeasible : :Optimal
 
-    # Back out solution and dual
-    z = c
-    λ = y
-    if work.status == :Optimal
-        # Note: r[end] == -(γ + d ⋅ y)
-        LinearAlgebra.BLAS.gemv!('T', 1 / r[end], G, y, -one(T), c) # z <- -1 / (γ + d ⋅ y) G^ᵀ y - c
-        LinearAlgebra.LAPACK.potrs!('U', L, z)
-        rmul!(λ, -1 / sqrt(-r[end])) # the sqrt appears to be missing in (12) in the paper
-    else
-        fill!(z, NaN)
-        fill!(λ, NaN)
-    end
+#     # Back out solution and dual
+#     z = c
+#     λ = y
+#     if work.status == :Optimal
+#         # Note: r[end] == -(γ + d ⋅ y)
+#         LinearAlgebra.BLAS.gemv!('T', 1 / r[end], G, y, -one(T), c) # z <- -1 / (γ + d ⋅ y) G^ᵀ y - c
+#         LinearAlgebra.LAPACK.potrs!('U', L, z)
+#         rmul!(λ, -1 / sqrt(-r[end])) # the sqrt appears to be missing in (12) in the paper
+#     else
+#         fill!(z, NaN)
+#         fill!(λ, NaN)
+#     end
 
-    z, λ
-end
+#     z, λ
+# end
 
-function solve!(work::QPWorkspace{T}, eps_infeasible = 1e-4) where T
-    checkunsolved(work)
+# function solve!(work::QPWorkspace{T}, eps_infeasible = 1e-4) where T
+#     checkunsolved(work)
 
-    Q = work.L # is set to Q initially; modified to be L
-    c = work.c
-    G = work.G
-    g = work.g
-    M = work.M
-    d = work.d
-    e = work.e
-    A = work.A
-    AM = work.AM
-    Ad = work.Ad
-    b = work.b
-    r = work.r
-    nnlswork = work.nnlswork
+#     Q = work.L # is set to Q initially; modified to be L
+#     c = work.c
+#     G = work.G
+#     g = work.g
+#     M = work.M
+#     d = work.d
+#     e = work.e
+#     A = work.A
+#     AM = work.AM
+#     Ad = work.Ad
+#     b = work.b
+#     r = work.r
+#     nnlswork = work.nnlswork
 
-    # Compute M
-    cholQ = cholesky!(Hermitian(Q, :U))
-    L = cholQ.U
-    M[:] = G
-    rdiv!(M, L)
+#     # Compute M
+#     cholQ = cholesky!(Hermitian(Q, :U))
+#     L = cholQ.U
+#     M[:] = G
+#     rdiv!(M, L)
 
-    # Compute d
-    e[:] = c
-    ldiv!(cholQ, e) # e <- Q⁻¹ c
-    mul!(d, G, e)
-    d .+= g # d <- g + G Q⁻¹ c
+#     # Compute d
+#     e[:] = c
+#     ldiv!(cholQ, e) # e <- Q⁻¹ c
+#     mul!(d, G, e)
+#     d .+= g # d <- g + G Q⁻¹ c
 
-    # Populate A
-    transpose!(AM, M)
-    transpose!(Ad, d)
-    rmul!(A, -1)
+#     # Populate A
+#     transpose!(AM, M)
+#     transpose!(Ad, d)
+#     rmul!(A, -1)
 
-    # Populate b
-    γ = one(T)
-    b .= 0
-    b[end] = γ
+#     # Populate b
+#     γ = one(T)
+#     b .= 0
+#     b[end] = γ
 
-    # Solve the NNLS
-    load!(nnlswork, A, b)
-    solve!(nnlswork)
-    y = nnlswork.x
+#     # Solve the NNLS
+#     load!(nnlswork, A, b)
+#     solve!(nnlswork)
+#     y = nnlswork.x
 
-    # Compute the residual
-    mul!(r, A, y)
-    r .-= b # r <- A * y - b
+#     # Compute the residual
+#     mul!(r, A, y)
+#     r .-= b # r <- A * y - b
 
-    # Check for feasibility
-    work.status = sum(abs, r) < eps_infeasible ? :Infeasible : :Optimal
+#     # Check for feasibility
+#     work.status = sum(abs, r) < eps_infeasible ? :Infeasible : :Optimal
 
-    # Back out solution and dual
-    z = similar(c) # TODO
-    λ = y
-    if work.status == :Optimal
-        # Note: r[end] == -(γ + d ⋅ y)
-        mul!(z, transpose(G), y)
-        z .= z ./ r[end] .- c # z <- -1 / (γ + d ⋅ y) G^ᵀ y - c
-        ldiv!(cholQ, z) # z <- -Q⁻¹ (1 / (γ + d ⋅ y) G^ᵀ y + c)
-        rmul!(λ, -1 / sqrt(-r[end])) # the sqrt appears to be missing in (12) in the paper
-    else
-        fill!(z, NaN)
-        fill!(λ, NaN)
-    end
+#     # Back out solution and dual
+#     z = similar(c) # TODO
+#     λ = y
+#     if work.status == :Optimal
+#         # Note: r[end] == -(γ + d ⋅ y)
+#         mul!(z, transpose(G), y)
+#         z .= z ./ r[end] .- c # z <- -1 / (γ + d ⋅ y) G^ᵀ y - c
+#         ldiv!(cholQ, z) # z <- -Q⁻¹ (1 / (γ + d ⋅ y) G^ᵀ y + c)
+#         rmul!(λ, -1 / sqrt(-r[end])) # the sqrt appears to be missing in (12) in the paper
+#     else
+#         fill!(z, NaN)
+#         fill!(λ, NaN)
+#     end
 
-    z, λ
-end
+#     z, λ
+# end
 
 # THE FOLLOWING 12 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -868,7 +868,7 @@ end
 
 # For a primal-feasible solution, this will return a value <= 0.
 # """
-primal_infeasibility(qp::QP, z, λ) = maximum(qp.G * z .- qp.g)
+# primal_infeasibility(qp::QP, z, λ) = maximum(qp.G * z .- qp.g)
 
 # THE FOLLOWING 12 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -883,7 +883,7 @@ primal_infeasibility(qp::QP, z, λ) = maximum(qp.G * z .- qp.g)
 
 # For a dual-feasible solution, this will return a value <= 0.
 # """
-dual_infeasibility(qp::QP, z, λ) = maximum(λ)
+# dual_infeasibility(qp::QP, z, λ) = maximum(λ)
 
 # THE FOLLOWING 7 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -893,12 +893,12 @@ dual_infeasibility(qp::QP, z, λ) = maximum(λ)
 
 # For an optimal solution, this should return a value near 0.
 # """
-function stationarity_violation(qp::QP, z, λ)
-    slack_grad = qp.G' * λ
-    cost_grad = qp.Q * z + qp.c
-    scale = mean(cost_grad ./ slack_grad)
-    maximum(abs, cost_grad .- scale .* slack_grad)
-end
+# function stationarity_violation(qp::QP, z, λ)
+#     slack_grad = qp.G' * λ
+#     cost_grad = qp.Q * z + qp.c
+#     scale = mean(cost_grad ./ slack_grad)
+#     maximum(abs, cost_grad .- scale .* slack_grad)
+# end
 
 # THE FOLLOWING 7 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -908,7 +908,7 @@ end
 
 # For an optimal solution, this should return a value near 0.
 # """
-slackness_violation(qp::QP, z, λ) = maximum(abs, (qp.G * z .- qp.g) .* λ)
+# slackness_violation(qp::QP, z, λ) = maximum(abs, (qp.G * z .- qp.g) .* λ)
 
 # THE FOLLOWING 8 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # """
@@ -919,14 +919,14 @@ slackness_violation(qp::QP, z, λ) = maximum(abs, (qp.G * z .- qp.g) .* λ)
 # solution should return a value close to 0, while an infeasible or suboptimal
 # solution should return a value greater than zero.
 # """
-function check_optimality_conditions(qp::QP, z, λ)
-    return max(
-               primal_infeasibility(qp, z, λ),
-               dual_infeasibility(qp, z, λ),
-               stationarity_violation(qp, z, λ),
-               slackness_violation(qp, z, λ)
-               )
-end
+# function check_optimality_conditions(qp::QP, z, λ)
+#     return max(
+#                primal_infeasibility(qp, z, λ),
+#                dual_infeasibility(qp, z, λ),
+#                stationarity_violation(qp, z, λ),
+#                slackness_violation(qp, z, λ)
+#                )
+# end
 
 # THE FOLLOWING 2 LINES WERE COMMENTED OUT BY OLIVER NIEHUIS ON 9/18/2024
 # include("NNLSSolverInterface.jl")
