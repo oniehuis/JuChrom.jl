@@ -72,19 +72,14 @@ calibration file as [`metadata`](@ref).
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename))
 ```
 
-Since we did not explicitly specify an interpolation method or an extrapolation method, 
-the constructor defaulted to [`NaturalCubicBSpline`](@ref) for interpolation and 
-[`Linear`](@ref) for extrapolation.
+Since we did not explicitly specify an interpolation method, 
+the constructor defaulted to [`NaturalCubicBSpline`](@ref) for interpolation.
 
-We now have a [`RiMapper`](@ref) object that enables us to retrieve various details, 
-including the [`retentionindexname`](@ref) and the [`retentiontimes`](@ref) and
-[`retentionindices`](@ref) used as calibration points. It also provides the names of the 
-[`extrapolationmethod`](@ref) and the [`interpolationmethod`](@ref), along with the 
-[`metadata`](@ref). Most importantly, this allows us to calculate the 
-[`retentionindex`](@ref) for a given retention time of interest. We'll use this to plot the 
-mapping function. Since we will be plotting additional mapping functions, we'll 
-encapsulate the code for plotting the mapping function into a reusable function that can be 
-called multiple times.
+We now have a [`RiMapper`](@ref) object that allows us to calculate the 
+[`retentionindex`](@ref) for a given retention time of interest. We'll use this to plot 
+the mapping function. Since we will be plotting additional mapping functions, we'll 
+encapsulate the code for plotting the mapping function into a reusable function that can 
+be called multiple times.
 
 ```@example 1
 function plotmappingfunction(ld::RiMapper, outputfile::AbstractString)
@@ -212,13 +207,13 @@ catch e
 end
 ```
 
-As shown in the output, the creation of a natural cubic B-spline that predicts continuously 
-increasing retention indices with increasing retention time has failed. However, we can 
-still force the B-spline interpolator to be returned, even if it contains critical points 
-in one or more polynomials. This is achieved by explicitly specifying 
-[`NaturalCubicBSpline`](@ref) as interpolatormetod and setting the `force` option in its 
-keyword argument to `true`. This approach can be useful for identifying problematic or 
-erroneous calibration points. Let's give it a try.
+As shown in the output, the creation of a natural cubic B-spline that predicts 
+continuously increasing retention indices with increasing retention time has failed. 
+However, we can still force the B-spline interpolator to be returned, even if it contains 
+critical points. This is achieved by explicitly specifying [`NaturalCubicBSpline`](@ref) 
+as interpolatormetod and setting the `force` option in its keyword argument to `true`. 
+This approach can be useful for identifying problematic or erroneous calibration points. 
+Let's give it a try.
 
 ```@example 1
 ld = RiMapper("Kovats", rts, ris, metadata=Dict(:filename => filename), 
@@ -240,11 +235,11 @@ This will produce the following
 ![](rt2ri_2.svg)
 
 As observed, the sharp increase in the retention index between 3.394 and 4.154 minutes 
-prompted the creation of a B-spline featuring two critical points in its second polynomial: 
-a local maximum at 5.128 minutes and a local minimum at 5.526 minutes. This outcome is not 
-due to Hexane being incorrectly identified or associated with an incorrect retention time. 
-Instead, the pronounced disparity in the retention time–retention index relationship in the 
-first segment of the B-spline, compared to the following segments, causes the B-spline to 
+prompted the creation of a B-spline featuring two critical points: a local maximum at 
+5.128 minutes and a local minimum at 5.526 minutes. This outcome is not due to Hexane 
+being incorrectly identified or associated with an incorrect retention time. Instead, 
+the pronounced disparity in the retention time–retention index relationship in the first 
+segment of the B-spline, compared to the following segments, causes the B-spline to 
 oscillate. This oscillation suggests that the available set of calibration points at the 
 start of the run is insufficient for reliable prediction of retention indices in this 
 region using the chosen interpolation method. It is entirely possible that a denser 
@@ -263,8 +258,8 @@ desirable interpolation method.
 
 It is often preferred to plot chromatographic intensity values against retention index 
 values rather than scan time. This requires chromatographic run data and corresponding 
-calibration data, which allow the calculation of an RiMapper for converting retention times 
-into retention indices. 
+calibration data, which allow the calculation of an RiMapper for converting retention 
+times into retention indices. 
 
 Let's assume we wish to plot total ion chromatogram (TIC) intensities from a gas 
 chromatography/mass spectrometry (GCMS) run against 
