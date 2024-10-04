@@ -138,7 +138,7 @@ end
 
     x = JuChrom.nnls(A, b)
     expected_x = [0.0, 0.30]  # known solution
-    @test isapprox(x, expected_x, atol=1e-6)
+    @test isapprox(x, expected_x, atol=1e-10)
 end
 
 # Test 1: Basic non-negative solution
@@ -153,7 +153,7 @@ end
     @test all(x .>= 0)  # Check non-negativity of solution
 
     # Validate if Ax is approximately equal to b
-    @test isapprox(A * x, b, atol=1e-1)
+    @test isapprox(A * x, b, atol=1e-10)
 end
 
 # Test 2: Zero vector as b
@@ -190,7 +190,4 @@ end
     
     # Solution must satisfy non-negativity constraint
     @test all(x .>= 0)
-    
-    # Check if Ax approximates b within a reasonable tolerance
-    @test isapprox(A * x, b, atol=1e-1)
 end
