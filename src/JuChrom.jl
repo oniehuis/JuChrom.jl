@@ -100,6 +100,10 @@ export importdata
 include("Deconvolution/Deconvolution.jl")
 using .Deconvolution
 
+include("GUI/Explorer.jl")
+using .Explorer
+export explorer
+
 # export candidatepeaks
 # export saveplot
 # export deconvolutedtic

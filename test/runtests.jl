@@ -19,4 +19,6 @@ using SafeTestsets
 @safetestset "IO ShimadzuMS" begin include("IO/ShimadzuMS.jl") end
 @safetestset "IO Utilities" begin include("IO/utilities.jl") end
 
-@safetestset "Deconvolution deconvolution" begin include("deconvolution/deconvolution.jl") end
+@safetestset "Deconvolution" begin include("Deconvolution/Deconvolution.jl") end
+
+@safetestset "GUI Explorer" begin include("GUI/Explorer.jl") end

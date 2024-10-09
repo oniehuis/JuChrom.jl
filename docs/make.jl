@@ -15,9 +15,13 @@ makedocs(
             "man/massspectra.md",
             "man/import.md",
             "man/export.md"],
-        "Tutorials" => Any[
-            "tutorials/retentionindices.md"],
         "Developers" => Any["man/internals.md"],
+        "Deconvolution" => Any[
+            "deconvolution/internals.md"],
+        "GUI" => Any[
+            "explorer/internals.md"],
+        "Tutorials" => Any[
+        "tutorials/retentionindices.md"],
         "Index" => "man/register.md"
     ]
 )
