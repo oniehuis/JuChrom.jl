@@ -1,4 +1,4 @@
-# Internals
+# Deconvolution
 
 ```@docs
 JuChrom.LocalMaxima

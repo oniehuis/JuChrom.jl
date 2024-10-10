@@ -1,4 +1,4 @@
-# Internals
+# Base
 
 ```@docs
 JuChrom.bsplineinterpolation
