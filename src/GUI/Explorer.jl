@@ -1,7 +1,7 @@
 module Explorer
 
 import GLMakie: Axis, Figure, Keyboard, Mouse, Observable, Scene
-import GLMakie: events, ispressed, mouseposition, on, pixelarea
+import GLMakie: events, ispressed, mouseposition, on, viewport
 import GLMakie: @lift
 import Makie: KeyEvent, MouseButtonEvent
 
@@ -17,7 +17,6 @@ export pixelspace_figure
 export scenebounds
 export width
 
-# Warning: `pixelarea` is deprecated, use `viewport` instead.
 
 """ 
     JuChrom.axisbounds(axis::Axis)
@@ -295,7 +294,7 @@ julia> JuChrom.pixelspace_figure(ax.scene, (-5, -5))
 (36, 34)
 ```
 """
-pixelspace_figure(scene::Scene, xy) = ((xy .+ pixelarea(scene)[].origin)...,)
+pixelspace_figure(scene::Scene, xy) = ((xy .+ viewport(scene)[].origin)...,)
 
 
 """ 
@@ -316,10 +315,10 @@ julia> x_start, x_stop, y_start, y_stop = JuChrom.scenebounds(ax.scene)
 ```
 """
 function scenebounds(scene::Scene)
-    length(pixelarea(scene)[].origin) == 2 || throw(
+    length(viewport(scene)[].origin) == 2 || throw(
         ArgumentError("the scene is not confined to exactly two dimensions"))
-    x, y = pixelarea(scene)[].origin
-    w, h = pixelarea(scene)[].widths
+    x, y = viewport(scene)[].origin
+    w, h = viewport(scene)[].widths
     x, x + w, y, y + h
 end
 
