@@ -117,7 +117,8 @@ where `x̄` and `ȳ` are the means of the `xs` and `ys` vectors, respectively.
 julia> xs, ys = [1.0, 2.0, 3.0, 4.0, 5.0], [1.0, 2.0, 3.0, 4.0, 5.0];
 
 julia> JuChrom.lsfit(xs, ys) .≈ (0.0, 1.0)
-true
+(true, true)
+```
 """
 function lsfit(xs::AbstractVector{<:Union{Real, Unitful.Quantity{<:Real}}}, 
     ys::AbstractVector{<:Union{Real, Unitful.Quantity{<:Real}}})
