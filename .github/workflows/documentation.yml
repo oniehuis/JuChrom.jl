@@ -9,8 +9,11 @@ on:
 
 jobs:
   build:
-    permissions: write-all
-    #permissions:
+    #permissions: write-all
+    permissions:
+      contents: write       # Allow writing to repository contents
+      pages: write          # Allow deploying to GitHub Pages
+      actions: write        # Allow actions to run and modify workflow state
     #  contents: write
     #  pull-requests: read
     #  statuses: write
