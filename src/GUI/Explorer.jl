@@ -17,6 +17,7 @@ export pixelspace_figure
 export scenebounds
 export width
 
+# Warning: `pixelarea` is deprecated, use `viewport` instead.
 
 """ 
     JuChrom.axisbounds(axis::Axis)
