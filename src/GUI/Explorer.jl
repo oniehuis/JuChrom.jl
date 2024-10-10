@@ -36,7 +36,6 @@ function explorer(;
         figure_size=figure_size,
         focus_on_show=focus_on_show
         )
-
 end
 
 end  # module
