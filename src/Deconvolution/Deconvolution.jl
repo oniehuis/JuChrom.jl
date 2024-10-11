@@ -1,14 +1,14 @@
 module Deconvolution
 
-include("../NNLS/NNLS.jl")
-import .NNLS: nnls
+# include("../NNLS/NNLS.jl")
+# import .NNLS: nnls
+import NNLS: nnls
 using Unitful
 
 export LocalMaxima
 export lsfit
 export nextlocalmaximum
 export nnls
-
 
 struct LocalMaxima{T1<:AbstractVector{<:Real}, T2<:Integer, T3<:Integer, T4<:Integer}
     values::T1
