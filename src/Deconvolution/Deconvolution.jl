@@ -1,14 +1,15 @@
 module Deconvolution
 
-# include("../NNLS/NNLS.jl")
-# import .NNLS: nnls
 import NNLS: nnls
+using JuChrom
 using Unitful
+import Statistics
 
 export LocalMaxima
 export lsfit
 export nextlocalmaximum
-export nnls
+export sigma
+
 
 struct LocalMaxima{T1<:AbstractVector{<:Real}, T2<:Integer, T3<:Integer, T4<:Integer}
     values::T1
@@ -196,5 +197,159 @@ function nextlocalmaximum(values::AbstractVector{<:Real};
         end
     end
 end
+
+
+"""
+    JuChrom.sigma(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0)
+
+Return an estimate of the standard deviation (σ) in the intensity measurements of the 
+instrument used to infer the chromatographic data by analyzing intensity fluctuations 
+within user-defined scan windows (default: 13 scans). The function also returns the number 
+of windows considered in the computation as a second output. This approach is based on the 
+method described by Stein (1999) for estimating noise levels in chromatographic data, with 
+some modifications. In brief, only windows with intensity values above the specified 
+threshold (default: 0) are included. Additionally, the total number of transitions must 
+exceed half the window's scan count, and no more than two consecutive intensity values can 
+fall on the same side of the mean intensity within any given window. For windows that meet 
+these criteria, the absolute differences between intensity values and the median intensity 
+are used to calculate the median absolute deviation (MAD). Since intensity fluctuations are 
+proportional to the square root of the measured intensity, the MAD is normalized by 
+dividing it by the square root of the median intensity. The MAD is calculated for all 
+possible non-overlapping windows across the intensity values for all ions. The median of 
+the MAD values is then multiplied by 1.4826 to estimate σ, assuming that the 
+intensity-normalized fluctuations follow a normal distribution. If no suitable windows are 
+found for calculating σ, the function returns an error.
+
+Reference
+Stein SE (1999): An integrated method for spectrum extraction and compound identification 
+from gas chromatography/mass spectrometry data. J. Am. Soc. Mass. Spectrom. 10: 770–781.
+
+# Examples
+```jldoctest
+julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
+
+julia> chrom = binions(importdata(dfolder, ChemStationMS()));
+
+julia> JuChrom.sigma(chrom) .≈ (1.989116630064713, 9874)
+(true, true)
+
+julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_MassHunterMS.D");
+
+julia> chrom = binions(importdata(dfolder, MassHunterMS()));
+
+julia> JuChrom.sigma(chrom) .≈ (1.951017182665152, 10979)
+(true, true)
+```
+"""
+function sigma(chrom::AbstractChromMS; windowsize::Integer=13, 
+    threshold::Real=0)::Tuple{Float64, Int}
+    if ioncount(chrom) ≥ Threads.nthreads()
+        chunks = Iterators.partition(1:ioncount(chrom), 
+            ioncount(chrom) ÷ Threads.nthreads())
+        tasks = map(chunks) do ionindices
+            Threads.@spawn sigma(chrom, ionindices, windowsize=windowsize, 
+                threshold=threshold)
+        end
+        chunk_lms = fetch.(tasks)
+        MADs = collect(Iterators.flatten(chunk_lms))
+    else
+        MADs = sigma(chrom, eachindex(ions(chrom)), windowsize=windowsize, 
+            threshold=threshold)
+    end
+    1.4826 * Statistics.median(MADs), length(MADs)
+end
+
+
+function sigma(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
+    threshold::Real=0)
+    windowsize > 4 || throw(ArgumentError("window size must be greater than four scans"))
+    windowsize ≤ scancount(chrom) || throw(
+        ArgumentError("window size must not exceed the scan count"))
+    MADs = Vector{Float64}()
+    for iᵢ in ionindices
+        istart = 1
+        while istart ≤ scancount(chrom) - windowsize + 1
+            istop = istart + windowsize - 1
+            x̄::Float64 = Statistics.mean(@view intensities(chrom)[istart:istop, iᵢ])
+            x̃::Float64 = Statistics.median(@view intensities(chrom)[istart:istop, iᵢ])
+            level = :na
+            next = false
+            mintransitions = floor(windowsize / 2) + 1
+            abovecount = belowcount = transitions = 0
+            absdiff = Vector{Float64}()
+            for (scancount, iₛ) in enumerate(istart:istop)
+                x = intensities(chrom)[iₛ, iᵢ]
+
+                if x ≤ threshold
+                    istart = iₛ + 1
+                    next = true
+                    break
+                end
+                
+                # To increase the likelihood that only random fluctuations are considered, 
+                # transitions within the window are measured relative to the mean instead 
+                # of the median. Additionally, no more than two consecutive signal 
+                # intensities may occur on the same side of the mean.
+
+                # transition :above -> :below
+                if level == :above && x < x̄
+                    abovecount = 0
+                    transitions += 1
+                    level = :below
+                    belowcount += 1
+                # transition :below -> :above
+                elseif level == :below && x > x̄
+                    belowcount = 0
+                    transitions += 1
+                    level = :above
+                    abovecount += 1
+                # remains :above
+                elseif level == :above && x ≥ x̄
+                    abovecount += 1
+                # remains :below
+                elseif level == :below && x ≤ x̄
+                    belowcount += 1
+                # starts :above
+                elseif level == :na && x > x̄
+                    level = :above
+                    abovecount += 1
+                    abovecount = 1
+                # starts :below
+                elseif level == :na && x < x̄
+                    level = :below
+                    belowcount += 1
+                    belowcount = 1
+                end
+
+                # Ensure that no more than two consecutive signal intensities occur on the 
+                # same side of the mean!
+                if abovecount == 3 || belowcount == 3
+                    istart = iₛ + 1
+                    next = true
+                    break
+                end
+
+                # Ensure that the transition count is at least half the window size
+                if windowsize - scancount < mintransitions - transitions
+                    istart = iₛ + 1
+                    next = true
+                    break
+                end
+
+                # Although transitions are measured relative to the mean, absolute 
+                # differences are recorded based on the median to enable the calculation 
+                # of the median absolute deviation (MAD).
+                push!(absdiff, abs(x - x̃))
+            end
+            next && continue
+
+            istart = istop + 1
+
+            push!(MADs, Statistics.median(absdiff) / sqrt(x̃))
+        end
+    end
+    MADs
+end
+
 
 end  # module

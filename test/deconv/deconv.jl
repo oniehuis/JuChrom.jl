@@ -137,31 +137,65 @@ end
 
 
 ############################################################################################
-# JuChrom.nnls(A, b)
+# JuChrom.sigma(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
+#   threshold::Real=0)
 ############################################################################################
-@testset "nnls" begin
-    # Test with a basic system (simple solution)
-    x1 = JuChrom.nnls([1.0 2.0; 3.0 4.0], [1.0, 1.0])
-    @test x1 ≈ [0.0, 0.30] atol=1e-10
+@testset "JuChrom.sigma(chrom, ionindices)" begin
+    # Ensure the function works on basic, well-defined input
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    ionindices = [1, 2]
+    result = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    @test result ≈ [0.7071067811865475, 1.1547005383792517]
 
-    # Basic non-negative solution
-    A2 = [1.0 2.0; 3.0 4.0]
-    b2 = [1.0, 2.0]
-    x2 = JuChrom.nnls(A2, b2)
-    @test all(x2 .>= 0)  # check non-negativity of solution
-    @test A2 * x2 ≈ b2 atol=1e-10
+    # Ensure the function works on real input
+    dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
+    chrom = binions(importdata(dfolder, ChemStationMS()))
+    ionindices = [2]
+    result = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    @test result ≈ [1.1470786693528088, 1.2792042981336627, 1.6431676725154982, 
+        1.3764944032233704, 0.7844645405527362, 1.1766968108291043, 0.4082482904638631]
 
-    # Zero vector as b
-    A3 = [1.0 2.0; 3.0 4.0]
-    x3 = JuChrom.nnls(A3, [0.0, 0.0])
-    @test x3 ≈ zeros(size(A3, 2)) atol=1e-10 # solution should be 0 since b is 0
+    # Test with no transition
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2], [1 2; 1 2; 1 2; 1 2; 1 2])
+    ionindices = [1, 2]
+    result = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    @test result == Float64[]
 
-    # Infeasible solution (forcing zero in the solution)
-    A4 = [1.0 0.0; 0.0 1.0]
-    x4 = JuChrom.nnls(A4, [-1.0, -1.0])
-    @test x4 ≈ zeros(size(A4, 2)) atol=1e-10
+    # Test with window size larger than scan count
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    ionindices = [1, 2]
+    @test_throws ArgumentError JuChrom.sigma(chrom, ionindices, windowsize=6, threshold=0)
 
-    # Random matrix and vector test
-    x5 = JuChrom.nnls(randn(100, 200), randn(100))
-    @test all(x5 .>= 0)  # check non-negativity of solution
+    # Test with window size samller 5 scans
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    ionindices = [1, 2]
+    @test_throws ArgumentError JuChrom.sigma(chrom, ionindices, windowsize=4, threshold=0)
+
+    # Test with threshold cutoff
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    ionindices = [2]
+    result1 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    @test result1 ≈ [1.1547005383792517]
+    result2 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=1)
+    @test result2 == Float64[]
+
+    # Test with less transitions than half the window size
+    chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 3 3; 3 3; 1 1; 1 1; 3 3; 
+        3 3; 1 1; 1 1])
+    ionindices = [1]
+    result1 = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    @test result2 == Float64[]
+
+    # Test with three consecutive scans having an intensity above (or below) the mean ints.
+    chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 1 1; 3 3; 1 1; 3 3; 1 1; 
+        3 3; 1 1; 3 3])
+    ionindices = [1]
+    result1 = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    @test result2 == Float64[]
+
+    # Edge case: empty input for ionindices
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    ionindices = []
+    result1 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    @test result2 == Float64[]
 end
