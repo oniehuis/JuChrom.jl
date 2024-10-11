@@ -18,7 +18,8 @@ makedocs(
         "Internals" => Any[
             "internals/base.md",
             "internals/deconvolution.md",
-            "internals/gui.md"],
+            "internals/explorer.md",
+            "internals/inputoutput.md"],
         "Tutorials" => Any[
             "tutorials/retentionindices.md"],
         "Index" => "man/register.md"

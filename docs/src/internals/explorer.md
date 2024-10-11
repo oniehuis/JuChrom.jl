@@ -1,4 +1,4 @@
-# GUI
+# Explorer
 
 ```@docs
 JuChrom.axisbounds

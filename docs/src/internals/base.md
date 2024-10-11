@@ -9,10 +9,4 @@ JuChrom.invert
 JuChrom.metricprefix
 JuChrom.name
 JuChrom.rt2ri
-JuChrom.InputOutput.FileExistsError
-JuChrom.InputOutput.IOError
-JuChrom.InputOutput.Source
-JuChrom.InputOutput.File
-JuChrom.InputOutput.Path
-JuChrom.InputOutput.buildxic
 ```
