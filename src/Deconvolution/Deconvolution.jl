@@ -220,7 +220,7 @@ the MAD values is then multiplied by 1.4826 to estimate σ, assuming that the
 intensity-normalized fluctuations follow a normal distribution. If no suitable windows are 
 found for calculating σ, the function returns an error.
 
-Reference
+# Reference
 Stein SE (1999): An integrated method for spectrum extraction and compound identification 
 from gas chromatography/mass spectrometry data. J. Am. Soc. Mass. Spectrom. 10: 770–781.
 
