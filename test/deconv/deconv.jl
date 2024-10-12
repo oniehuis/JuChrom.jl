@@ -206,8 +206,6 @@ end
 #   nthreads::Integer)
 ############################################################################################
 @testset "JuChrom.stddev(chrom)" begin
-    
-    println("Number of available threads: ", Threads.nthreads())
 
     # Ensure the function operates correctly with real input and supports multi-threading
     if Threads.nthreads() > 1

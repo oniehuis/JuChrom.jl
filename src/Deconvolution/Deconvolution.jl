@@ -246,7 +246,7 @@ function stddev(chrom::AbstractChromMS; windowsize::Integer=13,
     nthreads < 1 && throw(ArgumentError("the number of threads must be one or more"))
     nthreads > Threads.nthreads() && throw(
         ArgumentError("the number of threads exceeds the maximum available"))
-    if ioncount(chrom) ≥ nthreads
+    if ioncount(chrom) > 1 && ioncount(chrom) ≥ nthreads
         chunks = Iterators.partition(1:ioncount(chrom), 
             ioncount(chrom) ÷ nthreads)
         tasks = map(chunks) do ionindices
