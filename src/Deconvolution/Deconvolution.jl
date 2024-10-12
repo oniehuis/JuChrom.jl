@@ -350,4 +350,5 @@ function stddev(chrom::AbstractChromMS, ionindices; windowsize::Integer=13,
     mads
 end
 
+
 end  # module
