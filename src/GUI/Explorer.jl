@@ -1,6 +1,6 @@
 module Explorer
 
-import GLMakie: Axis, Figure, GLFW, Keyboard, Mouse, Observable, RGBf, Scene
+import GLMakie: Axis, Figure, GLFW, Keyboard, Mouse, Observable, RGBA, Scene
 import GLMakie: events, ispressed, mouseposition, on, viewport
 import GLMakie: @lift
 import GLMakie

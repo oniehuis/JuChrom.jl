@@ -163,7 +163,7 @@ julia> JuChrom.nextlocalmaximum(values, startindex=4)  # finds pleateau maximum 
 
 julia> JuChrom.nextlocalmaximum(values, startindex=4, stopindex=7)  # finds nothing
 
-julia> length(values)  
+julia> length(values)
 9
 
 julia> JuChrom.nextlocalmaximum(values, startindex=8)  # implicit stopindex=9

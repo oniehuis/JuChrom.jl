@@ -11,6 +11,7 @@ mutable struct ExplorerData
     # Fields related to the window and its displayed figure in general.
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     const fig::Figure
+    figure_backgroundcolor::Observable
     const window::GLFW.Window
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -238,7 +239,7 @@ mutable struct ExplorerData
         # Default values related to the window and its displayed figure in general.
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         figure_title_default = "JuChrom Explorer"
-        figure_backgroundcolor_default = RGBf(1, 1, 1)
+        figure_backgroundcolor_default = RGBA{Float32}(1.0f0,1.0f0,1.0f0,1.0f0)
         
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # Default values related to Axes 1–4 equally
@@ -334,6 +335,12 @@ mutable struct ExplorerData
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # Create a interative GLMakie figure
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+        first(figure_size) > 0 || throw(
+            ArgumentError("figure width must be a positive integer larger than zero"))
+        last(figure_size) > 0 || throw(
+            ArgumentError("figure height must be a positive integer larger than zero"))
+
         GLMakie.activate!(; title=figure_title_default, focus_on_show=focus_on_show)
         fig = Figure(; backgroundcolor=figure_backgroundcolor_default, size=figure_size)
 
@@ -940,6 +947,7 @@ mutable struct ExplorerData
             # Fields related to the window and its displayed figure in general.
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             fig,
+            Observable(figure_backgroundcolor_default),
             window # ,
 
             # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1144,7 +1152,8 @@ end  # of mutable struct
 # Fields related to the window and its displayed figure in general.
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 fig(e::ExplorerData) = e.fig
-
+figure_backgroundcolor(e::ExplorerData) = e.figure_backgroundcolor
+figure_backgroundcolor!(e::ExplorerData, color::RGBA) = e.figure_backgroundcolor = color
 window(e::ExplorerData) = e.window
 
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

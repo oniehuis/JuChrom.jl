@@ -1,7 +1,7 @@
 using JuChrom
 using Test
 
-import GLMakie: Axis, Figure, Point, Screen
+import GLMakie: Axis, Figure, GLFW, Point, Screen, RGBA
 import GLMakie: closeall, display, events, ispressed, mouseposition
 import Makie: Keyboard, KeyEvent, Mouse, MouseButtonEvent
 import Makie: colorbuffer
@@ -20,6 +20,55 @@ import Makie: colorbuffer
     
     @test JuChrom.axisbounds(ax) == (41, 84, 39, 84)
     @test_throws MethodError JuChrom.axisbounds(fig)
+
+    closeall()  # close window
+end
+
+
+############################################################################################
+# JuChrom.Explorer.ExplorerData()
+############################################################################################
+@testset "JuChrom.Explorer.ExplorerData()" begin
+    closeall()  # close any windows that may be open
+
+    # Verify that ExplorerData can be initialized with default settings
+    e = JuChrom.Explorer.ExplorerData()
+
+    # Default initialization
+    closeall()
+    e = JuChrom.Explorer.ExplorerData()
+    @test isa(e.fig, Figure)  # Check if the figure is created.
+    @test isa(e.window, GLFW.Window)  # Check if the window is created.
+
+    # Custom Figure Size
+    closeall()
+    custom_size = (800, 600)
+    e = JuChrom.Explorer.ExplorerData(figure_size=custom_size)
+    @test e.fig.scene.viewport.val.widths == [custom_size...]
+
+    # Custom reader function
+    # function dummy_reader() 
+    #     return "data" 
+    # end
+    # explorer = ExplorerData(reader=dummy_reader)
+    # @test explorer.reader !== nothing  # Check if the reader is assigned.
+
+    # Default background color
+    closeall()
+    e = JuChrom.Explorer.ExplorerData()
+    @test e.fig.scene.backgroundcolor.val == RGBA{Float32}(1.0f0,1.0f0,1.0f0)   
+
+    # Focus on show flag
+    # Can't directly test focus, but make sure the flag doesn't prevent window creation.
+    closeall()
+    e = JuChrom.Explorer.ExplorerData(focus_on_show=false)
+    @test isa(e.window, GLFW.Window)  # Window should still be created.
+
+    # Invalid figure size inputs
+    # Negative figure size should throw an error
+    closeall()
+    @test_throws ArgumentError JuChrom.Explorer.ExplorerData(figure_size=(0, 1)) 
+    @test_throws ArgumentError JuChrom.Explorer.ExplorerData(figure_size=(1, 0)) 
 
     closeall()  # close window
 end
