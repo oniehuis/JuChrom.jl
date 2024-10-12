@@ -200,7 +200,8 @@ end
 
 
 """
-    JuChrom.stddev(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0)
+    JuChrom.stddev(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0,
+    nthreads::Integer=Threads.nthreads())::Tuple{Union{Float64, Nothing}, Int}
 
 Return an estimate of the standard deviation (σ) in the intensity measurements of the 
 instrument used to infer the chromatographic data by analyzing intensity fluctuations 
@@ -218,7 +219,7 @@ dividing it by the square root of the median intensity. The MAD is calculated fo
 possible non-overlapping windows across the intensity values for all ions. The median of 
 the MAD values is then multiplied by 1.4826 to estimate σ, assuming that the 
 intensity-normalized fluctuations follow a normal distribution. If no suitable windows are 
-found for calculating σ, the function returns an error.
+found for calculating σ, the function returns (`nothing`, 0).
 
 # Reference
 Stein SE (1999): An integrated method for spectrum extraction and compound identification 
@@ -348,6 +349,5 @@ function stddev(chrom::AbstractChromMS, ionindices; windowsize::Integer=13,
     end
     mads
 end
-
 
 end  # module
