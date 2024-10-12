@@ -208,7 +208,7 @@ end
 @testset "JuChrom.stddev(chrom)" begin
 
     # Ensure the function operates correctly with real input, supporting multi-threading
-    if Threads.nthreads > 1
+    if Threads.nthreads() > 1
         dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
         chrom = binions(importdata(dfolder, ChemStationMS()))
         σ, n = JuChrom.stddev(chrom, windowsize=13, threshold=0)
