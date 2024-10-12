@@ -139,6 +139,7 @@ end
 for type in (MSScanDataV1, )
     expr = Expr(:call, type, map(ft -> Expr(:call, :ltoh, Expr(:call, :read, :io, ft)), 
         fieldtypes(type))...)
+    
     @eval Base.read(io::IO, ::Type{$type}) = $expr
 end
 
