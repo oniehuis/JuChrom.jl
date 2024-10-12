@@ -8,7 +8,7 @@ import Statistics
 export LocalMaxima
 export lsfit
 export nextlocalmaximum
-export sigma
+export stddev
 
 
 struct LocalMaxima{T1<:AbstractVector{<:Real}, T2<:Integer, T3<:Integer, T4<:Integer}
@@ -200,7 +200,7 @@ end
 
 
 """
-    JuChrom.sigma(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0)
+    JuChrom.stddev(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0)
 
 Return an estimate of the standard deviation (σ) in the intensity measurements of the 
 instrument used to infer the chromatographic data by analyzing intensity fluctuations 
@@ -230,42 +230,45 @@ julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D");
 
 julia> chrom = binions(importdata(dfolder, ChemStationMS()));
 
-julia> JuChrom.sigma(chrom) .≈ (1.989116630064713, 9874)
+julia> JuChrom.stddev(chrom) .≈ (1.989116630064713, 9874)
 (true, true)
 
 julia> dfolder = joinpath(JuChrom.agilent, "C7-C40_MassHunterMS.D");
 
 julia> chrom = binions(importdata(dfolder, MassHunterMS()));
 
-julia> JuChrom.sigma(chrom) .≈ (1.951017182665152, 10979)
+julia> JuChrom.stddev(chrom) .≈ (1.951017182665152, 10979)
 (true, true)
 ```
 """
-function sigma(chrom::AbstractChromMS; windowsize::Integer=13, 
-    threshold::Real=0)::Tuple{Float64, Int}
-    if ioncount(chrom) ≥ Threads.nthreads()
+function stddev(chrom::AbstractChromMS; windowsize::Integer=13, 
+    threshold::Real=0, nthreads::Integer=Threads.nthreads())::Tuple{Float64, Int}
+    nthreads < 1 && throw(ArgumentError("the number of threads must be one or more"))
+    nthreads > Threads.nthreads() && throw(
+        ArgumentError("the number of threads exceeds the maximum available"))
+    if ioncount(chrom) ≥ nthreads
         chunks = Iterators.partition(1:ioncount(chrom), 
-            ioncount(chrom) ÷ Threads.nthreads())
+            ioncount(chrom) ÷ nthreads)
         tasks = map(chunks) do ionindices
-            Threads.@spawn sigma(chrom, ionindices, windowsize=windowsize, 
+            Threads.@spawn stddev(chrom, ionindices, windowsize=windowsize, 
                 threshold=threshold)
         end
         chunk_lms = fetch.(tasks)
-        MADs = collect(Iterators.flatten(chunk_lms))
+        mads = collect(Iterators.flatten(chunk_lms))
     else
-        MADs = sigma(chrom, eachindex(ions(chrom)), windowsize=windowsize, 
+        mads = stddev(chrom, eachindex(ions(chrom)), windowsize=windowsize, 
             threshold=threshold)
     end
-    1.4826 * Statistics.median(MADs), length(MADs)
+    1.4826 * Statistics.median(mads), length(mads)
 end
 
 
-function sigma(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
+function stddev(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
     threshold::Real=0)
     windowsize > 4 || throw(ArgumentError("window size must be greater than four scans"))
     windowsize ≤ scancount(chrom) || throw(
         ArgumentError("window size must not exceed the scan count"))
-    MADs = Vector{Float64}()
+    mads = Vector{Float64}()
     for iᵢ in ionindices
         istart = 1
         while istart ≤ scancount(chrom) - windowsize + 1
@@ -338,17 +341,17 @@ function sigma(chrom::AbstractChromMS, ionindices; windowsize::Integer=13,
 
                 # Although transitions are measured relative to the mean, absolute 
                 # differences are recorded based on the median to enable the calculation 
-                # of the median absolute deviation (MAD).
+                # of the median absolute deviation (mad).
                 push!(absdiff, abs(x - x̃))
             end
             next && continue
 
             istart = istop + 1
 
-            push!(MADs, Statistics.median(absdiff) / sqrt(x̃))
+            push!(mads, Statistics.median(absdiff) / sqrt(x̃))
         end
     end
-    MADs
+    mads
 end
 
 

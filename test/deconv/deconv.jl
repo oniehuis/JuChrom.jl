@@ -137,65 +137,101 @@ end
 
 
 ############################################################################################
-# JuChrom.sigma(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
+# JuChrom.stddev(chrom::AbstractChromMS, ionindices; windowsize::Integer=13, 
 #   threshold::Real=0)
 ############################################################################################
-@testset "JuChrom.sigma(chrom, ionindices)" begin
+@testset "JuChrom.stddev(chrom, ionindices)" begin
     # Ensure the function works on basic, well-defined input
     chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
     ionindices = [1, 2]
-    result = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    result = JuChrom.stddev(chrom, ionindices, windowsize=5, threshold=0)
     @test result ≈ [0.7071067811865475, 1.1547005383792517]
 
     # Ensure the function works on real input
     dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
     chrom = binions(importdata(dfolder, ChemStationMS()))
     ionindices = [2]
-    result = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    result = JuChrom.stddev(chrom, ionindices, windowsize=13, threshold=0)
     @test result ≈ [1.1470786693528088, 1.2792042981336627, 1.6431676725154982, 
         1.3764944032233704, 0.7844645405527362, 1.1766968108291043, 0.4082482904638631]
 
     # Test with no transition
     chrom = ChromMS((1:5)u"s", [84.8, 85.2], [1 2; 1 2; 1 2; 1 2; 1 2])
     ionindices = [1, 2]
-    result = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    result = JuChrom.stddev(chrom, ionindices, windowsize=5, threshold=0)
     @test result == Float64[]
 
     # Test with window size larger than scan count
     chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
     ionindices = [1, 2]
-    @test_throws ArgumentError JuChrom.sigma(chrom, ionindices, windowsize=6, threshold=0)
+    @test_throws ArgumentError JuChrom.stddev(chrom, ionindices, windowsize=6, threshold=0)
 
     # Test with window size samller 5 scans
     chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
     ionindices = [1, 2]
-    @test_throws ArgumentError JuChrom.sigma(chrom, ionindices, windowsize=4, threshold=0)
+    @test_throws ArgumentError JuChrom.stddev(chrom, ionindices, windowsize=4, threshold=0)
 
     # Test with threshold cutoff
     chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
     ionindices = [2]
-    result1 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    result1 = JuChrom.stddev(chrom, ionindices, windowsize=5, threshold=0)
     @test result1 ≈ [1.1547005383792517]
-    result2 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=1)
+    result2 = JuChrom.stddev(chrom, ionindices, windowsize=5, threshold=1)
     @test result2 == Float64[]
 
     # Test with less transitions than half the window size
     chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 3 3; 3 3; 1 1; 1 1; 3 3; 
         3 3; 1 1; 1 1])
     ionindices = [1]
-    result1 = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    result1 = JuChrom.stddev(chrom, ionindices, windowsize=13, threshold=0)
     @test result2 == Float64[]
 
     # Test with three consecutive scans having an intensity above (or below) the mean ints.
     chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 1 1; 3 3; 1 1; 3 3; 1 1; 
         3 3; 1 1; 3 3])
     ionindices = [1]
-    result1 = JuChrom.sigma(chrom, ionindices, windowsize=13, threshold=0)
+    result1 = JuChrom.stddev(chrom, ionindices, windowsize=13, threshold=0)
     @test result2 == Float64[]
 
     # Edge case: empty input for ionindices
     chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
     ionindices = []
-    result1 = JuChrom.sigma(chrom, ionindices, windowsize=5, threshold=0)
+    result1 = JuChrom.stddev(chrom, ionindices, windowsize=5, threshold=0)
     @test result2 == Float64[]
+end
+
+
+############################################################################################
+# stddev(chrom::AbstractChromMS; windowsize::Integer=13, threshold::Real=0, 
+#   nthreads::Integer)
+############################################################################################
+@testset "JuChrom.stddev(chrom)" begin
+    
+    # Ensure the function operates correctly with real input and supports multi-threading
+    if Threads.nthreads() > 1
+        dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
+        chrom = binions(importdata(dfolder, ChemStationMS()))
+        σ, n = JuChrom.stddev(chrom, windowsize=13, threshold=0)
+        @test σ ≈ 1.989116630064713
+        @test n == 9874
+    end
+
+    # Ensure the function works correctly with real input on a single thread
+    dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
+    chrom = binions(importdata(dfolder, ChemStationMS()))
+    σ, n = JuChrom.stddev(chrom, windowsize=13, threshold=0, nthreads=1)
+    @test σ ≈ 1.989116630064713
+    @test n == 9874
+
+    # Ensure the function throws an error if the number of threads is less than one
+    dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
+    chrom = binions(importdata(dfolder, ChemStationMS()))
+    @test_throws ArgumentError JuChrom.stddev(chrom, windowsize=13, threshold=0, nthreads=0)
+
+    # Ensure the function throws an error if the number of threads exceeds the maximum 
+    # available
+    dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
+    chrom = binions(importdata(dfolder, ChemStationMS()))
+    @test_throws ArgumentError JuChrom.stddev(chrom, windowsize=13, threshold=0, 
+        nthreads=Threads.nthreads()+1)
 end

@@ -4,5 +4,5 @@
 JuChrom.LocalMaxima
 JuChrom.lsfit
 JuChrom.nextlocalmaximum
-JuChrom.sigma
+JuChrom.stddev
 ```
