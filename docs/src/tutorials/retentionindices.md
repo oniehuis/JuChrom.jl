@@ -121,7 +121,7 @@ This will produce the following
 ## Example 2: Calibration Points from an Excel File
 
 In this example, we assume that a set of calibration points for calculating the 
-[Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index), 
+[Kovats retention index](https://en.wikipedia.org/wiki/Kovats_retention_index) 
 has been stored in an Excel file, possibly as a result of a manual entry. The relevant 
 data can be found in the first sheet of the file `example1.xlsx`, named `Table1`. 
 
@@ -211,7 +211,7 @@ As shown in the output, the creation of a natural cubic B-spline that predicts
 continuously increasing retention indices with increasing retention time has failed. 
 However, we can still force the B-spline interpolator to be returned, even if it contains 
 critical points. This is achieved by explicitly specifying [`NaturalCubicBSpline`](@ref) 
-as interpolatormetod and setting the `force` option in its keyword argument to `true`. 
+as interpolator method and setting the `force` option in its keyword argument to `true`. 
 This approach can be useful for identifying problematic or erroneous calibration points. 
 Let's give it a try.
 
