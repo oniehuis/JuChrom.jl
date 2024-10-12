@@ -75,6 +75,53 @@ end
 
 
 ############################################################################################
+# JuChrom.Explorer.fig()
+############################################################################################
+@testset "JuChrom.Explorer.fig()" begin
+    closeall()
+    e = JuChrom.Explorer.ExplorerData()
+    @test isa(JuChrom.Explorer.fig(e), Figure)
+    closeall() 
+end
+
+
+############################################################################################
+# JuChrom.Explorer.figure_backgroundcolor!()
+############################################################################################
+@testset "JuChrom.Explorer.figure_backgroundcolor!()" begin
+    closeall()
+    e = JuChrom.Explorer.ExplorerData()
+    JuChrom.Explorer.figure_backgroundcolor!(e, RGBA{Float32}(0.0f0, 0.0f0, 0.0f0))
+    @test JuChrom.Explorer.figure_backgroundcolor(e).val == RGBA{Float32}(
+        0.0f0, 0.0f0, 0.0f0)
+    closeall() 
+end
+
+
+############################################################################################
+# JuChrom.Explorer.figure_backgroundcolor()
+############################################################################################
+@testset "JuChrom.Explorer.figure_backgroundcolor()" begin
+    closeall()
+    e = JuChrom.Explorer.ExplorerData()
+    @test JuChrom.Explorer.figure_backgroundcolor(e).val == RGBA{Float32}(
+        1.0f0, 1.0f0, 1.0f0)
+    closeall() 
+end
+
+
+############################################################################################
+# JuChrom.Explorer.window()
+############################################################################################
+@testset "JuChrom.Explorer.window()" begin
+    closeall() 
+    e = JuChrom.Explorer.ExplorerData()
+    @test isa(JuChrom.Explorer.window(e), GLFW.Window)
+    closeall() 
+end
+
+
+############################################################################################
 # JuChrom.height(ax::Axis) 
 ############################################################################################
 @testset "JuChrom.height(ax::Axis)" begin
