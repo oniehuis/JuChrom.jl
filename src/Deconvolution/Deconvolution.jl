@@ -242,7 +242,8 @@ julia> JuChrom.stddev(chrom) .≈ (1.951017182665152, 10979)
 ```
 """
 function stddev(chrom::AbstractChromMS; windowsize::Integer=13, 
-    threshold::Real=0, nthreads::Integer=Threads.nthreads())::Tuple{Float64, Int}
+    threshold::Real=0, nthreads::Integer=Threads.nthreads()
+    )::Tuple{Union{Float64, Nothing}, Int}
     nthreads < 1 && throw(ArgumentError("the number of threads must be one or more"))
     nthreads > Threads.nthreads() && throw(
         ArgumentError("the number of threads exceeds the maximum available"))
@@ -253,7 +254,7 @@ function stddev(chrom::AbstractChromMS; windowsize::Integer=13,
     end
     chunk_lms = fetch.(tasks)
     mads = collect(Iterators.flatten(chunk_lms))
-    1.4826 * Statistics.median(mads), length(mads)
+    length(mads) > 1 ? (1.4826 * Statistics.median(mads), length(mads)) : (nothing, 0)
 end
 
 

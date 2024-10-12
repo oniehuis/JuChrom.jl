@@ -207,8 +207,8 @@ end
 ############################################################################################
 @testset "JuChrom.stddev(chrom)" begin
 
-    # Ensure the function operates correctly with real input and supports multi-threading
-    if Threads.nthreads() > 1
+    # Ensure the function operates correctly with real input, supporting multi-threading
+    if Threads.nthreads > 1
         dfolder = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D")
         chrom = binions(importdata(dfolder, ChemStationMS()))
         σ, n = JuChrom.stddev(chrom, windowsize=13, threshold=0)
@@ -234,4 +234,47 @@ end
     chrom = binions(importdata(dfolder, ChemStationMS()))
     @test_throws ArgumentError JuChrom.stddev(chrom, windowsize=13, threshold=0, 
         nthreads=Threads.nthreads()+1)
+
+    # Ensure the function works on basic, well-defined input
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    σ, n = JuChrom.stddev(chrom, windowsize=5, threshold=0)
+    @test σ ≈ 1.3801577659941269
+    @test n == 2
+
+    # Test with no transition
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2], [1 2; 1 2; 1 2; 1 2; 1 2])
+    σ, n = JuChrom.stddev(chrom, windowsize=5, threshold=0)
+    @test σ ≈ 1.3801577659941269
+    @test n == 2
+
+    # Test with window size larger than scan count
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    @test_throws TaskFailedException JuChrom.stddev(chrom, windowsize=6, threshold=0)
+
+    # Test with window size samller 5 scans
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    @test_throws TaskFailedException JuChrom.stddev(chrom, windowsize=4, threshold=0)
+
+    # Test with threshold cutoff
+    chrom = ChromMS((1:5)u"s", [84.8, 85.2, 100.9], [1 2 4; 2 5 1; 3 1 2; 1 3 3; 3 5 4])
+    σ, n = JuChrom.stddev(chrom, windowsize=5, threshold=0)
+    @test σ ≈ 1.3801577659941269
+    @test n == 2
+    σ, n = JuChrom.stddev(chrom, windowsize=5, threshold=1)
+    @test isnothing(σ)
+    @test n == 0
+
+    # Test with less transitions than half the window size
+    chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 3 3; 3 3; 1 1; 1 1; 3 3; 
+        3 3; 1 1; 1 1])
+    σ, n = JuChrom.stddev(chrom, windowsize=13, threshold=0)
+    @test isnothing(σ)
+    @test n == 0
+
+    # Test with three consecutive scans having an intensity above (or below) the mean ints.
+    chrom = ChromMS((1:13)u"s", [1, 2], [1 1; 2 2; 3 3; 1 1; 1 1; 1 1; 3 3; 1 1; 3 3; 1 1; 
+        3 3; 1 1; 3 3])
+    result1 = JuChrom.stddev(chrom, windowsize=13, threshold=0)
+    @test isnothing(σ)
+    @test n == 0
 end
