@@ -246,19 +246,13 @@ function stddev(chrom::AbstractChromMS; windowsize::Integer=13,
     nthreads < 1 && throw(ArgumentError("the number of threads must be one or more"))
     nthreads > Threads.nthreads() && throw(
         ArgumentError("the number of threads exceeds the maximum available"))
-    if ioncount(chrom) > 1 && ioncount(chrom) ≥ nthreads
-        chunks = Iterators.partition(1:ioncount(chrom), 
-            ioncount(chrom) ÷ nthreads)
-        tasks = map(chunks) do ionindices
-            Threads.@spawn stddev(chrom, ionindices, windowsize=windowsize, 
-                threshold=threshold)
-        end
-        chunk_lms = fetch.(tasks)
-        mads = collect(Iterators.flatten(chunk_lms))
-    else
-        mads = stddev(chrom, eachindex(ions(chrom)), windowsize=windowsize, 
-            threshold=threshold)
+    n = ioncount(chrom) ≥ nthreads ? nthreads : ioncount(chrom)
+    chunks = Iterators.partition(1:ioncount(chrom), ioncount(chrom) ÷ n)
+    tasks = map(chunks) do ionindices
+        Threads.@spawn stddev(chrom, ionindices, windowsize=windowsize, threshold=threshold)
     end
+    chunk_lms = fetch.(tasks)
+    mads = collect(Iterators.flatten(chunk_lms))
     1.4826 * Statistics.median(mads), length(mads)
 end
 
