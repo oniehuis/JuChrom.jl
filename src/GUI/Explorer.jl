@@ -5,9 +5,11 @@ import GLMakie: events, ispressed, mouseposition, on, viewport
 import GLMakie: @lift
 import GLMakie
 
-import Makie: KeyEvent, MouseButtonEvent
+import Makie: KeyEvent, MouseButtonEvent, theme
+import Makie
 
 export axisbounds
+export decompose_exponential
 export explorer
 export height
 export inaxis
@@ -17,6 +19,8 @@ export mousebutton!
 export mouseposition!
 export pixelspace_figure
 export scenebounds
+export textdimensions
+export ticks
 export width
 
 include("makie_utilities.jl")

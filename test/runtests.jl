@@ -1,6 +1,5 @@
 using SafeTestsets
 
-# Testing contents of base.jl
 @safetestset "base ChromMS" begin include("base/ChromMS.jl") end
 @safetestset "base Chrom" begin include("base/Chrom.jl") end
 @safetestset "base AbstractChromMS" begin include("base/AbstractChromMS.jl") end

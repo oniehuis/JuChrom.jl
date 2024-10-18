@@ -18,6 +18,29 @@ julia> x_start, x_stop, y_start, y_stop = JuChrom.axisbounds(ax)
 axisbounds(axis::Axis) = scenebounds(axis.scene)
 
 
+"""
+    JuChrom.decompose_exponential(x::Float64) -> Tuple{Float64, Int}
+
+Decomposes a number written in scientific notation into its mantissa (the base value) and 
+exponent, where the base of the exponent is 10.
+
+# Examples
+```jldoctest
+julia> JuChrom.decompose_exponential(2.323 * 10^4) .≈ (2.323, 4)
+(true, true)
+
+julia> JuChrom.decompose_exponential(12345.0) .≈ (1.2345, 4)
+(true, true)
+```
+"""
+function decompose_exponential(x::Real)
+    x == 0 && return 0.0, 0
+    exponent::Int = floor(log10(abs(x)))
+    mantissa = x / 10.0^exponent
+    mantissa, exponent
+end
+
+
 """ 
     JuChrom.height(ax::Axis) -> Observable{Int}
 
@@ -300,6 +323,112 @@ function scenebounds(scene::Scene)
     x, y = viewport(scene)[].origin
     w, h = viewport(scene)[].widths
     x, x + w, y, y + h
+end
+
+
+"""
+    JuChrom.textdimensions(text::AbstractString; font=theme(:fonts)[:regular].val, 
+        fontsize=theme(:fontsize).val) -> NTuple{2, Float64}
+
+Return the width and height of the given `text` in pixels. Th optional keyword arguments
+`font` and `fontsize` allow you to specify the font and font size to use for the text. They 
+default to the regular font and font size from the current theme.
+
+# Example
+```jldoctest
+julia> using GLMakie;
+
+julia> text = "Hello, world!"
+"Hello, world!"
+
+julia> w, h = JuChrom.textdimensions(text, font="TeX Gyre Heros Makie", fontsize=24);
+
+julia> (w, h) .≈ (132.02399730682373, 27.959999084472656)
+(true, true)
+``` 
+"""
+function textdimensions(text::AbstractString; font=theme(:fonts)[:regular].val, 
+        fontsize=theme(:fontsize).val)::NTuple{2, Float64}
+    bbox = Makie.text_bb(text, font, fontsize)
+
+    width = bbox.widths[1]
+    height = bbox.widths[2]
+
+    width, height
+end
+
+
+"""
+    JuChrom.textdimensions(text::Makie.RichText; font=theme(:fonts)[:regular].val, 
+        fontsize=theme(:fontsize).val) -> NTuple{2, Float64}
+
+Return the width and height of the given rich `text` in pixels. Th optional keyword 
+arguments `font` and `fontsize` allow you to specify the font and font size to use for the 
+text. They default to the regular font and font size from the current theme.
+
+# Example
+```jldoctest
+julia> using GLMakie;
+
+julia> richtext = rich("Hello, world!", font="TeX Gyre Heros Makie", fontsize=24)
+RichText: "Hello, world!"
+
+julia> (w, h) = JuChrom.textdimensions(richtext);
+
+julia> (w, h) .≈ (131.52399730682373, 27.459999084472656)
+(true, true)
+```
+"""
+function textdimensions(text::Makie.RichText; font=theme(:fonts)[:regular].val, 
+        fontsize=theme(:fontsize).val)::NTuple{2, Float64}
+    
+    # Makie.text! throws an error when provided with an empty rich text
+    if length(text.children) == 1 && text.children[1] == ""
+        return 0.0, 0.0
+    end
+
+    scene = Makie.Scene(size=(1, 1))
+    text = Makie.text!(scene, [0], [0], text=text, font=font, fontsize=fontsize)
+    bbox = Makie.boundingbox(text)
+    
+    width = bbox.widths[1] - bbox.origin[1]
+    height = bbox.widths[2] - bbox.origin[2]
+
+    width, height
+end
+
+
+"""
+    JuChrom.ticks(start::Real, stop::Real; count::Integer=5) -> StepRangeLen
+
+Return a sequence of tick values for a specified range, ensuring that the intervals 
+between ticks are rounded to reasonable values. The function takes the start and 
+stop values of the range as arguments. Additionally, the optional `count` argument 
+specifies the desired number of tick values, with a default value of 5.
+
+# Example
+```jldoctest
+julia> JuChrom.ticks(3.2, 17.8, count=5)
+5.0:2.5:15.0
+```
+"""
+function ticks(start::Real, stop::Real; count::Integer=5)
+    start == stop && throw(ArgumentError("start and stop must be different"))
+    stepwidth = (stop - start) / (count - 1)
+    magnitude = 10.0^floor(log10(stepwidth))
+    norminterval = stepwidth / magnitude
+    stepwidth = if norminterval < 1.5
+        magnitude
+    elseif norminterval < 3
+        magnitude * 2
+    elseif norminterval < 7
+        magnitude * 5
+    else
+        magnitude * 10
+    end
+    start_adjusted = ceil(start / stepwidth) * stepwidth
+    stop_adjusted = floor(stop / stepwidth) * stepwidth
+    range(start_adjusted, stop=stop_adjusted, length=count)
 end
 
 

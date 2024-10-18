@@ -1,10 +1,11 @@
 using JuChrom
 using Test
 
-import GLMakie: Axis, Figure, Point, Screen
+import GLMakie
+import GLMakie: Axis, Point, Screen
 import GLMakie: closeall, display, events, ispressed, mouseposition
 import Makie: Keyboard, KeyEvent, Mouse, MouseButtonEvent
-import Makie: colorbuffer
+import Makie: colorbuffer, rich, theme
 
 
 ############################################################################################
@@ -13,7 +14,7 @@ import Makie: colorbuffer
 @testset "axisbounds(axis::Axis)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -26,12 +27,67 @@ end
 
 
 ############################################################################################
+# JuChrom.decompose_exponential(x::Float64)
+############################################################################################
+@testset "decompose_exponential Tests" begin
+    # Test for a positive number
+    @testset "Positive Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(2.323 * 10^4)
+        @test mantissa ≈ 2.323
+        @test exponent == 4
+    end
+
+    # Test for a negative number
+    @testset "Negative Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(-2.323 * 10^4)
+        @test mantissa ≈ -2.323
+        @test exponent == 4
+    end
+
+    # Test for a small positive number
+    @testset "Small Positive Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(0.00123)
+        @test mantissa ≈ 1.23
+        @test exponent == -3
+    end
+
+    # Test for a small negative number
+    @testset "Small Negative Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(-0.00123)
+        @test mantissa ≈ -1.23
+        @test exponent == -3
+    end
+
+    # Test for zero
+    @testset "Zero" begin
+        mantissa, exponent = JuChrom.decompose_exponential(0.0)
+        @test mantissa ≈ 0.0
+        @test exponent == 0
+    end
+
+    # Test for a large positive number
+    @testset "Large Positive Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(1.0e10)
+        @test mantissa ≈ 1.0
+        @test exponent == 10
+    end
+    
+    # Test for a large negative number
+    @testset "Large Negative Number" begin
+        mantissa, exponent = JuChrom.decompose_exponential(-1.0e10)
+        @test mantissa ≈ -1.0
+        @test exponent == 10
+    end
+end
+
+
+############################################################################################
 # JuChrom.height(ax::Axis) 
 ############################################################################################
 @testset "JuChrom.height(ax::Axis)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(0, 100))
+    fig = GLMakie.Figure(size=(0, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -50,7 +106,7 @@ end
 @testset "JuChrom.inaxis(axis::Axis, xy)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -111,7 +167,7 @@ end
 @testset "JuChrom.inscene(scene::Scene, xy)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -161,7 +217,7 @@ end
 @testset "JuChrom.keyboardbutton!(fig::Figure, event::Makie.KeyEvent)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -185,7 +241,7 @@ end
 @testset "JuChrom.mousebutton!(fig::Figure, event::Makie.MouseButtonEvent)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -210,7 +266,7 @@ end
 @testset "JuChrom.mouseposition!(fig::Figure, pos)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -234,7 +290,7 @@ end
 @testset "JuChrom.pixelspace_figure(scene::Scene, xy)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -252,7 +308,7 @@ end
 @testset "scenebounds(scene::Scene)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(100, 100))
+    fig = GLMakie.Figure(size=(100, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])
@@ -267,12 +323,147 @@ end
 
 
 ############################################################################################
+# JuChrom.textdimensions(text::AbstractString; font=theme(:fonts)[:regular].val, 
+# fontsize=theme(:fontsize).val)
+############################################################################################
+@testset "textdimensions Tests" begin
+    # Test for a simple text with default font and fontsize
+    @testset "Default Font and Fontsize" begin
+        width, height = JuChrom.textdimensions("Hello, world!")
+        @test width ≈ 77.01399397850037
+        @test height ≈ 16.309999465942383
+    end
+
+    # Test for a simple text with a larger fontsize
+    @testset "Larger Fontsize" begin
+        width, height = JuChrom.textdimensions("Hello, world!", 
+            fontsize=theme(:fontsize).val * 2)
+        @test width ≈ 154.02798795700073
+        @test height ≈ 32.619998931884766
+    end
+    
+    # Test for a simple text with a smaller fontsize
+    @testset "Smaller Fontsize" begin
+        width, height = JuChrom.textdimensions("Hello, world!", 
+            fontsize=theme(:fontsize).val / 2)
+        @test width ≈ 38.50699698925018
+        @test height ≈ 8.154999732971191
+    end
+    
+    # Test for a different font
+    @testset "Different Font" begin
+        width, height = JuChrom.textdimensions("Hello, world!", font="Courier")
+        @test width ≈ 109.2177734375
+        @test height ≈ 14.0
+    end
+    
+    # Test for an empty string
+    @testset "Empty String" begin
+        width, height = JuChrom.textdimensions("")
+        @test width ≈ 0.0
+        @test height ≈ 0.0
+    end
+    
+    # Test for a multiline text
+    @testset "Multiline Text" begin
+        width, height = JuChrom.textdimensions("Hello,\nworld!")
+        @test width ≈ 37.33799910545349
+        @test height ≈ 32.619998931884766
+    end
+end
+
+
+############################################################################################
+# JuChrom.textdimensions(text::Makie.RichText; font=theme(:fonts)[:regular].val, 
+# fontsize=theme(:fontsize).val)
+############################################################################################
+@testset "textdimensions Tests" begin
+    # Test for a simple text with default font and fontsize
+    @testset "Default Font and Fontsize" begin
+        width, height = JuChrom.textdimensions((rich("Hello, world!")))
+        @test width ≈ 76.51399397850037
+        @test height ≈ 15.809999346733093
+    end
+
+    # Test for a simple text with a larger fontsize
+    @testset "Larger Fontsize" begin
+        width, height = JuChrom.textdimensions(rich("Hello, world!"), 
+            fontsize=theme(:fontsize).val * 2)
+        @test width ≈ 153.52798795700073
+        @test height ≈ 32.11999869346619
+    end
+    
+    # Test for a simple text with a smaller fontsize
+    @testset "Smaller Fontsize" begin
+        width, height = JuChrom.textdimensions(rich("Hello, world!"), 
+            fontsize=theme(:fontsize).val / 2)
+        @test width ≈ 38.00699698925018
+        @test height ≈ 7.654999673366547
+    end
+    
+    # Test for a different font
+    @testset "Different Font" begin
+        width, height = JuChrom.textdimensions(rich("Hello, world!"), font="Courier")
+        @test width ≈ 108.7177734375
+        @test height ≈ 13.5
+    end
+    
+    # Test for an empty string
+    @testset "Empty String" begin
+        width, height = JuChrom.textdimensions(rich(""))
+        @test width ≈ 0.0
+        @test height ≈ 0.0
+    end
+    
+    # Test for a multiline text
+    @testset "Multiline Text" begin
+        width, height = JuChrom.textdimensions(rich("Hello,\nworld!"))
+        @test width ≈ 36.83799910545349
+        @test height ≈ 35.80999934673309
+    end
+end
+
+
+############################################################################################
+# JuChrom.ticks(start::Real, stop::Real; count::Integer=5)
+############################################################################################
+@testset "ticks Tests" begin
+    # Test for a simple range with default count
+    @test JuChrom.ticks(0.0, 10.0) == 0.0:2.5:10.0
+    
+    # Test for a simple range with specified count
+    @test JuChrom.ticks(0.0, 10.0, count=3) == 0.0:5.0:10.0
+    
+    # Test for a range with negative values
+    @test JuChrom.ticks(-10.0, 10.0) == -10.0:5.0:10.0
+    
+    # Test for a small range
+    @test JuChrom.ticks(0.0, 1.0) == 0.0:0.25:1.0
+    
+    # Test for a large range
+    @test JuChrom.ticks(0.0, 1000.0) == 0.0:250.0:1000.0
+    
+    # Test for a range with non-zero start
+    @test JuChrom.ticks(5.0, 15.0) == 6.0:2.0:14.0
+    
+    # Test for a range with non-zero start and end
+    @test JuChrom.ticks(3.2, 17.8) == 5.0:2.5:15.0
+    
+    # Test for a range with a single tick
+    @test_throws ArgumentError JuChrom.ticks(0.0, 0.0)
+    
+    # Test for a range with a single tick and non-zero start
+    @test_throws ArgumentError JuChrom.ticks(5.0, 5.0)
+end
+
+
+############################################################################################
 # JuChrom.width(ax::Axis) 
 ############################################################################################
 @testset "JuChrom.width(ax::Axis)" begin
     closeall()  # close any windows that may be open
 
-    fig = Figure(size=(0, 100))
+    fig = GLMakie.Figure(size=(0, 100))
     screen = display(Screen(visible = false), fig)
     colorbuffer(screen)
     ax = Axis(fig[1, 1])

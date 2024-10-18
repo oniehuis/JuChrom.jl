@@ -37,10 +37,12 @@ assign the minute time unit to the time values. Since
 mapping function, we will further load the 
 [CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie) package from 
 the [Makie](https://docs.makie.org) visualization ecosystem. If you haven't installed them 
-yet, you may need to do so.
+yet, you may need to do so. Additionally, we explicitly activate the CairoMakie backend to 
+ensure it is used, especially if another backend was previously active in the same session.
 
 ```@example 1
 using CairoMakie, DelimitedFiles, JuChrom
+CairoMakie.activate!()
 
 filename = "example1.CAL"
 file = joinpath(JuChrom.calibration, filename)
@@ -192,6 +194,7 @@ we'll specify a different input file and wrap the [`RiMapper`](@ref) call in a `
 
 ```@example 1
 using CairoMakie, DelimitedFiles, JuChrom
+CairoMakie.activate!()
 
 filename = "example2.CAL"
 file = joinpath(JuChrom.calibration, filename)
@@ -284,6 +287,7 @@ We begin by reading and processing the calibration file data to create an
 
 ```@example 4
 using CairoMakie, DelimitedFiles, JuChrom
+CairoMakie.activate!()
 
 calpath = joinpath(JuChrom.calibration, "empirical_data", "calfiles")
 calfile = joinpath(calpath, "2024-04-11_C7-C40_11_APR_24_V09.CAL")
@@ -368,6 +372,7 @@ as keys to retrieve the associated .CAL file names.
 
 ```@example 5
 using CairoMakie, DelimitedFiles, JuChrom
+CairoMakie.activate!()
 import XLSX
 
 file = joinpath(JuChrom.calibration, "empirical_data", "run_calfilename_relation.xlsx")

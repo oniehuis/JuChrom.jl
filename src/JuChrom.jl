@@ -100,10 +100,6 @@ export importdata
 include("Deconvolution/Deconvolution.jl")
 using .Deconvolution
 
-include("GUI/Explorer.jl")
-using .Explorer
-export explorer
-
 # export candidatepeaks
 # export saveplot
 # export deconvolutedtic
@@ -114,5 +110,9 @@ export explorer
 # export LocalMaxima
 # export deconvolute
 # export sigma
+
+include("GUI/Explorer.jl")
+using .Explorer
+export explorer
 
 end
