@@ -327,9 +327,10 @@ end
 # fontsize=theme(:fontsize).val)
 ############################################################################################
 @testset "textdimensions Tests" begin
-    # Test for a simple text with default font and fontsize
-    @testset "Default Font and Fontsize" begin
-        width, height = JuChrom.textdimensions("Hello, world!")
+    # Test for a simple text with standard font and fontsize
+    @testset "Standard Font and Fontsize" begin
+        width, height = JuChrom.textdimensions("Hello, world!", 
+            font="TeX Gyre Heros Makie", fontsize=14)
         @test width ≈ 77.01399397850037
         @test height ≈ 16.309999465942383
     end
@@ -337,36 +338,39 @@ end
     # Test for a simple text with a larger fontsize
     @testset "Larger Fontsize" begin
         width, height = JuChrom.textdimensions("Hello, world!", 
-            fontsize=theme(:fontsize).val * 2)
+            font="TeX Gyre Heros Makie", fontsize=28)
         @test width ≈ 154.02798795700073
         @test height ≈ 32.619998931884766
     end
     
-    # Test for a simple text with a smaller fontsize
+    # Test for a simple text with a smaller Float64 fontsize
     @testset "Smaller Fontsize" begin
         width, height = JuChrom.textdimensions("Hello, world!", 
-            fontsize=theme(:fontsize).val / 2)
-        @test width ≈ 38.50699698925018
-        @test height ≈ 8.154999732971191
+            font="TeX Gyre Heros Makie", fontsize=7.5)
+        @test width ≈ 41.25750058889389
+        @test height ≈ 8.737499713897705
     end
     
     # Test for a different font
     @testset "Different Font" begin
-        width, height = JuChrom.textdimensions("Hello, world!", font="Courier")
-        @test width ≈ 109.2177734375
-        @test height ≈ 14.0
+        width, height = JuChrom.textdimensions("Hello, world!", 
+            font="TeX Gyre Heros Makie Bold Italic", fontsize=14)
+        @test width ≈ 84.01399743556976
+        @test height ≈ 16.309999465942383
     end
     
     # Test for an empty string
     @testset "Empty String" begin
-        width, height = JuChrom.textdimensions("")
+        width, height = JuChrom.textdimensions("", font="TeX Gyre Heros Makie", 
+            fontsize=14)
         @test width ≈ 0.0
         @test height ≈ 0.0
     end
     
     # Test for a multiline text
     @testset "Multiline Text" begin
-        width, height = JuChrom.textdimensions("Hello,\nworld!")
+        width, height = JuChrom.textdimensions("Hello,\nworld!", 
+            font="TeX Gyre Heros Makie", fontsize=14)
         @test width ≈ 37.33799910545349
         @test height ≈ 32.619998931884766
     end
@@ -378,46 +382,50 @@ end
 # fontsize=theme(:fontsize).val)
 ############################################################################################
 @testset "textdimensions Tests" begin
-    # Test for a simple text with default font and fontsize
-    @testset "Default Font and Fontsize" begin
-        width, height = JuChrom.textdimensions((rich("Hello, world!")))
+    # Test for a simple text with standard font and fontsize
+    @testset "Standard Font and Fontsize" begin
+        width, height = JuChrom.textdimensions((rich("Hello, world!")), 
+            font="TeX Gyre Heros Makie", fontsize=14)
         @test width ≈ 76.51399397850037
         @test height ≈ 15.809999346733093
     end
 
     # Test for a simple text with a larger fontsize
     @testset "Larger Fontsize" begin
-        width, height = JuChrom.textdimensions(rich("Hello, world!"), 
-            fontsize=theme(:fontsize).val * 2)
+        width, height = JuChrom.textdimensions((rich("Hello, world!")), 
+            font="TeX Gyre Heros Makie", fontsize=28)
         @test width ≈ 153.52798795700073
         @test height ≈ 32.11999869346619
     end
     
-    # Test for a simple text with a smaller fontsize
+    # Test for a simple text with a smaller Float64 fontsize
     @testset "Smaller Fontsize" begin
-        width, height = JuChrom.textdimensions(rich("Hello, world!"), 
-            fontsize=theme(:fontsize).val / 2)
-        @test width ≈ 38.00699698925018
-        @test height ≈ 7.654999673366547
+        width, height = JuChrom.textdimensions((rich("Hello, world!")), 
+            font="TeX Gyre Heros Makie", fontsize=7.5)
+        @test width ≈ 40.75750058889389
+        @test height ≈ 8.237499684095383
     end
     
-    # Test for a different font
+    # Test with a different font
     @testset "Different Font" begin
-        width, height = JuChrom.textdimensions(rich("Hello, world!"), font="Courier")
-        @test width ≈ 108.7177734375
-        @test height ≈ 13.5
+        width, height = JuChrom.textdimensions(rich("Hello, world!"), 
+            font="TeX Gyre Heros Makie Bold Italic", fontsize=14)
+        @test width ≈ 83.51399743556976
+        @test height ≈ 15.809999346733093
     end
     
     # Test for an empty string
     @testset "Empty String" begin
-        width, height = JuChrom.textdimensions(rich(""))
+        width, height = JuChrom.textdimensions(rich(""), font="TeX Gyre Heros Makie", 
+            fontsize=14)
         @test width ≈ 0.0
         @test height ≈ 0.0
     end
     
     # Test for a multiline text
     @testset "Multiline Text" begin
-        width, height = JuChrom.textdimensions(rich("Hello,\nworld!"))
+        width, height = JuChrom.textdimensions(rich("Hello,\nworld!"), 
+            font="TeX Gyre Heros Makie", fontsize=14)
         @test width ≈ 36.83799910545349
         @test height ≈ 35.80999934673309
     end

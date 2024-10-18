@@ -388,8 +388,8 @@ function textdimensions(text::Makie.RichText; font=theme(:fonts)[:regular].val,
     end
 
     scene = Makie.Scene(size=(1, 1))
-    text = Makie.text!(scene, [0], [0], text=text, font=font, fontsize=fontsize)
-    bbox = Makie.boundingbox(text)
+    textplot = Makie.text!(scene, [0], [0], text=text, font=font, fontsize=fontsize)
+    bbox = Makie.boundingbox(textplot, textplot.markerspace[])
     
     width = bbox.widths[1] - bbox.origin[1]
     height = bbox.widths[2] - bbox.origin[2]
