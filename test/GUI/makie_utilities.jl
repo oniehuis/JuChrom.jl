@@ -437,25 +437,32 @@ end
 ############################################################################################
 @testset "ticks Tests" begin
     # Test for a simple range with default count
-    @test JuChrom.ticks(0.0, 10.0) == 0.0:2.5:10.0
-    
+    @test JuChrom.ticks(0.0, 10.0) == 0.0:2.0:10.0
+
     # Test for a simple range with specified count
+    @test JuChrom.ticks(0.0, 10.0, count=10) == 0.0:1.0:10.0
+    
+    # Test for a simple range with another specified count
     @test JuChrom.ticks(0.0, 10.0, count=3) == 0.0:5.0:10.0
     
     # Test for a range with negative values
     @test JuChrom.ticks(-10.0, 10.0) == -10.0:5.0:10.0
     
     # Test for a small range
-    @test JuChrom.ticks(0.0, 1.0) == 0.0:0.25:1.0
+    @test JuChrom.ticks(0.0, 1.0) == 0.0:0.2:1.0
     
     # Test for a large range
-    @test JuChrom.ticks(0.0, 1000.0) == 0.0:250.0:1000.0
+    @test JuChrom.ticks(0.0, 1000.0) == 0.0:200.0:1000.0
+
+    # Test for a large range
+    @test JuChrom.ticks(0.0, 0.0001, 
+        count=13) ≈ 0.0:9.999999999999999e-6:9.999999999999999e-5
     
     # Test for a range with non-zero start
     @test JuChrom.ticks(5.0, 15.0) == 6.0:2.0:14.0
     
     # Test for a range with non-zero start and end
-    @test JuChrom.ticks(3.2, 17.8) == 5.0:2.5:15.0
+    @test JuChrom.ticks(3.2, 17.8) == 5.0:5.0:15.0
     
     # Test for a range with a single tick
     @test_throws ArgumentError JuChrom.ticks(0.0, 0.0)

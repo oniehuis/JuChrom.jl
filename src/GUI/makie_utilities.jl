@@ -404,12 +404,16 @@ end
 Return a sequence of tick values for a specified range, ensuring that the intervals 
 between ticks are rounded to reasonable values. The function takes the start and 
 stop values of the range as arguments. Additionally, the optional `count` argument 
-specifies the desired number of tick values, with a default value of 5.
+specifies the desired number of tick values. The actual number of ticks generated may 
+vary to ensure that the intervals are evenly spaced and easy to read. Defaults to 5.
 
 # Example
 ```jldoctest
-julia> JuChrom.ticks(3.2, 17.8, count=5)
-5.0:2.5:15.0
+julia> JuChrom.ticks(3.2, 17.8)
+5.0:5.0:15.0
+
+julia> JuChrom.ticks(3.2, 17.8, count=10)
+4.0:2.0:16.0
 ```
 """
 function ticks(start::Real, stop::Real; count::Integer=5)
@@ -428,7 +432,7 @@ function ticks(start::Real, stop::Real; count::Integer=5)
     end
     start_adjusted = ceil(start / stepwidth) * stepwidth
     stop_adjusted = floor(stop / stepwidth) * stepwidth
-    range(start_adjusted, stop=stop_adjusted, length=count)
+    range(start_adjusted, step=stepwidth, stop=stop_adjusted)
 end
 
 
