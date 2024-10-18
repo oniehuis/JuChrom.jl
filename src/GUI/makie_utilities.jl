@@ -341,7 +341,7 @@ julia> using GLMakie;
 julia> text = "Hello, world!"
 "Hello, world!"
 
-julia> w, h = JuChrom.textdimensions(text, font="TeX Gyre Heros Makie", fontsize=24);
+julia> (w, h) = JuChrom.textdimensions(text, font="TeX Gyre Heros Makie", fontsize=24);
 
 julia> (w, h) .≈ (132.02399730682373, 27.959999084472656)
 (true, true)
