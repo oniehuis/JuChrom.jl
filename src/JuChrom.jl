@@ -97,8 +97,8 @@ export ShimadzuMS
 export exportdata
 export importdata
 
-include("Deconvolution/Deconvolution.jl")
-using .Deconvolution
+#include("Deconvolution/Deconvolution.jl")
+#using .Deconvolution
 
 # export candidatepeaks
 # export saveplot
