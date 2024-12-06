@@ -6,7 +6,7 @@ using CairoMakie
 
 import BasicInterpolators: CubicSplineInterpolator
 import Distributions: Normal, cquantile
-import NNLS: nnls
+import .JuChrom: NNLS
 import Optim: minimizer, optimize
 import QuadGK: quadgk
 import Statistics: mean, median
@@ -882,7 +882,7 @@ end
     
 #     matrix = hcat(ones(T, windowsize), xs_shifted)
 #     S = promote_type(T, eltype(ys))
-#     intercept, slope = nnls(convert(Matrix{S}, matrix), convert(Vector{S}, ys))  
+#     intercept, slope = NNLS.nnls(convert(Matrix{S}, matrix), convert(Vector{S}, ys))  
 
 #     # If the slope is zero, reverse the data as we (probably) have a negative slope. If 
 #     # the slope is really zero, the result should not be different.
@@ -1277,7 +1277,7 @@ end
     
 #     matrix = hcat(ones(T1, windowsize), shiftedtimes, modelintensities)
 #     T = promote_type(eltype(matrix), eltype(intensities))
-#     θ = nnls(convert(Matrix{T}, matrix), convert(Vector{T}, intensities))  
+#     θ = NNLS.nnls(convert(Matrix{T}, matrix), convert(Vector{T}, intensities))  
 
 #     if firstpass
 #         θ[2] == 0 && return peakintensity(shiftedtimes, reverse(intensities), 

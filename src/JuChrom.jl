@@ -11,6 +11,9 @@ import Roots
 
 @reexport using Unitful
 
+include("NNLS/NNLS.jl")
+using .NNLS
+
 const agilent = artifact"Agilent"
 const andi = artifact"ANDI"
 const calibration = artifact"calibration"
@@ -97,19 +100,19 @@ export ShimadzuMS
 export exportdata
 export importdata
 
-#include("Deconvolution/Deconvolution.jl")
-#using .Deconvolution
+include("Deconvolution/Deconvolution.jl")
+using .Deconvolution
 
-# export candidatepeaks
-# export saveplot
-# export deconvolutedtic
-# export componentbins
-# export componentpeakmodels
-# export massspectra
-# export nextlocalmaximum
-# export LocalMaxima
-# export deconvolute
-# export sigma
+export candidatepeaks
+export saveplot
+export deconvolutedtic
+export componentbins
+export componentpeakmodels
+export massspectra
+export nextlocalmaximum
+export LocalMaxima
+export deconvolute
+export sigma
 
 include("GUI/Explorer.jl")
 using .Explorer

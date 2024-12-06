@@ -17,7 +17,7 @@ makedocs(
             "man/export.md"],
         "Internals" => Any[
             "internals/base.md",
-            # "internals/deconvolution.md",
+            "internals/deconvolution.md",
             "internals/explorer.md",
             "internals/inputoutput.md"],
         "Tutorials" => Any[
