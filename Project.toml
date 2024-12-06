@@ -31,6 +31,5 @@ NNLS = {url = "https://github.com/rdeits/NNLS.jl.git", rev = "master"}
 [compat]
 Distributions = "0.25.112"
 MakieCore = "0.8.9"
-NNLS = "0.0.2"
 Roots = "2.2.1"
 julia = "1.11"

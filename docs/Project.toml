@@ -11,4 +11,3 @@ NNLS = {url = "https://github.com/rdeits/NNLS.jl.git", rev = "master"}
 
 [compat]
 julia = "1.11"
-NNLS = "0.0.2"
