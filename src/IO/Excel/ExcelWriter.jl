@@ -3,7 +3,7 @@ module ExcelWriter
 using XLSX
 using Unitful
 
-import ...JuChrom: AbstractChrom, scantimes, intensities
+import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, ions
 import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export Excel
@@ -56,5 +56,35 @@ function exportdata(fileformat::Excel, chrom::AbstractChrom, file::AbstractStrin
             [string("scan time [", timeunit, "]"), "intensity"])
     end
 end
+
+
+function exportdata(fileformat::Excel, chrom::AbstractChromMS, file::AbstractString;
+    timeunit::Unitful.TimeUnits, overwrite::Bool)
+    pathstem, suffix = splitext(file)
+    if suffix ≠ ".xlsx"
+        file = string(pathstem, ".xlsx")
+    end
+    overwrite || isfile(file) && throw(
+        FileExistsError("a file with the same name already exists: \"$file\""))
+
+    XLSX.openxlsx(file, mode="w") do xf
+        !isnothing(sheetname(fileformat)) && XLSX.rename!(xf[1], sheetname(fileformat))
+        sheet = xf[1]
+
+        # Write ions
+        sheet["A1"] = string("scan times [", timeunit, "]")
+
+        # Write ions
+        sheet["B1", dim=2] = [string("m/z ", i) for i in ions(chrom)]
+
+        # Write scan times
+        sheet["A2", dim=1] = scantimes(chrom, timeunit=timeunit, ustripped=true)
+
+        # Write intensities
+        sheet["B2"] = intensities(chrom)
+        
+    end
+end
+
 
 end  # module

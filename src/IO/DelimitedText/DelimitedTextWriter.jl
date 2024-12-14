@@ -3,7 +3,7 @@ module DelimitedTextWriter
 using CSV
 using Unitful
 
-import ...JuChrom: AbstractChrom, scantimes, intensity
+import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, intensity, ions, ioncount, scancount
 import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export DelimitedText
@@ -63,5 +63,34 @@ function exportdata(fileformat::DelimitedText, chrom::AbstractChrom, file::Abstr
     CSV.write(file, itr, delim=fileformat.delim, 
         header=[string("scan time [", timeunit, "]"), "intensity"])
 end
+
+
+function exportdata(fileformat::DelimitedText, chrom::AbstractChromMS, file::AbstractString; 
+    timeunit::Unitful.TimeUnits, overwrite::Bool)
+    pathstem, suffix = splitext(file)
+    if suffix == ""
+        if string(delim(fileformat)) in (",", ";")
+            file = string(pathstem, ".csv")
+        elseif string(delim(fileformat)) == "\t"
+            file = string(pathstem, ".tsv")
+        else
+            file = string(pathstem, ".txt")
+        end
+    end
+    overwrite || isfile(file) && throw(FileExistsError(
+        "a file with the same name already exists: \"$file\""))
+
+    header = [string("m/z ", i) for i in ions(chrom)]
+    pushfirst!(header, string("scan times [", timeunit, "]"))
+
+    itr = Vector{NamedTuple}(undef, scancount(chrom))
+    for (idxₛ, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true))
+        nt = (scantime=time, zip(Symbol.(ions(chrom)), intensities(chrom)[idxₛ, :])...)
+        itr[idxₛ] = nt
+    end
+
+    CSV.write(file, itr, delim=fileformat.delim, header=header)
+end
+
 
 end  # module

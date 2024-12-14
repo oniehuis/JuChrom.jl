@@ -8,7 +8,7 @@ export Path
 export IOError
 export FileExistsError
 
-import ..JuChrom: AbstractChrom, scantimes
+import ..JuChrom: AbstractChrom, AbstractChromMS, scantimes
 
 export FileFormat
 export AgilentFID
@@ -102,11 +102,45 @@ metadata: 0 entries
 
 julia> exportdata(chrom, "./delimtest", DelimitedText());
 
-julia> exportdata(chrom, "./delimtest", Excel(sheetname="TIC"));
+julia> exportdata(chrom, "./exceltest", Excel(sheetname="TIC"));
 
 ```
 """
 function exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
+    timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
+    exportdata(fileformat, chrom, file; timeunit, overwrite)
+end
+
+
+"""
+    exportdata(chrom::AbstractChromMS, file::AbstractString, fileformat::FileFormat; 
+    timeunit::Unitful.TimeUnits, overwrite::Bool=false)
+
+
+Write the scan times, ions, and associated intensity values of the AbstractChromMS object 
+to a file in the specified format. The optional parameter `timeunit` allows you 
+to specify the unit for the exported scan times. All time units defined in the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
+supported. The optional keyword argument `overwrite` allows to specify whether an existing 
+target file should be overwritten.
+
+See also [`AbstractChromMS`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
+
+# Examples
+```julia-repl
+julia> chrom = Chrom((1:3)u"minute", [123, 224, 103])
+Chrom {scan times: Int64, intensities: Int64}
+3 scans; scan times: 1 minute, 2 minute, 3 minute
+intensity range: 103 - 224
+metadata: 0 entries
+
+julia> exportdata(chrom, "./delimtest", DelimitedText());
+
+julia> exportdata(chrom, "./exceltest", Excel(sheetname="GCMS"));
+
+```
+"""
+function exportdata(chrom::AbstractChromMS, file::AbstractString, fileformat::FileFormat; 
     timeunit::Unitful.TimeUnits=unit(eltype(scantimes(chrom))), overwrite::Bool=false)
     exportdata(fileformat, chrom, file; timeunit, overwrite)
 end
