@@ -3,7 +3,9 @@ module DelimitedTextWriter
 using CSV
 using Unitful
 
-import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, intensity, ions, ioncount, scancount
+import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, intensity, ions, 
+    ioncount, rimapper, retentionindexname, minretentiontime, maxretentiontime, 
+    extrapolationmethod, retentionindex, scancount
 import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export DelimitedText
@@ -58,10 +60,28 @@ function exportdata(fileformat::DelimitedText, chrom::AbstractChrom, file::Abstr
     end
     overwrite || isfile(file) && throw(FileExistsError(
         "a file with the same name already exists: \"$file\""))
-    itr = ((scantimes=time, intensities=intensity(chrom, i)) 
-        for (i, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true)))
-    CSV.write(file, itr, delim=fileformat.delim, 
-        header=[string("scan time [", timeunit, "]"), "intensity"])
+
+    if isnothing(rimapper(chrom))
+        header = [string("scan time [", timeunit, "]"), "intensity"]
+        itr = ((scantimes=time, intensities=intensity(chrom, i)) 
+            for (i, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true)))
+    else
+        ris = Vector{Union{Float64, Missing}}(missing, scancount(chrom))
+        ld = rimapper(chrom)
+        for (i, rt) in enumerate(scantimes(chrom))
+            if (minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld) 
+                || !isnothing(extrapolationmethod(ld)))
+                ris[i] = retentionindex(ld, rt)
+            end
+        end
+        header = [string("scan time [", timeunit, "]"), retentionindexname(ld), 
+            "intensity"]
+        itr = ((scantimes=time, retentionindex=ris[i], intensities=intensity(chrom, i)) 
+            for (i, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true)))
+    end
+    
+    CSV.write(file, itr, delim=fileformat.delim, header=header)
+    
 end
 
 
@@ -80,13 +100,35 @@ function exportdata(fileformat::DelimitedText, chrom::AbstractChromMS, file::Abs
     overwrite || isfile(file) && throw(FileExistsError(
         "a file with the same name already exists: \"$file\""))
 
-    header = [string("m/z ", i) for i in ions(chrom)]
-    pushfirst!(header, string("scan times [", timeunit, "]"))
-
     itr = Vector{NamedTuple}(undef, scancount(chrom))
-    for (idxₛ, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true))
-        nt = (scantime=time, zip(Symbol.(ions(chrom)), intensities(chrom)[idxₛ, :])...)
-        itr[idxₛ] = nt
+
+    if isnothing(rimapper(chrom))
+        header = vcat(string("scan times [", timeunit, "]"), 
+            [string("m/z ", i) for i in ions(chrom)])
+
+        for (idxₛ, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true))
+            nt = (scantime=time, zip(Symbol.(ions(chrom)), intensities(chrom)[idxₛ, :])...)
+            itr[idxₛ] = nt
+        end
+    else
+        header = vcat(string("scan times [", timeunit, "]"), 
+            retentionindexname(rimapper(chrom)),
+            [string("m/z ", i) for i in ions(chrom)])
+
+        ris = Vector{Union{Float64, Missing}}(missing, scancount(chrom))
+        ld = rimapper(chrom)
+        for (i, rt) in enumerate(scantimes(chrom))
+            if (minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld) 
+                || !isnothing(extrapolationmethod(ld)))
+                ris[i] = retentionindex(ld, rt)
+            end
+        end
+
+        for (idxₛ, time) in enumerate(scantimes(chrom, timeunit=timeunit, ustripped=true))
+            nt = (scantime=time, retentionindex=ris[idxₛ], zip(Symbol.(ions(chrom)), 
+                intensities(chrom)[idxₛ, :])...)
+            itr[idxₛ] = nt
+        end
     end
 
     CSV.write(file, itr, delim=fileformat.delim, header=header)

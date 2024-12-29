@@ -1471,7 +1471,7 @@ rimapper(chrom::AbstractChromatogram) = chrom.rimapper
 
 
 """
-    rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
+    rimapper!(chrom::AbstractChromatogram, rim::AbstractRiMapper)
 
 Assign an retention index mapper to the AbstractChromatogram object.
 
@@ -1486,7 +1486,7 @@ true
 
 julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
 
-julia> rimapper(chrom, ld);
+julia> rimapper!(chrom, ld);
 
 julia> rimapper(chrom)
 RiMapper {index name: Kovats, calibration points: 5}
@@ -1500,7 +1500,7 @@ julia> retentionindex(chrom, 2.2u"minute") ≈ 2200.0
 true
 ```
 """
-rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper) = chrom.rimapper = rim
+rimapper!(chrom::AbstractChromatogram, rim::AbstractRiMapper) = chrom.rimapper = rim
 
 
 """
@@ -1863,8 +1863,12 @@ function Base.show(io::IO, chrom::AbstractChromatogram)
         println(io, "intensity: ", first(intensities(chrom)))
     end
 
-
     # Information about the metadata
     n = length(metadata(chrom))
     print(io, "metadata: ", n, (n == 0 || n > 1) ? " entries" : " entry" )
+
+    # ADD INFORMATION AN RIMAPPER
+    if rimapper(chrom) !== nothing
+        print(io, "\nretention index mapper: ", retentionindexname(rimapper(chrom)))
+    end
 end

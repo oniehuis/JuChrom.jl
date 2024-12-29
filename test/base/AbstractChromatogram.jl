@@ -613,16 +613,16 @@ end
 ############################################################################################
 # rimapper(chrom::AbstractChromatogram, rim::AbstractRiMapper)
 ############################################################################################
-@testset "rimapper(::AbstractChromatogram, ::AbstractRiMapper)" begin
+@testset "rimapper!(::AbstractChromatogram, ::AbstractRiMapper)" begin
     chrom = Chrom([1, 2, 3]u"s", [12, 956, 23])
     ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000)
     @test nothing === chrom.rimapper
-    rimapper(chrom, ld)
+    rimapper!(chrom, ld)
     @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
 
     chrom = ChromMS([1, 2, 3]u"s", [85, 100], [0 12; 34 956; 23 1])
     @test nothing === chrom.rimapper
-    rimapper(chrom, ld)
+    rimapper!(chrom, ld)
     @test isa(chrom.rimapper, JuChrom.AbstractRiMapper)
 end
 

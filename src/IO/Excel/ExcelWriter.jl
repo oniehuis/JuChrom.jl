@@ -3,7 +3,9 @@ module ExcelWriter
 using XLSX
 using Unitful
 
-import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, ions
+import ...JuChrom: AbstractChrom, AbstractChromMS, scantimes, intensities, ions, rimapper, 
+    retentionindexname, minretentiontime, maxretentiontime, extrapolationmethod,
+    retentionindex, scancount
 import ..InputOutput: FileExistsError, FileFormat, exportdata
 
 export Excel
@@ -49,11 +51,26 @@ function exportdata(fileformat::Excel, chrom::AbstractChrom, file::AbstractStrin
     end
     overwrite || isfile(file) && throw(
         FileExistsError("a file with the same name already exists: \"$file\""))
-    columns = [scantimes(chrom, timeunit=timeunit, ustripped=true), intensities(chrom)]
+    if isnothing(rimapper(chrom))
+        headers = [string("scan time [", timeunit, "]"), "intensity"]
+        columns = [scantimes(chrom, timeunit=timeunit, ustripped=true), intensities(chrom)]
+    else
+        ris = Vector{Union{Float64, Missing}}(missing, scancount(chrom))
+        ld = rimapper(chrom)
+        for (i, rt) in enumerate(scantimes(chrom))
+            if (minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld) 
+               || !isnothing(extrapolationmethod(ld)))
+                ris[i] = retentionindex(ld, rt)
+            end
+        end
+        headers = [string("scan time [", timeunit, "]"), retentionindexname(ld), 
+            "intensity"]
+        columns = [scantimes(chrom, timeunit=timeunit, ustripped=true), ris, 
+            intensities(chrom)]
+    end
     XLSX.openxlsx(file, mode="w") do xf
         !isnothing(sheetname(fileformat)) && XLSX.rename!(xf[1], sheetname(fileformat))
-        XLSX.writetable!(xf[1], columns, 
-            [string("scan time [", timeunit, "]"), "intensity"])
+        XLSX.writetable!(xf[1], columns, headers)
     end
 end
 
@@ -71,18 +88,40 @@ function exportdata(fileformat::Excel, chrom::AbstractChromMS, file::AbstractStr
         !isnothing(sheetname(fileformat)) && XLSX.rename!(xf[1], sheetname(fileformat))
         sheet = xf[1]
 
-        # Write ions
+        # Write scan time header
         sheet["A1"] = string("scan times [", timeunit, "]")
 
-        # Write ions
-        sheet["B1", dim=2] = [string("m/z ", i) for i in ions(chrom)]
-
         # Write scan times
-        sheet["A2", dim=1] = scantimes(chrom, timeunit=timeunit, ustripped=true)
+        sheet["A2", dim=1] = collect(scantimes(chrom, timeunit=timeunit, ustripped=true))
 
-        # Write intensities
-        sheet["B2"] = intensities(chrom)
-        
+        if isnothing(rimapper(chrom))
+            # Write ions
+            sheet["B1", dim=2] = [string("m/z ", i) for i in ions(chrom)]
+
+            # Write intensities
+            sheet["B2"] = collect(intensities(chrom))
+        else
+            ris = Vector{Union{Float64, Missing}}(missing, scancount(chrom))
+            ld = rimapper(chrom)
+            for (i, rt) in enumerate(scantimes(chrom))
+                if (minretentiontime(ld) ≤ rt ≤ maxretentiontime(ld) 
+                   || !isnothing(extrapolationmethod(ld)))
+                    ris[i] = retentionindex(ld, rt)
+                end
+            end
+
+            # Write retention index header
+            sheet["B1"] = retentionindexname(ld)
+
+            # Write retention indices
+            sheet["B2", dim=1] = ris
+
+            # Write ions
+            sheet["C1", dim=2] = [string("m/z ", i) for i in ions(chrom)]
+
+            # Write intensities
+            sheet["C2"] = collect(intensities(chrom))
+        end
     end
 end
 

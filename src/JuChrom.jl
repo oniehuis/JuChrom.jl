@@ -76,6 +76,7 @@ export retentionindexname
 export retentiontimes
 export retentiontime
 export rimapper
+export rimapper!
 export runduration
 export scancount
 export scanduration

@@ -178,4 +178,15 @@ end
         "11 ions; range: m/z 85 - 95\n",
         "intensity range: 0 - 32\n",
         "metadata: 0 entries")
+
+    # RiMapper
+    show(io, ChromMS((1:4)u"minute", [85, 100], [0 12; 34 956; 23 1; 0 0], 
+        rimapper=RiMapper("Kovats", (2:5)u"minute", 2000:1000:5000)))
+    @test String(take!(io)) == string(
+    "JuChrom.ChromMS {scan times: Int64, ions: Int64, intensities: Int64}\n",
+    "4 scans; scan times: 1 minute, 2 minute, 3 minute, 4 minute\n",
+    "2 ions: m/z 85, 100\n",
+    "intensity range: 0 - 956\n",
+    "metadata: 0 entries\n",
+    "retention index mapper: Kovats")
 end

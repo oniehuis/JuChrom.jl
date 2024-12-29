@@ -82,13 +82,13 @@ using .ShimadzuMSReaders
     exportdata(chrom::AbstractChrom, file::AbstractString, fileformat::FileFormat; 
     timeunit::Unitful.TimeUnits, overwrite::Bool=false)
 
-
-Write the scan times and associated intensity values of the AbstractChrom object to a  
-file in the specified format. The optional parameter `timeunit` allows you 
-to specify the unit for the exported scan times. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `overwrite` allows to specify whether an existing 
-target file should be overwritten.
+Export the scan times and corresponding intensity values from the AbstractChrom object to a 
+file in the specified format. If the AbstractChrom object includes a RiMapper, it will also 
+export retention indices to the file. The optional `timeunit` parameter allows you to 
+define the unit of measurement for the scan times in the output. All time units supported 
+by the package [Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, 
+`u"minute"`) can be used. Additionally, the optional `overwrite` keyword argument specifies 
+whether an existing target file should be overwritten.
 
 See also [`AbstractChrom`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).
 
@@ -116,12 +116,13 @@ end
     exportdata(chrom::AbstractChromMS, file::AbstractString, fileformat::FileFormat; 
     timeunit::Unitful.TimeUnits, overwrite::Bool=false)
 
-
-Write the scan times, ions, and associated intensity values of the AbstractChromMS object 
-to a file in the specified format. The optional parameter `timeunit` allows you 
-to specify the unit for the exported scan times. All time units defined in the package 
-[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) are 
-supported. The optional keyword argument `overwrite` allows to specify whether an existing 
+Export the scan times, ions, and corresponding intensity values from the AbstractChromMS 
+object to a file in the specified format. If the AbstractChromMS object includes a 
+RiMapper, it will also export retention indices to the file. The optional `timeunit` 
+parameter allows you to define the unit of measurement for the scan times in the output. 
+All time units supported by the package 
+[Unitful.jl](https://painterqubits.github.io/Unitful.jl) (e.g., `u"s"`, `u"minute"`) can be 
+used. Additionally, the optional `overwrite` keyword argument specifies whether an existing 
 target file should be overwritten.
 
 See also [`AbstractChromMS`](@ref), [`DelimitedText`](@ref), [`Excel`](@ref).

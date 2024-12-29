@@ -112,4 +112,14 @@ end
         "3 scans; scan times: 1 s, 2 s, 3 s\n",
         "intensity range: 12 - 956\n",
         "metadata: 2 entries")
+    
+    # RiMapper
+    show(io, Chrom(Int64[1, 2, 3]u"s", Int64[12, 956, 23], rimapper=RiMapper("Kovats", 
+        (1:5)u"minute", 1000:1000:5000)))
+    @test String(take!(io)) == string(
+        "JuChrom.Chrom {scan times: Int64, intensities: Int64}\n",
+        "3 scans; scan times: 1 s, 2 s, 3 s\n",
+        "intensity range: 12 - 956\n",
+        "metadata: 0 entries\n",
+        "retention index mapper: Kovats")
 end

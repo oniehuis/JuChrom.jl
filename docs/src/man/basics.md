@@ -35,6 +35,7 @@ minintensity(::AbstractChromMS; ::OrdinalRange{T1, S1}, ::OrdinalRange{T2, S2}) 
 minion(::AbstractChromMS)
 minscantime
 rimapper
+rimapper!
 runduration
 scancount
 scanduration

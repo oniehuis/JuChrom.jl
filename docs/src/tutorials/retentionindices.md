@@ -306,7 +306,7 @@ run data.
 runpath = joinpath(JuChrom.calibration, "empirical_data", "runs")
 runfolder = joinpath(runpath, "ON16150_April17_2024_I.D")
 chrom = importdata(runfolder, ChemStationMS())
-rimapper(chrom, ld)  # stores a reference to the RiMapper in ChromMS object
+rimapper!(chrom, ld)  # stores a reference to the RiMapper in ChromMS object
 tic = totalionchromatogram(chrom)
 ```
 
@@ -408,7 +408,7 @@ chroms = []
 for run in keys(cal4run)
   runfolder = joinpath(JuChrom.calibration, "empirical_data", "runs", run)
   chrom = importdata(runfolder, ChemStationMS())
-  rimapper(chrom, mpr4cal[cal4run[run]])
+  rimapper!(chrom, mpr4cal[cal4run[run]])
   push!(chroms, chrom)
 end
 ```
