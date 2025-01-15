@@ -410,7 +410,7 @@ end
 
 
 """
-    integer(value:::Real; start::Real=0.7) -> Int
+    integer(value::Real; start::Real=0.7) -> Int
 
 Return the integer for the given `value` that satisfies the following condition: 
 `integer - 1 + start ≤ value < integer + start`, where `0 ≤ start < 1`.
