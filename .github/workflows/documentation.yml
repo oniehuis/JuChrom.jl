@@ -3,39 +3,59 @@ name: Documentation
 on:
   push:
     branches:
-      - main # update to match your development branch (master, main, dev, trunk, ...)
+      - main
     tags: '*'
   pull_request:
 
 jobs:
   build:
-    # These permissions are needed to:
-    # - Deploy the documentation: https://documenter.juliadocs.org/stable/man/hosting/#Permissions
-    # - Delete old caches: https://github.com/julia-actions/cache#usage
     permissions:
       actions: write
       contents: write
       pull-requests: read
       statuses: write
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
         with:
           version: '1'
-      - uses: julia-actions/cache@v2
-      - name: Install PyCall and olefile
-        run: julia -e 'using Pkg; ENV["PYTHON"]=""; py="PyCall"; Pkg.add(py); Pkg.build()'
-      - name: Install Linux packages that GLMakie depends on to render graphics
-        run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev xsettingsd x11-xserver-utils
-      - name: Install dependencies
+
+      - name: Cache Julia registries
+        uses: actions/cache@v3
+        with:
+          path: ~/.julia/registries
+          key: ${{ runner.os }}-julia-registries
+
+      - name: Cache Julia packages
+        uses: julia-actions/cache@v2
+        with:
+          cache-name: 'docs'
+          cache-version: 1
+
+      - name: Install Linux packages for GLMakie
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev \
+            libxi-dev libxext-dev xsettingsd x11-xserver-utils
+
+      - name: Install Julia dependencies (including PyCall)
         shell: julia --color=yes --project=docs {0}
         run: |
           using Pkg
+          ENV["PYTHON"] = ""
+          Pkg.add("PyCall")
+          Pkg.build("PyCall")
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
-      - name: Build and deploy
+
+      - name: Build and deploy docs
         run: julia --color=yes --project=docs docs/make.jl
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # If authenticating with GitHub Actions token
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # If authenticating with SSH deploy key
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
