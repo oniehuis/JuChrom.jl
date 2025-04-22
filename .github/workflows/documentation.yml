@@ -36,7 +36,7 @@ jobs:
             libxi-dev libxext-dev xsettingsd x11-xserver-utils
 
       - name: Install Julia dependencies (including PyCall)
-        shell: julia --color=yes --project=docs {0}
+        shell: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=docs {0}
         run: |
           using Pkg
           ENV["PYTHON"] = ""
@@ -46,7 +46,9 @@ jobs:
           Pkg.instantiate()
         
       - name: Build and deploy
-        run: julia --color=yes --project=docs docs/make.jl
+        run: > 
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
+          julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
