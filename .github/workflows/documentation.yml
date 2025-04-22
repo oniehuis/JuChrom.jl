@@ -24,18 +24,9 @@ jobs:
         with:
           version: '1'
 
-      - name: Cache Julia registries
-        uses: actions/cache@v3
-        with:
-          path: ~/.julia/registries
-          key: ${{ runner.os }}-julia-registries
-
       - name: Cache Julia packages
         uses: julia-actions/cache@v2
-        with:
-          cache-name: 'docs'
-          cache-version: 1
-
+      
       - name: Install Linux packages for GLMakie
         run: |
           sudo apt-get update
@@ -53,8 +44,8 @@ jobs:
           Pkg.build("PyCall")
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
-
-      - name: Build and deploy docs
+        
+      - name: Build and deploy
         run: julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
