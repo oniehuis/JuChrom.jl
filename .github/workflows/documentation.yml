@@ -36,7 +36,7 @@ jobs:
             libxi-dev libxext-dev xsettingsd x11-xserver-utils
 
       - name: Install Julia dependencies (including PyCall)
-        shell: DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=docs {0}
+        shell: julia --color=yes --project=docs {0}
         run: |
           using Pkg
           ENV["PYTHON"] = ""
