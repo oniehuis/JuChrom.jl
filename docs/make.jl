@@ -22,8 +22,8 @@ makedocs(
             # "internals/explorer.md",
             "internals/inputoutput.md"
 			],
-        # "Tutorials" => Any[
-            # "tutorials/retentionindices.md"],
+        "Tutorials" => Any[
+            "tutorials/retentionindices.md"],
         "Index" => "man/register.md"
     ]
 )
