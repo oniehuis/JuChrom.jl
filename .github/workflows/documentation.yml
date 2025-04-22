@@ -52,3 +52,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+      - name: Clean up unused packages and artifacts
+        run: julia -e 'using Pkg; Pkg.gc()'
