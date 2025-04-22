@@ -4,3 +4,5 @@
 .DS_Store
 /docs/Manifest.toml
 /docs/build
+/tmp
+/experimental
