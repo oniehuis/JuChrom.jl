@@ -84,4 +84,18 @@ export sharedions
 export similarity
 export totalionchromatogram
 
+include("IO/InputOutput.jl")
+using .InputOutput
+
+export FileFormat
+export AgilentFID
+export ANDI
+export ChemStationMS
+export DelimitedText
+export Excel
+export MassHunterMS
+export ShimadzuMS
+export exportdata
+export importdata
+
 end

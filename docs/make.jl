@@ -13,14 +13,14 @@ makedocs(
             "man/basics.md",
             "man/retentionindices.md",
             "man/massspectra.md",
-            # "man/import.md",
-            # "man/export.md"
+            "man/import.md",
+            "man/export.md"
 			],
         "Internals" => Any[
             "internals/base.md",
             # "internals/deconvolution.md",
             # "internals/explorer.md",
-            # "internals/inputoutput.md"
+            "internals/inputoutput.md"
 			],
         # "Tutorials" => Any[
             # "tutorials/retentionindices.md"],
