@@ -46,6 +46,10 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
+      - name: Set non-graphical backend for GLMakie (headless)
+        run: |
+          echo 'using GLMakie; GLMakie.set_backend("GR")' >> $HOME/.julia/config/startup.jl
+
       - uses: julia-actions/julia-runtest@v1
 
       - uses: julia-actions/julia-processcoverage@v1
