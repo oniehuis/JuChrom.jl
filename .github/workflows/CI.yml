@@ -67,5 +67,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
 
-      - name: Clean up
+      - name: Clean up unused packages and artifacts
         run: julia -e 'using Pkg; Pkg.gc()'
