@@ -8,3 +8,10 @@ SafeTestsets = "1bc83da4-3b8d-516f-aca4-4fe02f6d838f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
+JuChrom = { path = "../" }
+
+[name]
+name = "JuChromTest"
+
+[uuid]
+uuid = "e9467ef8-e4e7-5192-8a1a-b1aee40e663a" # Replace with your JuChromTest UUID (can be any unique ID)
