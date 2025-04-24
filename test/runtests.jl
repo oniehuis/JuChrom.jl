@@ -1,5 +1,7 @@
 using SafeTestsets
 
+Coverage.begin_coverage()
+
 @safetestset "base ChromMS" begin include("base/ChromMS.jl") end
 @safetestset "base Chrom" begin include("base/Chrom.jl") end
 @safetestset "base AbstractChromMS" begin include("base/AbstractChromMS.jl") end
@@ -23,3 +25,5 @@ using SafeTestsets
 @safetestset "GUI Explorer" begin include("GUI/Explorer.jl") end
 @safetestset "GUI ExplorerData" begin include("GUI/ExplorerData.jl") end
 @safetestset "GUI makie_utilities" begin include("GUI/makie_utilities.jl") end
+
+Coverage.end_coverage()
