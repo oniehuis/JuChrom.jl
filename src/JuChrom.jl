@@ -98,4 +98,9 @@ export ShimadzuMS
 export exportdata
 export importdata
 
+include("GUI/Explorer.jl")
+using .Explorer
+
+export explorer
+
 end

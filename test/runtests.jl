@@ -20,6 +20,6 @@ using SafeTestsets
 
 # @safetestset "Deconvolution" begin include("deconv/deconv.jl") end
 
-# @safetestset "GUI Explorer" begin include("GUI/Explorer.jl") end
-# @safetestset "GUI ExplorerData" begin include("GUI/ExplorerData.jl") end
-# @safetestset "GUI makie_utilities" begin include("GUI/makie_utilities.jl") end
+@safetestset "GUI Explorer" begin include("GUI/Explorer.jl") end
+@safetestset "GUI ExplorerData" begin include("GUI/ExplorerData.jl") end
+@safetestset "GUI makie_utilities" begin include("GUI/makie_utilities.jl") end
