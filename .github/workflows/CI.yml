@@ -29,27 +29,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: julia-actions/setup-julia@v2
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-
-      - uses: julia-actions/cache@v2
+      
+      - name: Cache Julia packages
+        uses: julia-actions/cache@v2
 
       - uses: julia-actions/julia-buildpkg@v1
 
-      - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
-      - name: Install Julia dependencies
-        shell: julia --project=monorepo {0}
+      - name: Install Linux packages for GLMakie
+        run: | 
+          sudo apt-get update
+          sudo apt-get install -y \ 
+          xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
+          libxrandr-dev libxinerama-dev libxcursor-dev \
+          libxi-dev libxext-dev
+
+      - name: Set up testing environment
+        shell: julia --project=test-env {0}
         run: |
           using Pkg;
-          # dev mono repo versions
           pkg"dev ."
-      - name: Run the tests
-        #id: referencetests
-        #continue-on-error: true
+
+      - name: Run unit tests and collect coverage
         run: >
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=monorepo -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
+          julia --color=yes --project=test-env -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
 
       - uses: julia-actions/julia-processcoverage@v1
 
