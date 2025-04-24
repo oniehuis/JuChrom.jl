@@ -46,10 +46,15 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
-      - name: Run tests
+      # - name: Run tests
+      #   run: >
+      #     DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
+      #     julia --project -e 'using Pkg; Pkg.test()'
+
+      - name: Run tests with coverage
         run: >
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
-          julia --project -e 'using Pkg; Pkg.test()'
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24'
+          julia --project --code-coverage=lcov -e 'using JuChrom; include("test/runtests.jl")'
 
       - uses: julia-actions/julia-processcoverage@v1
 
