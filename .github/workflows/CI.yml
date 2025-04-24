@@ -48,9 +48,9 @@ jobs:
 
       # - uses: julia-actions/julia-runtest@v1
       
-      # Install CoverageTools in the /test environment
-      - name: Ensure CoverageTools is installed in /test
-        run: julia --project=test -e 'using Pkg; Pkg.add("CoverageTools")'
+      # # Install CoverageTools in the /test environment
+      # - name: Ensure CoverageTools is installed in /test
+      #   run: julia --project=test -e 'using Pkg; Pkg.add("CoverageTools")'
     
       - name: Run tests with coverage
         run: >
