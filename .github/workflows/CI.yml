@@ -34,32 +34,22 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
 
-      - name: Install Linux packages for GLMakie
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev \
-            libxi-dev libxext-dev xsettingsd x11-xserver-utils
-
       - uses: julia-actions/cache@v2
 
       - uses: julia-actions/julia-buildpkg@v1
 
-      - name: Create config directory for Julia if it doesn't exist
+      - run: sudo apt-get update && sudo apt-get install -y xorg-dev mesa-utils xvfb libgl1 freeglut3-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxext-dev
+      - name: Install Julia dependencies
+        shell: julia --project=monorepo {0}
         run: |
-          mkdir -p $HOME/.julia/config
-          echo "Checking config directory contents:"
-          ls -la $HOME/.julia/config
-
-      - name: Ensure startup.jl exists and append configuration
-        run: |
-          echo "Creating or verifying the startup.jl file"
-          touch $HOME/.julia/config/startup.jl
-          echo 'using GLMakie; GLMakie.set_backend("GR")' >> $HOME/.julia/config/startup.jl
-          cat $HOME/.julia/config/startup.jl  # Optional: check contents of the file
-
-      - uses: julia-actions/julia-runtest@v1
+          using Pkg;
+          # dev mono repo versions
+          pkg"dev ."
+      - name: Run the tests
+        #id: referencetests
+        #continue-on-error: true
+        run: >
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' julia --color=yes --project=monorepo -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
 
       - uses: julia-actions/julia-processcoverage@v1
 
