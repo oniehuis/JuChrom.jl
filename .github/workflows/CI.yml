@@ -46,19 +46,7 @@ jobs:
 
       - uses: julia-actions/julia-buildpkg@v1
 
-      # - uses: julia-actions/julia-runtest@v1
-      
-      # # Install CoverageTools in the /test environment
-      # - name: Ensure CoverageTools is installed in /test
-      #   run: julia --project=test -e 'using Pkg; Pkg.add("CoverageTools")'
-    
-      - name: Run tests with coverage
-        run: >
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24'
-          julia --project=test --code-coverage=all -e '
-            using Pkg;
-            Pkg.instantiate();
-            Pkg.test()'
+      - uses: julia-actions/julia-runtest@v1
 
       - uses: julia-actions/julia-processcoverage@v1
 
