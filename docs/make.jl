@@ -18,7 +18,7 @@ makedocs(
 			],
         "Internals" => Any[
             "internals/base.md",
-            # "internals/deconvolution.md",
+            "internals/deconvolution.md",
             "internals/explorer.md",
             "internals/inputoutput.md"
 			],
