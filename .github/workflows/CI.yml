@@ -52,7 +52,7 @@ jobs:
         shell: julia --project=test-env {0}
         run: |
           using Pkg;
-          pkg"dev ."
+          Pkg.develop(PackageSpec(path=pwd()))
 
       - name: Run unit tests and collect coverage
         run: >
