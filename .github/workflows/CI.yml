@@ -45,14 +45,19 @@ jobs:
       - uses: julia-actions/cache@v2
 
       - uses: julia-actions/julia-buildpkg@v1
-      
+
       - name: Create config directory for Julia if it doesn't exist
         run: |
           mkdir -p $HOME/.julia/config
-          
-      - name: Set non-graphical backend for GLMakie (headless)
+          echo "Checking config directory contents:"
+          ls -la $HOME/.julia/config
+
+      - name: Ensure startup.jl exists and append configuration
         run: |
+          echo "Creating or verifying the startup.jl file"
+          touch $HOME/.julia/config/startup.jl
           echo 'using GLMakie; GLMakie.set_backend("GR")' >> $HOME/.julia/config/startup.jl
+          cat $HOME/.julia/config/startup.jl  # Optional: check contents of the file
 
       - uses: julia-actions/julia-runtest@v1
 
