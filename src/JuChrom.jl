@@ -98,21 +98,21 @@ export ShimadzuMS
 export exportdata
 export importdata
 
-include("NNLS/NNLS.jl")
-using .NNLS
+# include("NNLS/NNLS.jl")
+# using .NNLS
 
 include("Deconvolution/Deconvolution.jl")
 using .Deconvolution
 
-export candidatepeaks
-export saveplot
-export deconvolutedtic
-export componentbins
-export componentpeakmodels
-export massspectra
+# export candidatepeaks
+# export saveplot
+# export deconvolutedtic
+# export componentbins
+# export componentpeakmodels
+# export massspectra
 export nextlocalmaximum
 export LocalMaxima
-export deconvolute
+# export deconvolute
 export sigma
 
 # include("GUI/Explorer.jl")
