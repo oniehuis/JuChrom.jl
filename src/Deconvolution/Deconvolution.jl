@@ -2,26 +2,26 @@ module Deconvolution
 
 using JuChrom
 using Unitful
-using CairoMakie
+# using CairoMakie
 
-import BasicInterpolators: CubicSplineInterpolator
+# import BasicInterpolators: CubicSplineInterpolator
 import Distributions: Normal, cquantile
-import .JuChrom: NNLS
-import Optim: minimizer, optimize
-import QuadGK: quadgk
+# import .JuChrom: NNLS
+# import Optim: minimizer, optimize
+# import QuadGK: quadgk
 import Statistics: mean, median
 
-export candidatepeaks
-export componentbins
-export componentpeakmodels
-export deconvolutedtic
-export deconvolutionwindows
+# export candidatepeaks
+# export componentbins
+# export componentpeakmodels
+# export deconvolutedtic
+# export deconvolutionwindows
 export LocalMaxima
 export lsfit
-export massspectra
+# export massspectra
 export nextlocalmaximum
-export paraamdis
-export saveplot
+# export paraamdis
+# export saveplot
 export stddev
 
 
