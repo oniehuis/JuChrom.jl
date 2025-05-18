@@ -115,9 +115,9 @@ export LocalMaxima
 export deconvolute
 export sigma
 
-include("GUI/Explorer.jl")
-using .Explorer
+# include("GUI/Explorer.jl")
+# using .Explorer
 
-export explorer
+# export explorer
 
 end

@@ -818,9 +818,8 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
         end
     else
         return rt::Unitful.Time -> begin
-            rt_ustripped = ustrip(timeunit, rt)
             if first(retentiontimes) ≤ rt ≤ last(retentiontimes)
-                S(rt_ustripped)
+                clamp(S(ustrip(timeunit, rt)), first(ris), last(ris))
             else
                 throw(ArgumentError("retention time outside range for calculating "
                     * "retention index"))
