@@ -27,13 +27,13 @@ jobs:
       - name: Cache Julia packages
         uses: julia-actions/cache@v2
       
-      - name: Install Linux packages for GLMakie
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev \
-            libxi-dev libxext-dev
+      # - name: Install Linux packages for GLMakie
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
+      #       libxrandr-dev libxinerama-dev libxcursor-dev \
+      #       libxi-dev libxext-dev
 
       - name: Install Julia dependencies (including PyCall)
         shell: julia --color=yes --project=docs {0}
