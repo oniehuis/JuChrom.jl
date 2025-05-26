@@ -54,6 +54,7 @@ export ionscantime
 export ionscantimeindex
 export ionscantimes
 export ionscantimeshift
+export jacobian_rt2ri
 export massspectrum
 export maxintensity
 export maxion
@@ -74,6 +75,7 @@ export retentiontimes
 export retentiontime
 export rimapper
 export rimapper!
+export rt2ri
 export runduration
 export scancount
 export scanduration

@@ -8,4 +8,5 @@ JuChrom.findclosest
 JuChrom.invert
 JuChrom.name
 JuChrom.rt2ri
+JuChrom.jacobian_rt2ri
 ```

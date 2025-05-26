@@ -64,21 +64,33 @@ struct PiecewiseLinear <: PolationMethod end
 
 
 struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
-    T3<:AbstractVector{<:Real}, T4<:PolationMethod, T5<:Union{<:PolationMethod, Nothing}
+    T3<:AbstractVector{<:Real}, T4<:PolationMethod, T5<:Union{<:PolationMethod, Nothing},
+    T6<:Function, T7<:Union{Function, Nothing}
     } <: AbstractRiMapper
     retentionindexname::T1
     retentiontimes::T2
     retentionindices::T3
     interpolationmethod::T4
     extrapolationmethod::T5
-    rt2ri::Function
+    rt2ri::T6
+    jacobian_rt2ri::T7
     metadata::Dict{Any, Any}
-    function RiMapper{T1, T2, T3, T4, T5}(retentionindexname::T1, retentiontimes::T2, 
-        retentionindices::T3, interpolationmethod::T4, extrapolationmethod::T5, 
-        rt2ri::Function, metadata::Dict
-        ) where {T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time}, 
-        T3<:AbstractVector{<:Real}, T4<:PolationMethod, 
-        T5<:Union{<:PolationMethod, Nothing}}
+    function RiMapper{T1, T2, T3, T4, T5, T6, T7}(
+        retentionindexname::T1,
+        retentiontimes::T2, 
+        retentionindices::T3,
+        interpolationmethod::T4,
+        extrapolationmethod::T5,
+        rt2ri::T6,
+        jacobian_rt2ri::T7,
+        metadata::Dict) where {
+            T1<:AbstractString,
+            T2<:AbstractVector{<:Unitful.Time}, 
+            T3<:AbstractVector{<:Real},
+            T4<:PolationMethod, 
+            T5<:Union{<:PolationMethod, Nothing},
+            T6<:Function,
+            T7<:Union{Function, Nothing}}
 
         length(retentionindexname) > 0 || throw(ArgumentError(
             "no retention index name provided"))
@@ -96,7 +108,7 @@ struct RiMapper{T1<:AbstractString, T2<:AbstractVector{<:Unitful.Time},
             "retention indices not in ascending order"))
 
         new(retentionindexname, retentiontimes, retentionindices, interpolationmethod, 
-            extrapolationmethod, rt2ri, metadata)
+            extrapolationmethod, rt2ri, jacobian_rt2ri, metadata)
     end
 end
 
@@ -253,10 +265,11 @@ function RiMapper(
         T4<:NaturalCubicBSpline,
         T5<:Linear}
 
-    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=true, 
-        force=force(interpolationmethod))
-    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
-        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+    rt2ri, jacobian_rt2ri = bsplineinterpolation(retentiontimes, retentionindices, 
+        extrapolation=true, force=force(interpolationmethod))
+    RiMapper{T1, T2, T3, T4, T5, typeof(rt2ri), typeof(jacobian_rt2ri)}(retentionindexname, 
+        retentiontimes, retentionindices, interpolationmethod, extrapolationmethod, 
+        rt2ri, jacobian_rt2ri, metadata)
 end
 
 
@@ -274,10 +287,11 @@ function RiMapper(
         T4<:NaturalCubicBSpline,
         T5<:Nothing}
 
-    rt2ri = bsplineinterpolation(retentiontimes, retentionindices, extrapolation=false, 
-        force=force(interpolationmethod))
-    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
-        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+    rt2ri, jacobian_rt2ri = bsplineinterpolation(retentiontimes, retentionindices, 
+        extrapolation=false, force=force(interpolationmethod))
+    RiMapper{T1, T2, T3, T4, T5, typeof(rt2ri), typeof(jacobian_rt2ri)}(retentionindexname, 
+        retentiontimes, retentionindices, interpolationmethod, extrapolationmethod, rt2ri, 
+        jacobian_rt2ri, metadata)
 end
 
 
@@ -297,8 +311,9 @@ function RiMapper(
 
     rt2ri = piecewiselinearinterpolation(retentiontimes, retentionindices, 
         extrapolation=true)
-    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
-        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+    RiMapper{T1, T2, T3, T4, T5, typeof(rt2ri), Nothing}(retentionindexname, retentiontimes, 
+        retentionindices, interpolationmethod, extrapolationmethod, rt2ri, nothing, 
+        metadata)
 end
 
 
@@ -318,9 +333,28 @@ function RiMapper(
 
     rt2ri = piecewiselinearinterpolation(retentiontimes, retentionindices, 
         extrapolation=false)
-    RiMapper{T1, T2, T3, T4, T5}(retentionindexname, retentiontimes, retentionindices, 
-        interpolationmethod, extrapolationmethod, rt2ri, metadata)
+    RiMapper{T1, T2, T3, T4, T5, typeof(rt2ri), Nothing}(retentionindexname, retentiontimes, 
+        retentionindices, interpolationmethod, extrapolationmethod, rt2ri, nothing, 
+        metadata)
 end
+
+
+"""
+    jacobian_rt2ri(mapper::RiMapper)
+
+Return the derivative function of the applied interpolation method, if it exists.
+
+See also [`RiMapper`](@ref), [`retentionindex`](@ref).
+
+# Example
+```jldoctest
+julia> ld = RiMapper("Kovats", (1:5)u"minute", 1000:1000:5000);
+
+julia> jacobian_rt2ri(ld)(1.9u"minute") ≈ 999.9999999999998
+true
+```
+"""
+jacobian_rt2ri(mapper::RiMapper) = mapper.jacobian_rt2ri
 
 
 """
@@ -756,7 +790,7 @@ See also [`scantimes`](@ref), [`retentionindices`](@ref).
 ```jldoctest
 julia> rts, ris = (1:8)*u"s", [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400];
 
-julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris);
+julia> rt2ri, jacobian_rt2ri = JuChrom.bsplineinterpolation(rts, ris);
 
 julia> rt2ri(1u"s") ≈ 1000.0
 true
@@ -771,7 +805,7 @@ julia> rt2ri(9.1u"s") ≈ 7950.0
 ERROR: ArgumentError: retention time outside range for calculating retention index
 [...]
 
-julia> rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=true);
+julia> rt2ri, jacobian_rt2ri = JuChrom.bsplineinterpolation(rts, ris; extrapolation=true);
 
 julia> rt2ri(9.1u"s") ≈ 8053.1226382686355
 true
@@ -803,6 +837,9 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     S = BSplineKit.interpolate(rts_ustripped, ris, BSplineKit.BSplineOrder(4),
         BSplineKit.Natural()) 
 
+    # Derivative spline
+    dS = BSplineKit.Derivative(1) * S
+
     # Check for critical points
     ϵ = (maximum(retentionindices) - minimum(retentionindices)) * 1e-10
     cpoints = criticalpoints(S, rts_ustripped, ϵ)
@@ -812,12 +849,16 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
     end
 
     if extrapolation
-        return rt::Unitful.Time -> begin
+        rt2ri = rt::Unitful.Time -> begin
             rt_ustripped = ustrip(timeunit, rt)
             BSplineKit.extrapolate(S, BSplineKit.Linear())(rt_ustripped)
         end
+        jacobian_rt2ri = rt -> begin
+            rt_ustripped = ustrip(timeunit, rt)
+            BSplineKit.extrapolate(dS, BSplineKit.Linear())(rt_ustripped)
+        end
     else
-        return rt::Unitful.Time -> begin
+        rt2ri = rt::Unitful.Time -> begin
             if first(retentiontimes) ≤ rt ≤ last(retentiontimes)
                 clamp(S(ustrip(timeunit, rt)), first(ris), last(ris))
             else
@@ -825,7 +866,15 @@ function bsplineinterpolation(retentiontimes::AbstractVector{<:Unitful.Time},
                     * "retention index"))
             end
         end
+        jacobian_rt2ri = rt::Unitful.Time -> begin
+            if first(retentiontimes) ≤ rt ≤ last(retentiontimes)
+                dS(ustrip(timeunit, rt))
+            else
+                throw(ArgumentError("retention time outside range for derivative calculation"))
+            end
+        end
     end
+    rt2ri, jacobian_rt2ri
 end
 
 

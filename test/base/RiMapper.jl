@@ -328,7 +328,7 @@ end
 # retentionindices::AbstractVector{<:Real}; extrapolation::Bool=true)
 ############################################################################################
 @testset "bsplineinterpolation" begin
-    rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+    rt2ri, jacobian_rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
         [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400])
     @test 1000.0 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
@@ -337,7 +337,7 @@ end
     @test_throws ArgumentError rt2ri(0.5u"s")
     @test [1000.0, 1800.0] ≈ rt2ri.([1, 2]u"s")
 
-    rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
+    rt2ri, jacobian_rt2ri = JuChrom.bsplineinterpolation([1, 2, 3, 4, 5, 6, 7, 8]*u"s", 
         [1000, 1800, 3050, 3800, 5500, 6600, 6900, 7400]; extrapolation=true)
     @test 1000.0 ≈ rt2ri(1u"s")
     @test 1333.7469941600825 ≈ rt2ri(1.5u"s")
