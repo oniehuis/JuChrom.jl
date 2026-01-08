@@ -82,11 +82,11 @@ meters to 1/meter).
 # Example
 ```jldoctest
 julia> JuChrom.inverse(u"m")
-m⁻¹
+m^-1
 julia> JuChrom.inverse(u"kg")
-kg⁻¹
+kg^-1
 julia> JuChrom.inverse(u"s")
-s⁻¹
+s^-1
 ```
 """
 inverse(u::Unitful.Units) = unit(1.0 / u)
