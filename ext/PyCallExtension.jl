@@ -5,9 +5,11 @@ using JuChrom
 
 const ROOT = joinpath(@__DIR__, "..")
 
+include(joinpath(ROOT, "src", "IO", "Loaders", "ShimadzuMSLoader.jl"))
+
 function __init__()
     if !isdefined(JuChrom, :ShimadzuMSLoader)
-        Base.include(JuChrom, joinpath(ROOT, "src", "IO", "Loaders", "ShimadzuMSLoader.jl"))
+        @eval JuChrom const ShimadzuMSLoader = $(ShimadzuMSLoader)
     end
 end
 
