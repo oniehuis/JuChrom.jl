@@ -28,19 +28,19 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                 "man/Scans.md",
                 "man/ScanSeries.md",
                 "man/ScanMatrices.md",
-                "man/convert.md",
                 "man/loaders.md",
+                "man/convert.md",
+                "man/transform.md",
                 "man/retention_mapper.md",
-                "man/baseline.md",
                 "man/quadvar_model.md",
-                "man/alignment.md",
-                "man/transform.md"
+                "man/baseline.md",
+                "man/alignment.md"
 			    ],
             "Internals" => Any[
                 "internals/transform.md",
                 "internals/utils.md"
 		        ],
-            # "Index" => "man/register.md"
+            "Index" => "man/register.md"
         ]
     )
 end
