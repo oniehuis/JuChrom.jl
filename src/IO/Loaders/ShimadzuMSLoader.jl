@@ -17,9 +17,8 @@ function __init__()
 end
 
 # ── Internal Project Imports ─────────────────────────────────────────────────
-import ..JuChrom: ChromScan, MassScan, ChromScanSeries, MassScanSeries
-import ..InputOutput: FileCorruptionError, FileFormatError, 
-    MissingFileError
+import JuChrom: ChromScan, MassScan, ChromScanSeries, MassScanSeries
+import JuChrom.InputOutput: FileCorruptionError, FileFormatError, MissingFileError
 
 # ── Public API ───────────────────────────────────────────────────────────────
 
