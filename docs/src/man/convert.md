@@ -1,4 +1,4 @@
-# Loader
+# Convert
 
 ```@docs
 JuChrom.mzchrom

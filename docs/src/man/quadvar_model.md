@@ -1,4 +1,4 @@
-# Alignment
+# Quadratic Variance Model
 
 ```@docs
 fitquadvarmodel

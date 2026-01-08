@@ -1,4 +1,4 @@
-# Loader
+# Loaders
 
 ```@docs
 JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec
