@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Retention Mapper · JuChrom</title><meta name="title" content="Retention Mapper · JuChrom"/><meta property="og:title" content="Retention Mapper · JuChrom"/><meta property="twitter:title" content="Retention Mapper · JuChrom"/><meta name="description" content="Documentation for JuChrom."/><meta property="og:description" content="Documentation for JuChrom."/><meta property="twitter:description" content="Documentation for JuChrom."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="JuChrom logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">JuChrom</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><span class="tocitem">Manual</span><ul><li><a class="tocitem" href="../Scans/">Scans</a></li><li><a class="tocitem" href="../ScanSeries/">ScansSeries</a></li><li><a class="tocitem" href="../ScanMatrices/">ScanMatrices</a></li><li><a class="tocitem" href="../convert/">Loader</a></li><li><a class="tocitem" href="../loader/">Loader</a></li><li><a class="tocitem" href="../jld2/">JLD2 Input/Output Support</a></li><li class="is-active"><a class="tocitem" href>Retention Mapper</a></li><li><a class="tocitem" href="../baseline/">Scans</a></li><li><a class="tocitem" href="../quadvar_model/">Alignment</a></li><li><a class="tocitem" href="../alignment/">Alignment</a></li><li><a class="tocitem" href="../transform/">Transform</a></li></ul></li><li><span class="tocitem">Internals</span><ul><li><a class="tocitem" href="../../internals/transform/">Transform</a></li><li><a class="tocitem" href="../../internals/utils/">Utils</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Manual</a></li><li class="is-active"><a href>Retention Mapper</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Retention Mapper</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/oniehuis/JuChrom.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/oniehuis/JuChrom.jl/blob/main/docs/src/man/retention_mapper.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Retention-Mapper"><a class="docs-heading-anchor" href="#Retention-Mapper">Retention Mapper</a><a id="Retention-Mapper-1"></a><a class="docs-heading-anchor-permalink" href="#Retention-Mapper" title="Permalink"></a></h1><article><details class="docstring" open="true"><summary id="JuChrom.applymap"><a class="docstring-binding" href="#JuChrom.applymap"><code>JuChrom.applymap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">applymap(rm::RetentionMapper, retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}; 
+         domain_boundary_threshold::Real=1e-8,
+         warn::Bool=false, 
+         unit::Union{&lt;:Nothing, Unitful.Units}=rm.rB_unit)</code></pre><p>Apply the fitted mapping to transform a retention value from domain A to domain B using the  fitted spline within the <code>RetentionMapper</code>.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: A fitted retention mapper containing the spline and normalization  parameters.</li><li><code>retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}</code>: The retention value to be mapped from  domain A to domain B.</li><li><code>domain_boundary_threshold::Real=1e-8</code>: Threshold for determining when to warn about extrapolation beyond the spline domain.</li><li><code>warn::Bool=false</code>: If <code>true</code>, logs a warning when extrapolating beyond the spline domain.</li><li><code>unit::Union{&lt;:Nothing, Unitful.Units}=rm.rB_unit</code>: Desired output unit (defaults to the  unit used for domain B during fitting).</li></ul><p><strong>Behavior</strong></p><ul><li>For inputs outside the spline domain, linear extrapolation is performed using the  spline&#39;s first derivative at the boundary</li><li>Returns the predicted output value on the original scale with appropriate units</li></ul><p>See also <a href="#JuChrom.rawapplymap"><code>rawapplymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; applymap(mapper, 5.0u&quot;minute&quot;) ≈ 338.71144090340465u&quot;Th&quot;
+true
+
+julia&gt; applymap(mapper, 0.5u&quot;minute&quot;, warn=true) ≈ 44.68816899287087u&quot;Th&quot;
+[ Info: rA=0.5 is below the spline domain boundary (rA_min=1.2): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L46-L87">source</a></section><section><div><pre><code class="language-julia hljs">applymap(rmap::RetentionMapper, series::MassScanSeries;
+         domain_boundary_threshold::Real=1e-8,
+         unit::Union{&lt;:Nothing, Unitful.Units}=rm.rB_unit,
+         warn::Bool=false) -&gt; MassScanSeries</code></pre><p>Apply retention mapping <code>rmap</code> to <code>series</code>, transforming retention coordinates and scaling  intensities by the Jacobian to preserve peak areas.</p><p>For parameter descriptions and basic behavior, see <a href="#JuChrom.applymap"><code>applymap</code></a> for single retention  values.</p><p><strong>Returns</strong></p><ul><li>New <code>MassScanSeries</code> with mapped retentions and Jacobian-corrected intensities</li></ul><p><strong>Important Notes</strong></p><p><code>applymap</code> treats intensities as densities with respect to retention coordinates. Monotonic  reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your  data are integrated counts per scan with variable dwell times, convert to densities first  using dwell time before calling <code>applymap</code>. Only numerical values are transformed — units  remain unchanged. If intensities are densities with retention units in the denominator,  handle unit transformation separately.</p><p><strong>Examples</strong></p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L111-L135">source</a></section><section><div><pre><code class="language-julia hljs">applymap(rmap::RetentionMapper,
+         msm::MassScanMatrix;
+         domain_boundary_threshold::Real=1e-8,
+         unit=rmap.rB_unit,
+         warn::Bool=false)
+    -&gt; MassScanMatrix</code></pre><p>Apply retention mapper <code>rmap</code> to <code>msm</code>, transforming retention coordinates and scaling intensities by the Jacobian to preserve peak areas.</p><p>For additional parameter descriptions and basic behavior, see <a href="#JuChrom.applymap"><code>applymap</code></a> for  single retention values.</p><p><strong>Returns</strong></p><ul><li>New <code>MassScanMatrix</code> with mapped retentions and Jacobian-corrected intensities</li></ul><p><strong>Important Notes</strong></p><p><code>applymap</code> treats intensities as densities with respect to retention coordinates. Monotonic  reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your  data are integrated counts per scan with variable dwell times, convert to densities first  using dwell time before calling <code>applymap</code>. Only numerical values are transformed — units  remain unchanged. If intensities are densities with retention units in the denominator,  handle unit transformation separately.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L307-L331">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.derivinvmap"><a class="docstring-binding" href="#JuChrom.derivinvmap"><code>JuChrom.derivinvmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">derivinvmap(rm::RetentionMapper, retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}};
+            rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
+            warn::Bool=false) where {T1&lt;:Union{Nothing, Unitful.Units}, 
+            T2&lt;:Union{Nothing, Unitful.Units}, T3&lt;:Real}</code></pre><p>Compute the derivative of the inverse mapping, i.e. d(A)/d(B), at a given output value  (domain B).</p><p>This function computes the local derivative <code>d(A)/d(B)</code> at a given output value using  the inverse of the normalized B-spline approximation stored in the <code>RetentionMapper</code>.  This derivative describes how a small change in the output (domain B) would translate  back to a change in the input (domain A), under the smoothed, monotonic mapping. If the  output value is outside the supported domain, extrapolation is performed using the boundary  derivative. The derivative is adjusted to account for the normalization scales applied  during spline fitting.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The retention mapper containing spline and scaling parameters.</li><li><code>retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}</code>: Output value (domain B) for which the  inverse derivative is computed.</li><li><code>rA_unit</code>: Desired input unit for the derivative (defaults to the domain A unit used in  fitting).</li><li><code>rB_unit</code>: Desired output unit for the derivative (defaults to the domain B unit used in  fitting).</li><li><code>tol::Real=1e-8</code>: Tolerance for root-finding when locating the corresponding input value.</li><li><code>warn::Bool=false</code>: Whether to emit informational messages when extrapolating outside the  spline domain.</li></ul><p><strong>Returns</strong></p><p>The derivative d(A)/d(B) at the specified output value, with units of <code>rA_unit/rB_unit</code>.</p><p><strong>Notes</strong></p><ul><li>For retention time/retention index mappings, this gives the local &quot;time per retention  index unit&quot; rate.</li><li>This is the reciprocal of the forward derivative from <code>derivmap</code>.</li><li>The derivative is always positive due to the monotonicity constraint.</li><li>Root-finding is used to locate the corresponding input value before computing the  derivative.</li></ul><p>See also <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; derivinvmap(mapper, 350.0u&quot;Th&quot;) ≈ 0.02857099580171666u&quot;minute/Th&quot;
+true
+
+julia&gt; derivinvmap(mapper, 350.0)
+ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. Expected units compatible with Th.
+
+julia&gt; test_indices = [250.0, 600.0]u&quot;Th&quot;;
+
+julia&gt; derivinvmap.(mapper, test_indices) ≈ [0.015606366497378708, 0.03240806524912834]u&quot;minute/Th&quot;
+true
+
+julia&gt; derivinvmap(mapper, 350.0u&quot;Th&quot;, rA_unit=u&quot;s&quot;, rB_unit=u&quot;kTh&quot;) ≈ 1714.2597481029995u&quot;s/kTh&quot;
+true
+
+julia&gt; derivinvmap(mapper, 50.0u&quot;Th&quot;, warn=true) ≈ 0.012655503630152843u&quot;minute/Th&quot;
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L442-L511">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.derivmap"><a class="docstring-binding" href="#JuChrom.derivmap"><code>JuChrom.derivmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">derivmap(rm::RetentionMapper, retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}};
+         rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
+         T1&lt;:Union{Nothing, Unitful.Units}, T2&lt;:Union{Nothing, Unitful.Units}}</code></pre><p>Compute the first derivative of the fitted mapping with respect to the input (domain A)  at a given input value.</p><p>This function evaluates the derivative of the fitted monotonic B-spline, extrapolating  using boundary derivatives if the input lies outside the spline domain. The derivative is  adjusted to account for the normalization scales applied during spline fitting.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The retention mapper containing spline and scaling parameters.</li><li><code>retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}</code>: Input value (domain A) at which to  evaluate the derivative.</li><li><code>rA_unit</code>: Desired input unit for the derivative (defaults to the domain A unit used in  fitting).</li><li><code>rB_unit</code>: Desired output unit for the derivative (defaults to the domain B unit used in  fitting).</li><li><code>warn::Bool=false</code>: Whether to emit informational messages when extrapolating outside the  spline domain.</li></ul><p><strong>Returns</strong></p><p>The derivative d(B)/d(A) at the specified input value, with units of <code>rB_unit/rA_unit</code>.</p><p><strong>Notes</strong></p><ul><li>For retention time/retention index mappings, this gives the local &quot;retention index per  unit time&quot; rate.</li><li>The derivative is always positive due to the monotonicity constraint, indicating the  rate of increase.</li><li>Extrapolation uses constant derivatives at the boundaries, ensuring smooth behavior  outside the fitted domain.</li></ul><p>See also <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; derivmap(mapper, 5.0u&quot;minute&quot;) ≈ 37.42885149584893u&quot;minute^-1&quot;
+true
+
+julia&gt; test_times = [3.0, 11.0]u&quot;minute&quot;;
+
+julia&gt; derivmap.(mapper, test_times) ≈ [67.10235298491122, 34.639458067769134]u&quot;minute^-1&quot;
+true
+
+julia&gt; derivmap(mapper, 5.0u&quot;minute&quot;, rA_unit=u&quot;s&quot;) ≈ 0.6238141915974822u&quot;s^-1&quot;
+true
+
+julia&gt; derivmap(mapper, 0.8u&quot;minute&quot;, warn=true) ≈ 79.01700550402535u&quot;minute^-1&quot;
+[ Info: rA=0.8 is below the spline domain boundary (rA_min=1.2): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L608-L668">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.extras"><a class="docstring-binding" href="#JuChrom.extras"><code>JuChrom.extras</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">extras(msm::AbstractMassScanMatrix) -&gt; Dict{String, Any}</code></pre><p>Returns the unstructured extras associated with the mass scan matrix.</p><p>This dictionary may contain arbitrary key-value pairs that are not captured by the  structured fields such as <code>instrument</code>, <code>acquisition</code>, <code>user</code>, or <code>sample</code>.</p><p><strong>Arguments</strong></p><ul><li><code>msm</code>: A concrete subtype of <code>AbstractMassScanMatrix</code>.</li></ul><p><strong>Returns</strong></p><p>A <code>Dict{String, Any}</code> containing unstructured metadata.</p><p>See also <a href="../ScanMatrices/#JuChrom.AbstractMassScanMatrix"><code>AbstractMassScanMatrix</code></a>, <a href="../ScanMatrices/#JuChrom.MassScanMatrix"><code>MassScanMatrix</code></a>, <a href="../ScanMatrices/#JuChrom.acquisition-Tuple{AbstractMassScanMatrix}"><code>acquisition</code></a>,  <a href="../ScanMatrices/#JuChrom.instrument-Tuple{AbstractMassScanMatrix}"><code>instrument</code></a>, <a href="../ScanMatrices/#JuChrom.sample-Tuple{AbstractMassScanMatrix}"><code>sample</code></a>, <a href="../ScanMatrices/#JuChrom.user-Tuple{AbstractMassScanMatrix}"><code>user</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; msm = MassScanMatrix([1.0, 2.0]u&quot;s&quot;, [100.0, 200.0], [1.0 2.0; 3.0 4.0]; 
+                             extras=Dict(&quot;run&quot; =&gt; 42, &quot;comment&quot; =&gt; &quot;Baseline drift&quot;));
+
+julia&gt; extras(msm)
+Dict{String, Any} with 2 entries:
+  &quot;run&quot;     =&gt; 42
+  &quot;comment&quot; =&gt; &quot;Baseline drift&quot;
+
+julia&gt; extras(msm)[&quot;qc_passed&quot;] = true;
+
+julia&gt; extras(msm)
+Dict{String, Any} with 3 entries:
+  &quot;qc_passed&quot; =&gt; true
+  &quot;run&quot;       =&gt; 42
+  &quot;comment&quot;   =&gt; &quot;Baseline drift&quot;</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/core_getters/matrices.jl#L37-L72">source</a></section><section><div><pre><code class="language-julia hljs">extras(series::AbstractScanSeries) -&gt; Dict{String, Any}</code></pre><p>Returns the unstructured extras associated with the scan series.</p><p>This dictionary may contain arbitrary key-value pairs that are not captured by the  structured fields such as <code>instrument</code>, <code>acquisition</code>, <code>user</code>, or <code>sample</code>.</p><p><strong>Arguments</strong></p><ul><li><code>series</code>: A concrete subtype of <code>AbstractScanSeries</code>.</li></ul><p><strong>Returns</strong></p><p>A <code>Dict{String, Any}</code> containing unstructured metadata.</p><p>See also <a href="../ScanMatrices/#JuChrom.instrument-Tuple{AbstractMassScanMatrix}"><code>instrument</code></a>, <a href="../ScanMatrices/#JuChrom.acquisition-Tuple{AbstractMassScanMatrix}"><code>acquisition</code></a>, <a href="../ScanMatrices/#JuChrom.user-Tuple{AbstractMassScanMatrix}"><code>user</code></a>, <a href="../ScanMatrices/#JuChrom.sample-Tuple{AbstractMassScanMatrix}"><code>sample</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; s = [ChromScan(1.0u&quot;s&quot;, 10.0u&quot;V&quot;), ChromScan(2.0u&quot;s&quot;, 200.0u&quot;V&quot;)];
+
+julia&gt; series = ChromScanSeries(s, extras=Dict(&quot;run&quot;=&gt;42, &quot;comment&quot;=&gt;&quot;Baseline drift&quot;));
+
+julia&gt; extras(series)
+Dict{String, Any} with 2 entries:
+  &quot;run&quot;     =&gt; 42
+  &quot;comment&quot; =&gt; &quot;Baseline drift&quot;
+
+julia&gt; extras(series)[&quot;qc_passed&quot;] = true;
+
+julia&gt; extras(series)
+Dict{String, Any} with 3 entries:
+  &quot;qc_passed&quot; =&gt; true
+  &quot;run&quot;       =&gt; 42
+  &quot;comment&quot;   =&gt; &quot;Baseline drift&quot;</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/core_getters/series.jl#L37-L72">source</a></section><section><div><pre><code class="language-julia hljs">extras(rm::AbstractRetentionMapper)</code></pre><p>Retrieve the metadata dictionary associated with the retention mapper.</p><p>The metadata can store additional information about the mapper, such as the calibration  file name, creation date, experimental conditions, or other user-defined properties  that were stored during mapper creation or added subsequently.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The retention mapper from which to retrieve metadata.</li></ul><p><strong>Returns</strong></p><p>A <code>Dict{String, Any}</code> containing the metadata key-value pairs. Returns an empty  dictionary if no metadata was stored.</p><p><strong>Notes</strong></p><ul><li>Metadata is stored as a mutable dictionary and can be modified after mapper creation.</li><li>Common metadata keys include &quot;cal<em>file&quot;, &quot;creation</em>date&quot;, &quot;instrument&quot;, etc.</li><li>The metadata does not affect the mathematical mapping operations.</li></ul><p>See also <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+       mapper = fitmap(retention_times, retention_indices, 
+                       extras=Dict(&quot;cal_file&quot; =&gt; &quot;test.cal&quot;, &quot;instrument&quot; =&gt; &quot;GC-MS&quot;));
+
+julia&gt; extras(mapper)
+Dict{String, Any} with 2 entries:
+  &quot;cal_file&quot;   =&gt; &quot;test.cal&quot;
+  &quot;instrument&quot; =&gt; &quot;GC-MS&quot;
+
+julia&gt; extras(mapper)[&quot;cal_file&quot;]
+&quot;test.cal&quot;
+
+julia&gt; extras(mapper)[&quot;analysis_date&quot;] = &quot;2025-06-28&quot;;
+
+julia&gt; extras(mapper)
+Dict{String, Any} with 3 entries:
+  &quot;cal_file&quot;      =&gt; &quot;test.cal&quot;
+  &quot;instrument&quot;    =&gt; &quot;GC-MS&quot;
+  &quot;analysis_date&quot; =&gt; &quot;2025-06-28&quot;</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L178-L227">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.fitmap"><a class="docstring-binding" href="#JuChrom.fitmap"><code>JuChrom.fitmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">fitmap(retentions_A::AbstractVector{&lt;:Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}},
+       retentions_B::AbstractVector{&lt;:Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}};
+       smoothness_penalty_n::Integer=100,
+       monotonicity_grid_size::Integer=10^5,
+       λ_max::Real=1e2,
+       λ_min::Real=1e-20,
+       logλ_tolerance::Real=1e-4,
+       max_lambda_iters::Integer=100,
+       extras::AbstractDict{&lt;:AbstractString, &lt;:Any}=Dict{String, Any}())</code></pre><p>Constructs a strictly increasing, smooth cubic B-spline that maps values from domain A  (<code>retentions_A</code>) to domain B (<code>retentions_B</code>), subject to a monotonicity constraint and  smoothness penalty.</p><p>The fitted spline minimizes a regularized least-squares objective: data fidelity (squared  residuals) and a smoothness penalty (second derivative norm), subject to non-negativity of  the first derivative.</p><p>The smoothing parameter <code>λ</code> is automatically determined via binary search: it selects the  smallest value that yields a monotonic spline while fitting the data as closely as possible,  thus ensuring both stability and high fidelity without introducing spurious oscillations.</p><p>This method offers a principled and robust way to construct a physically meaningful mapping between any two monotonically related quantities:</p><ul><li><p><strong>Monotonicity enforcement</strong> ensures the fitted function is strictly increasing, which is appropriate when the relationship between the two variables is expected to be monotonic.</p></li><li><p><strong>Automatic regularization strength selection</strong> identifies the highest level of smoothing that still maintains monotonicity, balancing accurate data representation with robustness against overfitting and numerical instability.</p></li><li><p><strong>Invertibility</strong> is guaranteed due to strict monotonicity, enabling reliable backward mapping from domain B to domain A.</p></li><li><p><strong>Numerical robustness</strong> is achieved through convex optimization over normalized data, ensuring convergence and stability across a wide range of inputs.</p></li></ul><p><strong>Arguments</strong></p><ul><li><code>retentions_A::AbstractVector{&lt;:Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}}</code>: Input domain values  (strictly increasing, same units if using Unitful quantities).</li><li><code>retentions_B::AbstractVector{&lt;:Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}}</code>: Corresponding output  domain values.</li><li><code>smoothness_penalty_n::Integer=100</code>: Number of evaluation points for curvature penalty.</li><li><code>monotonicity_grid_size::Integer=10^5</code>: Number of grid points to enforce monotonicity.</li><li><code>λ_max::Real=1e2</code>: Upper bound for smoothness parameter search.</li><li><code>λ_min::Real=1e-20</code>: Lower bound for smoothness parameter search.</li><li><code>logλ_tolerance::Real=1e-4</code>: Tolerance for log₁₀(λ) convergence in binary search.</li><li><code>max_lambda_iters::Integer=100</code>: Maximum number of iterations for λ search.</li><li><code>extras::AbstractDict{&lt;:AbstractString, &lt;:Any}</code>: Optional metadata to attach to the  mapper.</li></ul><p><strong>Returns</strong></p><p>A <code>RetentionMapper</code> object containing the fitted monotonic spline and associated metadata.</p><p>See also <a href="#JuChrom.extras"><code>extras</code></a>, <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.rawmapmin"><code>rawmapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>,  <a href="#JuChrom.rawmapmax"><code>rawmapmax</code></a>, <a href="#JuChrom.invmapmin"><code>invmapmin</code></a>, <a href="#JuChrom.rawinvmapmin"><code>rawinvmapmin</code></a>, <a href="#JuChrom.invmapmax"><code>invmapmax</code></a>,  <a href="#JuChrom.rawinvmapmax"><code>rawinvmapmax</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];
+
+julia&gt; mapper = fitmap(retention_times, retention_indices, 
+                      extras=Dict(&quot;instrument&quot; =&gt; &quot;GC-MS&quot;, &quot;column&quot; =&gt; &quot;DB-5&quot;));
+
+julia&gt; applymap(mapper, 5.0u&quot;minute&quot;) ≈ 338.71144090340465
+true
+
+julia&gt; invmap(mapper, 150) ≈ 1.8368240074613091u&quot;minute&quot;
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/fit.jl#L4-L80">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.invmap"><a class="docstring-binding" href="#JuChrom.invmap"><code>JuChrom.invmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">invmap(rm::RetentionMapper, retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}};
+       unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
+       ) where {T1&lt;:Unitful.TimeUnits, T2&lt;:Real}</code></pre><p>Invert the fitted mapping by computing the input value (domain A) corresponding to a given  output value (domain B).</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The fitted retention mapper containing the spline and scaling info.</li><li><code>retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}</code>: Output value from domain B to invert back  to domain A.</li><li><code>unit</code>: Desired output unit (defaults to the unit used for domain A during fitting).</li><li><code>tol::Real=1e-8</code>: Tolerance for root-finding (default 1e-8).</li><li><code>warn::Bool=false</code>: If <code>true</code>, logs warnings when extrapolating beyond spline domain.</li></ul><p><strong>Behavior</strong></p><ul><li>Normalizes the input value to the spline domain.</li><li>Performs linear extrapolation beyond the spline range using derivative at the boundaries.</li><li>Uses numerical root-finding (bisection method) within the spline domain for precise  inversion.</li><li>Converts result back to original domain A scale with requested units.</li></ul><p>This function leverages the strict monotonicity of the fitted spline to provide reliable  inverse mapping, enabling bidirectional conversion between the two domains.</p><p>See also <a href="#JuChrom.rawinvmap"><code>rawinvmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; invmap(mapper, 350.0u&quot;Th&quot;) ≈ 5.312425320906996u&quot;minute&quot;
+true
+
+julia&gt; invmap(mapper, 350.0)
+ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. Expected units compatible with Th.
+[...]
+
+julia&gt; test_indices = [250.0u&quot;Th&quot;, 450.0u&quot;Th&quot;];
+
+julia&gt; invmap.(mapper, test_indices) ≈ [3.2283166885897936, 8.08686182716771]u&quot;minute&quot;
+true
+
+julia&gt; invmap(mapper, 400.0u&quot;Th&quot;, unit=u&quot;s&quot;) ≈ 407.99982102982375u&quot;s&quot;
+true
+
+julia&gt; invmap(mapper, 50.0u&quot;Th&quot;, warn=true) ≈ 0.5672238965934812u&quot;minute&quot;
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L773-L829">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.invmapmax"><a class="docstring-binding" href="#JuChrom.invmapmax"><code>JuChrom.invmapmax</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">invmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the maximum predicted value of the output domain (domain B) for the fitted  retention mapper.</p><p>This corresponds to the predicted output value at the maximum input value and represents  the upper bound of the output range that can be reliably inverted back to input values. For unitful mappers, returns the value with units; for unitless mappers, returns the raw  numeric value.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to  the requested unit.</li></ul><p><strong>Returns</strong></p><p>The maximum predicted output value. For unitful mappers, returns a <code>Quantity</code> with  appropriate units (converted if <code>unit</code> is specified). For unitless mappers, returns the  raw numeric value.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B maximum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawinvmapmax"><code>rawinvmapmax</code></a>, <a href="#JuChrom.invmapmin"><code>invmapmin</code></a>, <a href="#JuChrom.rawinvmapmin"><code>rawinvmapmin</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; invmapmax(mapper) ≈ 499.9999793028839
+true
+
+julia&gt; invmapmax(mapper) ≈ applymap(mapper, mapmax(mapper))
+true
+
+julia&gt; invmap(mapper, invmapmax(mapper)) ≈ mapmax(mapper)
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; invmapmax(mapper_unitless) ≈ 499.9999793028839
+true
+
+julia&gt; invmapmax(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L931-L987">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.invmapmin"><a class="docstring-binding" href="#JuChrom.invmapmin"><code>JuChrom.invmapmin</code></a> — <span class="docstring-category">Function</span></summary><section><div><p>invmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</p><p>Return the minimum predicted value of the output domain (domain B) for the fitted retention  mapper. This corresponds to the predicted output value at the minimum input value and  represents the lower bound of the output range that can be reliably inverted back to input  values. For unitful mappers, returns the value with units; for unitless mappers, returns  the raw numeric value.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to  the requested unit.</li></ul><p><strong>Returns</strong></p><p>The minimum predicted output value. For unitful mappers, returns a <code>Quantity</code> with  appropriate units (converted if <code>unit</code> is specified). For unitless mappers, returns the  raw numeric value.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B minimum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawinvmapmin"><code>rawinvmapmin</code></a>, <a href="#JuChrom.invmapmax"><code>invmapmax</code></a>, <a href="#JuChrom.rawinvmapmax"><code>rawinvmapmax</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; invmapmin(mapper) ≈ 100.00001207241763
+true
+
+julia&gt; invmapmin(mapper) ≈ applymap(mapper, mapmin(mapper))
+true
+
+julia&gt; (invmapmin(mapper), invmapmax(mapper)) .≈ (100.00001207241763, 499.9999793028839)
+(true, true)
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; invmapmin(mapper_unitless) ≈ 100.00001207241763
+true
+
+julia&gt; invmapmin(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L865-L916">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.mapmax"><a class="docstring-binding" href="#JuChrom.mapmax"><code>JuChrom.mapmax</code></a> — <span class="docstring-category">Function</span></summary><section><div><p>mapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</p><p>Return the maximum value of the input domain (domain A) for the fitted retention mapper. This corresponds to the largest input value used during calibration and represents the upper bound of the reliable interpolation range. For unitful mappers, returns the value with units; for unitless mappers, returns the raw numeric value.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to  the requested unit.</li></ul><p><strong>Returns</strong></p><p>The maximum input value from the calibration data. For unitful mappers, returns a <code>Quantity</code> with appropriate units (converted if <code>unit</code> is specified). For unitless mappers, returns the raw numeric value.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A maximum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawmapmax"><code>rawmapmax</code></a>, <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.rawmapmin"><code>rawmapmin</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; mapmax(mapper) ≈ 9.3u&quot;minute&quot;
+true
+
+julia&gt; mapmax(mapper, unit=u&quot;s&quot;) ≈ 558.0u&quot;s&quot;
+true
+
+julia&gt; (mapmin(mapper), mapmax(mapper)) .≈ (1.2u&quot;minute&quot;, 9.3u&quot;minute&quot;)
+(true, true)
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; mapmax(mapper_unitless) ≈ 9.3
+true
+
+julia&gt; mapmax(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1002-L1051">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.mapmin"><a class="docstring-binding" href="#JuChrom.mapmin"><code>JuChrom.mapmin</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">mapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the minimum value of the input domain (domain A) for the fitted retention mapper. This corresponds to the smallest input value used during calibration and represents the lower bound of the reliable interpolation range. For unitful mappers, returns the value with units; for unitless mappers, returns the raw numeric value.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to the requested unit.</li></ul><p><strong>Returns</strong></p><p>The minimum input value from the calibration data. For unitful mappers, returns a <code>Quantity</code> with appropriate units (converted if <code>unit</code> is specified). For unitless mappers, returns the raw numeric value.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A minimum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawmapmin"><code>rawmapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.rawmapmax"><code>rawmapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; mapmin(mapper) ≈ 1.2u&quot;minute&quot;
+true
+
+julia&gt; mapmin(mapper, unit=u&quot;s&quot;) ≈ 72.0u&quot;s&quot;
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; mapmin(mapper_unitless) ≈ 1.2
+true
+
+julia&gt; mapmin(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1066-L1112">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawapplymap"><a class="docstring-binding" href="#JuChrom.rawapplymap"><code>JuChrom.rawapplymap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawapplymap(rm::RetentionMapper, retention::Quantity{&lt;:Real};
+            warn::Bool=false, unit::Union{&lt;:Nothing, Unitful.Units}=rm.rB_unit)</code></pre><p>Apply the fitted mapping to transform an input value from domain A to domain B using the fitted spline within the <code>RetentionMapper</code>, returning a unitless numeric result.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: A fitted retention mapper containing the spline and normalization parameters.</li><li><code>retention::Quantity{&lt;:Real}</code>: The input value with units to be mapped from domain A to  domain B.</li><li><code>warn::Bool=false</code>: If <code>true</code>, logs a warning when extrapolating beyond the spline domain.</li><li><code>unit::Union{&lt;:Nothing, Unitful.Units}=rm.rB_unit</code>: Unit system for the output value  before unit stripping (defaults to the unit used for domain B during fitting).</li></ul><p><strong>Behavior</strong></p><ul><li>Input value is normalized before spline evaluation.</li><li>If the input lies outside the spline domain, linear extrapolation is performed using the spline&#39;s first derivative at the boundary.</li><li>Returns the predicted output value as a unitless number in the specified unit system.</li><li>Requires input with units (use <a href="#JuChrom.applymap"><code>applymap</code></a> for unitless inputs).</li></ul><p>This function provides the same transformation as <a href="#JuChrom.applymap"><code>applymap</code></a> but strips units from  the result, which is useful for downstream calculations that require raw numeric values.</p><p>See also <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawapplymap(mapper, 5.0u&quot;minute&quot;) ≈ 338.71144090340465
+true
+
+julia&gt; test_times = [3.0, 11.0]u&quot;minute&quot;;
+
+julia&gt; rawapplymap.(mapper, test_times) ≈ [235.0195638002354, 564.0302630521933]
+true
+
+julia&gt; rawapplymap(mapper, 0.5u&quot;minute&quot;, warn=true) ≈ 44.68816899287087
+[ Info: rA=0.5 is below the spline domain boundary (rA_min=1.2): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1128-L1175">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawderivinvmap"><a class="docstring-binding" href="#JuChrom.rawderivinvmap"><code>JuChrom.rawderivinvmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawderivinvmap(rm::RetentionMapper, retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}};
+              rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
+              warn::Bool=false) where {T1&lt;:Union{Nothing, Unitful.Units}, 
+              T2&lt;:Union{Nothing, Unitful.Units}, T3&lt;:Real}</code></pre><p>Compute the derivative of the inverse mapping, i.e. d(A)/d(B), at a given output value  (domain B), returning a unitless numeric result.</p><p>This function computes the local derivative <code>d(A)/d(B)</code> at a given output value using  the inverse of the normalized B-spline approximation stored in the <code>RetentionMapper</code>.  This derivative describes how a small change in the output (domain B) would translate  back to a change in the input (domain A), under the smoothed, monotonic mapping. If the  output value is outside the supported domain, extrapolation is performed using the boundary  derivative. The derivative is adjusted to account for the normalization scales applied  during spline fitting.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The retention mapper containing spline and scaling parameters.</li><li><code>retention::Union{&lt;:Real, &lt;:Quantity{&lt;:Real}}</code>: Output value (domain B) for which the  inverse derivative is computed.</li><li><code>rA_unit</code>: Input unit for the derivative calculation (defaults to the domain A unit used  in fitting).</li><li><code>rB_unit</code>: Output unit for the derivative calculation (defaults to the domain B unit used  in fitting).</li><li><code>tol::Real=1e-8</code>: Tolerance for root-finding when locating the corresponding input value.</li><li><code>warn::Bool=false</code>: Whether to emit informational messages when extrapolating outside the  spline domain.</li></ul><p><strong>Returns</strong></p><p>The derivative d(A)/d(B) at the specified output value as a unitless number, expressed in  the unit system of <code>rA_unit/rB_unit</code> before unit stripping.</p><p><strong>Notes</strong></p><ul><li>For retention time/retention index mappings, this gives the local &quot;time per retention  index unit&quot; rate as a raw numeric value.</li><li>This is the reciprocal of the forward derivative from <a href="#JuChrom.rawderivmap"><code>rawderivmap</code></a>.</li><li>The derivative is always positive due to the monotonicity constraint.</li><li>Root-finding is used to locate the corresponding input value before computing the  derivative.</li></ul><p>This function provides the same transformation as <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a> but strips units from  the result, which is useful for downstream calculations that require raw numeric values.</p><p>See also <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>, <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawderivinvmap(mapper, 350.0u&quot;Th&quot;) ≈ 0.02857099580171666
+true
+
+julia&gt; rawderivinvmap(mapper, 350.0)
+ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. Expected units compatible with Th.
+[...]
+
+julia&gt; test_indices = [250.0, 600.0]u&quot;Th&quot;;
+
+julia&gt; rawderivinvmap.(mapper, test_indices) ≈ [0.015606366497378708, 0.03240806524912834]
+true
+
+julia&gt; rawderivinvmap(mapper, 350.0u&quot;Th&quot;, rA_unit=u&quot;s&quot;) ≈ 1.7142597481029995
+true
+
+julia&gt; rawderivinvmap(mapper, 50.0u&quot;Th&quot;, warn=true) ≈ 0.012655503630152843
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+true
+
+julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawderivinvmap(mapper, 350.0) ≈ 0.02857099580171666
+true
+
+julia&gt; rawderivinvmap(mapper, 350.0u&quot;Th&quot;)
+ERROR: ArgumentError: Input cannot have units when rm.rB_unit is Nothing. Expected unitless input.
+[...]</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1200-L1286">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawderivmap"><a class="docstring-binding" href="#JuChrom.rawderivmap"><code>JuChrom.rawderivmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawderivmap(rm::RetentionMapper, retention::Quantity{&lt;:Real};
+            rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
+            T1&lt;:Union{Nothing, Unitful.Units}, T2&lt;:Union{Nothing, Unitful.Units}}</code></pre><p>Compute the first derivative of the fitted mapping with respect to the input (domain A) at a given input value, returning a unitless numeric result.</p><p>This function evaluates the derivative of the fitted monotonic B-spline, extrapolating using boundary derivatives if the input lies outside the spline domain. The derivative is adjusted to account for the normalization scales applied during spline fitting.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The retention mapper containing spline and scaling parameters.</li><li><code>retention::Quantity{&lt;:Real}</code>: Input value with units (domain A) at which to evaluate  the derivative.</li><li><code>rA_unit</code>: Input unit for the derivative calculation (defaults to the domain A unit used  in fitting).</li><li><code>rB_unit</code>: Output unit for the derivative calculation (defaults to the domain B unit used  in fitting).</li><li><code>warn::Bool=false</code>: Whether to emit informational messages when extrapolating outside the spline domain.</li></ul><p><strong>Returns</strong></p><p>The derivative d(B)/d(A) at the specified input value as a unitless number, expressed in  the unit system of <code>rB_unit/rA_unit</code> before unit stripping.</p><p><strong>Notes</strong></p><ul><li>Requires input with units (use <a href="#JuChrom.derivmap"><code>derivmap</code></a> for unitless inputs).</li><li>For retention time/retention index mappings, this gives the local &quot;retention index per unit time&quot; rate as a raw numeric value.</li><li>The derivative is always positive due to the monotonicity constraint.</li><li>Extrapolation uses constant derivatives at the boundaries, ensuring smooth behavior outside the fitted domain.</li></ul><p>This function provides the same transformation as <a href="#JuChrom.derivmap"><code>derivmap</code></a> but strips units from  the result, which is useful for downstream calculations that require raw numeric values.</p><p>See also <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.invmap"><code>invmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawderivmap(mapper, 5.0u&quot;minute&quot;) ≈ 37.42885149584893
+true
+
+julia&gt; test_times = [3.0, 11.0]u&quot;minute&quot;;
+
+julia&gt; rawderivmap.(mapper, test_times) ≈ [67.10235298491122, 34.639458067769134]
+true
+
+julia&gt; rawderivmap(mapper, 5.0u&quot;minute&quot;, rA_unit=u&quot;s&quot;) ≈ 0.6238141915974822
+true
+
+julia&gt; rawderivmap(mapper, 0.8u&quot;minute&quot;, warn=true) ≈ 79.01700550402535
+[ Info: rA=0.8 is below the spline domain boundary (rA_min=1.2): extrapolating left.
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1341-L1403">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawinvmap"><a class="docstring-binding" href="#JuChrom.rawinvmap"><code>JuChrom.rawinvmap</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawinvmap(rm::RetentionMapper, retention::Quantity{&lt;:Real};
+          unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
+          ) where {T1&lt;:Unitful.TimeUnits, T2&lt;:Real}</code></pre><p>Invert the fitted mapping by computing the input value (domain A) corresponding to a given  output value (domain B), returning a unitless numeric result.</p><p><strong>Arguments</strong></p><ul><li><code>rm::RetentionMapper</code>: The fitted retention mapper containing the spline and scaling info.</li><li><code>retention::Quantity{&lt;:Real}</code>: Output value with units from domain B to invert back  to domain A.</li><li><code>unit</code>: Unit system for the output value before unit stripping (defaults to the unit used  for domain A during fitting).</li><li><code>tol::Real=1e-8</code>: Tolerance for root-finding (default 1e-8).</li><li><code>warn::Bool=false</code>: If <code>true</code>, logs warnings when extrapolating beyond spline domain.</li></ul><p><strong>Behavior</strong></p><ul><li>Normalizes the input value to the spline domain.</li><li>Performs linear extrapolation beyond the spline range using derivative at the boundaries.</li><li>Uses numerical root-finding (bisection method) within the spline domain for precise  inversion.</li><li>Returns the result as a unitless number in the specified unit system.</li><li>Requires input with units (use <a href="#JuChrom.invmap"><code>invmap</code></a> for unitless inputs).</li></ul><p>This function leverages the strict monotonicity of the fitted spline to provide reliable  inverse mapping, enabling bidirectional conversion between the two domains while returning raw numeric values useful for downstream calculations.</p><p>See also <a href="#JuChrom.invmap"><code>invmap</code></a>, <a href="#JuChrom.applymap"><code>applymap</code></a>, <a href="#JuChrom.derivmap"><code>derivmap</code></a>, <a href="#JuChrom.derivinvmap"><code>derivinvmap</code></a>,  <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u&quot;Th&quot;
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawinvmap(mapper, 350.0u&quot;Th&quot;) ≈ 5.312425320906996
+true
+
+julia&gt; rawinvmap(mapper, 350.0) ≈ 5.312425320906996
+ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. Expected units compatible with Th.
+[...]
+
+julia&gt; test_indices = [250.0, 450.0]u&quot;Th&quot;;
+
+julia&gt; rawinvmap.(mapper, test_indices) ≈ [3.2283166885897936, 8.08686182716771]
+true
+
+julia&gt; rawinvmap(mapper, 400.0u&quot;Th&quot;, unit=u&quot;s&quot;) ≈ 407.99982102982375
+true
+
+julia&gt; rawinvmap(mapper, 50.0u&quot;Th&quot;, warn=true) ≈ 0.5672238965934812
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+true
+
+julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawinvmap(mapper, 350.0) ≈ 5.312425320906996
+true
+
+julia&gt; rawinvmap(mapper, 350.0u&quot;Th&quot;) ≈ 5.312425320906996
+ERROR: ArgumentError: Input cannot have units when rm.rB_unit is Nothing. Expected unitless input.
+[...]</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1457-L1527">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawinvmapmax"><a class="docstring-binding" href="#JuChrom.rawinvmapmax"><code>JuChrom.rawinvmapmax</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawinvmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the raw numeric maximum predicted value of the output domain (domain B), stripped  of units.</p><p>This function always returns the numeric value without units, regardless of whether the  mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping.  For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>The maximum predicted output value as a raw number (no units), optionally converted to  the specified unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B maximum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.invmapmax"><code>invmapmax</code></a>, <a href="#JuChrom.invmapmin"><code>invmapmin</code></a>, <a href="#JuChrom.rawinvmapmin"><code>rawinvmapmin</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawinvmapmax(mapper) ≈ 499.9999793028839
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; rawinvmapmax(mapper_unitless) ≈ 499.9999793028839
+true
+
+julia&gt; rawinvmapmax(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1562-L1608">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawinvmapmin"><a class="docstring-binding" href="#JuChrom.rawinvmapmin"><code>JuChrom.rawinvmapmin</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawinvmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the raw numeric minimum predicted value of the output domain (domain B), stripped  of units.</p><p>This function always returns the numeric value without units, regardless of whether  the mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping.  For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>The minimum predicted output value as a raw number (no units), optionally converted to the  specified unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B minimum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.invmapmin"><code>invmapmin</code></a>, <a href="#JuChrom.invmapmax"><code>invmapmax</code></a>, <a href="#JuChrom.rawinvmapmax"><code>rawinvmapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawinvmapmin(mapper) ≈ 100.00001207241763
+true
+
+julia&gt; (rawinvmapmin(mapper), rawinvmapmax(mapper)) .≈ (100.00001207241763, 499.9999793028839)
+(true, true)
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; rawinvmapmin(mapper_unitless) ≈ 100.00001207241763
+true
+
+julia&gt; rawinvmapmin(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1623-L1672">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawmapmax"><a class="docstring-binding" href="#JuChrom.rawmapmax"><code>JuChrom.rawmapmax</code></a> — <span class="docstring-category">Function</span></summary><section><div><p>rawmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</p><p>Return the raw numeric maximum value of the input domain (domain A), stripped of units. This function always returns the numeric value without units, regardless of whether the mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping. For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>The maximum input value as a raw number (no units), optionally converted to the specified  unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A maximum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.rawmapmin"><code>rawmapmin</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawmapmax(mapper) ≈ 9.3
+true
+
+julia&gt; rawmapmax(mapper, unit=u&quot;s&quot;) ≈ 558.0
+true
+
+julia&gt; (rawmapmin(mapper), rawmapmax(mapper)) .≈ (1.2, 9.3)
+(true, true)
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; rawmapmax(mapper_unitless) ≈ 9.3
+true
+
+julia&gt; rawmapmax(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1687-L1734">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawmapmin"><a class="docstring-binding" href="#JuChrom.rawmapmin"><code>JuChrom.rawmapmin</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the raw numeric minimum value of the input domain (domain A), stripped of units. This function always returns the numeric value without units, regardless of whether the mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping. For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>The minimum input value as a raw number (no units), optionally converted to the specified unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A minimum to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.rawmapmax"><code>rawmapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawmapmin(mapper) ≈ 1.2
+true
+
+julia&gt; rawmapmin(mapper, unit=u&quot;s&quot;) ≈ 72.0
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; rawmapmin(mapper_unitless) ≈ 1.2
+true
+
+julia&gt; rawmapmin(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A minimum to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/map.jl#L1749-L1793">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawretentions_A"><a class="docstring-binding" href="#JuChrom.rawretentions_A"><code>JuChrom.rawretentions_A</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawretentions_A(rm::AbstractRetentionMapper;
+                unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the raw numeric calibration data values from the input domain (domain A), stripped  of units.</p><p>This function always returns the numeric values without units, regardless of whether  the mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping.  For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>A vector of raw numeric calibration input values (no units), optionally converted to the  specified unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.retentions_A"><code>retentions_A</code></a>, <a href="#JuChrom.retentions_B"><code>retentions_B</code></a>, <a href="#JuChrom.rawretentions_B"><code>rawretentions_B</code></a>,  <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawretentions_A(mapper) ≈ [1.2, 2.5, 4.1, 6.8, 9.3]
+true
+
+julia&gt; rawretentions_A(mapper, unit=u&quot;s&quot;) ≈ [72.0, 150.0, 246.0, 408.0, 558.0]
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; rawretentions_A(mapper_unitless) ≈ [1.2, 2.5, 4.1, 6.8, 9.3]
+true
+
+julia&gt; rawretentions_A(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L232-L283">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.rawretentions_B"><a class="docstring-binding" href="#JuChrom.rawretentions_B"><code>JuChrom.rawretentions_B</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">rawretentions_B(rm::AbstractRetentionMapper;
+                unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the raw numeric calibration data values from the output domain (domain B),  stripped of units.</p><p>This function always returns the numeric values without units, regardless of whether  the mapper was created with unitful or unitless data.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: For unitful mappers, specifies the unit to convert to before stripping.  For unitless mappers, this parameter is ignored.</li></ul><p><strong>Returns</strong></p><p>A vector of raw numeric calibration output values (no units), optionally converted to the  specified unit first.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.retentions_B"><code>retentions_B</code></a>, <a href="#JuChrom.retentions_A"><code>retentions_A</code></a>, <a href="#JuChrom.rawretentions_A"><code>rawretentions_A</code></a>,  <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; rawretentions_B(mapper) ≈ [100.0, 200.0, 300.0, 400.0, 500.0]
+true
+
+julia&gt; rawretentions_B(mapper, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention B to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L298-L339">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.retentions_A"><a class="docstring-binding" href="#JuChrom.retentions_A"><code>JuChrom.retentions_A</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">retentions_A(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the calibration data values from the input domain (domain A) used to fit the  retention mapper.</p><p>This function provides access to the original input values that were used during  calibration. For unitful mappers, returns the values with units; for unitless mappers,  returns the raw numeric values.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to  the requested unit.</li></ul><p><strong>Returns</strong></p><p>A vector of calibration input values. For unitful mappers, returns a vector of <code>Quantity</code>  objects with appropriate units (converted if <code>unit</code> is specified). For unitless mappers,  returns a vector of raw numeric values.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention A to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawretentions_A"><code>rawretentions_A</code></a>, <a href="#JuChrom.retentions_B"><code>retentions_B</code></a>, <a href="#JuChrom.rawretentions_B"><code>rawretentions_B</code></a>,  <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; retentions_A(mapper) ≈ [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+true
+
+julia&gt; retentions_A(mapper, unit=u&quot;s&quot;) ≈ [72.0, 150.0, 246.0, 408.0, 558.0]u&quot;s&quot;
+true
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; retentions_A(mapper_unitless) ≈ [1.2, 2.5, 4.1, 6.8, 9.3]
+true
+
+julia&gt; retentions_A(mapper_unitless, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention A to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L354-L407">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.retentions_B"><a class="docstring-binding" href="#JuChrom.retentions_B"><code>JuChrom.retentions_B</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">retentions_B(rm::AbstractRetentionMapper;
+unit::Union{Nothing, Unitful.Units}=nothing)</code></pre><p>Return the calibration data values from the output domain (domain B) used to fit the  retention mapper.</p><p>This function provides access to the original output values that were used during  calibration. For unitful mappers, returns the values with units; for unitless mappers,  returns the raw numeric values.</p><p><strong>Arguments</strong></p><ul><li><code>rm::AbstractRetentionMapper</code>: The fitted retention mapper.</li><li><code>unit</code>: Desired output unit (optional). If specified for unitful mappers, converts to  the requested unit.</li></ul><p><strong>Returns</strong></p><p>A vector of calibration output values. For unitful mappers, returns a vector of <code>Quantity</code>  objects with appropriate units (converted if <code>unit</code> is specified). For unitless mappers,  returns a vector of raw numeric values.</p><p><strong>Throws</strong></p><ul><li><code>ArgumentError</code>: When attempting to specify a <code>unit</code> for a unitless mapper. The error message will be &quot;Cannot convert unitless retention B to a unit&quot;.</li></ul><p>See also <a href="#JuChrom.rawretentions_B"><code>rawretentions_B</code></a>, <a href="#JuChrom.retentions_A"><code>retentions_A</code></a>, <a href="#JuChrom.rawretentions_A"><code>rawretentions_A</code></a>,  <a href="#JuChrom.mapmin"><code>mapmin</code></a>, <a href="#JuChrom.mapmax"><code>mapmax</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; retentions_B(mapper) ≈ [100.0, 200.0, 300.0, 400.0, 500.0]
+true
+
+julia&gt; retentions_B(mapper, unit=u&quot;s&quot;)
+ERROR: ArgumentError: Cannot convert unitless retention B to a unit</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L422-L465">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.retentionunit_A"><a class="docstring-binding" href="#JuChrom.retentionunit_A"><code>JuChrom.retentionunit_A</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">retentionunit_A(mapper::AbstractRetentionMapper)</code></pre><p>Return the unit associated with the input domain (domain A) of the retention mapper.</p><p>For unitful mappers, this returns the <code>Unitful.Units</code> object representing the unit  of the input values. For unitless mappers, this returns <code>Nothing</code>.</p><p><strong>Arguments</strong></p><ul><li><code>mapper::AbstractRetentionMapper</code>: The fitted retention mapper.</li></ul><p><strong>Returns</strong></p><p>The unit of the input domain. Returns a <code>Unitful.Units</code> object for unitful mappers,  or <code>Nothing</code> for unitless mappers.</p><p>See also <a href="#JuChrom.retentions_A"><code>retentions_A</code></a>, <a href="#JuChrom.rawretentions_A"><code>rawretentions_A</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; retentionunit_A(mapper)
+minute
+
+julia&gt; inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
+       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(inputs, outputs);
+
+julia&gt; retentionunit_A(mapper_unitless) === nothing
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L480-L515">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.retentionunit_B"><a class="docstring-binding" href="#JuChrom.retentionunit_B"><code>JuChrom.retentionunit_B</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">retentionunit_B(mapper::AbstractRetentionMapper)</code></pre><p>Return the unit associated with the output domain (domain B) of the retention mapper.</p><p>For unitful mappers, this returns the <code>Unitful.Units</code> object representing the unit  of the output values. For unitless mappers, this returns <code>Nothing</code>.</p><p><strong>Arguments</strong></p><ul><li><code>mapper::AbstractRetentionMapper</code>: The fitted retention mapper.</li></ul><p><strong>Returns</strong></p><p>The unit of the output domain. Returns a <code>Unitful.Units</code> object for unitful mappers,  or <code>Nothing</code> for unitless mappers.</p><p>See also <a href="#JuChrom.retentions_B"><code>retentions_B</code></a>, <a href="#JuChrom.rawretentions_B"><code>rawretentions_B</code></a>, <a href="#JuChrom.fitmap"><code>fitmap</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u&quot;minute&quot;
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper = fitmap(retention_times, retention_indices);
+
+julia&gt; retentionunit_B(mapper) === nothing
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/2883aa4620c8abd7a852e429708cc640b94ad994/src/core/retention_mapping/container.jl#L520-L548">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../jld2/">« JLD2 Input/Output Support</a><a class="docs-footer-nextpage" href="../baseline/">Scans »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Thursday 8 January 2026 18:54">Thursday 8 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
