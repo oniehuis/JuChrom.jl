@@ -62,6 +62,7 @@ jobs:
           using Pkg;
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
+          Pkg.add("PyCall")
           ENV["PYTHON"] = Sys.which("python")
           Pkg.build("PyCall")
 
