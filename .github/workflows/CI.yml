@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    permissions:
+      actions: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.11']
+        os: [ubuntu-22.04]
+        arch: [x64]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+          arch: ${{ matrix.arch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install olefile
+        run: python -m pip install --upgrade pip olefile
+      
+      - name: Cache Julia packages
+        uses: julia-actions/cache@v2
+
+      - uses: julia-actions/julia-buildpkg@v1
+
+      # - name: Install Linux packages for GLMakie
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
+      #       libxrandr-dev libxinerama-dev libxcursor-dev \
+      #       libxi-dev libxext-dev
+
+      - name: Set up testing environment
+        shell: julia --project=test-env {0}
+        run: |
+          using Pkg;
+          Pkg.develop(PackageSpec(path=pwd()))
+
+      - name: Run unit tests and collect coverage
+        env:
+          PYTHON: ${{ env.pythonLocation }}/bin/python
+        run: >
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
+          julia --color=yes --project=test-env -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
+
+      - uses: julia-actions/julia-processcoverage@v1
+
+      - uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Clean up unused packages and artifacts
+        run: julia -e 'using Pkg; Pkg.gc()'

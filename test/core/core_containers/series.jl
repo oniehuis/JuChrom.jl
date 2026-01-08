@@ -1,0 +1,151 @@
+module TestScanSeriesContainers
+
+using Test
+using Unitful
+using Unitful: s, minute, pA
+using JuChrom  # ChromScan, MassScan, ChromScanSeries, MassScanSeries
+
+# Helpers to build scans quickly
+mkchrom(i, rt_unit, I_unit) = ChromScan(i*1.0*rt_unit, (10i)*I_unit)
+mkms(rt, mzs, ints; level=1) = MassScan(rt, mzs, ints; level)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ChromScanSeries
+# ─────────────────────────────────────────────────────────────────────────────
+
+@testset "ChromScanSeries – inner constructor" begin
+    scans = [ChromScan(1.0u"minute", 10.0u"pA"),
+             ChromScan(2.0u"minute", 20.0u"pA")]
+    S  = eltype(scans)
+    T1 = typeof(scans)
+    T2 = typeof((vendor="Acme",))
+    T3 = typeof((method="M1",))
+    T4 = typeof((user="U",))
+    T5 = typeof((sample="S",))
+    T6 = Dict{String,Any}
+
+    css = ChromScanSeries{S,
+                          typeof(first(scans).retention_unit),
+                          typeof(first(scans).intensity_unit),
+                          T1, T2, T3, T4, T5, T6}(
+        scans, (vendor="Acme",), (method="M1",), (user="U",), (sample="S",),
+        Dict{String,Any}("x"=>1))
+    @test css.scans === scans
+    @test css.instrument == (vendor="Acme",)
+    @test css.acquisition == (method="M1",)
+    @test css.user == (user="U",)
+    @test css.sample == (sample="S",)
+    @test css.extras == Dict("x"=>1)
+
+    # Errors: empty scans, abstract eltype
+    empty_vec = Vector{S}()  # CONCRETE eltype; ensures we hit the ctor's non-empty check
+    @test_throws ArgumentError ChromScanSeries{S, Nothing, Nothing,
+                                               typeof(empty_vec),
+                                               NamedTuple, NamedTuple, NamedTuple, NamedTuple, Dict{String,Any}}(
+        empty_vec, NamedTuple(), NamedTuple(), NamedTuple(), NamedTuple(), Dict{String,Any}())
+
+    abs_vec = AbstractVector{AbstractChromScan}(scans)  # abstract eltype should be rejected
+    @test_throws ArgumentError ChromScanSeries{eltype(abs_vec), Nothing, Nothing,
+                                               typeof(abs_vec),
+                                               NamedTuple, NamedTuple, NamedTuple, NamedTuple, Dict{String,Any}}(
+        abs_vec, NamedTuple(), NamedTuple(), NamedTuple(), NamedTuple(), Dict{String,Any}())
+end
+
+@testset "ChromScanSeries – outer constructor" begin
+    scans = [mkchrom(1, u"minute", u"pA"), mkchrom(2, u"minute", u"pA")]
+
+    # Defaults & type-parameter inference (R=minute, I=pA)
+    css = ChromScanSeries(scans)
+    @test css.scans === scans
+    @test css.instrument == NamedTuple()
+    @test css.acquisition == NamedTuple()
+    @test css.user == NamedTuple()
+    @test css.sample == NamedTuple()
+    @test css.extras isa Dict{String,Any}
+    @test typeof(css).parameters[2] === typeof(first(scans).retention_unit)
+    @test typeof(css).parameters[3] === typeof(first(scans).intensity_unit)
+
+    # extras: AbstractString keys are converted to String; values widened to Any
+    s = "ab"; k = SubString(s, 1, 1)
+    css2 = ChromScanSeries(scans; extras=Dict(k=>1))
+    @test css2.extras isa Dict{String,Any}
+    @test first(keys(css2.extras)) isa String
+
+    # Error paths on outer ctor (non-empty, concrete eltype)
+    @test_throws ArgumentError ChromScanSeries(Vector{eltype(scans)}())  # empty concrete
+    abs_vec = AbstractVector{AbstractChromScan}(scans)
+    @test_throws ArgumentError ChromScanSeries(abs_vec)                  # abstract eltype
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MassScanSeries
+# ─────────────────────────────────────────────────────────────────────────────
+
+@testset "MassScanSeries – inner constructor" begin
+    scans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
+             mkms(2.0u"s", [100.0, 150.0], [12.0, 22.0]; level=2)]
+    S  = eltype(scans)
+    T1 = typeof(scans)
+    T2 = typeof((instr="MS",))
+    T3 = typeof((mode="FullScan",))
+    T4 = typeof((user="U",))
+    T5 = typeof((sample="S",))
+    T6 = Dict{String,Any}
+
+    mss = MassScanSeries{S,
+                         typeof(first(scans).retention_unit),
+                         typeof(first(scans).mz_unit),
+                         typeof(first(scans).intensity_unit),
+                         T1, T2, T3, T4, T5, T6}(
+        scans, (instr="MS",), (mode="FullScan",), (user="U",), (sample="S",),
+        Dict{String,Any}("y"=>2))
+    @test mss.scans === scans
+    @test mss.instrument == (instr="MS",)
+    @test mss.acquisition == (mode="FullScan",)
+    @test mss.user == (user="U",)
+    @test mss.sample == (sample="S",)
+    @test mss.extras == Dict("y"=>2)
+
+    # Errors: empty scans, abstract eltype
+    empty_vec = typeof(scans)([])  # already concrete eltype
+    @test_throws ArgumentError MassScanSeries{S, Nothing, Nothing, Nothing,
+                                              typeof(empty_vec),
+                                              NamedTuple, NamedTuple, NamedTuple, NamedTuple, Dict{String,Any}}(
+        empty_vec, NamedTuple(), NamedTuple(), NamedTuple(), NamedTuple(), Dict{String,Any}())
+
+    abs_vec = AbstractVector{AbstractMassScan}(scans)
+    @test_throws ArgumentError MassScanSeries{eltype(abs_vec), Nothing, Nothing, Nothing,
+                                              typeof(abs_vec),
+                                              NamedTuple, NamedTuple, NamedTuple, NamedTuple, Dict{String,Any}}(
+        abs_vec, NamedTuple(), NamedTuple(), NamedTuple(), NamedTuple(), Dict{String,Any}())
+end
+
+@testset "MassScanSeries – outer constructor" begin
+    scans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
+             mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=2)]
+
+    # Defaults & type-parameter inference (R, M, I)
+    mss = MassScanSeries(scans)
+    @test mss.scans === scans
+    @test mss.instrument == NamedTuple()
+    @test mss.acquisition == NamedTuple()
+    @test mss.user == NamedTuple()
+    @test mss.sample == NamedTuple()
+    @test mss.extras isa Dict{String,Any}
+    @test typeof(mss).parameters[2] === typeof(first(scans).retention_unit)
+    @test typeof(mss).parameters[3] === typeof(first(scans).mz_unit)
+    @test typeof(mss).parameters[4] === typeof(first(scans).intensity_unit)
+
+    # extras: AbstractString keys conversion; Any value type
+    s = "xyz"; k = SubString(s, 2, 3)
+    mss2 = MassScanSeries(scans; extras=Dict(k=>:ok))
+    @test mss2.extras isa Dict{String,Any}
+    @test first(keys(mss2.extras)) isa String
+
+    # Error paths on outer ctor (non-empty, concrete eltype)
+    @test_throws ArgumentError MassScanSeries(typeof(scans)([]))
+    abs_vec = AbstractVector{AbstractMassScan}(scans)
+    @test_throws ArgumentError MassScanSeries(abs_vec)
+end
+
+end # module

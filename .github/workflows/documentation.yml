@@ -1,0 +1,64 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags: '*'
+  pull_request:
+
+jobs:
+  build:
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: read
+      statuses: write
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install olefile
+        run: python -m pip install --upgrade pip olefile
+
+      - name: Cache Julia packages
+        uses: julia-actions/cache@v2
+      
+      # - name: Install Linux packages for GLMakie
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y \
+      #       xorg-dev mesa-utils xvfb libgl1 freeglut3-dev \
+      #       libxrandr-dev libxinerama-dev libxcursor-dev \
+      #       libxi-dev libxext-dev
+
+      - name: Install Julia dependencies (including PyCall)
+        shell: julia --color=yes --project=docs {0}
+        run: |
+          using Pkg
+          Pkg.instantiate()
+          ENV["PYTHON"] = Sys.which("python")
+          Pkg.build("PyCall")
+          Pkg.develop(PackageSpec(path=pwd()))
+        
+      - name: Build and deploy
+        run: > 
+          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
+          julia --color=yes --project=docs docs/make.jl
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+      - name: Clean up unused packages and artifacts
+        run: julia -e 'using Pkg; Pkg.gc()'

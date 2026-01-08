@@ -1,0 +1,28 @@
+[Agilent]
+git-tree-sha1 = "19bcd4ecdc2ac5fb3604ef71f3fa019a378c3218"
+
+    [[Agilent.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/Agilent.tar.gz"
+    sha256 = "7be6740d83ae1f6e158921e24d1f6fa2865eaba9f8d27c9f24220cd48e119c9f"
+
+[ANDI]
+git-tree-sha1 = "fbb1cfc928d393c7b88470d38380a57185f7973f"
+
+    [[ANDI.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/ANDI.tar.gz"
+    sha256 = "fc781115eadba07853c2030fe64300d5569492e7cfa04374d4ab3e3edeb8d192"
+
+[calibration]
+git-tree-sha1 = "c7cd9162c1843733eb71b371c027a52643f69953"
+
+    [[calibration.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/calibration.tar.gz"
+    sha256 = "839ce3b84596ccaa9f82f292c60f9292563d3805799cce3f1ec9b82dd03743f8"
+
+[Shimadzu]
+git-tree-sha1 = "b5ebed589fd223178150ec8823aff2430fdd50e8"
+
+    [[Shimadzu.download]]
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/main/Shimadzu.tar.gz"
+    sha256 = "4339f1f970753fbf2f6cb6657405b99256aa6337747d48b09855b19c466899e6"
+
