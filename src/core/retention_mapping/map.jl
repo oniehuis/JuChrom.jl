@@ -414,16 +414,18 @@ function _compute_inverse_derivative_mapping(
     # Handle extrapolation if input is below spline domain
     if rB_norm ≤ rm.rB_pred_norm_min
         if warn && rB_norm ≤ rm.rB_pred_norm_min - domain_boundary_threshold
-            @info ("rB=$rB is below the inverse spline domain boundary " * 
-                   "(rB_min=$(rm.rB_pred_min)): extrapolating left.")
+            rB_min_str = Printf.@sprintf("%.6f", rm.rB_pred_min)
+            @info ("rB=$rB is below the inverse spline domain boundary " *
+                   "(rB_min=$rB_min_str): extrapolating left.")
         end
         d_rA_d_rB_norm = spline′(rm.rA_norm_min)
 
     # Handle extrapolation if input is above spline domain
     elseif rB_norm ≥ rm.rB_pred_norm_max
         if warn && rB_norm ≥ rm.rB_pred_norm_max + domain_boundary_threshold
-            @info ("rB=$rB is above the inverse spline domain boundary " * 
-                   "(rB_max=$(rm.rB_pred_max)): extrapolating right.")
+            rB_max_str = Printf.@sprintf("%.6f", rm.rB_pred_max)
+            @info ("rB=$rB is above the inverse spline domain boundary " *
+                   "(rB_max=$rB_max_str): extrapolating right.")
         end
         d_rA_d_rB_norm = spline′(rm.rA_norm_max)
     else
@@ -503,7 +505,7 @@ julia> derivinvmap(mapper, 350.0u"Th", rA_unit=u"s", rB_unit=u"kTh") ≈ 1714.25
 true
 
 julia> derivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012655503630152843u"minute/Th"
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.00007284568862): extrapolating left.
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
 true
 ```
 """
@@ -736,8 +738,9 @@ function _compute_inverse_mapping(
     # Handle extrapolation if input is below spline domain
     if rB_norm ≤ rm.rB_pred_norm_min
         if warn && rB_norm ≤ rm.rB_pred_norm_min - domain_boundary_threshold
-            @info ("rB=$rB is below the inverse spline domain boundary " * 
-                   "(rB_min=$(rm.rB_pred_min)): extrapolating left.")
+            rB_min_str = Printf.@sprintf("%.6f", rm.rB_pred_min)
+            @info ("rB=$rB is below the inverse spline domain boundary " *
+                   "(rB_min=$rB_min_str): extrapolating left.")
         end
         # Use spline derivative at left boundary to extend linearly
         spline′ = Derivative(1) * rm.spline
@@ -748,8 +751,9 @@ function _compute_inverse_mapping(
     # Handle extrapolation if input is above spline domain
     elseif rB_norm ≥ rm.rB_pred_norm_max
         if warn && rB_norm ≥ rm.rB_pred_norm_max + domain_boundary_threshold
-            @info ("rB=$rB is above the inverse spline domain boundary " * 
-                   "(rB_max=$(rm.rB_pred_max)): extrapolating right.")
+            rB_max_str = Printf.@sprintf("%.6f", rm.rB_pred_max)
+            @info ("rB=$rB is above the inverse spline domain boundary " *
+                   "(rB_max=$rB_max_str): extrapolating right.")
         end
         # Use spline derivative at right boundary to extend linearly
         spline′ = Derivative(1) * rm.spline
@@ -819,7 +823,7 @@ julia> invmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.99982102982375u"s"
 true
 
 julia> invmap(mapper, 50.0u"Th", warn=true) ≈ 0.5672238965934812u"minute"
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.00007284568862): extrapolating left.
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
 true
 ```
 """
@@ -1265,7 +1269,7 @@ julia> rawderivinvmap(mapper, 350.0u"Th", rA_unit=u"s") ≈ 1.7142597481029995
 true
 
 julia> rawderivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012655503630152843
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.00007284568862): extrapolating left.
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
 true
 
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
@@ -1506,7 +1510,7 @@ julia> rawinvmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.99982102982375
 true
 
 julia> rawinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.5672238965934812
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.00007284568862): extrapolating left.
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
 true
 
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"

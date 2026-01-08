@@ -1,4 +1,10 @@
+using Pkg
 using SafeTestsets
+
+if Base.active_project() != joinpath(@__DIR__, "Project.toml")
+    Pkg.activate(@__DIR__)
+end
+Pkg.instantiate()
 
 # Core
 @safetestset "core/alignment/alignment.jl" begin
@@ -61,7 +67,7 @@ end
 
 # IO
 @safetestset "IO/InputOutput" begin
-    include("IO/InputOutput.jl")
+    include("IO/inputoutput.jl")
 end
 @safetestset "IO/Loaders/AgilentFIDLoader" begin
     include("IO/Loaders/AgilentFIDLoader.jl")

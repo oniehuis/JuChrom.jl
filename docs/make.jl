@@ -12,6 +12,7 @@ makedocs(
     format = Documenter.HTML(),
     modules = [JuChrom],
 	authors = "Oliver Niehuis",
+    root = @__DIR__,
     pages = [
         "Home" => "index.md",
         "Manual" => Any[
