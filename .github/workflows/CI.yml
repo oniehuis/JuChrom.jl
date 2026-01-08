@@ -60,11 +60,14 @@ jobs:
         shell: julia --project=test-env {0}
         run: |
           using Pkg;
+          ENV["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
+          ENV["PYTHON"] = Sys.which("python")
           Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
           Pkg.add("PyCall")
-          ENV["PYTHON"] = Sys.which("python")
+          Pkg.build("Conda")
           Pkg.build("PyCall")
+          Pkg.precompile()
 
       - name: Run unit tests and collect coverage
         env:
