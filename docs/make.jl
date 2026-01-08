@@ -15,9 +15,9 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Manual" => Any[
-            "man/scans.md",
-            "man/scanseries.md",
-            "man/scanmatrices.md",
+            "man/Scans.md",
+            "man/ScanSeries.md",
+            "man/ScanMatrices.md",
             "man/convert.md",
             "man/loader.md",
             "man/jld2.md",
