@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ['1.11']
+        version: ['1.12']
         os: [ubuntu-22.04]
         arch: [x64]
 
