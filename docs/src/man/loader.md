@@ -16,9 +16,13 @@ Shimadzu loaders are available when PyCall is installed and loaded (extension).
 using JuChrom
 using Markdown
 if isdefined(JuChrom, :ShimadzuMSLoader)
-    Markdown.MD(Markdown.CodeBlock("@docs", """
-JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec
-JuChrom.ShimadzuMSLoader.ShimadzuMS
-"""))
+    bt = Char(96)
+    docs_block = string(
+        bt, bt, bt, "@docs\n",
+        "JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec\n",
+        "JuChrom.ShimadzuMSLoader.ShimadzuMS\n",
+        bt, bt, bt
+    )
+    Markdown.parse(docs_block)
 end
 ```
