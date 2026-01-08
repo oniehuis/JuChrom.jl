@@ -1,8 +1,8 @@
 # ── airpls ────────────────────────────────────────────────────────────────────────────────
 
 """
- airpls(retentions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}; 
-        λ::Real=1e7, max_iter::Integer=10^4, ...) -> Vector{Float64}
+    airpls(retentions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}; 
+           λ::Real=1e7, max_iter::Integer=10^4, ...) -> Vector{Float64}
 
 Estimate a smooth baseline from spectroscopic/chromatographic data using Adaptive
 Iteratively Reweighted Penalized Least Squares (airPLS).
