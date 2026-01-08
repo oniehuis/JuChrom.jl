@@ -72,7 +72,6 @@ Concrete subtypes must define at least:
 - `extras::Dict{String, Any}`
 
 Supports generic operations on mass spectrometry scan series.
-```
 """
 abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I} end
 

@@ -226,7 +226,7 @@ Concrete subtypes must define the following fields:
 - `retention_unit::Union{Unitful.Units, Nothing}` — unit of separation, or `nothing` if not 
   provided
 - `mz_values::AbstractVector{<:Real}` — vector of m/z values (must be non-empty, finite, 
-  > 0, strictly increasing)
+  larger than zero, strictly increasing)
 - `mz_unit::Union{Unitful.Units, Nothing}` — optional unit of m/z values (e.g. Da/e); 
   typically `nothing` since m/z is unitless by convention
 - `intensities::AbstractVector{<:Real}` — vector of intensity values (same length as 

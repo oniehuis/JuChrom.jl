@@ -617,6 +617,7 @@ julia> sample(series)
 
 julia> sample(series).ID
 "Polistes dominula"
+```
 """
 sample(series::AbstractScanSeries) = series.sample
 

@@ -77,24 +77,38 @@ a warning is emitted, as this may lead to type instability.
 - `vec::AbstractVector`: A vector with potentially mixed element types.
 
 # Returns
-- A new container of the same kind (`Dict` or `Vector`) with unified and converted element types.
+- A new container of the same kind (`Dict` or `Vector`) with unified and converted element 
+  types. If promotion yields `Any` or another abstract type, conversion is effectively 
+  identity.
 
 # Throws
-- A `MethodError` if any element cannot be converted to the promoted type `T`.
+- Errors when the promoted type is concrete and cannot accept a value.
+  This may be a `MethodError` (no conversion) or `InexactError` (inexact conversion).
 
 # Examples
-```julia
-d = Dict("a" => 1, "b" => 2.5)
-typify(d)
-# => Dict{String, Float64}
+```jldoctest
+julia> d = Dict("a" => 1, "b" => 2.5)
+Dict{String, Real} with 2 entries:
+  "b" => 2.5
+  "a" => 1
 
-v = [1, 2.5, 3]
-typify(v)
-# => Vector{Float64}
+julia> typify(d)
+Dict{String, Float64} with 2 entries:
+  "b" => 2.5
+  "a" => 1.0
 
-v = [1, "x"]
-typify(v)
-# => Vector{Union{Int, String}}, with warning
+julia> v = Real[1, 2.5, 3]
+3-element Vector{Real}:
+ 1
+ 2.5
+ 3
+
+julia> typify(v)
+3-element Vector{Float64}:
+ 1.0
+ 2.5
+ 3.0
+```
 """
 function typify(dict::Dict)
     T = promote_type(typeof.(values(dict))...)

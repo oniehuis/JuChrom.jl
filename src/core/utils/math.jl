@@ -31,7 +31,7 @@ true
 
 julia> isapprox(cosdis(x, y, false), 0.025368153802923787; atol=1e-12)
 true
-````
+```
 """
 function cosdis(
     x::AbstractVector{<:Real},

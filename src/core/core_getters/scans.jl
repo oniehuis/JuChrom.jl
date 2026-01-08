@@ -169,7 +169,7 @@ true
 
 julia> intensities(msc, unit=u"nA") == [0.01, 0.02]u"nA"
 true
-````
+```
 """
 @inline function intensities(
     scan::AbstractMassScan{<:Any, <:Any, Nothing};

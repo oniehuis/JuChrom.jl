@@ -37,7 +37,7 @@ julia> scancount(trimmed)
 
 julia> retentions(trimmed) == [2.0]u"minute"
 true
-````
+```
 """
 function indextrim(
     series::AbstractScanSeries; 

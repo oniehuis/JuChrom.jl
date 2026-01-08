@@ -92,10 +92,16 @@ See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisiti
 [`sample`](@ref), [`user`](@ref), [`extras`](@ref).
 
 # Examples
-julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [1.0 2.0; 3.0 4.0]; 
-                            instrument=(detector = "Orbitrap", manufacturer = "Thermo"));
+```jldoctest
+julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [1.0 2.0; 3.0 4.0];
+                            instrument=(detector="Orbitrap", manufacturer="Thermo"));
+
 julia> instrument(msm)
 (detector = "Orbitrap", manufacturer = "Thermo")
+
+julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [1.0 2.0; 3.0 4.0];
+                            instrument=(detector="Orbitrap", manufacturer="Thermo"));
+
 
 julia> instrument(msm).detector
 "Orbitrap"
@@ -253,6 +259,7 @@ See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalue
 [`rawmzvalues`](@ref).
 
 # Examples
+```jldoctest
 julia> msm = MassScanMatrix([1.0]u"s", [100.0, 200.0], [1.0 2.0]);
 
 julia> mzcount(msm)

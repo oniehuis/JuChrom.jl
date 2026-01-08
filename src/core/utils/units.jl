@@ -149,6 +149,7 @@ array and `nothing` are returned.
 See also: [`consistentunits`](@ref)
 
 # Examples
+```jldoctest
 julia> JuChrom.strip_units_checked([1, 2]u"s", "times")
 ([1, 2], s)
 
@@ -161,6 +162,7 @@ julia> JuChrom.strip_units_checked([], "empty")
 julia> JuChrom.strip_units_checked([1u"s", 2u"m"], "mixed")
 ERROR: ArgumentError: Inconsistent units in mixed.
 [...]
+```
 """
 function strip_units_checked(mat::AbstractArray, name::String)
     isempty(mat) && return mat, nothing

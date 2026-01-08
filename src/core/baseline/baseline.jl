@@ -49,6 +49,7 @@ baseline = airpls(times, signal; variances=errors.^2, λ=1e5)
 
 # Sensitive peak detection
 baseline = airpls(x, y; threshold_factor=2.0, no_improvement_limit=15)
+```
 """
 function airpls(
     retentions::AbstractVector{<:Real},
