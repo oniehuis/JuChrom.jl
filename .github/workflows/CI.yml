@@ -61,6 +61,9 @@ jobs:
         run: |
           using Pkg;
           Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()
+          ENV["PYTHON"] = Sys.which("python")
+          Pkg.build("PyCall")
 
       - name: Run unit tests and collect coverage
         env:
