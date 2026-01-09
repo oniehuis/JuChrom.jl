@@ -56,7 +56,7 @@ ms_series = load(ChemStationMS(file; mode=:ms))
 ```
 
 ```@example 1
-# Infer and plot total ion chromatogram
+# Infer tic and plot total ion chromatogram into SVG file
 tic = mzchrom(ms_series)
 
 fig_1 = Figure(; size=(1000, 400))
@@ -64,8 +64,13 @@ axis_1 = Axis(fig_1[1,1], title="Total Ion Chromatogram",
                           ylabel="Intensity [no unit]",
                           xlabel="Retention [minute]")
 lines!(axis_1, rawretentions(tic, unit=u"minute"), rawintensities(tic), color=:red)
-display(fig_1)
+save("tic.svg", fig_1)
 ```
+
+This will produce the following 
+[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
+
+![](tic.svg)
 
 ## Disclaimer
 
