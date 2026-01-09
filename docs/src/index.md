@@ -45,27 +45,29 @@ Most users will work with GC-MS data collected on an instrument. This example lo
 Agilent GC-MS data stored in ChemStation MS format.
 
 ```@example 1
-# Load JuChrom package and its optional Agilent ChemStation MS loader
+# Load JuChrom and the Agilent ChemStation MS loader
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
-# Load CairoMakie package for plotting
+# Load CairoMakie for plotting
 using CairoMakie
 CairoMakie.activate!()
 
-# Load GC-MS run data from an example Agilent ChemStation "data.ms" file
+# Load an example Agilent ChemStation GC-MS run
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 
-# Infer tic
+# Compute the total ion chromatogram (TIC)
 tic = mzchrom(mss)
 
-# Plot TIC into SVG file
-fig_1 = Figure(; size=(1000, 400))
+# Plot the TIC and save to SVG
+fig_1 = Figure(; size=(1200, 400))
 axis_1 = Axis(fig_1[1,1], title="Total Ion Chromatogram",
                           ylabel="Intensity [no unit]",
                           xlabel="Retention [minute]")
-lines!(axis_1, rawretentions(tic, unit=u"minute"), rawintensities(tic), color=:red)
+lines!(axis_1, rawretentions(tic, unit=u"minute"), 
+               rawintensities(tic),
+               color=:blue)
 save("tic.svg", fig_1)
 nothing # hide
 ```
@@ -73,24 +75,49 @@ nothing # hide
 ![](tic.svg)
 
 ```@example 1
-# Integer-bin mz values
+# Bin m/z values to integer bins
 bmss = binmzvalues(mss)
 
-# Extract chromatogram of m/z 85, repressing warnings for scans without m/z 85 signal
-t85 = mzchrom(bmss, 85, warning=false)
+# Extract the m/z 109 chromatogram; silence warnings for scans without m/z 109 signal
+xic = mzchrom(bmss, 109, warning=false)
 
-# Plot m/z 85 chromatogram into SVG file
-fig_2 = Figure(; size=(1000, 400))
-axis_2= Axis(fig_2[1,1], title="m/z 85",
+# Plot the m/z 109 chromatogram and save to SVG
+fig_2 = Figure(; size=(1200, 400))
+axis_2= Axis(fig_2[1,1], title="m/z 109",
                          ylabel="Intensity [no unit]",
                          xlabel="Retention [minute]")
-lines!(axis_2, rawretentions(t85, unit=u"minute"), rawintensities(t85), color=:red)
-save("t85.svg", fig_2)
+lines!(axis_2, rawretentions(xic, unit=u"minute"),
+               rawintensities(xic),
+               color=:blue)
+save("xic.svg", fig_2)
 nothing # hide
 ```
 
-![](t85.svg)
+![](xic.svg)
 
+```@example 1
+# Estimate the baseline with airPLS, assuming Poisson count variance (Var ≈ intensity)
+baseline = airpls(rawretentions(xic, unit=u"minute"),
+                  rawintensities(xic), 
+                  variances=rawintensities(xic),
+                  λ=0.01)  # λ controls baseline smoothness (higher = smoother)
+
+# Plot the m/z 109 chromatogram with its baseline and save to SVG.
+fig_3 = Figure(; size=(1200, 400))
+axis_3= Axis(fig_3[1,1], title="m/z 109",
+                         ylabel="Intensity [no unit]",
+                         xlabel="Retention [minute]")
+lines!(axis_3, rawretentions(xic, unit=u"minute"),
+               rawintensities(xic),
+               color=:blue)
+lines!(axis_3, rawretentions(xic, unit=u"minute"),
+               baseline,
+               color=:red)
+save("xic-baseline.svg", fig_3)
+nothing # hide
+```
+
+![](xic-baseline.svg)
 
 ## Disclaimer
 
