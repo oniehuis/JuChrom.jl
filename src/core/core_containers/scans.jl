@@ -7,11 +7,11 @@ spectrometric scan points.
 `R` is the separation unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the 
 signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes are expected to define `retention::Real`,
-`retention_unit::Union{Unitful.Units,Nothing}`,
-`intensity_unit::Union{Unitful.Units,Nothing}`, and `attrs::NamedTuple`. The intensity
-itself is not prescribed: subtypes may store it under `intensity`, `intensities`, or
-another field, and it may be a scalar, vector, matrix, or other form.
+Concrete subtypes are expected to define `retention::Real`, `retention_unit::Union{
+Unitful.Units, Nothing}`, `intensity_unit::Union{Unitful.Units, Nothing}`, and 
+`attrs::NamedTuple`. The intensity itself is not prescribed: subtypes may store it under 
+`intensity`, `intensities`, or another field, and it may be a scalar, vector, matrix, or 
+other form.
 
 The type parameter `I` indicates only the unit of the intensity data, not its structure
 or storage location. Subtypes should document how to access their intensity values.
@@ -28,15 +28,27 @@ Abstract supertype for individual chromatographic scan points.
 `R` is the separation unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the 
 signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes are expected to define `retention::Real`,
-`retention_unit::Union{Unitful.Units,Nothing}`, `intensity::Real`,
-`intensity_unit::Union{Unitful.Units,Nothing}`, and `attrs::NamedTuple`. Subtypes may
-define additional fields as needed.
+Concrete subtypes are expected to define `retention::Real`, `retention_unit::Union{
+Unitful.Units, Nothing}`, `intensity::Real`, `intensity_unit::Union{Unitful.Units, Nothing}`, 
+and `attrs::NamedTuple`. Subtypes may define additional fields as needed.
 
 See also: [`AbstractScan`](@ref).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
 
+"""
+    ChromScan{R, I} <: AbstractChromScan{R, I}
+
+Concrete chromatographic scan point with a single intensity value at a retention
+coordinate. `ChromScan` is a subtype of `AbstractChromScan`.
+
+`R` is the retention unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the
+intensity unit type (`Unitful.Units` subtype or `Nothing`).
+
+Fields include `retention::Real`, `retention_unit::Union{Unitful.Units, Nothing}`,
+`intensity::Real`, `intensity_unit::Union{Unitful.Units, Nothing}`, and
+`attrs::NamedTuple`.
+"""
 struct ChromScan{
     T1<:Real,
     T2<:Union{Nothing, Unitful.Units},
@@ -79,7 +91,7 @@ end
     ChromScan(
         retention::Union{Real, AbstractQuantity{<:Real}},
         intensity::Union{Real, AbstractQuantity{<:Real}};
-        attrs::NamedTuple = NamedTuple()
+        attrs::NamedTuple=NamedTuple()
     )
 
 Construct a `ChromScan` object representing a single chromatographic scan point acquired at
@@ -156,7 +168,7 @@ end
         retention_unit::Union{Unitful.Units, Nothing},
         intensity::Real,
         intensity_unit::Union{Unitful.Units, Nothing};
-        attrs::NamedTuple = NamedTuple()
+        attrs::NamedTuple=NamedTuple()
     )
 
 Construct a `ChromScan` object by explicitly providing the unit-stripped numeric values and
@@ -204,17 +216,31 @@ Abstract supertype for individual mass spectrometric scan points.
 type (`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
 (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes are expected to define `retention::Real`,
-`retention_unit::Union{Unitful.Units,Nothing}`,
-`mz_values::AbstractVector{<:Real}`, `mz_unit::Union{Unitful.Units,Nothing}`,
-`intensities::AbstractVector{<:Real}`, `intensity_unit::Union{Unitful.Units,Nothing}`,
-`level::Integer`, and `attrs::NamedTuple`. Subtypes may define additional fields as
-needed.
+Concrete subtypes are expected to define `retention::Real`, `retention_unit::Union{
+Unitful.Units, Nothing}`, `mz_values::AbstractVector{<:Real}`, `mz_unit::Union{
+Unitful.Units, Nothing}`, `intensities::AbstractVector{<:Real}`, `intensity_unit::Union{
+Unitful.Units, Nothing}`, `level::Integer`, and `attrs::NamedTuple`. Subtypes may define 
+additional fields as needed.
 
 See also: [`AbstractScan`](@ref).
 """
 abstract type AbstractMassScan{R, M, I} <: AbstractScan{R, I} end
 
+"""
+    MassScan{R, M, I} <: AbstractMassScan{R, M, I}
+
+Concrete mass spectrometric scan point with m/z and intensity vectors. `MassScan` is a
+subtype of `AbstractMassScan`.
+
+`R` is the retention unit type (`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit
+type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
+(`Unitful.Units` subtype or `Nothing`).
+
+Fields include `retention::Real`, `retention_unit::Union{Unitful.Units, Nothing}`,
+`mz_values::AbstractVector{<:Real}`, `mz_unit::Union{Unitful.Units, Nothing}`,
+`intensities::AbstractVector{<:Real}`, `intensity_unit::Union{Unitful.Units, Nothing}`,
+`level::Integer`, and `attrs::NamedTuple`.
+"""
 struct MassScan{
     T1<:Real,
     T2<:Union{Nothing, Unitful.Units},
@@ -282,8 +308,8 @@ end
         retention::Union{Real, AbstractQuantity{<:Real}},
         mz_values::AbstractVector{<:Union{Real, AbstractQuantity{<:Real}}},
         intensities::AbstractVector{<:Union{Real, AbstractQuantity{<:Real}}};
-        level::Integer = 1,
-        attrs::NamedTuple = NamedTuple()
+        level::Integer=1,
+        attrs::NamedTuple=NamedTuple()
     )
 
 Construct a `MassScan` object representing a single scan acquired at a specific point along
@@ -370,8 +396,8 @@ end
         mz_unit::Union{Unitful.Units, Nothing},
         intensities::AbstractVector{<:Real},
         intensity_unit::Union{Unitful.Units, Nothing};
-        level::Integer = 1,
-        attrs::NamedTuple = NamedTuple()
+        level::Integer=1,
+        attrs::NamedTuple=NamedTuple()
     )
 
 Construct a `MassScan` object from pre-parsed and unit-stripped values. This constructor is 

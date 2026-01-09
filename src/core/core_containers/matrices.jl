@@ -1,5 +1,5 @@
 """
-    AbstractMassScanMatrix{R, M, I}
+    AbstractMassScanMatrix{R, M, I} <: Any
 
 Abstract supertype for all matrix-based representations of mass spectrometry scan data.
 
@@ -16,6 +16,24 @@ See also: [`MassScanMatrix`](@ref).
 """
 abstract type AbstractMassScanMatrix{R, M, I} end
 
+"""
+    MassScanMatrix{R, M, I} <: AbstractMassScanMatrix{R, M, I}
+
+Concrete matrix-based representation of mass spectrometry scan data, stored as aligned
+retention and m/z axes with an intensity matrix. `MassScanMatrix` is a subtype of
+`AbstractMassScanMatrix`.
+
+`R` is the separation axis unit type (`Unitful.Units` subtype or `Nothing`), `M` is the
+m/z unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
+(`Unitful.Units` subtype or `Nothing`).
+
+Fields include `retentions::AbstractVector{<:Real}`, `mz_values::AbstractVector{<:Real}`,
+`intensities::AbstractMatrix{<:Real}`, optional units stored in 
+`retention_unit::Union{Unitful.Units, Nothing}`, `mz_unit::Union{Unitful.Units, Nothing}`,
+and `intensity_unit::Union{Unitful.Units, Nothing}`, an MS `level::Integer`, and metadata
+in `instrument::NamedTuple`, `acquisition::NamedTuple`, `user::NamedTuple`,
+`sample::NamedTuple`, and `extras::Dict{String, Any}`.
+"""
 struct MassScanMatrix{
     T1<:AbstractVector{<:Real},
     T2<:Union{Nothing, Unitful.Units},
@@ -119,12 +137,12 @@ end
         mz_unit::Union{Nothing, Unitful.Units},
         intensities_unitfree::AbstractMatrix{<:Real},
         intensity_unit::Union{Nothing, Unitful.Units};
-        level::Integer = 1,
-        instrument::NamedTuple = NamedTuple(),
-        acquisition::NamedTuple = NamedTuple(),
-        user::NamedTuple = NamedTuple(),
-        sample::NamedTuple = NamedTuple(),
-        extras::AbstractDict = Dict{String, Any}()
+        level::Integer=1,
+        instrument::NamedTuple=NamedTuple(),
+        acquisition::NamedTuple=NamedTuple(),
+        user::NamedTuple=NamedTuple(),
+        sample::NamedTuple=NamedTuple(),
+        extras::AbstractDict=Dict{String, Any}()
     )
 
 Construct a `MassScanMatrix` from already unitless numeric arrays and explicit unit fields.
@@ -209,12 +227,12 @@ end
         retentions::AbstractVector{<:Union{Real, Quantity}},
         mz_values::AbstractVector{<:Union{Real, Quantity}},
         intensities::AbstractMatrix{<:Union{Real, Quantity}};
-        level::Integer = 1,
-        instrument::NamedTuple = NamedTuple(),
-        acquisition::NamedTuple = NamedTuple(),
-        user::NamedTuple = NamedTuple(),
-        sample::NamedTuple = NamedTuple(),
-        extras::AbstractDict = Dict{String, Any}()
+        level::Integer=1,
+        instrument::NamedTuple=NamedTuple(),
+        acquisition::NamedTuple=NamedTuple(),
+        user::NamedTuple=NamedTuple(),
+        sample::NamedTuple=NamedTuple(),
+        extras::AbstractDict=Dict{String, Any}()
     )
 
 Construct a `MassScanMatrix` representing a collection of aligned mass spectrometry scans.
@@ -312,20 +330,30 @@ function MassScanMatrix(
         converted_extras)
 end
 
+"""
+    Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
+
+Return a `MassScanMatrix` whose intensities are the elementwise difference
+`intensities(msm₁) .- intensities(msm₂)`, after verifying that retention coordinates, m/z
+values, MS level, and metadata match.
+
+Throws `DimensionMismatch` if any of `retentions`, `mz_values`, `level`, or metadata
+(`instrument`, `acquisition`, `user`, `sample`, `extras`) differ between the inputs.
+"""
 function Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
-    retentions(msm₁) == retentions(msm₂)    || throw(DimensionMismatch(
+    retentions(msm₁) == retentions(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in their retention coordinates."))
-    mzvalues(msm₁)   == mzvalues(msm₂)      || throw(DimensionMismatch(
+    mzvalues(msm₁) == mzvalues(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in their m/z values."))
-    level(msm₁)      == level(msm₂)         || throw(DimensionMismatch(
+    level(msm₁) == level(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in their MS levels."))
-    instrument(msm₁) == instrument(msm₂)    || throw(DimensionMismatch(
+    instrument(msm₁) == instrument(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in the instrument data"))
-    acquisition(msm₁) == acquisition(msm₂)  || throw(DimensionMismatch(
+    acquisition(msm₁) == acquisition(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in the acquisition data"))
-    user(msm₁)       == user(msm₂)          || throw(DimensionMismatch(
+    user(msm₁) == user(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in the user data"))
-    sample(msm₁)     == sample(msm₂)        || throw(DimensionMismatch(
+    sample(msm₁) == sample(msm₂) || throw(DimensionMismatch(
         "MassScanMatrix differ in the sample data"))
     isequal(extras(msm₁), extras(msm₂)) || throw(DimensionMismatch(
         "MassScanMatrix differ in their extras"))

@@ -29,8 +29,7 @@ Base.last(series::AbstractScanSeries) = last(scans(series))
 Base.getproperty(series::AbstractScanSeries, name::Symbol) = getfield(series, name)
 
 """
-    abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} 
-        <: AbstractScanSeries{S, R, Nothing, I}
+    abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} <: AbstractScanSeries{S, R, Nothing, I}
 
 Abstract supertype for a series of chromatographic scans. This type represents a sequence 
 of `AbstractChromScan` objects with associated metadata. It specializes `AbstractScanSeries` 
@@ -52,8 +51,7 @@ See also [`AbstractScanSeries`](@ref), [`AbstractChromScan`](@ref), [`scans`](@r
 abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} <: AbstractScanSeries{S, R, Nothing, I} end
 
 """
-    abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} 
-        <: AbstractScanSeries{S, R, M, I}
+    abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I}
 
 Abstract supertype for a series of mass spectrometry scans. This type represents a sequence 
 of `AbstractMassScan` objects with associated metadata. It specializes `AbstractScanSeries` 
@@ -74,6 +72,20 @@ See also [`AbstractScanSeries`](@ref), [`AbstractMassScan`](@ref), [`scans`](@re
 """
 abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I} end
 
+"""
+    ChromScanSeries{S, R, I} <: AbstractChromScanSeries{S, R, I}
+
+Concrete chromatographic scan series with scan data and metadata. `ChromScanSeries` is a
+subtype of `AbstractChromScanSeries`.
+
+`S` is the concrete scan type (a subtype of `AbstractScan`), `R` is the separation unit type 
+(`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
+(`Unitful.Units` subtype or `Nothing`).
+
+Fields include `scans::AbstractVector{S}`, `instrument::NamedTuple`, 
+`acquisition::NamedTuple`, `user::NamedTuple`, `sample::NamedTuple`, and
+`extras::Dict{String, Any}`.
+"""
 struct ChromScanSeries{
     S<:AbstractChromScan,
     R,
@@ -202,6 +214,20 @@ Base.:(==)(a::ChromScanSeries, b::ChromScanSeries) =
     sample(a) == sample(b) &&
     extras(a) == extras(b)
 
+"""
+    MassScanSeries{S, R, M, I} <: AbstractMassScanSeries{S, R, M, I}
+
+Concrete mass spectrometry scan series with scan data and metadata. `MassScanSeries` is a
+subtype of `AbstractMassScanSeries`.
+
+`S` is the concrete scan type (a subtype of `AbstractScan`), `R` is the separation unit type 
+(`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit type (`Unitful.Units` subtype or 
+`Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
+
+Fields include `scans::AbstractVector{S}`, `instrument::NamedTuple`,
+`acquisition::NamedTuple`, `user::NamedTuple`, `sample::NamedTuple`, and
+`extras::Dict{String, Any}`.
+"""
 struct MassScanSeries{
     S<:AbstractMassScan,
     R,

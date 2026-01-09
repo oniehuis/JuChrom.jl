@@ -20,4 +20,5 @@ retentionunit(::AbstractMassScanMatrix)
 sample(::AbstractMassScanMatrix)
 scancount(::AbstractMassScanMatrix)
 user(::AbstractMassScanMatrix)
+Base.:(-)(::MassScanMatrix, ::MassScanMatrix)
 ```

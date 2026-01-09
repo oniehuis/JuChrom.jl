@@ -190,6 +190,16 @@ end
     JuChrom.ScanSeriesDisplay.print_complex_value(io, (x=1,), "", "", true)
     JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2; 3 4], "", "", true)
     JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2 3; 4 5 6; 7 8 9], "", "", true)
+
+    empty_sections = [("Instrument", NamedTuple())]
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), empty_sections, Dict{String, Any}()) == false
+
+    sections = [("Instrument", (model="X",)),
+                ("User", (name="A",))]
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), sections, Dict{String, Any}()) == true
+
+    extras = Dict("note" => "x" ^ 70, "nested" => (a=1, b=2))
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), sections, extras) == true
 end
 
 end # module
