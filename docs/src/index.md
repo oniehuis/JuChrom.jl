@@ -46,15 +46,25 @@ julia> using JuChrom
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
-# Load CairoMakiie package for plotting
+# Load CairoMakie package for plotting
 using CairoMakie
 CairoMakie.activate!()
 
-# Load GC-MS run data from example Agilent ChemStation "data.ms" file
+# Load GC-MS run data from an example Agilent ChemStation "data.ms" file
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
-data = load(ChemStationMS(file; mode=:ms))
+ms_series = load(ChemStationMS(file; mode=:ms))
+```
 
-RT_start, RT_stop = extrema(retentions(data, unit=u"minute"))
+```@example 1
+# Infer and plot total ion chromatogram
+tic = mzchrom(ms_series)
+
+fig_1 = Figure(; size=(1000, 400))
+axis_1 = Axis(fig_1[1,1], title="Total Ion Chromatogram",
+                          ylabel="Intensity [no unit]",
+                          xlabel="Retention [minute]")
+lines!(axis_1, rawretentions(tic, unit=u"minute"), rawintensities(tic), color=:red)
+display(fig_1)
 ```
 
 ## Disclaimer
