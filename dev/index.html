@@ -16,42 +16,45 @@ mss = load(ChemStationMS(file; mode=:ms))
 tic = mzchrom(mss)
 
 # Plot the TIC and save to SVG
-fig_1 = Figure(; size=(1200, 400))
-axis_1 = Axis(fig_1[1,1], title=&quot;Total Ion Chromatogram&quot;,
-                          ylabel=&quot;Intensity [no unit]&quot;,
-                          xlabel=&quot;Retention [minute]&quot;)
-lines!(axis_1, rawretentions(tic, unit=u&quot;minute&quot;),
-               rawintensities(tic),
-               color=:blue)
-save(&quot;tic.svg&quot;, fig_1)</code></pre><p><img src="tic.svg" alt/></p><pre><code class="language-julia hljs"># Bin m/z values to integer bins
-bmss = binmzvalues(mss)
+fig₁  = Figure(; size=(1000, 350))
+ax₁ = Axis(fig₁[1,1], title=&quot;Total Ion Chromatogram&quot;,
+                      ylabel=&quot;Intensity [no unit]&quot;,
+                      xlabel=&quot;Retention [minute]&quot;)
+lines!(ax₁, rawretentions(tic, unit=u&quot;minute&quot;),
+            rawintensities(tic),
+            color=:blue)
+save(&quot;tic.svg&quot;, fig₁)</code></pre><p><img src="tic.svg" alt/></p><pre><code class="language-julia hljs"># Trim the scan series to a 10–30 minute retention window
+tmss = retentiontrim(mss; start=10u&quot;minute&quot;, stop=30u&quot;minute&quot;)
+
+# Bin m/z values to integer bins
+btmss = binmzvalues(tmss)
 
 # Extract the m/z 109 chromatogram; silence warnings for scans without m/z 109 signal
-xic = mzchrom(bmss, 109, warning=false)
+xic = mzchrom(btmss, 109, warning=false)
 
 # Plot the m/z 109 chromatogram and save to SVG
-fig_2 = Figure(; size=(1200, 400))
-axis_2= Axis(fig_2[1,1], title=&quot;m/z 109&quot;,
-                         ylabel=&quot;Intensity [no unit]&quot;,
-                         xlabel=&quot;Retention [minute]&quot;)
-lines!(axis_2, rawretentions(xic, unit=u&quot;minute&quot;),
-               rawintensities(xic),
-               color=:blue)
-save(&quot;xic.svg&quot;, fig_2)</code></pre><p><img src="xic.svg" alt/></p><pre><code class="language-julia hljs"># Estimate the baseline with airPLS, assuming Poisson count variance (Var ≈ intensity)
+fig₂ = Figure(; size=(1000, 350))
+ax₂= Axis(fig₂[1,1], title=&quot;m/z 109&quot;,
+                     ylabel=&quot;Intensity [no unit]&quot;,
+                     xlabel=&quot;Retention [minute]&quot;)
+lines!(ax₂, rawretentions(xic, unit=u&quot;minute&quot;),
+            rawintensities(xic),
+            color=:blue)
+save(&quot;xic.svg&quot;, fig₂)</code></pre><p><img src="xic.svg" alt/></p><pre><code class="language-julia hljs"># Estimate the baseline with airPLS, assuming Poisson count variance (Var ≈ intensity)
 baseline = airpls(rawretentions(xic, unit=u&quot;minute&quot;),
                   rawintensities(xic),
                   variances=rawintensities(xic),
                   λ=0.01)  # λ controls baseline smoothness (higher = smoother)
 
 # Plot the m/z 109 chromatogram with its baseline and save to SVG.
-fig_3 = Figure(; size=(1200, 400))
-axis_3= Axis(fig_3[1,1], title=&quot;m/z 109&quot;,
-                         ylabel=&quot;Intensity [no unit]&quot;,
-                         xlabel=&quot;Retention [minute]&quot;)
-lines!(axis_3, rawretentions(xic, unit=u&quot;minute&quot;),
-               rawintensities(xic),
-               color=:blue)
-lines!(axis_3, rawretentions(xic, unit=u&quot;minute&quot;),
-               baseline,
-               color=:red)
-save(&quot;xic-baseline.svg&quot;, fig_3)</code></pre><p><img src="xic-baseline.svg" alt/></p><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/Scans/">Scans »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 9 January 2026 14:03">Friday 9 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig₃ = Figure(; size=(1000, 350))
+ax₃ = Axis(fig₃[1,1], title=&quot;m/z 109&quot;,
+                      ylabel=&quot;Intensity [no unit]&quot;,
+                      xlabel=&quot;Retention [minute]&quot;)
+lines!(ax₃, rawretentions(xic, unit=u&quot;minute&quot;),
+            rawintensities(xic),
+            color=:blue)
+lines!(ax₃, rawretentions(xic, unit=u&quot;minute&quot;),
+            baseline,
+            color=:red)
+save(&quot;xic-baseline.svg&quot;, fig₃)</code></pre><p><img src="xic-baseline.svg" alt/></p><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/Scans/">Scans »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 9 January 2026 14:20">Friday 9 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
