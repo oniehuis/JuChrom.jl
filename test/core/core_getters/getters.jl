@@ -8,7 +8,7 @@ module TestGetters
 
 using Test
 using Unitful
-using Unitful: s
+using Unitful: s, pA, nA
 
 # ── Internal Project Imports ─────────────────────────────────────────────────
 
@@ -203,6 +203,15 @@ end
     @test_throws MethodError intensities(nothing)
 end
 
+# ── rawintensities ───────────────────────────────────────────────────────────
+
+@testset "rawintensities(scan::AbstractMassScan)" begin
+    m_unitful = MassScan(1.0u"s", [100.0, 200.0]u"Th", [10.0, 20.0]u"pA")
+    @test rawintensities(m_unitful) == [10.0, 20.0]
+    @test rawintensities(m_unitful; unit=u"nA") == [0.01, 0.02]
+    @test rawintensities(MASSSCAN) == INTS
+end
+
 @testset "intensities(series::AbstractScanSeries, scanindex::Integer)" begin
     # Test that `intensities` works
     @test intensities(MSS, 1) == INTS
@@ -269,6 +278,15 @@ end
     @test_throws MethodError mzvalues([1, 2, 3])
     @test_throws MethodError mzvalues(1.0)
     @test_throws MethodError mzvalues(nothing)
+end
+
+# ── rawmzvalues ──────────────────────────────────────────────────────────────
+
+@testset "rawmzvalues(scan::AbstractMassScan)" begin
+    m_unitful = MassScan(1.0u"s", [100.0, 200.0]u"Th", [10.0, 20.0]u"pA")
+    @test rawmzvalues(m_unitful) == [100.0, 200.0]
+    @test rawmzvalues(m_unitful; unit=u"Th") == [100.0, 200.0]
+    @test rawmzvalues(MASSSCAN) == MZS
 end
 
 @testset "mzvalues(series::AbstractScanSeries, scanindex::Integer)" begin

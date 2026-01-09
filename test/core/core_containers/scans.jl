@@ -196,6 +196,17 @@ end
     ints = fill(1.0, length(ions))
     m3 = MassScan(0.5u"s", ions, ints)
     @test length(m3.mz_values) == length(m3.intensities)
+
+    # Unitful m/z and intensity vectors with unitless retention
+    m4 = MassScan(2.5, [100.0, 150.0]u"Th", [10.0, 20.0]u"pA"; level=3, attrs=ATTRS_TUPLE)
+    @test m4.retention == 2.5
+    @test m4.retention_unit === nothing
+    @test m4.mz_values == [100.0, 150.0]
+    @test m4.mz_unit == u"Th"
+    @test m4.intensities == [10.0, 20.0]
+    @test m4.intensity_unit == pA
+    @test m4.level === 3
+    @test m4.attrs == ATTRS_TUPLE
 end
 
 end # module

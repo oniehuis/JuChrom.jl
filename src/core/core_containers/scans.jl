@@ -2,55 +2,36 @@
     AbstractScan{R, I}
 
 Abstract supertype for all scan objects, such as individual chromatographic or mass
-spectrometric scan points.
+spectrometric scan points. `R` is the separation unit type (`Unitful.Units` subtype or 
+`Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype or 
+`Nothing`).
 
-# Type Parameters
-- `R`: Type of the separation unit (i.e. `Unitful.Units` subtype or `Nothing`)
-- `I`: Type of the signal intensity unit (i.e. `Unitful.Units` subtype or `Nothing`)
+Concrete subtypes are expected to define `retention::Real`,
+`retention_unit::Union{Unitful.Units,Nothing}`,
+`intensity_unit::Union{Unitful.Units,Nothing}`, and `attrs::NamedTuple`. The intensity
+itself is not prescribed: subtypes may store it under `intensity`, `intensities`, or
+another field, and it may be a scalar, vector, matrix, or other form.
 
-# Required Fields for Subtypes
-Concrete subtypes must define the following fields:
+The type parameter `I` indicates only the unit of the intensity data, not its structure
+or storage location. Subtypes should document how to access their intensity values.
 
-- `retention::Real` — separation coordinate (e.g. time, index, or position), stored without 
-  units
-- `retention_unit::Union{Unitful.Units, Nothing}` — unit of the separation axis, or 
-  `nothing` if not provided
-- `intensity_unit::Union{Unitful.Units, Nothing}` — unit of the signal intensity, or 
-  `nothing` if not provided
-- `attrs::NamedTuple` — additional scan-level attrs
-
-**Note:** This abstract type does **not** enforce a specific field name or structure for the 
-intensity data. Subtypes may define fields like `intensity`, `intensities`, or others, and 
-the intensity may be a scalar, a vector, a matrix, or any other form.
-
-The type parameter `I` only indicates the unit of the intensity data, not its structure or 
-where it is stored. Subtypes are responsible for documenting how to access their intensity 
-values.
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref).
 """
 abstract type AbstractScan{R, I} end
 
 """
     AbstractChromScan{R, I} <: AbstractScan{R, I}
 
-Abstract supertype for individual chromatographic scan points.
+Abstract supertype for individual chromatographic scan points. `R` is the separation unit 
+type (`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
+(`Unitful.Units` subtype or `Nothing`).
 
-# Type Parameters
-- `R`: Type of the separation unit (i.e. `Unitful.Units` subtype or `Nothing`)
-- `I`: Type of the signal intensity unit (i.e. `Unitful.Units` subtype or `Nothing`)
+Concrete subtypes are expected to define `retention::Real`,
+`retention_unit::Union{Unitful.Units,Nothing}`, `intensity::Real`,
+`intensity_unit::Union{Unitful.Units,Nothing}`, and `attrs::NamedTuple`. Subtypes may
+define additional fields as needed.
 
-# Required Fields for Subtypes
-Concrete subtypes must define the following fields:
-
-- `retention::Real` — separation coordinate (e.g. time, index, position), stored without 
-  units
-- `retention_unit::Union{Unitful.Units, Nothing}` — unit of retention, or `nothing` if not 
-  provided
-- `intensity::Real` — signal intensity value, stored without units
-- `intensity_unit::Union{Unitful.Units, Nothing}` — unit of intensity, or `nothing` if not 
-  provided
-- `attrs::NamedTuple` — additional scan-level attrs
-
-Subtypes may define additional fields as necessary.
+See also: [`AbstractScan`](@ref).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
 
@@ -105,16 +86,11 @@ values. If units are provided, they are stripped from the values and stored sepa
 the `retention_unit` and `intensity_unit` fields. If no unit is provided, `nothing` is 
 stored.
 
-# Arguments
-- `retention`: Separation coordinate (e.g. `2u"s"` or `5000`)
-- `intensity`: Signal intensity (e.g. `1000` or `10u"pA"`)
-- `attrs`: Optional scan-level attrs as a `NamedTuple` (default: empty)
-
-# Returns
-A `ChromScan` instance where numeric values and their units are stored separately.
-
-# Throws
-- `ArgumentError` if `retention` or `intensity` is not finite
+`retention` is the separation coordinate (for example `2u"s"` or `5000`), `intensity` is
+the signal intensity (for example `1000` or `10u"pA"`), and `attrs` provides optional
+scan-level metadata as a `NamedTuple`. Returns a `ChromScan` instance where numeric values
+and their units are stored separately. Throws `ArgumentError` if `retention` or `intensity`
+is not finite.
 
 See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`retention`](@ref), 
 [`rawretention`](@ref), [`retentionunit`](@ref), [`intensity`](@ref), 
@@ -182,25 +158,28 @@ This constructor bypasses automatic unit inference. It is intended for advanced 
 such as programmatic data loading, conversion, or optimization, where unit parsing has
 already been performed externally.
 
-# Arguments
-- `retention`: Numeric value representing the separation coordinate
-- `retention_unit`: Unit of retention (`Unitful.Units` subtype) or `nothing`
-- `intensity`: Numeric intensity value
-- `intensity_unit`: Unit of intensity (`Unitful.Units` subtype) or `nothing`
-- `attrs`: Optional scan-level attrs (`NamedTuple`, default: empty)
-
-# Throws
-- `ArgumentError` if `retention` or `intensity` is not finite
-
-# Note
-No unit consistency checks are performed in this constructor. It assumes all values are 
-prevalidated.
+`retention` is the numeric separation coordinate, `retention_unit` is its unit or
+`nothing`, `intensity` is the numeric signal intensity, `intensity_unit` is its unit or
+`nothing`, and `attrs` provides optional scan-level metadata. Throws `ArgumentError` if
+`retention` or `intensity` is not finite. No unit consistency checks are performed; values
+are assumed to be prevalidated.
 """
 @inline ChromScan(rt_val::Real, rt_unit::Union{Nothing, Unitful.Units},
     I_val::Real, I_unit::Union{Nothing, Unitful.Units}; attrs::NamedTuple=NamedTuple()) =
     ChromScan{typeof(rt_val), typeof(rt_unit), typeof(I_val), typeof(I_unit), typeof(attrs)}(
         rt_val, rt_unit, I_val, I_unit, attrs)
 
+"""
+    Base.:(==)(a::ChromScan, b::ChromScan)
+
+Return `true` if two `ChromScan` objects have approximately equal retention and intensity
+values (`isapprox` defaults), identical retention and intensity units, and identical
+`attrs`.
+
+See also [`ChromScan`](@ref), [`retention`](@ref), [`rawretention`](@ref), 
+[`retentionunit`](@ref), [`intensity`](@ref), [`rawintensity`](@ref), 
+[`intensityunit`](@ref), [`attrs`](@ref).
+"""
 Base.:(==)(a::ChromScan, b::ChromScan) = 
     retention(a) ≈ retention(b) &&
     retentionunit(a) == retentionunit(b) &&
@@ -211,32 +190,19 @@ Base.:(==)(a::ChromScan, b::ChromScan) =
 """
     AbstractMassScan{R, M, I} <: AbstractScan{R, I}
 
-Abstract supertype for individual mass spectrometric scan points.
+Abstract supertype for individual mass spectrometric scan points. `R` is the separation 
+unit type (`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit type (`Unitful.Units` 
+subtype or `Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype 
+or `Nothing`).
 
-# Type Parameters
-- `R`: Type of the separation unit (i.e. `Unitful.Units` subtype or `Nothing`)
-- `M`: Type of the m/z value unit (i.e. `Unitful.Units` subtype or `Nothing`)
-- `I`: Type of the signal intensity unit (i.e. `Unitful.Units` subtype or `Nothing`)
+Concrete subtypes are expected to define `retention::Real`,
+`retention_unit::Union{Unitful.Units,Nothing}`,
+`mz_values::AbstractVector{<:Real}`, `mz_unit::Union{Unitful.Units,Nothing}`,
+`intensities::AbstractVector{<:Real}`, `intensity_unit::Union{Unitful.Units,Nothing}`,
+`level::Integer`, and `attrs::NamedTuple`. Subtypes may define additional fields as
+needed.
 
-# Required Fields for Subtypes
-Concrete subtypes must define the following fields:
-
-- `retention::Real` — separation coordinate (e.g. time, index, position), stored without 
-  units
-- `retention_unit::Union{Unitful.Units, Nothing}` — unit of separation, or `nothing` if not 
-  provided
-- `mz_values::AbstractVector{<:Real}` — vector of m/z values (must be non-empty, finite, 
-  larger than zero, strictly increasing)
-- `mz_unit::Union{Unitful.Units, Nothing}` — optional unit of m/z values (e.g. Da/e); 
-  typically `nothing` since m/z is unitless by convention
-- `intensities::AbstractVector{<:Real}` — vector of intensity values (same length as 
-  `mz_values`, all finite)
-- `intensity_unit::Union{Unitful.Units, Nothing}` — unit of intensity, or `nothing` if not 
-  provided
-- `level::Integer` — MS level (must be ≥ 1)
-- `attrs::NamedTuple` — additional scan-level attrs
-
-Subtypes may define additional fields as necessary.
+See also: [`AbstractScan`](@ref).
 """
 abstract type AbstractMassScan{R, M, I} <: AbstractScan{R, I} end
 
@@ -319,31 +285,16 @@ plain numbers or `Unitful.AbstractQuantity` values. If units are present, they a
 from the values and stored separately. Each of mz_values and intensities must be either 
 entirely unitless or share a consistent unit within their respective vectors.
 
-# Arguments
-- `retention`: Separation coordinate (e.g. `2.0u"s"` or `5000`)
-- `mz_values`: Vector of mass-to-charge (m/z) values; must be non-empty, finite, strictly 
-  increasing, and > 0
-- `intensities`: Vector of signal intensities (same length as `mz_values`, all finite)
-- `level`: MS level (default: `1`; must be ≥ 1)
-- `attrs`: Optional scan-level attrs as a `NamedTuple`
-
-# Returns
-A `MassScan` instance where numeric values and their units (if present) are stored 
+`retention` is the separation coordinate (for example `2.0u"s"` or `5000`), `mz_values`
+is a vector of m/z values, and `intensities` is the matching vector of signal intensities.
+`level` sets the MS level (default `1`), and `attrs` provides optional scan-level metadata.
+Returns a `MassScan` instance where numeric values and their units (if present) are stored
 separately.
 
-# Throws
-- `ArgumentError` if:
-  - `retention` is not finite
-  - `mz_values` is empty, contains non-positive or non-finite values, or is not strictly 
-    increasing
-  - `mz_values` mix unitful and unitless values
-  - `mz_values` have inconsistent units
-  - `intensities` is empty
-  - `intensities` contain non-finite values
-  - `intensities` mix unitful and unitless values
-  - `intensities` have inconsistent units
-  - `level` is less than 1
-- `DimensionMismatch` if `length(mz_values) ≠ length(intensities)`
+Throws `ArgumentError` if `retention` is not finite, if `mz_values` are empty, non-positive,
+non-finite, or not strictly increasing, if `mz_values` or `intensities` mix unitful and
+unitless values or have inconsistent units, if `intensities` are empty or contain non-finite
+values, or if `level < 1`. Throws `DimensionMismatch` if `length(mz_values) ≠ length(intensities)`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`retention`](@ref), 
 [`rawretention`](@ref), [`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), 
@@ -410,25 +361,16 @@ end
              level::Integer = 1,
              attrs::NamedTuple = NamedTuple())
 
-Construct a `MassScan` object from pre-parsed and unit-stripped values.
-This constructor is intended for advanced use cases where unit inference and validation
-are handled externally (e.g. during deserialization or optimized data loading).
+Construct a `MassScan` object from pre-parsed and unit-stripped values. This constructor is 
+intended for advanced use cases where unit inference and validation are handled externally 
+(e.g. during deserialization or optimized data loading).
 
-# Arguments
-- `retention`: Numeric retention value (unit-stripped)
-- `retention_unit`: Unit of retention (or `nothing`)
-- `mz_values`: Vector of m/z values (must be validated externally)
-- `mz_unit`: Unit of m/z values (or `nothing`)
-- `intensities`: Vector of numeric intensity values (unit-stripped)
-- `intensity_unit`: Unit of intensity (or `nothing`)
-- `level`: MS level (default: 1)
-- `attrs`: Optional attrs (`NamedTuple`)
-
-# Throws
-- `ArgumentError` or `DimensionMismatch` if values are invalid (see inner constructor)
-
-# Note
-This constructor performs no unit consistency checks. Use only when values
+`retention` is the numeric retention value, `retention_unit` is its unit (or `nothing`),
+`mz_values` is the vector of m/z values, `mz_unit` is its unit (or `nothing`),
+`intensities` is the vector of numeric intensity values, and `intensity_unit` is its unit
+(or `nothing`). `level` sets the MS level (default `1`), and `attrs` provides optional
+metadata. Throws `ArgumentError` or `DimensionMismatch` if values are invalid (see inner
+constructor). This constructor performs no unit consistency checks; use it only when values
 have already been validated.
 """
 @inline MassScan(rt_val::Real, rt_unit,
@@ -442,6 +384,18 @@ have already been validated.
              typeof(level), typeof(attrs)}(
         rt_val, rt_unit, mz, mz_unit, I, I_unit, level, attrs)
 
+"""
+    Base.:(==)(a::MassScan, b::MassScan)
+
+Return `true` if two `MassScan` objects have approximately equal retention, m/z values,
+and intensities (`isapprox` defaults), identical m/z, retention, and intensity units, the
+same m/z length, the same `level`, and identical `attrs`.
+
+See also [`MassScan`](@ref), [`retention`](@ref), [`rawretention`](@ref),
+[`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzunit`](@ref),
+[`intensities`](@ref), [`rawintensities`](@ref), [`intensityunit`](@ref), [`level`](@ref),
+[`attrs`](@ref).
+"""
 Base.:(==)(a::MassScan, b::MassScan) = 
     isapprox(retention(a), retention(b)) &&
     retentionunit(a) == retentionunit(b) &&
@@ -450,4 +404,5 @@ Base.:(==)(a::MassScan, b::MassScan) =
     mzunit(a) == mzunit(b) &&
     all(isapprox.(rawintensities(a), rawintensities(b)))  &&
     intensityunit(a) == intensityunit(b) &&
+    level(a) == level(b) &&
     attrs(a) == attrs(b)
