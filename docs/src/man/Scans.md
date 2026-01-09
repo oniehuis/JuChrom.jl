@@ -4,10 +4,8 @@
 AbstractScan
 AbstractChromScan
 ChromScan
-Base.:(==)(::ChromScan, ::ChromScan)
 AbstractMassScan
 MassScan
-Base.:(==)(::MassScan, ::MassScan)
 attrs(::AbstractScan)
 intensity(::AbstractChromScan{<:Any, Nothing})
 intensityunit(::AbstractScan)
@@ -22,4 +20,6 @@ rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})
 rawretention(::AbstractScan{Nothing})
 retention(::AbstractScan{Nothing})
 retentionunit(::AbstractScan)
+Base.:(==)(::ChromScan, ::ChromScan)
+Base.:(==)(::MassScan, ::MassScan)
 ```

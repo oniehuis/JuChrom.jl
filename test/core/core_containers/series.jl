@@ -77,6 +77,18 @@ end
     @test_throws ArgumentError ChromScanSeries(abs_vec)                  # abstract eltype
 end
 
+@testset "ChromScanSeries – interface and equality" begin
+    scans = [mkchrom(1, u"minute", u"pA"), mkchrom(2, u"minute", u"pA")]
+    css1 = ChromScanSeries(scans; instrument=(vendor="Acme",))
+    css2 = ChromScanSeries(scans; instrument=(vendor="Acme",))
+    css3 = ChromScanSeries(scans; instrument=(vendor="Other",))
+
+    @test first(css1) == scans[1]
+    @test last(css1) == scans[end]
+    @test css1 == css2
+    @test css1 != css3
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # MassScanSeries
 # ─────────────────────────────────────────────────────────────────────────────
@@ -146,6 +158,38 @@ end
     @test_throws ArgumentError MassScanSeries(typeof(scans)([]))
     abs_vec = AbstractVector{AbstractMassScan}(scans)
     @test_throws ArgumentError MassScanSeries(abs_vec)
+end
+
+@testset "MassScanSeries – interface and equality" begin
+    scans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
+             mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=2)]
+    mss1 = MassScanSeries(scans; acquisition=(mode="FullScan",))
+    mss2 = MassScanSeries(scans; acquisition=(mode="FullScan",))
+    mss3 = MassScanSeries(scans; acquisition=(mode="SIM",))
+
+    @test first(mss1) == scans[1]
+    @test last(mss1) == scans[end]
+    @test mss1 == mss2
+    @test mss1 != mss3
+end
+
+@testset "ScanSeriesDisplay helpers" begin
+    io = IOBuffer()
+    short = "short"
+    long = "x" ^ 80
+
+    @test JuChrom.ScanSeriesDisplay.format_value_with_wrap(short, 10) == short
+    @test occursin("\n", JuChrom.ScanSeriesDisplay.format_value_with_wrap(long, 10))
+
+    JuChrom.ScanSeriesDisplay.print_wrapped_value(io, "pfx", short, "  ")
+    JuChrom.ScanSeriesDisplay.print_wrapped_value(io, "pfx", "line1\nline2", "  ")
+
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, [1, 2, 3], "", "", true)
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, [1, 2, 3, 4], "", "", true)
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, Dict("a" => 1), "", "", true)
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, (x=1,), "", "", true)
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2; 3 4], "", "", true)
+    JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2 3; 4 5 6; 7 8 9], "", "", true)
 end
 
 end # module

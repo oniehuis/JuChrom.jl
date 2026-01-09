@@ -4,18 +4,18 @@
 Abstract supertype for objects representing a series of scan measurements, such as 
 chromatograms or mass spectra.
 
-This type is parameterized as follows:
-- `S`: Concrete scan type (a subtype of `AbstractScan`)
-- `R`: Type of the separation (retention) unit (`Unitful.Units` subtype or `Nothing`)
-- `M`: Type of the m/z unit (`Unitful.Units` subtype or `Nothing`)
-- `I`: Type of the signal intensity unit (`Unitful.Units` subtype or `Nothing`)
+`S` is the concrete scan type (a subtype of `AbstractScan`), `R` is the separation unit type 
+(`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit type (`Unitful.Units` subtype or 
+`Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes must provide at minimum:
-- `scans::AbstractVector{S}`: ordered collection of scan objects
-- `instrument`, `acquisition`, `sample`, `user`: structured metadata as `NamedTuple`s
-- `extras`: optional unstructured metadata (`Dict{String, Any}`)
+Concrete subtypes are expected to define `scans::AbstractVector{S}` along with
+`instrument`, `acquisition`, `sample`, and `user` metadata as `NamedTuple`s, plus
+`extras::Dict{String, Any}` for unstructured metadata. Subtypes may define additional
+fields as needed.
 
-Subtypes may define additional fields as needed to support specific applications.
+See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`scans`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref).
 """
 abstract type AbstractScanSeries{S, R, M, I} end
 
@@ -29,49 +29,48 @@ Base.last(series::AbstractScanSeries) = last(scans(series))
 Base.getproperty(series::AbstractScanSeries, name::Symbol) = getfield(series, name)
 
 """
-    abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} <: AbstractScanSeries{S, R, Nothing, I}
+    abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} 
+        <: AbstractScanSeries{S, R, Nothing, I}
 
-Abstract supertype for a series of chromatographic scans.
+Abstract supertype for a series of chromatographic scans. This type represents a sequence 
+of `AbstractChromScan` objects with associated metadata. It specializes `AbstractScanSeries` 
+by setting the m/z unit type parameter `M` to `Nothing`, since chromatographic scans do not 
+include m/z values. 
 
-This type represents a sequence of `AbstractChromScan` objects, along with associated 
-metadata. It specializes `AbstractScanSeries` by setting the m/z unit type parameter `M` 
-to `Nothing`, as chromatographic scans do not include m/z values.
+`S` is the concrete scan type (a subtype of `AbstractChromScan`), `R` is the separation unit 
+type (`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
+(`Unitful.Units` subtype or `Nothing`). 
 
-# Type Parameters
-- `S`: Concrete scan type, a subtype of `AbstractChromScan`
-- `R`: Type of the separation (retention time) unit (`Unitful.Units` or `Nothing`)
-- `I`: Type of the signal intensity unit (`Unitful.Units` or `Nothing`)
+Concrete subtypes are expected to define `scans::AbstractVector{S}` along with `instrument`,
+`acquisition`, `sample`, and `user` metadata as `NamedTuple`s, plus 
+`extras::Dict{String, Any}`.
 
-Concrete subtypes must define at least:
-- `scans::AbstractVector{S}`
-- `instrument`, `acquisition`, `sample`, `user` as `NamedTuple`s
-- `extras::Dict{String, Any}`
-
-Supports generic operations on chromatographic scan series.
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScan`](@ref), [`scans`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref).
 """
 abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} <: AbstractScanSeries{S, R, Nothing, I} end
 
 """
-    abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I}
+    abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} 
+        <: AbstractScanSeries{S, R, M, I}
 
-Abstract supertype for a series of mass spectrometry scans.
+Abstract supertype for a series of mass spectrometry scans. This type represents a sequence 
+of `AbstractMassScan` objects with associated metadata. It specializes `AbstractScanSeries` 
+by including the m/z unit type parameter `M`, which is relevant for mass spectrometry data. 
 
-This type represents a sequence of `AbstractMassScan` objects along with associated 
-metadata. It specializes `AbstractScanSeries` by including the m/z unit type parameter `M`, 
-which is relevant for mass spectrometry data.
+`S` is the concrete scan type (a subtype of `AbstractMassScan`), `R` is the separation
+unit type (`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit type (`Unitful.Units` 
+subtype or `Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype 
+or `Nothing`). 
 
-# Type Parameters
-- `S`: Concrete scan type, a subtype of `AbstractMassScan`
-- `R`: Type of the separation (retention time) unit (`Unitful.Units` or `Nothing`)
-- `M`: Type of the m/z unit (`Unitful.Units`)
-- `I`: Type of the signal intensity unit (`Unitful.Units` or `Nothing`)
+Concrete subtypes are expected to define `scans::AbstractVector{S}` along with `instrument`, 
+`acquisition`, `sample`, and `user` metadata as `NamedTuple`s, plus 
+`extras::Dict{String, Any}`.
 
-Concrete subtypes must define at least:
-- `scans::AbstractVector{S}`
-- `instrument`, `acquisition`, `sample`, `user` as `NamedTuple`s
-- `extras::Dict{String, Any}`
-
-Supports generic operations on mass spectrometry scan series.
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScan`](@ref), [`scans`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref).
 """
 abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I} end
 
@@ -137,23 +136,15 @@ end
 Constructs a `ChromScanSeries`, representing an ordered collection of scans (subtypes of 
 `AbstractChromScan`) with associated metadata.
 
-# Arguments
-- `scans`: A non-empty vector of chromatographic scan objects. All elements must be of the 
-  same concrete subtype of `AbstractChromScan`.
-- `instrument`: *(optional)* Structured instrument metadata as a `NamedTuple`.
-- `acquisition`: *(optional)* Acquisition parameters as a `NamedTuple`.
-- `user`: *(optional)* User-related metadata as a `NamedTuple`.
-- `sample`: *(optional)* Sample-related metadata as a `NamedTuple`.
-- `extras`: *(optional)* Unstructured metadata stored as a `Dict{String, Any}`.
+`scans` must be a non-empty vector of chromatographic scan objects, all of the same
+concrete subtype of `AbstractChromScan`. `instrument`, `acquisition`, `user`, and `sample`
+accept optional `NamedTuple` metadata, and `extras` holds unstructured metadata. Returns a
+`ChromScanSeries` containing the scans and metadata. Throws `ArgumentError` if `scans` is
+empty or if the element type of `scans` is not concrete.
 
-# Returns
-A `ChromScanSeries` containing the scans and their associated metadata.
-
-# Throws
-- `ArgumentError` if `scans` is empty.
-- `ArgumentError` if the element type of `scans` is not concrete.
-
-See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -275,24 +266,15 @@ end
 Constructs a `MassScanSeries`, representing an ordered collection of scans (subtypes of 
 `AbstractMassScan`) with associated metadata.
 
-# Arguments
-- `scans`: A non-empty vector of mass scan objects. All elements must be of the same 
-  concrete subtype of `AbstractMassScan`.
-- `instrument`: *(optional)* Structured instrument metadata as a `NamedTuple`.
-- `acquisition`: *(optional)* Acquisition parameters as a `NamedTuple`.
-- `user`: *(optional)* User-related metadata as a `NamedTuple`.
-- `sample`: *(optional)* Sample-related metadata as a `NamedTuple`.
-- `extras`: *(optional)* Unstructured metadata stored as a `Dict{String, Any}`.
+`scans` must be a non-empty vector of mass scan objects, all of the same concrete subtype
+of `AbstractMassScan`. `instrument`, `acquisition`, `user`, and `sample` accept optional
+`NamedTuple` metadata, and `extras` holds unstructured metadata. Returns a `MassScanSeries`
+containing the scans and metadata. Throws `ArgumentError` if `scans` is empty or if the
+element type of `scans` is not concrete.
 
-# Returns
-A `MassScanSeries` containing the scans and their associated metadata.
-
-# Throws
-- `ArgumentError` if `scans` is empty.
-- `ArgumentError` if the element type of `scans` is not concrete.
-
-# See also
-[`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans`](@ref)
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -438,6 +420,7 @@ function print_complex_value(io::IO, value, base_prefix::String, continuation_pr
         println(io, "$(base_prefix)├─ $(size(value, 1))×$(size(value, 2)) $(typeof(value).name.name)")
         if size(value, 1) <= 2 && size(value, 2) <= 3
             # Small matrices: show content
+            nrows = size(value, 1)
             for (i, row_idx) in enumerate(axes(value, 1))
                 is_last_row = i == nrows
                 row_prefix = is_last_row ? "$(base_prefix)└─" : "$(base_prefix)├─"

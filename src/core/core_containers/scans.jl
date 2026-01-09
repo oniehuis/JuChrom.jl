@@ -2,9 +2,10 @@
     AbstractScan{R, I}
 
 Abstract supertype for all scan objects, such as individual chromatographic or mass
-spectrometric scan points. `R` is the separation unit type (`Unitful.Units` subtype or 
-`Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype or 
-`Nothing`).
+spectrometric scan points. 
+
+`R` is the separation unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the 
+signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
 
 Concrete subtypes are expected to define `retention::Real`,
 `retention_unit::Union{Unitful.Units,Nothing}`,
@@ -22,9 +23,10 @@ abstract type AbstractScan{R, I} end
 """
     AbstractChromScan{R, I} <: AbstractScan{R, I}
 
-Abstract supertype for individual chromatographic scan points. `R` is the separation unit 
-type (`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
-(`Unitful.Units` subtype or `Nothing`).
+Abstract supertype for individual chromatographic scan points. 
+
+`R` is the separation unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the 
+signal intensity unit type (`Unitful.Units` subtype or `Nothing`).
 
 Concrete subtypes are expected to define `retention::Real`,
 `retention_unit::Union{Unitful.Units,Nothing}`, `intensity::Real`,
@@ -74,9 +76,11 @@ struct ChromScan{
 end
 
 """
-    ChromScan(retention::Union{Real, AbstractQuantity{<:Real}},
-              intensity::Union{Real, AbstractQuantity{<:Real}};
-              attrs::NamedTuple = NamedTuple())
+    ChromScan(
+        retention::Union{Real, AbstractQuantity{<:Real}},
+        intensity::Union{Real, AbstractQuantity{<:Real}};
+        attrs::NamedTuple = NamedTuple()
+    )
 
 Construct a `ChromScan` object representing a single chromatographic scan point acquired at
 a given value along the separation axis (e.g. retention time, index, or position).
@@ -92,7 +96,7 @@ scan-level metadata as a `NamedTuple`. Returns a `ChromScan` instance where nume
 and their units are stored separately. Throws `ArgumentError` if `retention` or `intensity`
 is not finite.
 
-See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`retention`](@ref), 
+See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`retention`](@ref), 
 [`rawretention`](@ref), [`retentionunit`](@ref), [`intensity`](@ref), 
 [`rawintensity`](@ref), [`intensityunit`](@ref), [`attrs`](@ref).
 
@@ -147,9 +151,13 @@ end
         rt, nothing, I, nothing, attrs)
 
 """
-    ChromScan(retention::Real, retention_unit::Union{Unitful.Units, Nothing},
-              intensity::Real, intensity_unit::Union{Unitful.Units, Nothing};
-              attrs::NamedTuple = NamedTuple())
+    ChromScan(
+        retention::Real,
+        retention_unit::Union{Unitful.Units, Nothing},
+        intensity::Real,
+        intensity_unit::Union{Unitful.Units, Nothing};
+        attrs::NamedTuple = NamedTuple()
+    )
 
 Construct a `ChromScan` object by explicitly providing the unit-stripped numeric values and
 their associated units.
@@ -190,10 +198,11 @@ Base.:(==)(a::ChromScan, b::ChromScan) =
 """
     AbstractMassScan{R, M, I} <: AbstractScan{R, I}
 
-Abstract supertype for individual mass spectrometric scan points. `R` is the separation 
-unit type (`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit type (`Unitful.Units` 
-subtype or `Nothing`), and `I` is the signal intensity unit type (`Unitful.Units` subtype 
-or `Nothing`).
+Abstract supertype for individual mass spectrometric scan points. 
+
+`R` is the separation unit type (`Unitful.Units` subtype or `Nothing`), `M` is the m/z unit 
+type (`Unitful.Units` subtype or `Nothing`), and `I` is the signal intensity unit type 
+(`Unitful.Units` subtype or `Nothing`).
 
 Concrete subtypes are expected to define `retention::Real`,
 `retention_unit::Union{Unitful.Units,Nothing}`,
@@ -252,7 +261,7 @@ struct MassScan{
         all(mz -> mz > 0, mz_values) || throw(
             ArgumentError("all m/z values must be greater than zero"))
         all(diff(mz_values) .> 0) || throw(ArgumentError(
-            "m/z values must be strictly increasing (no duplicates allowed)"))  # consider removing this constraint to reflect different ms scan directions
+            "m/z values must be strictly increasing (no duplicates allowed)"))
         length(intensities) ≥ 1 || throw(ArgumentError("no intensity value(s) provided"))
         all(isfinite, intensities) || throw(ArgumentError("all intensities must be finite"))
         length(mz_values) == length(intensities) || throw(
@@ -294,9 +303,10 @@ separately.
 Throws `ArgumentError` if `retention` is not finite, if `mz_values` are empty, non-positive,
 non-finite, or not strictly increasing, if `mz_values` or `intensities` mix unitful and
 unitless values or have inconsistent units, if `intensities` are empty or contain non-finite
-values, or if `level < 1`. Throws `DimensionMismatch` if `length(mz_values) ≠ length(intensities)`.
+values, or if `level < 1`. Throws `DimensionMismatch` if 
+`length(mz_values) ≠ length(intensities)`.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`retention`](@ref), 
+See also [`AbstractScan`](@ref), [`AbstractMassScan`](@ref), [`retention`](@ref), 
 [`rawretention`](@ref), [`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), 
 [`mzcount`](@ref), [`mzunit`](@ref) [`intensities`](@ref), [`rawintensities`](@ref), 
 [`intensityunit`](@ref), [`level`](@ref), [`attrs`](@ref).
@@ -353,13 +363,16 @@ end
 end
 
 """
-    MassScan(retention::Real, retention_unit::Union{Unitful.Units, Nothing},
-             mz_values::AbstractVector{<:Real},
-             mz_unit::Union{Unitful.Units, Nothing},
-             intensities::AbstractVector{<:Real},
-             intensity_unit::Union{Unitful.Units, Nothing};
-             level::Integer = 1,
-             attrs::NamedTuple = NamedTuple())
+    MassScan(
+        retention::Real,
+        retention_unit::Union{Unitful.Units, Nothing},
+        mz_values::AbstractVector{<:Real},
+        mz_unit::Union{Unitful.Units, Nothing},
+        intensities::AbstractVector{<:Real},
+        intensity_unit::Union{Unitful.Units, Nothing};
+        level::Integer = 1,
+        attrs::NamedTuple = NamedTuple()
+    )
 
 Construct a `MassScan` object from pre-parsed and unit-stripped values. This constructor is 
 intended for advanced use cases where unit inference and validation are handled externally 
