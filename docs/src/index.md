@@ -7,14 +7,14 @@ optional extensions that use PyCall and the Python `olefile` module.
 
 ## Installation
 
-The package is not registered, so install it directly from GitHub:
+JuChrom is not yet registered in the General registry. Install it directly from GitHub:
 
 ```
 julia> ]
 pkg> add https://github.com/oniehuis/JuChrom.jl
 ```
 
-After the installation finishes you can load it in the Julia REPL with:
+After the installation finishes, you can load it in the Julia REPL with:
 
 ```
 julia> using JuChrom
@@ -40,9 +40,6 @@ julia> using JuChrom
   alignment routine for matching spectra based on similarity scores.
 
 ## Quickstart
-
-Most users will work with GC-MS data collected on an instrument. This example loads
-Agilent GC-MS data stored in ChemStation MS format.
 
 ```@example 1
 # Load JuChrom and the Agilent ChemStation MS loader
