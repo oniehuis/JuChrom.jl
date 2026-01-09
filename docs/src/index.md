@@ -39,8 +39,28 @@ julia> using JuChrom
 - Spectral similarity tools (cosine distance/similarity) and a dynamic-programming
   alignment routine for matching spectra based on similarity scores.
 
+## Quickstart
+
+```@example 1
+# Load JuChrom package and its optional Agilent ChemStation MS loader
+using JuChrom
+using JuChrom.ChemStationMSLoader
+
+# Load CairoMakiie package for plotting
+using CairoMakie
+CairoMakie.activate!()
+
+# Load GC-MS run data from example Agilent ChemStation "data.ms" file
+file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
+data = load(ChemStationMS(file; mode=:ms))
+
+RT_start, RT_stop = extrema(retentions(data, unit=u"minute"))
+```
+
 ## Disclaimer
 
-JuChrom is research software provided "as is." You remain responsible for validating
-each step and interpretation of any data analysis; the authors cannot be held liable if
-the package produces misleading or incorrect results.
+JuChrom is provided "as is," without warranty of any kind. Users are responsible for
+independently validating all outputs and interpretations and for determining suitability
+for their specific applications. The authors and contributors disclaim any liability for
+errors, omissions, or any consequences arising from use of the software, including use
+in regulated, clinical, or safety-critical contexts.
