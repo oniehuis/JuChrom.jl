@@ -4,12 +4,47 @@ pkg&gt; add https://github.com/oniehuis/JuChrom.jl</code></pre><p>After the inst
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
-# Load CairoMakiie package for plotting
+# Load CairoMakie package for plotting
 using CairoMakie
 CairoMakie.activate!()
 
-# Load GC-MS run data from example Agilent ChemStation &quot;data.ms&quot; file
+# Load GC-MS run data from an example Agilent ChemStation &quot;data.ms&quot; file
 file = joinpath(JuChrom.agilent, &quot;C7-C40_ChemStationMS.D&quot;, &quot;data.ms&quot;)
-data = load(ChemStationMS(file; mode=:ms))
+ms_series = load(ChemStationMS(file; mode=:ms))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MassScanSeries with 2405 scans
+├─ Scan type:
+│  └─ MassScan{Float32, Unitful.FreeUnits{(ms,), 𝐓, nothing}, Vector{Float32}, Nothing, Vector{Int32}, Nothing, Int64, @NamedTuple{}}
+├─ Retention:
+│  ├─ Range: 191941.0 to 1.899047e6 (ms)
+│  └─ Type: Float32
+├─ M/Z values:
+│  ├─ Range: 29.0 to 562.9 (unitless)
+│  ├─ Total data points: 1526985
+│  └─ Type: Float32
+├─ Intensity:
+│  ├─ Range: 0 to 1186816 (unitless)
+│  ├─ Type: Int32
+│  └─ MS Level: 1
+└─ Annotations:
+   ├─ Instrument:
+   │  ├─ type = MSD 5977B
+   │  ├─ inlet = unknown
+   │  └─ method = VM_STD_Auto_SPME.M
+   ├─ Acquisition:
+   │  ├─ datetime = 19 Jun 24  05:06 pm
+   │  ├─ sequence = 0
+   │  ├─ vial = 23
+   │  └─ replicate = 0
+   ├─ User: operator = unknown
+   └─ Sample:
+     ├─ sample = C7-C40_vial4_dil4_June19_2024
+     └─ description = Alkanstandard vial 4 4x verdünnt
+</code></pre><pre><code class="language-julia hljs"># Infer tic and plot total ion chromatogram into SVG file
+tic = mzchrom(ms_series)
 
-RT_start, RT_stop = extrema(retentions(data, unit=u&quot;minute&quot;))</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(3.1990168f0 minute, 31.650784f0 minute)</code></pre><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/Scans/">Scans »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 9 January 2026 12:10">Friday 9 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig_1 = Figure(; size=(1000, 400))
+axis_1 = Axis(fig_1[1,1], title=&quot;Total Ion Chromatogram&quot;,
+                          ylabel=&quot;Intensity [no unit]&quot;,
+                          xlabel=&quot;Retention [minute]&quot;)
+lines!(axis_1, rawretentions(tic, unit=u&quot;minute&quot;), rawintensities(tic), color=:red)
+save(&quot;tic.svg&quot;, fig_1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">CairoMakie.Screen{SVG}
+</code></pre><p>This will produce the following  <a href="https://en.wikipedia.org/wiki/SVG">Scalable Vector Graphics (SVG)</a> file:</p><p><img src="tic.svg" alt/></p><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/Scans/">Scans »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Friday 9 January 2026 12:40">Friday 9 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
