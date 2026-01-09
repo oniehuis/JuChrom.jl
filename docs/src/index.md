@@ -58,35 +58,38 @@ mss = load(ChemStationMS(file; mode=:ms))
 tic = mzchrom(mss)
 
 # Plot the TIC and save to SVG
-fig_1 = Figure(; size=(1200, 400))
-axis_1 = Axis(fig_1[1,1], title="Total Ion Chromatogram",
-                          ylabel="Intensity [no unit]",
-                          xlabel="Retention [minute]")
-lines!(axis_1, rawretentions(tic, unit=u"minute"), 
-               rawintensities(tic),
-               color=:blue)
-save("tic.svg", fig_1)
+fig₁  = Figure(; size=(1000, 350))
+ax₁ = Axis(fig₁[1,1], title="Total Ion Chromatogram",
+                      ylabel="Intensity [no unit]",
+                      xlabel="Retention [minute]")
+lines!(ax₁, rawretentions(tic, unit=u"minute"), 
+            rawintensities(tic),
+            color=:blue)
+save("tic.svg", fig₁)
 nothing # hide
 ```
 
 ![](tic.svg)
 
 ```@example 1
+# Trim the scan series to a 10–30 minute retention window
+tmss = retentiontrim(mss; start=10u"minute", stop=30u"minute")
+
 # Bin m/z values to integer bins
-bmss = binmzvalues(mss)
+btmss = binmzvalues(tmss)
 
 # Extract the m/z 109 chromatogram; silence warnings for scans without m/z 109 signal
-xic = mzchrom(bmss, 109, warning=false)
+xic = mzchrom(btmss, 109, warning=false)
 
 # Plot the m/z 109 chromatogram and save to SVG
-fig_2 = Figure(; size=(1200, 400))
-axis_2= Axis(fig_2[1,1], title="m/z 109",
-                         ylabel="Intensity [no unit]",
-                         xlabel="Retention [minute]")
-lines!(axis_2, rawretentions(xic, unit=u"minute"),
-               rawintensities(xic),
-               color=:blue)
-save("xic.svg", fig_2)
+fig₂ = Figure(; size=(1000, 350))
+ax₂= Axis(fig₂[1,1], title="m/z 109",
+                     ylabel="Intensity [no unit]",
+                     xlabel="Retention [minute]")
+lines!(ax₂, rawretentions(xic, unit=u"minute"),
+            rawintensities(xic),
+            color=:blue)
+save("xic.svg", fig₂)
 nothing # hide
 ```
 
@@ -100,17 +103,17 @@ baseline = airpls(rawretentions(xic, unit=u"minute"),
                   λ=0.01)  # λ controls baseline smoothness (higher = smoother)
 
 # Plot the m/z 109 chromatogram with its baseline and save to SVG.
-fig_3 = Figure(; size=(1200, 400))
-axis_3= Axis(fig_3[1,1], title="m/z 109",
-                         ylabel="Intensity [no unit]",
-                         xlabel="Retention [minute]")
-lines!(axis_3, rawretentions(xic, unit=u"minute"),
-               rawintensities(xic),
-               color=:blue)
-lines!(axis_3, rawretentions(xic, unit=u"minute"),
-               baseline,
-               color=:red)
-save("xic-baseline.svg", fig_3)
+fig₃ = Figure(; size=(1000, 350))
+ax₃ = Axis(fig₃[1,1], title="m/z 109",
+                      ylabel="Intensity [no unit]",
+                      xlabel="Retention [minute]")
+lines!(ax₃, rawretentions(xic, unit=u"minute"),
+            rawintensities(xic),
+            color=:blue)
+lines!(ax₃, rawretentions(xic, unit=u"minute"),
+            baseline,
+            color=:red)
+save("xic-baseline.svg", fig₃)
 nothing # hide
 ```
 
