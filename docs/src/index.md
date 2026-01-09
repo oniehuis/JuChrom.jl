@@ -41,6 +41,9 @@ julia> using JuChrom
 
 ## Quickstart
 
+Most users will work with GC-MS data collected on an instrument. This example loads
+Agilent GC-MS data stored in ChemStation MS format.
+
 ```@example 1
 # Load JuChrom package and its optional Agilent ChemStation MS loader
 using JuChrom
@@ -52,25 +55,42 @@ CairoMakie.activate!()
 
 # Load GC-MS run data from an example Agilent ChemStation "data.ms" file
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
-ms_series = load(ChemStationMS(file; mode=:ms))
-```
+mss = load(ChemStationMS(file; mode=:ms))
 
-```@example 1
-# Infer tic and plot total ion chromatogram into SVG file
-tic = mzchrom(ms_series)
+# Infer tic
+tic = mzchrom(mss)
 
+# Plot TIC into SVG file
 fig_1 = Figure(; size=(1000, 400))
 axis_1 = Axis(fig_1[1,1], title="Total Ion Chromatogram",
                           ylabel="Intensity [no unit]",
                           xlabel="Retention [minute]")
 lines!(axis_1, rawretentions(tic, unit=u"minute"), rawintensities(tic), color=:red)
 save("tic.svg", fig_1)
+nothing # hide
 ```
 
-This will produce the following 
-[Scalable Vector Graphics (SVG)](https://en.wikipedia.org/wiki/SVG) file:
-
 ![](tic.svg)
+
+```@example 1
+# Integer-bin mz values
+bmss = binmzvalues(mss)
+
+# Extract chromatogram of m/z 85, repressing warnings for scans without m/z 85 signal
+t85 = mzchrom(bmss, 85, warning=false)
+
+# Plot m/z 85 chromatogram into SVG file
+fig_2 = Figure(; size=(1000, 400))
+axis_2= Axis(fig_2[1,1], title="m/z 85",
+                         ylabel="Intensity [no unit]",
+                         xlabel="Retention [minute]")
+lines!(axis_2, rawretentions(t85, unit=u"minute"), rawintensities(t85), color=:red)
+save("t85.svg", fig_2)
+nothing # hide
+```
+
+![](t85.svg)
+
 
 ## Disclaimer
 
