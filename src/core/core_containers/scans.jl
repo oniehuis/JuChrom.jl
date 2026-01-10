@@ -16,7 +16,10 @@ other form.
 The type parameter `I` indicates only the unit of the intensity data, not its structure
 or storage location. Subtypes should document how to access their intensity values.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref).
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
+[`attrs(::AbstractScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractScan{R, I} end
 
