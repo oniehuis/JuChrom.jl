@@ -297,9 +297,9 @@ function mspeakdata(
     retentions = tretention === Nothing ? scantimes(scandata) :
         convert(Vector{tretention}, scantimes(scandata))
     retentions_sec = retentions .* 60
-    retention_unit = u"s"
-    mz_unit = nothing
-    intensity_unit = nothing
+    retentionunit = u"s"
+    mzunit = nothing
+    intensityunit = nothing
     scans = Vector{Any}()
     open(file, "r") do f
         for (i, scandatum) in enumerate(scandata)
@@ -320,9 +320,9 @@ function mspeakdata(
             ints_converted = tintensity === Nothing ? ints : convert(Vector{tintensity}, ints)
             attrs = scandatum_attrs(scandatum; include_tic=true)
             scan = MassScan(
-                retentions_sec[i], retention_unit,
-                mzs_converted, mz_unit, 
-                ints_converted, intensity_unit;
+                retentions_sec[i], retentionunit,
+                mzs_converted, mzunit, 
+                ints_converted, intensityunit;
                 level=scandatum.MSLevel,
                 attrs=attrs)
             push!(scans, scan)
@@ -358,12 +358,12 @@ function readfile(
         elseif mode == :tic
             retentions_unitfree, intensities_unitfree, scan_attrs = 
                 read_scan_data_tic(T, scandata, options)
-            retention_unit = u"s"
-            intensity_unit = nothing
+            retentionunit = u"s"
+            intensityunit = nothing
 
             scans = [
                 ChromScan(
-                    retention, retention_unit, intensity, intensity_unit;
+                    retention, retentionunit, intensity, intensityunit;
                     attrs=attrs
                 ) for (retention, intensity, attrs) in 
                     zip(retentions_unitfree, intensities_unitfree, scan_attrs)

@@ -432,14 +432,14 @@ function binretentions(
     end
 
     # Convert bin centers back to raw numeric retentions + unit metadata.
-    raw_retentions, retention_unit = (isunitful(first(bin_centers)) ? 
+    raw_retentions, retentionunit = (isunitful(first(bin_centers)) ? 
         (Unitful.ustrip.(bin_centers), Unitful.unit(first(bin_centers))) : (bin_centers, 
         nothing))
 
     # Build the output matrix, cloning metadata to avoid side effects.
     msm_out = MassScanMatrix(
         raw_retentions,
-        retention_unit,
+        retentionunit,
         deepcopy(rawmzvalues(msm)),
         mzunit(msm),
         im,
@@ -506,9 +506,9 @@ function binmzvalues(series::MassScanSeries, mzbin_fn::F=integer) where {F<:Func
     # Infer types from the reference scan
     intensity_type        = eltype(rawintensities(reference_scan))
     retention_type        = typeof(reference_scan.retention)
-    mz_unit_type          = typeof(reference_scan.mz_unit)
-    retention_unit_type   = typeof(reference_scan.retention_unit)
-    intensity_unit_type   = typeof(reference_scan.intensity_unit)
+    mz_unit_type          = typeof(reference_scan.mzunit)
+    retention_unit_type   = typeof(reference_scan.retentionunit)
+    intensity_unit_type   = typeof(reference_scan.intensityunit)
     metadata_type         = typeof(reference_scan.attrs)
 
     # Define concrete MassScan type with updated m/z value type
@@ -543,11 +543,11 @@ function binmzvalues(series::MassScanSeries, mzbin_fn::F=integer) where {F<:Func
 
         new_scans[i] = ScanT(
             scan.retention,
-            scan.retention_unit,
+            scan.retentionunit,
             unique_mzs,
-            scan.mz_unit,
+            scan.mzunit,
             binned_ints,
-            scan.intensity_unit,
+            scan.intensityunit,
             scan.level,
             deepcopy(scan.attrs),
         )

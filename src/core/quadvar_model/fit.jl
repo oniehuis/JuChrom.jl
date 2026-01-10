@@ -1,16 +1,16 @@
-@inline function _strip_mz_value(val::Number, mz_unit::Union{Nothing, Unitful.Units})
-    if isnothing(mz_unit)
+@inline function _strip_mz_value(val::Number, mzunit::Union{Nothing, Unitful.Units})
+    if isnothing(mzunit)
         isunitful(val) && throw(ArgumentError("m/z grid is unitless but the value $val carries units."))
         return val
     elseif isunitful(val)
-        return Unitful.ustrip(Unitful.uconvert(mz_unit, val))
+        return Unitful.ustrip(Unitful.uconvert(mzunit, val))
     else
         return val
     end
 end
 
-@inline _strip_mz_values(vals, mz_unit::Union{Nothing, Unitful.Units}) =
-    map(v -> _strip_mz_value(v, mz_unit), vals)
+@inline _strip_mz_values(vals, mzunit::Union{Nothing, Unitful.Units}) =
+    map(v -> _strip_mz_value(v, mzunit), vals)
 
 # ── fitquadvarmodel (series → QuadVarFit) ───────────────────────────────────
 
@@ -30,8 +30,8 @@ restricted to the selected m/z.
 - `mzsel`: m/z selection:
     - `nothing` → all m/z in the reference grid,
     - indices (range or `Vector{Int}`) into `mz_ref`,
-    - `Vector{<:Number}` of exact m/z values (unitless numbers interpreted in `mz_unit`;
-      Unitful quantities are converted to `mz_unit`) found in `mz_ref`.
+    - `Vector{<:Number}` of exact m/z values (unitless numbers interpreted in `mzunit`;
+      Unitful quantities are converted to `mzunit`) found in `mz_ref`.
 - `show_progress` (default `true`), `progress_every` (default `1`).
 - `kwargs...` are forwarded to `fitquadvarmodel(Ms::Vector{<:AbstractMatrix})`.
 
@@ -51,11 +51,11 @@ function fitquadvarmodel(
     first_ms = mscanmatrix(series_batches[1][1])
     intensity_unit = applicable(intensityunit, first_ms) ? intensityunit(first_ms) : nothing
     mz_ref_raw = uniquemzvalues(series_batches[1][1])
-    mz_unit = (!isempty(mz_ref_raw) && isunitful(first(mz_ref_raw))) ? Unitful.unit(first(mz_ref_raw)) : nothing
+    mzunit = (!isempty(mz_ref_raw) && isunitful(first(mz_ref_raw))) ? Unitful.unit(first(mz_ref_raw)) : nothing
 
     # Convert series to n_scans × n_mz matrices (strict checks)
     matrices_batches = Vector{Vector{Matrix{Float64}}}(undef, batchcount)
-    mz_ref = collect(_strip_mz_values(mz_ref_raw, mz_unit))
+    mz_ref = collect(_strip_mz_values(mz_ref_raw, mzunit))
     n_mz = length(mz_ref)
 
     for b in 1:batchcount
@@ -67,7 +67,7 @@ function fitquadvarmodel(
         n_scans_ref = nothing
 
         for (r, obj) in enumerate(reps)
-            mz_r = _strip_mz_values(uniquemzvalues(obj), mz_unit)
+            mz_r = _strip_mz_values(uniquemzvalues(obj), mzunit)
             (length(mz_r) == n_mz && mz_r == mz_ref) ||
                 throw(ArgumentError("m/z grid mismatch at batch $b, replicate $r."))
 
@@ -103,7 +103,7 @@ function fitquadvarmodel(
             throw(ArgumentError("m/z indices out of bounds; valid range is 1:$n_mz."))
     elseif mzsel isa AbstractVector{<:Number}
         vals_raw = collect(mzsel)
-        vals = collect(_strip_mz_values(vals_raw, mz_unit))
+        vals = collect(_strip_mz_values(vals_raw, mzunit))
         idxmap = Dict(v => i for (i, v) in enumerate(mz_ref))   # value -> index
         mz_idx = [get(idxmap, v, 0) for v in vals]
         all(mz_idx .> 0) || throw(ArgumentError("At least one requested m/z value not found in grid."))
@@ -138,8 +138,8 @@ function fitquadvarmodel(
     if show_progress
         r  = results[1]; p = r.params; st = r.stats
         mz_val = isnothing(sel_mz_vals) ? mz_ref[i1] : sel_mz_vals[1]
-        mz_fmt = isnothing(mz_unit) ? @sprintf("%6.1f", mz_val) :
-            @sprintf("%6.1f %s", mz_val, string(mz_unit))
+        mz_fmt = isnothing(mzunit) ? @sprintf("%6.1f", mz_val) :
+            @sprintf("%6.1f %s", mz_val, string(mzunit))
         @info @sprintf("m/z %s  z_rms = %5.3f  cov95 = %5.3f  σ₀² = %12.3f  ϕ = %7.3f  κ = %8.4f  acf = %6.3f  [%4d/%4d]",
                        mz_fmt, st.z_rms, st.cov95, p.σ₀², p.ϕ, p.κ, r.acf, 1, n_mz_select)
     end
@@ -158,8 +158,8 @@ function fitquadvarmodel(
         if show_progress && (j % progress_every == 0 || j == n_mz_select)
             r  = results[j]; p = r.params; st = r.stats
             mz_val = isnothing(sel_mz_vals) ? mz_ref[mi] : sel_mz_vals[j]
-            mz_fmt = isnothing(mz_unit) ? @sprintf("%6.1f", mz_val) :
-                @sprintf("%6.1f %s", mz_val, string(mz_unit))
+            mz_fmt = isnothing(mzunit) ? @sprintf("%6.1f", mz_val) :
+                @sprintf("%6.1f %s", mz_val, string(mzunit))
             @info @sprintf("m/z %s  z_rms = %5.3f  cov95 = %5.3f  σ₀² = %12.3f  ϕ = %7.3f  κ = %8.4f  acf = %6.3f  [%4d/%4d]",
                            mz_fmt, st.z_rms, st.cov95, p.σ₀², p.ϕ, p.κ, r.acf, j, n_mz_select)
         end
@@ -215,13 +215,13 @@ function fitquadvarmodel(
         observed[b] = obs_b
     end
 
-    mz_values = isnothing(sel_mz_vals) ? mz_ref[mz_idx] : sel_mz_vals
+    mzvalues = isnothing(sel_mz_vals) ? mz_ref[mz_idx] : sel_mz_vals
 
     QuadVarFit(
-        mz_unit,
+        mzunit,
         mz_ref,
         mz_idx,
-        mz_values,
+        mzvalues,
         batchcount,
         n_reps_per_batch,
         n_scans_per_batch,

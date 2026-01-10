@@ -196,8 +196,8 @@ function ChromScanSeries(
     isconcretetype(S) || throw(ArgumentError(
         "scans must have a concrete element type, got $S"))
 
-    R = typeof(first(scans).retention_unit)
-    I = typeof(first(scans).intensity_unit)
+    R = typeof(first(scans).retentionunit)
+    I = typeof(first(scans).intensityunit)
 
     converted_extras = Dict{String, Any}(String(k) => v for (k, v) in extras)
 
@@ -337,9 +337,9 @@ function MassScanSeries(
     isconcretetype(S) || throw(ArgumentError(
         "scans must have a concrete element type, got $S"))
 
-    R = typeof(first(scans).retention_unit)
-    M = typeof(first(scans).mz_unit)
-    I = typeof(first(scans).intensity_unit)
+    R = typeof(first(scans).retentionunit)
+    M = typeof(first(scans).mzunit)
+    I = typeof(first(scans).intensityunit)
 
     converted_extras = Dict{String, Any}(String(k) => v for (k, v) in extras)
 

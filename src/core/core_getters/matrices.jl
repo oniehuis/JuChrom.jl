@@ -151,7 +151,7 @@ end
 @inline function intensities(
     msm::AbstractMassScanMatrix{<:Any, <:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert(msm.intensities, msm.intensity_unit, unit)
+    _handle_unitful_convert(msm.intensities, msm.intensityunit, unit)
 end
 
 # ── intensityunit ─────────────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ end
 
 Return the unit associated with the intensity values of a mass scan matrix.
 
-This function retrieves the `intensity_unit` field from any mass scan matrix subtype, 
+This function retrieves the `intensityunit` field from any mass scan matrix subtype, 
 which indicates the physical unit used for the signal intensities (e.g. `u"pA"`). If 
 no unit was specified at construction, returns `nothing`.
 
@@ -184,7 +184,7 @@ julia> intensityunit(msm2) === nothing
 true
 ```
 """
-intensityunit(msm::AbstractMassScanMatrix) = msm.intensity_unit
+intensityunit(msm::AbstractMassScanMatrix) = msm.intensityunit
 
 # ── level ─────────────────────────────────────────────────────────────────────────────────
 
@@ -218,7 +218,7 @@ level(msm::AbstractMassScanMatrix) = msm.level
 
 Return the number of m/z values in the mass scan matrix.
 
-This utility function returns the length of the `mz_values` vector stored in a mass 
+This utility function returns the length of the `mzvalues` vector stored in a mass 
 spectrometric scan matrix. It reflects the number of unique m/z data points (peaks) 
 measured across all scans in the matrix, typically corresponding to the columns of the 
 intensity matrix.
@@ -240,7 +240,7 @@ julia> mzcount(msm) == size(intensities(msm), 2)
 true
 ```
 """
-mzcount(msm::AbstractMassScanMatrix) = length(msm.mz_values)
+mzcount(msm::AbstractMassScanMatrix) = length(msm.mzvalues)
 
 # ── mzunit ────────────────────────────────────────────────────────────────────────────────
 
@@ -271,7 +271,7 @@ julia> mzunit(msm) == nothing
 true
 ```
 """
-mzunit(msm::AbstractMassScanMatrix) = msm.mz_unit
+mzunit(msm::AbstractMassScanMatrix) = msm.mzunit
 
 # ── mzvalues ──────────────────────────────────────────────────────────────────────────────
 
@@ -287,7 +287,7 @@ If the matrix is unitless and a unit is requested, an error is thrown.
 `msm` is a subtype of `AbstractMassScanMatrix`. `unit` is an optional target unit.
 Returns a vector of m/z values, converted to the requested unit when specified, otherwise
 returned in stored form. Throws `ArgumentError` if the matrix is unitless and a unit is
-requested, and `AssertionError` if the matrix claims to have a unit but `mz_unit` is
+requested, and `AssertionError` if the matrix claims to have a unit but `mzunit` is
 `nothing`.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`rawmzvalues`](@ref), 
@@ -316,13 +316,13 @@ ERROR: ArgumentError: Cannot convert unitless m/z values to a unit
 @inline function mzvalues(
     msm::AbstractMassScanMatrix{<:Any, Nothing};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitless(msm.mz_values, unit, "m/z values")
+    _handle_unitless(msm.mzvalues, unit, "m/z values")
 end
 
 @inline function mzvalues(
     msm::AbstractMassScanMatrix{<:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert(msm.mz_values, msm.mz_unit, unit)
+    _handle_unitful_convert(msm.mzvalues, msm.mzunit, unit)
 end
 
 # ── rawintensities ────────────────────────────────────────────────────────────────────────
@@ -333,7 +333,7 @@ end
 
 Return the numeric (unitless) intensity values from all scans in a mass scan matrix.
 
-If the scan matrix’s `intensity_unit` is not `nothing`, the intensity values are optionally 
+If the scan matrix’s `intensityunit` is not `nothing`, the intensity values are optionally 
 converted to the user-specified `unit` using `uconvert`, then stripped of units. If no 
 `unit` is specified, the stored unit is used for stripping.
 
@@ -375,7 +375,7 @@ end
 @inline function rawintensities(
     msm::AbstractMassScanMatrix{<:Any, <:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip(msm.intensities, msm.intensity_unit, unit)
+    _handle_unitful_strip(msm.intensities, msm.intensityunit, unit)
 end
 
 # ── rawmzvalues ───────────────────────────────────────────────────────────────────────────
@@ -392,7 +392,7 @@ an error is thrown.
 `msm` is a subtype of `AbstractMassScanMatrix`. `unit` is an optional target unit.
 Returns a vector of numeric m/z values, optionally converted and stripped of units. Throws
 `ArgumentError` if the matrix is unitless and a unit is requested, and `AssertionError` if
-the matrix claims to have a unit but `mz_unit` is `nothing`.
+the matrix claims to have a unit but `mzunit` is `nothing`.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref).
@@ -417,13 +417,13 @@ ERROR: ArgumentError: Cannot convert unitless m/z values to a unit
 @inline function rawmzvalues(
     msm::AbstractMassScanMatrix{<:Any, Nothing};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitless(msm.mz_values, unit, "m/z values")
+    _handle_unitless(msm.mzvalues, unit, "m/z values")
 end
 
 @inline function rawmzvalues(
     msm::AbstractMassScanMatrix{<:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip(msm.mz_values, msm.mz_unit, unit)
+    _handle_unitful_strip(msm.mzvalues, msm.mzunit, unit)
 end
 
 # ── rawretentions ─────────────────────────────────────────────────────────────────────────
@@ -468,7 +468,7 @@ end
 @inline function rawretentions(
     msm::AbstractMassScanMatrix{<:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip(msm.retentions, msm.retention_unit, unit)
+    _handle_unitful_strip(msm.retentions, msm.retentionunit, unit)
 end
 
 # ── retentions ────────────────────────────────────────────────────────────────────────────
@@ -479,7 +479,7 @@ end
 Return the vector of retention values from a mass scan matrix, optionally converted to a
 specified unit.
 
-If the matrix stores a `retention_unit`, values are returned as `Unitful.AbstractQuantity`s and
+If the matrix stores a `retentionunit`, values are returned as `Unitful.AbstractQuantity`s and
 any requested `unit` is applied via `uconvert`. If the matrix is unitless, the raw numeric
 vector is returned unless a unit conversion is requested, which throws `ArgumentError`.
 This function does not assign units to unitless matrices; it only converts when a unit is
@@ -521,7 +521,7 @@ end
 @inline function retentions(
     msm::AbstractMassScanMatrix{<:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert(msm.retentions, msm.retention_unit, unit)
+    _handle_unitful_convert(msm.retentions, msm.retentionunit, unit)
 end
 
 # ── retentionunit ─────────────────────────────────────────────────────────────────────────
@@ -531,7 +531,7 @@ end
 
 Return the unit associated with the retention value of a scan.
 
-This function retrieves the `retention_unit` field from any scan subtype, which indicates 
+This function retrieves the `retentionunit` field from any scan subtype, which indicates 
 the physical unit used along the separation axis (e.g. `u"s"`, `u"minute"`). If no unit 
 was specified at construction, returns `nothing`.
 
@@ -554,7 +554,7 @@ julia> retentionunit(msm2)
 minute
 ```
 """
-retentionunit(msm::AbstractMassScanMatrix) = msm.retention_unit
+retentionunit(msm::AbstractMassScanMatrix) = msm.retentionunit
 
 # ── sample ────────────────────────────────────────────────────────────────────────────────
 

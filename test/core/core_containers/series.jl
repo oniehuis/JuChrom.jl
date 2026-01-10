@@ -25,8 +25,8 @@ mkms(rt, mzs, ints; level=1) = MassScan(rt, mzs, ints; level)
     T6 = Dict{String,Any}
 
     css = ChromScanSeries{S,
-                          typeof(first(scans).retention_unit),
-                          typeof(first(scans).intensity_unit),
+                          typeof(first(scans).retentionunit),
+                          typeof(first(scans).intensityunit),
                           T1, T2, T3, T4, T5, T6}(
         scans, (vendor="Acme",), (method="M1",), (user="U",), (sample="S",),
         Dict{String,Any}("x"=>1))
@@ -62,8 +62,8 @@ end
     @test css.user == NamedTuple()
     @test css.sample == NamedTuple()
     @test css.extras isa Dict{String,Any}
-    @test typeof(css).parameters[2] === typeof(first(scans).retention_unit)
-    @test typeof(css).parameters[3] === typeof(first(scans).intensity_unit)
+    @test typeof(css).parameters[2] === typeof(first(scans).retentionunit)
+    @test typeof(css).parameters[3] === typeof(first(scans).intensityunit)
 
     # extras: AbstractString keys are converted to String; values widened to Any
     s = "ab"; k = SubString(s, 1, 1)
@@ -105,9 +105,9 @@ end
     T6 = Dict{String,Any}
 
     mss = MassScanSeries{S,
-                         typeof(first(scans).retention_unit),
-                         typeof(first(scans).mz_unit),
-                         typeof(first(scans).intensity_unit),
+                         typeof(first(scans).retentionunit),
+                         typeof(first(scans).mzunit),
+                         typeof(first(scans).intensityunit),
                          T1, T2, T3, T4, T5, T6}(
         scans, (instr="MS",), (mode="FullScan",), (user="U",), (sample="S",),
         Dict{String,Any}("y"=>2))
@@ -144,9 +144,9 @@ end
     @test mss.user == NamedTuple()
     @test mss.sample == NamedTuple()
     @test mss.extras isa Dict{String,Any}
-    @test typeof(mss).parameters[2] === typeof(first(scans).retention_unit)
-    @test typeof(mss).parameters[3] === typeof(first(scans).mz_unit)
-    @test typeof(mss).parameters[4] === typeof(first(scans).intensity_unit)
+    @test typeof(mss).parameters[2] === typeof(first(scans).retentionunit)
+    @test typeof(mss).parameters[3] === typeof(first(scans).mzunit)
+    @test typeof(mss).parameters[4] === typeof(first(scans).intensityunit)
 
     # extras: AbstractString keys conversion; Any value type
     s = "xyz"; k = SubString(s, 2, 3)

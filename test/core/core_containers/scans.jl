@@ -21,9 +21,9 @@ const ATTRS_TUPLE = (column="1", flowrate=0.1)
     cs = ChromScan{Float64, typeof(u"s"), Float64, typeof(pA), NamedTuple}(
         1.0, u"s", 100.0, pA, NamedTuple())
     @test cs.retention === 1.0
-    @test cs.retention_unit == u"s"
+    @test cs.retentionunit == u"s"
     @test cs.intensity === 100.0
-    @test cs.intensity_unit == pA
+    @test cs.intensityunit == pA
     @test cs.attrs == NamedTuple()
 
     # Attrs preserved
@@ -46,39 +46,39 @@ end
     # Unitful retention & intensity → units stripped into *_unit fields
     c1 = ChromScan(5u"minute", 100u"pA")
     @test c1.retention == 5
-    @test c1.retention_unit == u"minute"
+    @test c1.retentionunit == u"minute"
     @test c1.intensity == 100
-    @test c1.intensity_unit == pA
+    @test c1.intensityunit == pA
     @test c1.attrs == NamedTuple()
 
     # Unitful retention, unitless intensity
     c2 = ChromScan(2u"s", 10.0; attrs=ATTRS_TUPLE)
     @test c2.retention == 2
-    @test c2.retention_unit == u"s"
+    @test c2.retentionunit == u"s"
     @test c2.intensity == 10.0
-    @test c2.intensity_unit === nothing
+    @test c2.intensityunit === nothing
     @test c2.attrs == ATTRS_TUPLE
 
     # Unitless retention, unitful intensity
     c3 = ChromScan(12.5, 3u"pA")
     @test c3.retention === 12.5
-    @test c3.retention_unit === nothing
+    @test c3.retentionunit === nothing
     @test c3.intensity === 3
-    @test c3.intensity_unit == pA
+    @test c3.intensityunit == pA
 
     # Unitless retention & intensity
     c4 = ChromScan(100.0, 200.0)
     @test c4.retention === 100.0
-    @test c4.retention_unit === nothing
+    @test c4.retentionunit === nothing
     @test c4.intensity === 200.0
-    @test c4.intensity_unit === nothing
+    @test c4.intensityunit === nothing
 
     # Explicit (unit-stripped) constructor
     c5 = ChromScan(1.5, u"s", 7.0, pA; attrs=(id=1,))
     @test c5.retention === 1.5
-    @test c5.retention_unit == u"s"
+    @test c5.retentionunit == u"s"
     @test c5.intensity === 7.0
-    @test c5.intensity_unit == pA
+    @test c5.intensityunit == pA
     @test c5.attrs == (id=1,)
 end
 
@@ -97,11 +97,11 @@ end
         [10.0, 20.0],  nothing,
         1, NamedTuple())
     @test ms.retention === 1.0
-    @test ms.retention_unit == u"s"
-    @test ms.mz_values == [100.0, 150.0]
-    @test ms.mz_unit === nothing
+    @test ms.retentionunit == u"s"
+    @test ms.mzvalues == [100.0, 150.0]
+    @test ms.mzunit === nothing
     @test ms.intensities == [10.0, 20.0]
-    @test ms.intensity_unit === nothing
+    @test ms.intensityunit === nothing
     @test ms.level === 1
     @test ms.attrs == NamedTuple()
 
@@ -170,20 +170,20 @@ end
     # Defaults: level=1, attrs=()
     m1 = MassScan(2.0u"s", [100.0, 150.0], [10.0, 20.0])
     @test m1.retention == 2.0
-    @test m1.retention_unit == u"s"
-    @test m1.mz_values == [100.0, 150.0]
-    @test m1.mz_unit === nothing
+    @test m1.retentionunit == u"s"
+    @test m1.mzvalues == [100.0, 150.0]
+    @test m1.mzunit === nothing
     @test m1.intensities == [10.0, 20.0]
-    @test m1.intensity_unit === nothing
+    @test m1.intensityunit === nothing
     @test m1.level === 1
     @test m1.attrs == NamedTuple()
 
     # Unitful intensities vector → strip values, keep unit
     m2 = MassScan(1.0u"s", [120.0, 160.0], [600.0, 1100.0]u"pA"; level=2, attrs=ATTRS_TUPLE)
     @test m2.retention == 1.0
-    @test m2.retention_unit == u"s"
+    @test m2.retentionunit == u"s"
     @test m2.intensities == [600.0, 1100.0]
-    @test m2.intensity_unit == pA
+    @test m2.intensityunit == pA
     @test m2.level === 2
     @test m2.attrs == ATTRS_TUPLE
 
@@ -195,16 +195,16 @@ end
     ions = collect(100.0:0.01:100.3)
     ints = fill(1.0, length(ions))
     m3 = MassScan(0.5u"s", ions, ints)
-    @test length(m3.mz_values) == length(m3.intensities)
+    @test length(m3.mzvalues) == length(m3.intensities)
 
     # Unitful m/z and intensity vectors with unitless retention
     m4 = MassScan(2.5, [100.0, 150.0]u"Th", [10.0, 20.0]u"pA"; level=3, attrs=ATTRS_TUPLE)
     @test m4.retention == 2.5
-    @test m4.retention_unit === nothing
-    @test m4.mz_values == [100.0, 150.0]
-    @test m4.mz_unit == u"Th"
+    @test m4.retentionunit === nothing
+    @test m4.mzvalues == [100.0, 150.0]
+    @test m4.mzunit == u"Th"
     @test m4.intensities == [10.0, 20.0]
-    @test m4.intensity_unit == pA
+    @test m4.intensityunit == pA
     @test m4.level === 3
     @test m4.attrs == ATTRS_TUPLE
 end

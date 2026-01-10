@@ -153,10 +153,10 @@ function readfile(file::AbstractString, mode::Symbol)
 
             elseif mode == :tic
                 retentions_unitfree, intensities_unitfree = read_scan_data_tic(f, scancount)
-                retention_unit = u"ms"
-                intensity_unit = nothing
-                scans = [ChromScan(retention_unitfree, retention_unit, intensity_unitfree, 
-                    intensity_unit) for (retention_unitfree, 
+                retentionunit = u"ms"
+                intensityunit = nothing
+                scans = [ChromScan(retention_unitfree, retentionunit, intensity_unitfree, 
+                    intensityunit) for (retention_unitfree, 
                     intensity_unitfree) in zip(retentions_unitfree, intensities_unitfree)]
                 return ChromScanSeries(
                     scans,
@@ -362,11 +362,11 @@ function build_mass_scans(
         "Total intensity count $(length(ints)) does not match " * 
         "sum of counts $(sum(counts))"))
     
-    retention_unit = u"ms"
-    intensity_unit = nothing
+    retentionunit = u"ms"
+    intensityunit = nothing
     level = 1
-    scans = Vector{MassScan{Float32, typeof(retention_unit), Vector{Float32}, Nothing, 
-        Vector{Int32}, typeof(intensity_unit), typeof(level), @NamedTuple{}}}(undef, 
+    scans = Vector{MassScan{Float32, typeof(retentionunit), Vector{Float32}, Nothing, 
+        Vector{Int32}, typeof(intensityunit), typeof(level), @NamedTuple{}}}(undef, 
         length(counts))
 
     offset = 0
@@ -375,8 +375,8 @@ function build_mass_scans(
         x = @view mzs[offset+1:offset+n]
         y = @view ints[offset+1:offset+n]
         p = sortperm(x)
-        scans[i] = MassScan(retentions_unitfree[i], retention_unit, x[p], nothing, y[p], 
-            intensity_unit)
+        scans[i] = MassScan(retentions_unitfree[i], retentionunit, x[p], nothing, y[p], 
+            intensityunit)
         offset += n
     end
 

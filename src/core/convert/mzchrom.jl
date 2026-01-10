@@ -3,33 +3,33 @@
 # helpers
 
 # Works for mz grids that are Vector{<:Real} *or* Vector{<:Unitful.AbstractQuantity}.
-function resolve_mz_index(mz_values::AbstractVector,
+function resolve_mz_index(mzvalues::AbstractVector,
                           sel::Number,
                           tol;
-                          mz_unit=nothing,
+                          mzunit=nothing,
                           warning::Bool=true)::Int
     # empty grid -> soft fail
-    if isempty(mz_values)
+    if isempty(mzvalues)
         warning && @warn "m/z grid is empty; returning 0."
         return 0
     end
 
     # normalize grid to Float64
-    v = if first(mz_values) isa Unitful.AbstractQuantity
-        mz_unit === nothing && throw(ArgumentError("m/z grid has units but `mz_unit` was not provided."))
-        @. float(ustrip(uconvert(mz_unit, mz_values)))
+    v = if first(mzvalues) isa Unitful.AbstractQuantity
+        mzunit === nothing && throw(ArgumentError("m/z grid has units but `mzunit` was not provided."))
+        @. float(ustrip(uconvert(mzunit, mzvalues)))
     else
-        @. float(mz_values)
+        @. float(mzvalues)
     end
 
     # normalize selection to Float64 in same unit system
     sel_val = if sel isa Unitful.AbstractQuantity
-        mz_unit === nothing && throw(ArgumentError("unitful selection requires a unitful m/z grid"))
+        mzunit === nothing && throw(ArgumentError("unitful selection requires a unitful m/z grid"))
         try
-            float(ustrip(uconvert(mz_unit, sel)))
+            float(ustrip(uconvert(mzunit, sel)))
         catch e
             if e isa Unitful.DimensionError
-                throw(ArgumentError("incompatible units for selection: $(sel) vs $(mz_unit)"))
+                throw(ArgumentError("incompatible units for selection: $(sel) vs $(mzunit)"))
             else
                 rethrow()
             end
@@ -40,13 +40,13 @@ function resolve_mz_index(mz_values::AbstractVector,
 
     # normalize tol to Float64 in same unit system
     tol_val = if tol isa Unitful.AbstractQuantity
-        mz_unit === nothing && throw(
+        mzunit === nothing && throw(
             ArgumentError("unitful tolerance requires a unitful m/z grid"))
         try
-            float(ustrip(uconvert(mz_unit, tol)))
+            float(ustrip(uconvert(mzunit, tol)))
         catch e
             if e isa Unitful.DimensionError
-                throw(ArgumentError("incompatible units for tol: $(tol) vs $(mz_unit)"))
+                throw(ArgumentError("incompatible units for tol: $(tol) vs $(mzunit)"))
             else
                 rethrow()
             end
@@ -61,7 +61,7 @@ function resolve_mz_index(mz_values::AbstractVector,
         return i
     else
         warning && @warn ("No m/z match for $(sel) within tolerance $(tol) " 
-                          * "$(mz_unit === nothing ? "" : string(mz_unit)); returning 0.")
+                          * "$(mzunit === nothing ? "" : string(mzunit)); returning 0.")
         return 0
     end
 end
@@ -96,7 +96,7 @@ function extract_value_by_mz(scan::MassScan, sel::Number, tol::Number, warning::
         throw(ArgumentError("unitless series: `tol` must be unitless"))
     end
 
-    j = resolve_mz_index(mzv, sel, tol; mz_unit=mz_u, warning=warning)
+    j = resolve_mz_index(mzv, sel, tol; mzunit=mz_u, warning=warning)
     if j == 0
         return zero(eltype(intensities(scan)))
     else
@@ -206,7 +206,7 @@ function mzchrom(msm::MassScanMatrix,
     scalar_j = nothing
     if selection !== nothing && !(selection isa AbstractVector)
         if by === :mz
-            scalar_j = resolve_mz_index(mzvalues(msm), selection, tol; mz_unit=mzunit(msm), 
+            scalar_j = resolve_mz_index(mzvalues(msm), selection, tol; mzunit=mzunit(msm), 
                                         warning=warning)
         else
             scalar_j = resolve_index(length(mzvalues(msm)), Int(selection); warning=warning)
@@ -217,7 +217,7 @@ function mzchrom(msm::MassScanMatrix,
     resolved_sel = selection
     if selection isa AbstractVector
         if by === :mz
-            resolve = sel -> resolve_mz_index(mzvalues(msm), sel, tol; mz_unit=mzunit(msm), 
+            resolve = sel -> resolve_mz_index(mzvalues(msm), sel, tol; mzunit=mzunit(msm), 
                                               warning=warning)
             idx = [resolve(sel) for sel in selection]
             filter!(!=(0), idx)

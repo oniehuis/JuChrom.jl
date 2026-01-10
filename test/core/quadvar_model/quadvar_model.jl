@@ -96,7 +96,7 @@ end
     # Minimal dummy QuadVarFit (small, consistent)
     function _mkfit()
         mz_ref = [100.0, 101.0]
-        mz_unit = nothing
+        mzunit = nothing
         mz_idx = [1, 2]
         mz_vals = mz_ref
         batchcount = 1
@@ -117,11 +117,11 @@ end
         qc_s_max = [10.0, 10.0]
         qc_nz = [5, 5]
         observed = [[zeros(3, 2) for _ in 1:2]]
-        intensity_unit = nothing
+        intensityunit = nothing
 
-        QuadVarFit(mz_unit, mz_ref, mz_idx, mz_vals, batchcount,
+        QuadVarFit(mzunit, mz_ref, mz_idx, mz_vals, batchcount,
                    n_reps_per_batch, n_scans_per_batch,
-                   params, intensity_unit, signal, offsets, gains,
+                   params, intensityunit, signal, offsets, gains,
                    scale_c, acf, acf_lag, n_pairs,
                    qc_z_rms, qc_cov68, qc_cov95, qc_s_min, qc_s_max, qc_nz,
                    observed)
@@ -755,9 +755,9 @@ end
     # Basic success path (default mzsel = all)
     q = fitquadvarmodel(series_batches; show_progress=false)
     @test q isa QuadVarFit
-    @test q.mz_unit === nothing
+    @test q.mzunit === nothing
     @test length(q.mz_ref) == n_mz
-    @test q.mz_values == mz_ref
+    @test q.mzvalues == mz_ref
     @test q.batchcount == 2
     @test q.n_reps_per_batch == [R1, R2]
     @test q.n_scans_per_batch == [T1, T2]
@@ -773,7 +773,7 @@ end
     # mzsel by indices
     qidx = fitquadvarmodel(series_batches; mzsel=[2, 4, 6], show_progress=false)
     @test qidx.mz_idx == [2, 4, 6]
-    @test qidx.mz_values == mz_ref[[2, 4, 6]]
+    @test qidx.mzvalues == mz_ref[[2, 4, 6]]
     @test length(qidx.params) == 3
     @test size(qidx.observed[2][1]) == (T2, 3)
 
@@ -788,7 +788,7 @@ end
     qval = fitquadvarmodel(series_batches; mzsel=[mz_ref[1], mz_ref[5]], 
         show_progress=false)
     @test qval.mz_idx == [1, 5]
-    @test qval.mz_values == [mz_ref[1], mz_ref[5]]
+    @test qval.mzvalues == [mz_ref[1], mz_ref[5]]
 
     # Unitful m/z grids are preserved
     mz_ref_unit = mz_ref .* u"Th"
@@ -797,14 +797,14 @@ end
     series_batches_unit = [reps1_unit, reps2_unit]
 
     qunit = fitquadvarmodel(series_batches_unit; show_progress=false)
-    @test qunit.mz_unit == u"Th"
+    @test qunit.mzunit == u"Th"
     @test qunit.mz_ref == mz_ref
     @test all(x -> !JuChrom.isunitful(x), qunit.mz_ref)
-    @test qunit.mz_values == mz_ref
+    @test qunit.mzvalues == mz_ref
 
     qunit_sel = fitquadvarmodel(series_batches_unit; mzsel=[mz_ref_unit[2], mz_ref_unit[4]], show_progress=false)
-    @test qunit_sel.mz_unit == u"Th"
-    @test qunit_sel.mz_values == [mz_ref[2], mz_ref[4]]
+    @test qunit_sel.mzunit == u"Th"
+    @test qunit_sel.mzvalues == [mz_ref[2], mz_ref[4]]
 
     # Forwarding of kwargs to inner solver: change λ_signal to smoother pooled signal
     function _roughness_sum(qv::QuadVarFit)
@@ -1437,9 +1437,9 @@ end
 @testset "QuadVarFit()" begin
     # Small synthetic fixture
     mz_ref = [100.0, 101.0, 102.0]
-    mz_unit = nothing
+    mzunit = nothing
     mz_idx = [1, 3]
-    mz_values = mz_ref[mz_idx]
+    mzvalues = mz_ref[mz_idx]
     n_sel = length(mz_idx)
 
     batchcount = 2
@@ -1489,13 +1489,13 @@ end
     for b in 1:batchcount
         observed[b] = [fill(0.0, n_scans_per_batch[b], n_sel) for _ in 1:n_reps_per_batch[b]]
     end
-    intensity_unit = nothing
+    intensityunit = nothing
 
     f = QuadVarFit(
-        mz_unit, mz_ref, mz_idx, mz_values,
+        mzunit, mz_ref, mz_idx, mzvalues,
         batchcount,
         n_reps_per_batch, n_scans_per_batch,
-        params, intensity_unit, signal, offsets, gains,
+        params, intensityunit, signal, offsets, gains,
         scale_c, acf, acf_lag, n_pairs,
         qc_z_rms, qc_cov68, qc_cov95, qc_s_min, qc_s_max, qc_nz,
         observed
@@ -1507,11 +1507,11 @@ end
 
     # Basic shape/consistency
     @test f.batchcount == batchcount
-    @test f.mz_unit === mz_unit
-    @test f.mz_values == f.mz_ref[f.mz_idx]
-    @test length(f.mz_idx) == length(f.mz_values) == n_sel
+    @test f.mzunit === mzunit
+    @test f.mzvalues == f.mz_ref[f.mz_idx]
+    @test length(f.mz_idx) == length(f.mzvalues) == n_sel
     @test allunique(f.mz_idx)
-    @test f.intensity_unit === intensity_unit
+    @test f.intensityunit === intensityunit
 
     # params element type is concrete subtype
     @test f.params isa Vector{<:QuadVarParams}
@@ -1709,7 +1709,7 @@ end
     # Minimal, internally-consistent builder
     function _mkfit(; n_mz=8, idx=collect(2:7), reps=(3,4), scans=(10,12))
         mz_ref = collect(range(100.0, length=n_mz, step=0.5))
-        mz_unit = nothing
+        mzunit = nothing
         mz_idx = idx
         mz_vals = mz_ref[mz_idx]
         batchcount = length(reps)
@@ -1735,11 +1735,11 @@ end
         qc_nz    = fill(50, n_sel)
         observed = [[zeros(n_scans_per_batch[b], n_sel) for _ in 1:n_reps_per_batch[b]] 
                     for b in 1:batchcount]
-        intensity_unit = nothing
+        intensityunit = nothing
 
-        QuadVarFit(mz_unit, mz_ref, mz_idx, mz_vals, batchcount,
+        QuadVarFit(mzunit, mz_ref, mz_idx, mz_vals, batchcount,
                    n_reps_per_batch, n_scans_per_batch,
-                   params, intensity_unit, signal, offsets, gains,
+                   params, intensityunit, signal, offsets, gains,
                    scale_c, acf, acf_lag, n_pairs,
                    qc_z_rms, qc_cov68, qc_cov95, qc_s_min, qc_s_max, qc_nz,
                    observed)
@@ -1781,7 +1781,7 @@ end
     # Minimal, internally-consistent builder
     function _mkfit(; n_mz=8, idx=collect(2:7), reps=(3,4), scans=(10,12))
         mz_ref = collect(range(100.0, length=n_mz, step=0.5))
-        mz_unit = nothing
+        mzunit = nothing
         mz_idx = idx
         mz_vals = mz_ref[mz_idx]
         batchcount = length(reps)
@@ -1806,11 +1806,11 @@ end
         qc_nz    = fill(1, n_sel)
         observed = [[zeros(n_scans_per_batch[b], n_sel) for _ in 1:n_reps_per_batch[b]] 
                     for b in 1:batchcount]
-        intensity_unit = nothing
+        intensityunit = nothing
 
-        QuadVarFit(mz_unit, mz_ref, mz_idx, mz_vals, batchcount,
+        QuadVarFit(mzunit, mz_ref, mz_idx, mz_vals, batchcount,
                    n_reps_per_batch, n_scans_per_batch,
-                   params, intensity_unit, signal, offsets, gains,
+                   params, intensityunit, signal, offsets, gains,
                    scale_c, acf, acf_lag, n_pairs,
                    qc_z_rms, qc_cov68, qc_cov95, qc_s_min, qc_s_max, qc_nz,
                    observed)

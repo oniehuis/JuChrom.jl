@@ -45,7 +45,7 @@ function Makie.plot(q::JuChrom.QuadVarFit;
 
     obs_ncols = size(obs_batch[1], 2)
     full_ncols = length(q.mz_ref)
-    sel_ncols  = length(q.mz_values)
+    sel_ncols  = length(q.mzvalues)
 
     observed_is_full = obs_ncols == full_ncols
     observed_is_sel  = obs_ncols == sel_ncols
@@ -55,8 +55,8 @@ function Makie.plot(q::JuChrom.QuadVarFit;
 
     # Column index into observed matrices
     col_idx  = observed_is_full ? q.mz_idx[mzi] : mzi
-    mzval    = q.mz_values[mzi]
-    mzunit   = q.mz_unit
+    mzval    = q.mzvalues[mzi]
+    mzunit   = q.mzunit
     p        = q.params[mzi]
     acf_val  = q.acf[mzi]
 

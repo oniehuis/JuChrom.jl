@@ -34,7 +34,7 @@ attrs(scan::AbstractScan) = scan.attrs
 
 Return the intensity value of a chromatographic scan, optionally as a `Unitful.AbstractQuantity`.
 
-If the scan stores an `intensity_unit`, the return value is an `AbstractQuantity`, and any requested
+If the scan stores an `intensityunit`, the return value is an `AbstractQuantity`, and any requested
 `unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value is
 returned unless a unit conversion is requested, which throws `ArgumentError`. This
 function does not assign units to unitless scans; it only converts when a unit is stored.
@@ -55,7 +55,7 @@ julia> intensity(csc)
 julia> intensity(csc; unit=u"fA")
 100000 fA
 
-julia> csc2 = ChromScan(5000, 100);  # intensity_unit == nothing
+julia> csc2 = ChromScan(5000, 100);  # intensityunit == nothing
 
 julia> intensity(csc2)
 100
@@ -74,7 +74,7 @@ end
 @inline function intensity(
     scan::AbstractChromScan{<:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert_scalar(scan.intensity, scan.intensity_unit, unit)
+    _handle_unitful_convert_scalar(scan.intensity, scan.intensityunit, unit)
 end
 
 # ── intensityunit ─────────────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ end
 
 Return the unit associated with the intensity value(s) of a scan.
 
-This function retrieves the `intensity_unit` field from any scan subtype, which indicates 
+This function retrieves the `intensityunit` field from any scan subtype, which indicates 
 the physical unit used for the signal intensity or intensities (e.g. `u"pA"`, `u"counts"`). 
 If no unit was specified at construction, returns `nothing`.
 
@@ -108,7 +108,7 @@ julia> intensityunit(csc) === nothing
 true
 ```
 """
-intensityunit(scan::AbstractScan) = scan.intensity_unit
+intensityunit(scan::AbstractScan) = scan.intensityunit
 
 # ── intensities ───────────────────────────────────────────────────────────────────────────
 
@@ -125,7 +125,7 @@ unitless and a unit is requested, an error is thrown.
 (`Unitful.Units` subtype or `nothing`). Returns a vector of intensity values, converted
 to the requested unit when provided. Throws `ArgumentError` if the scan has no intensity
 unit and a conversion is requested, and `AssertionError` if the scan claims to have a unit
-but `intensity_unit` is `nothing`.
+but `intensityunit` is `nothing`.
 
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawintensities`](@ref), 
@@ -151,7 +151,7 @@ end
 @inline function intensities(
     scan::AbstractMassScan{<:Any, <:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert(scan.intensities, scan.intensity_unit, unit)
+    _handle_unitful_convert(scan.intensities, scan.intensityunit, unit)
 end
 
 # ── level ────────────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ level(scan::AbstractMassScan) = scan.level
 
 Return the number of m/z values in the scan.
 
-This is a simple utility function that returns the length of the `mz_values` vector stored 
+This is a simple utility function that returns the length of the `mzvalues` vector stored 
 in a mass spectrometric scan. It reflects the number of data points (peaks) measured at a 
 given separation coordinate.
 
@@ -203,7 +203,7 @@ julia> mzcount(msc)
 3
 ```
 """
-mzcount(scan::AbstractMassScan) = length(scan.mz_values)
+mzcount(scan::AbstractMassScan) = length(scan.mzvalues)
 
 # ── mzunit ────────────────────────────────────────────────────────────────────────────────
 
@@ -229,7 +229,7 @@ julia> mzunit(msc) === nothing
 true
 ```
 """
-mzunit(scan::AbstractMassScan) = scan.mz_unit
+mzunit(scan::AbstractMassScan) = scan.mzunit
 
 # ── mzvalues───────────────────────────────────────────────────────────────────────────────
 
@@ -246,7 +246,7 @@ If the scan is unitless and a unit is requested, an error is thrown.
 (`Unitful.Units` subtype or `nothing`). Returns a vector of m/z values, converted to the
 requested unit when specified, otherwise returned in stored form. Throws `ArgumentError`
 if the scan is unitless and a unit is requested, and `AssertionError` if the scan claims
-to have a unit but `mz_unit` is `nothing`.
+to have a unit but `mzunit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawmzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
@@ -262,13 +262,13 @@ true
 @inline function mzvalues(
     scan::AbstractMassScan{<:Any, Nothing, <:Any};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitless(scan.mz_values, unit, "m/z values")
+    _handle_unitless(scan.mzvalues, unit, "m/z values")
 end
 
 @inline function mzvalues(
     scan::AbstractMassScan{<:Any, <:Unitful.Units, <:Any};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert(scan.mz_values, scan.mz_unit, unit)
+    _handle_unitful_convert(scan.mzvalues, scan.mzunit, unit)
 end
 
 # ── rawintensities ────────────────────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ unit before stripping.
 `scan` is a subtype of `AbstractMassScan`. `unit` is an optional target unit
 (`Unitful.Units` subtype or `nothing`). Returns a vector of numeric intensity values with
 units stripped. Throws `ArgumentError` if the scan is unitless but a unit conversion is
-requested, and `AssertionError` if the scan claims to have a unit but `intensity_unit` is
+requested, and `AssertionError` if the scan claims to have a unit but `intensityunit` is
 `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`intensities`](@ref), 
@@ -311,7 +311,7 @@ end
 @inline function rawintensities(
     scan::AbstractMassScan{<:Any, <:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip(scan.intensities, scan.intensity_unit, unit)
+    _handle_unitful_strip(scan.intensities, scan.intensityunit, unit)
 end
 
 # ── rawintensity ──────────────────────────────────────────────────────────────────────────
@@ -321,7 +321,7 @@ end
 
 Return the numeric intensity value of a chromatographic scan as a unitless `Real`.
 
-If the scan stores an `intensity_unit`, the value is optionally converted to `unit` via
+If the scan stores an `intensityunit`, the value is optionally converted to `unit` via
 `uconvert` and then stripped. If the scan is unitless, the raw numeric value is returned
 unless a unit conversion is requested, which throws `ArgumentError`. This function does
 not assign units to unitless scans; it only converts when a unit is stored.
@@ -361,7 +361,7 @@ end
 @inline function rawintensity(
     scan::AbstractChromScan{<:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip_scalar(scan.intensity, scan.intensity_unit, unit)
+    _handle_unitful_strip_scalar(scan.intensity, scan.intensityunit, unit)
 end
 
 # ── rawmzvalues ───────────────────────────────────────────────────────────────────────────
@@ -379,7 +379,7 @@ an error is thrown.
 (`Unitful.Units` subtype or `nothing`). Returns a vector of numeric m/z values, optionally
 converted to the requested unit and stripped of units. Throws `ArgumentError` if the scan
 is unitless and a unit is requested, and `AssertionError` if the scan claims to have a
-unit but `mz_unit` is `nothing`.
+unit but `mzunit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
@@ -395,13 +395,13 @@ true
 @inline function rawmzvalues(
     scan::AbstractMassScan{<:Any, <:Any, Nothing};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitless(scan.mz_values, unit, "m/z values")
+    _handle_unitless(scan.mzvalues, unit, "m/z values")
 end
 
 @inline function rawmzvalues(
     scan::AbstractMassScan{<:Any, <:Any, <:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip(scan.mz_values, scan.mz_unit, unit)
+    _handle_unitful_strip(scan.mzvalues, scan.mzunit, unit)
 end
 
 # ── rawretention ──────────────────────────────────────────────────────────────────────────
@@ -411,7 +411,7 @@ end
 
 Return the numeric retention value of a scan, always as a unitless `Real`.
 
-If the scan stores a `retention_unit`, the value is optionally converted to `unit` via
+If the scan stores a `retentionunit`, the value is optionally converted to `unit` via
 `uconvert` and then stripped. If the scan is unitless, the raw numeric value is returned
 unless a unit conversion is requested, which throws `ArgumentError`. This function does
 not assign units to unitless scans; it only converts when a unit is stored.
@@ -451,7 +451,7 @@ end
 @inline function rawretention(
     scan::AbstractScan{<:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_strip_scalar(scan.retention, scan.retention_unit, unit)
+    _handle_unitful_strip_scalar(scan.retention, scan.retentionunit, unit)
 end
 
 # ── retention ─────────────────────────────────────────────────────────────────────────────
@@ -461,7 +461,7 @@ end
 
 Return the retention value of a scan, optionally converted to a specified unit.
 
-If the scan stores a `retention_unit`, the return value is a `Unitful.AbstractQuantity`, and any
+If the scan stores a `retentionunit`, the return value is a `Unitful.AbstractQuantity`, and any
 requested `unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value
 is returned unless a unit conversion is requested, which throws `ArgumentError`. This
 function does not assign units to unitless scans; it only converts when a unit is stored.
@@ -501,7 +501,7 @@ end
 @inline function retention(
     scan::AbstractScan{<:Unitful.Units};
     unit::Union{Nothing, Unitful.Units}=nothing)
-    _handle_unitful_convert_scalar(scan.retention, scan.retention_unit, unit)
+    _handle_unitful_convert_scalar(scan.retention, scan.retentionunit, unit)
 end
 
 # ── retentionunit ─────────────────────────────────────────────────────────────────────────
@@ -511,7 +511,7 @@ end
 
 Return the unit associated with the retention value of a scan.
 
-This function retrieves the `retention_unit` field from any scan subtype, which indicates 
+This function retrieves the `retentionunit` field from any scan subtype, which indicates 
 the physical unit used along the separation axis (e.g. `u"s"`, `u"minute"`). If no unit 
 was specified at construction, returns `nothing`.
 
@@ -534,4 +534,4 @@ julia> retentionunit(csc)
 minute
 ```
 """
-retentionunit(scan::AbstractScan) = scan.retention_unit
+retentionunit(scan::AbstractScan) = scan.retentionunit

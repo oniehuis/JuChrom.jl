@@ -127,12 +127,12 @@ function readfile(file::AbstractString, unit::Union{Nothing, Unitful.Units})
             # Start and stop time
             starttime, stoptime = read_vector_ntoh_at(f, 282, Float32, 2)
             retentions_unitfree = LinRange(starttime, stoptime, scancount)
-            retention_unit = u"ms"
+            retentionunit = u"ms"
 
             # Signal unit
-            intensity_unit = read_len_prefixed_string_ltoh_at(f, 4172, 2)
-            intensity_unit == "pA" || throw(FileFormatError(
-                "Unsupported intensity unit \"$intensity_unit\" in file: $file"))
+            intensityunit = read_len_prefixed_string_ltoh_at(f, 4172, 2)
+            intensityunit == "pA" || throw(FileFormatError(
+                "Unsupported intensity unit \"$intensityunit\" in file: $file"))
 
             if unit == u"pA"
                 scalingfactor = read_scalar_ntoh_at(f, 4732, Float64)
@@ -148,11 +148,11 @@ function readfile(file::AbstractString, unit::Union{Nothing, Unitful.Units})
             raw_intensities = read_vector_ltoh_at(f, 6144, Float64, scancount)
             any(raw_intensities .< 0) && @warn "Negative intensity values found in file: $file"
 
-            scans = Vector{ChromScan{eltype(retentions_unitfree), typeof(retention_unit),
+            scans = Vector{ChromScan{eltype(retentions_unitfree), typeof(retentionunit),
                 eltype(raw_intensities), typeof(unit), @NamedTuple{}}}(undef, scancount)
             @inbounds for i in 1:scancount
                 intensity = raw_intensities[i] * scalingfactor
-                scans[i] = ChromScan(retentions_unitfree[i], retention_unit, intensity, 
+                scans[i] = ChromScan(retentions_unitfree[i], retentionunit, intensity, 
                     unit)
             end
             ChromScanSeries(

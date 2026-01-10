@@ -360,7 +360,7 @@ end
 Return the numeric (unitless) intensity values from all scans in a chromatographic scan 
 series.
 
-If the scan’s `intensity_unit` is not `nothing`, the intensity values are optionally 
+If the scan’s `intensityunit` is not `nothing`, the intensity values are optionally 
 converted to the user-specified `unit` using `uconvert`, then stripped of units. If no 
 `unit` is specified, the stored unit is used for stripping.
 
@@ -406,7 +406,7 @@ no conversion is performed.
 target unit for conversion before stripping (must be `nothing` for unitless scans).
 Returns a vector of unitless intensity values for the specified scan. Throws `BoundsError`
 if `scanindex` is out of range, `ArgumentError` if a unit is requested for unitless
-intensities, and `AssertionError` if the scan claims to have a unit but `intensity_unit`
+intensities, and `AssertionError` if the scan claims to have a unit but `intensityunit`
 is `nothing`.
 
 See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`intensityunit`](@ref), 

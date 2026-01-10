@@ -23,14 +23,14 @@ CairoMakie.activate!()  # headless backend for tests
 
 function make_dummy_qvf()
     mz_ref = [100.0]
-    mz_unit = nothing
+    mzunit = nothing
     mz_idx = [1]
-    mz_values = [100.0]
+    mzvalues = [100.0]
     batchcount = 1
     n_reps_per_batch = [1]
     n_scans_per_batch = [3]
     params = [QuadVarParams(0.1, 0.01, 0.0)]
-    intensity_unit = nothing
+    intensityunit = nothing
     signal = [[ [1.0, 2.0, 3.0] ]]
     offsets = [[ fill(0.1, 3, 1) ]]
     gains = [[ [1.0] ]]
@@ -47,15 +47,15 @@ function make_dummy_qvf()
     observed = [[ [1.0; 2.0; 3.0] ] .|> x -> reshape(x, 3, 1)]
 
     QuadVarFit(
-        mz_unit,
+        mzunit,
         mz_ref,
         mz_idx,
-        mz_values,
+        mzvalues,
         batchcount,
         n_reps_per_batch,
         n_scans_per_batch,
         params,
-        intensity_unit,
+        intensityunit,
         signal,
         offsets,
         gains,
@@ -87,9 +87,9 @@ end
     @test length([p for p in axes_off[1].scene.plots if p isa Makie.Lines]) >= 1
 
     # unitful m/z title renders unit
-    mz_unit = u"Th"
+    mzunit = u"Th"
     qvf_unit = QuadVarFit(
-        mz_unit,
+        mzunit,
         [100.0, 101.0],
         [1],
         [100.0],
@@ -120,7 +120,7 @@ end
 
     # observed uses full grid columns
     qvf_full_obs = QuadVarFit(
-        mz_unit,
+        mzunit,
         [100.0, 101.0],
         [2],
         [101.0],
@@ -153,15 +153,15 @@ end
 
     qvf_bad_obs = make_dummy_qvf()
     qvf_bad_obs = QuadVarFit(
-        qvf_bad_obs.mz_unit,
+        qvf_bad_obs.mzunit,
         qvf_bad_obs.mz_ref,
         qvf_bad_obs.mz_idx,
-        qvf_bad_obs.mz_values,
+        qvf_bad_obs.mzvalues,
         qvf_bad_obs.batchcount,
         qvf_bad_obs.n_reps_per_batch,
         qvf_bad_obs.n_scans_per_batch,
         qvf_bad_obs.params,
-        qvf_bad_obs.intensity_unit,
+        qvf_bad_obs.intensityunit,
         qvf_bad_obs.signal,
         qvf_bad_obs.offsets,
         qvf_bad_obs.gains,

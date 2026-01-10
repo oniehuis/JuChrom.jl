@@ -61,17 +61,17 @@ Container for fitted **signal/offset/gain + quadratic variance** results
 across a selected set of m/z values.
 
 # Fields
-- `mz_unit::Union{Unitful.Units, Nothing}`: m/z unit tracked from the input grid
+- `mzunit::Union{Unitful.Units, Nothing}`: m/z unit tracked from the input grid
   (or `nothing` if unitless).
 - `mz_ref::Vector{<:Real}`: numeric m/z grid present in the input data (values
-  expressed in `mz_unit` when that is set).
+  expressed in `mzunit` when that is set).
 - `mz_idx::Vector{Int}`: indices into `mz_ref` that were fitted.
-- `mz_values::Vector{<:Real}`: selected m/z values (`mz_ref[mz_idx]`, numeric).
+- `mzvalues::Vector{<:Real}`: selected m/z values (`mz_ref[mz_idx]`, numeric).
 - `batchcount::Int`: number of batches.
 - `n_reps_per_batch::Vector{Int}`: replicates per batch.
 - `n_scans_per_batch::Vector{Int}`: scans per batch.
 - `params::Vector{QuadVarParams}`: variance parameters per selected m/z.
-- `intensity_unit::Union{Unitful.Units, Nothing}`: intensity unit tracked from input data
+- `intensityunit::Union{Unitful.Units, Nothing}`: intensity unit tracked from input data
   (or `nothing` if unitless).
 - `signal::Vector{Vector{Vector{Float64}}}`: fitted signal per m/z, per batch.
 - `offsets::Vector{Vector{Matrix{Float64}}}`: offsets per m/z, per batch.
@@ -89,20 +89,20 @@ across a selected set of m/z values.
   shaped as `observed[b][r] :: n_scans_b × n_mz_select`.
 
 # Notes
-- Use `mz_values[j]` for labels (multiply by `mz_unit` to recover Unitful values);
+- Use `mzvalues[j]` for labels (multiply by `mzunit` to recover Unitful values);
   use `mz_idx[j]` if you need to index into a full grid.
-- `observed[b][r][:, j]` matches the **j-th selected** m/z (i.e., `mz_values[j]`).
+- `observed[b][r][:, j]` matches the **j-th selected** m/z (i.e., `mzvalues[j]`).
 """
 struct QuadVarFit{T1<:AbstractVector{<:Real}, T2<:QuadVarParams, T3<:Union{Nothing, Unitful.Units}, T4<:Union{Nothing, Unitful.Units}}
-    mz_unit::T4
+    mzunit::T4
     mz_ref::T1
     mz_idx::Vector{Int}
-    mz_values::T1
+    mzvalues::T1
     batchcount::Int
     n_reps_per_batch::Vector{Int}
     n_scans_per_batch::Vector{Int}
     params::Vector{T2}
-    intensity_unit::T3
+    intensityunit::T3
     signal::Vector{Vector{Vector{Float64}}}
     offsets::Vector{Vector{Matrix{Float64}}}
     gains::Vector{Vector{Vector{Float64}}}
@@ -122,8 +122,8 @@ end
 # Treat `QuadVarFit` as a scalar in broadcasting contexts
 Base.Broadcast.broadcastable(f::QuadVarFit) = Base.RefValue(f)
 
-@inline _with_mz_unit(val, mz_unit::Union{Nothing, Unitful.Units}) =
-    isnothing(mz_unit) ? val : val * mz_unit
+@inline _with_mz_unit(val, mzunit::Union{Nothing, Unitful.Units}) =
+    isnothing(mzunit) ? val : val * mzunit
 
 function Base.summary(q::QuadVarFit)
     n_batches = let x = q.n_reps_per_batch; x === nothing ? 0 : length(x) end
@@ -140,8 +140,8 @@ function Base.show(io::IO, ::MIME"text/plain", q::QuadVarFit)
     nscans = q.n_scans_per_batch
     mzref  = q.mz_ref
     mzidx  = q.mz_idx
-    mzvals = q.mz_values
-    mzunit = q.mz_unit
+    mzvals = q.mzvalues
+    mzunit = q.mzunit
     unit_suffix = isnothing(mzunit) ? "" : " (" * string(mzunit) * ")"
     mzvals_disp = _with_mz_unit.(mzvals, Base.RefValue(mzunit))
 

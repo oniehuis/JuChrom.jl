@@ -83,6 +83,33 @@ The keyword argument `mode` determines the type of data to load:
 - `:tic` → total ion chromatogram only
 
 Returns a `ShimadzuMSLoaderSpec` object used for deferred data loading via `load(...)`.
+
+This loader is provided by the PyCall extension and depends on the Python `olefile`
+module. To enable it in your session:
+
+```julia
+using JuChrom
+using PyCall # triggers the extension
+```
+
+To install PyCall (and select a Python if needed):
+
+```julia
+import Pkg
+Pkg.add("PyCall")
+# Optional: point PyCall to a specific Python before rebuilding
+# ENV["PYTHON"] = "/path/to/python"
+Pkg.build("PyCall")
+```
+
+To install the Python dependency:
+
+```julia
+using PyCall
+pyimport_conda("olefile", "olefile")
+```
+
+You can verify availability with `isdefined(JuChrom, :ShimadzuMSLoader)`.
 """
 function ShimadzuMS(path::String; mode::Symbol=:ms)
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(
@@ -188,11 +215,11 @@ function build_mass_scans(
         "Total intensity count $(length(ints)) does not match " * 
         "sum of counts $(sum(counts))"))
     
-    retention_unit = u"ms"
-    intensity_unit = nothing
+    retentionunit = u"ms"
+    intensityunit = nothing
     level = 1
-    scans = Vector{MassScan{Int32, typeof(retention_unit), Vector{Float64}, Nothing, 
-        Vector{UInt32}, typeof(intensity_unit), typeof(level), @NamedTuple{}}}(undef, 
+    scans = Vector{MassScan{Int32, typeof(retentionunit), Vector{Float64}, Nothing, 
+        Vector{UInt32}, typeof(intensityunit), typeof(level), @NamedTuple{}}}(undef, 
         length(counts))
 
     offset = 0
@@ -201,8 +228,8 @@ function build_mass_scans(
         x = @view mzs[offset+1:offset+n]
         y = @view ints[offset+1:offset+n]
         p = sortperm(x)
-        scans[i] = MassScan(retentions_unitfree[i], retention_unit, x[p], nothing, y[p], 
-            intensity_unit)
+        scans[i] = MassScan(retentions_unitfree[i], retentionunit, x[p], nothing, y[p], 
+            intensityunit)
         offset += n
     end
 
@@ -255,7 +282,7 @@ function load_tic(file::AbstractString)
                 "Shimadzu retention time stream size is not divisible by 4 bytes"))
         end
         retentions_unitfree = ltoh.(reinterpret(Int32, bytestring))
-        retention_unit = u"ms"
+        retentionunit = u"ms"
 
         streamname = ["GCMS Raw Data", "TIC Data"]
         bytestring = readbytestring(file, streamname)
@@ -264,11 +291,11 @@ function load_tic(file::AbstractString)
                 "Shimadzu TIC data stream size is not divisible by 8 bytes"))
         end
         intensities_unitfree = ltoh.(reinterpret(Int64, bytestring))
-        intensity_unit = nothing
+        intensityunit = nothing
 
         # Pair retention time/intensity into individual ChromScan entries
-        scans = [ChromScan(retention_unitfree, retention_unit, intensity_unitfree,
-            intensity_unit) for (retention_unitfree,
+        scans = [ChromScan(retention_unitfree, retentionunit, intensity_unitfree,
+            intensityunit) for (retention_unitfree,
             intensity_unitfree) in zip(retentions_unitfree, intensities_unitfree)]
 
         ChromScanSeries(

@@ -34,11 +34,11 @@ mkints(r, c) = reshape(collect(1.0:(r*c)), r, c)
 
     # Stored fields
     @test msm.retentions === ret
-    @test msm.retention_unit == u"s"
-    @test msm.mz_values === mzs
-    @test msm.mz_unit === nothing
+    @test msm.retentionunit == u"s"
+    @test msm.mzvalues === mzs
+    @test msm.mzunit === nothing
     @test msm.intensities === im
-    @test msm.intensity_unit == pA
+    @test msm.intensityunit == pA
     @test msm.level === 2
     @test msm.instrument == (vendor="Acme",)
     @test msm.acquisition == (mode="DIA",)
@@ -146,11 +146,11 @@ end
                          extras=Dict(SubString("k",1,1)=>1))
 
     @test msm.retentions === ret
-    @test msm.retention_unit == u"s"
-    @test msm.mz_values === mzs
-    @test msm.mz_unit === nothing
+    @test msm.retentionunit == u"s"
+    @test msm.mzvalues === mzs
+    @test msm.mzunit === nothing
     @test msm.intensities === im
-    @test msm.intensity_unit == pA
+    @test msm.intensityunit == pA
     @test msm.level === 3
     @test msm.instrument == (vendor="A",)
     @test msm.acquisition == (mode="DDA",)
@@ -170,11 +170,11 @@ end
 
     msm = MassScanMatrix(ret, mzs, im; instrument=(id=1,))
     @test msm.retentions == [1.0, 2.0]       # stripped
-    @test msm.retention_unit == u"s"
-    @test msm.mz_values == [100.0, 200.0, 300.0]
-    @test msm.mz_unit === nothing
+    @test msm.retentionunit == u"s"
+    @test msm.mzvalues == [100.0, 200.0, 300.0]
+    @test msm.mzunit === nothing
     @test msm.intensities == [1.0 2.0 3.0; 4.0 5.0 6.0]
-    @test msm.intensity_unit == pA
+    @test msm.intensityunit == pA
     @test msm.level === 1
     @test msm.instrument == (id=1,)
     @test msm.acquisition == NamedTuple()

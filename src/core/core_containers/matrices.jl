@@ -7,7 +7,7 @@ Abstract supertype for all matrix-based representations of mass spectrometry sca
 m/z unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
 (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes are expected to define `retentions`, `mz_values`, and `intensities`
+Concrete subtypes are expected to define `retentions`, `mzvalues`, and `intensities`
 arrays, plus `level` and metadata fields (`instrument`, `acquisition`, `sample`, `user`)
 as `NamedTuple`s, with `extras::Dict{String, Any}` for unstructured metadata. Subtypes may
 include additional fields as needed.
@@ -27,10 +27,10 @@ retention and m/z axes with an intensity matrix. `MassScanMatrix` is a subtype o
 m/z unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
 (`Unitful.Units` subtype or `Nothing`).
 
-Fields include `retentions::AbstractVector{<:Real}`, `mz_values::AbstractVector{<:Real}`,
+Fields include `retentions::AbstractVector{<:Real}`, `mzvalues::AbstractVector{<:Real}`,
 `intensities::AbstractMatrix{<:Real}`, optional units stored in 
-`retention_unit::Union{Unitful.Units, Nothing}`, `mz_unit::Union{Unitful.Units, Nothing}`,
-and `intensity_unit::Union{Unitful.Units, Nothing}`, an MS `level::Integer`, and metadata
+`retentionunit::Union{Unitful.Units, Nothing}`, `mzunit::Union{Unitful.Units, Nothing}`,
+and `intensityunit::Union{Unitful.Units, Nothing}`, an MS `level::Integer`, and metadata
 in `instrument::NamedTuple`, `acquisition::NamedTuple`, `user::NamedTuple`,
 `sample::NamedTuple`, and `extras::Dict{String, Any}`.
 """
@@ -50,11 +50,11 @@ struct MassScanMatrix{
     } <: AbstractMassScanMatrix{T2, T4, T6}
 
     retentions::T1
-    retention_unit::T2
-    mz_values::T3
-    mz_unit::T4
+    retentionunit::T2
+    mzvalues::T3
+    mzunit::T4
     intensities::T5
-    intensity_unit::T6
+    intensityunit::T6
     level::T7
     instrument::T8
     acquisition::T9
@@ -65,11 +65,11 @@ struct MassScanMatrix{
     # Inner constructor with validation to ensure consistent, valid data
     function MassScanMatrix{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12}(
         retentions::T1,
-        retention_unit::T2,
-        mz_values::T3,
-        mz_unit::T4,
+        retentionunit::T2,
+        mzvalues::T3,
+        mzunit::T4,
         intensities::T5,
-        intensity_unit::T6,
+        intensityunit::T6,
         level::T7,
         instrument::T8,
         acquisition::T9,
@@ -95,11 +95,11 @@ struct MassScanMatrix{
         all(isfinite, retentions) || throw(ArgumentError("All retentions must be finite."))
 
         # Check unitfree m/z values
-        !isempty(mz_values) || throw(ArgumentError("No m/z value(s) provided."))
-        all(isfinite, mz_values) || throw(ArgumentError("All m/z values must be finite."))
-        all(mz -> mz > 0, mz_values) || throw(
+        !isempty(mzvalues) || throw(ArgumentError("No m/z value(s) provided."))
+        all(isfinite, mzvalues) || throw(ArgumentError("All m/z values must be finite."))
+        all(mz -> mz > 0, mzvalues) || throw(
             ArgumentError("All m/z values must be greater than zero."))
-        all(diff(mz_values) .> 0) || throw(ArgumentError(
+        all(diff(mzvalues) .> 0) || throw(ArgumentError(
             "m/z values must be strictly increasing (no duplicates allowed)."))
 
         # Check unitfree intensities
@@ -112,7 +112,7 @@ struct MassScanMatrix{
            ArgumentError("Retention count does not match the row count of intensities."))
 
         # Confirm the number of m/z values matches the number of columns in intensity matrix
-        length(mz_values) == size(intensities, 2) || throw(
+        length(mzvalues) == size(intensities, 2) || throw(
            ArgumentError("m/z value count does not match the column count of intensities."))
 
         # Validate that scan level is positive
@@ -120,9 +120,9 @@ struct MassScanMatrix{
 
         # Construct the MassScanMatrix instance
         new{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12}(
-            retentions, retention_unit,
-            mz_values, mz_unit,
-            intensities, intensity_unit,
+            retentions, retentionunit,
+            mzvalues, mzunit,
+            intensities, intensityunit,
             level,
             instrument, acquisition, user, sample,
             extras)
@@ -132,11 +132,11 @@ end
 """
     MassScanMatrix(
         retention_unitfree::AbstractVector{<:Real},
-        retention_unit::Union{Nothing, Unitful.Units},
+        retentionunit::Union{Nothing, Unitful.Units},
         mz_values_unitfree::AbstractVector{<:Real},
-        mz_unit::Union{Nothing, Unitful.Units},
+        mzunit::Union{Nothing, Unitful.Units},
         intensities_unitfree::AbstractMatrix{<:Real},
-        intensity_unit::Union{Nothing, Unitful.Units};
+        intensityunit::Union{Nothing, Unitful.Units};
         level::Integer=1,
         instrument::NamedTuple=NamedTuple(),
         acquisition::NamedTuple=NamedTuple(),
@@ -152,10 +152,10 @@ This method is intended for advanced use, when you have already separated units 
 (`Real`), and unit arguments must be either a compatible `Unitful.Units` object or `nothing` 
 if unitless.
 
-`retention_unitfree` provides the unitless separation coordinates and `retention_unit`
-their unit (or `nothing`). `mz_values_unitfree` provides unitless m/z values and `mz_unit`
+`retention_unitfree` provides the unitless separation coordinates and `retentionunit`
+their unit (or `nothing`). `mz_values_unitfree` provides unitless m/z values and `mzunit`
 their unit (or `nothing`). `intensities_unitfree` provides the unitless intensity matrix
-and `intensity_unit` its unit (or `nothing`). `level` sets the MS level (default `1`), and
+and `intensityunit` its unit (or `nothing`). `level` sets the MS level (default `1`), and
 `instrument`, `acquisition`, `user`, `sample`, and `extras` carry optional metadata.
 Returns a `MassScanMatrix` with unitless arrays and units stored separately.
 
@@ -173,11 +173,11 @@ julia> ret = [1.0, 2.0];
 
 julia> msm = MassScanMatrix(ret, u"s", mzs, nothing, ints, nothing);
 
-julia> msm.retention_unit
+julia> msm.retentionunit
 s
-julia> isnothing(msm.mz_unit)
+julia> isnothing(msm.mzunit)
 true
-julia> isnothing(msm.intensity_unit)
+julia> isnothing(msm.intensityunit)
 true
 julia> size(msm.intensities)
 (2, 3)
@@ -185,11 +185,11 @@ julia> size(msm.intensities)
 """
 function MassScanMatrix(
     retention_unitfree::T1,
-    retention_unit::T2,
+    retentionunit::T2,
     mz_values_unitfree::T3,
-    mz_unit::T4,
+    mzunit::T4,
     intensities_unitfree::T5,
-    intensity_unit::T6;
+    intensityunit::T6;
     level::T7=1,
     instrument::T8=NamedTuple(),
     acquisition::T9=NamedTuple(),
@@ -214,9 +214,9 @@ function MassScanMatrix(
 
     # Call the inner constructor with all provided and default arguments
     MassScanMatrix{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, Dict{String, Any}}(
-        retention_unitfree, retention_unit,
-        mz_values_unitfree, mz_unit,
-        intensities_unitfree, intensity_unit,
+        retention_unitfree, retentionunit,
+        mz_values_unitfree, mzunit,
+        intensities_unitfree, intensityunit,
         level,
         instrument, acquisition, user, sample,
         converted_extras)
@@ -225,7 +225,7 @@ end
 """
     MassScanMatrix(
         retentions::AbstractVector{<:Union{Real, AbstractQuantity}},
-        mz_values::AbstractVector{<:Union{Real, AbstractQuantity}},
+        mzvalues::AbstractVector{<:Union{Real, AbstractQuantity}},
         intensities::AbstractMatrix{<:Union{Real, AbstractQuantity}};
         level::Integer=1,
         instrument::NamedTuple=NamedTuple(),
@@ -241,7 +241,7 @@ All inputs may contain raw numeric values or `Unitful.AbstractQuantity` values. 
 present, they are stripped and stored separately. Each input must either be entirely 
 unitless or use consistent units across its values.
 
-`retentions` provides separation coordinates, `mz_values` provides m/z values, and
+`retentions` provides separation coordinates, `mzvalues` provides m/z values, and
 `intensities` provides the intensity matrix; each may be unitless or unitful with
 consistent units. `level` sets the MS level (default `1`), and `instrument`, `acquisition`,
 `user`, `sample`, and `extras` carry optional metadata. Returns a `MassScanMatrix` with
@@ -251,7 +251,7 @@ Throws `ArgumentError` if retentions are empty or non-finite, if m/z values are 
 non-strictly increasing, non-positive, or non-finite, if intensities are empty or contain
 non-finite values, if units are inconsistent, or if `level < 1`. Throws
 `DimensionMismatch` if the intensity matrix shape does not match
-`length(retentions)` × `length(mz_values)`.
+`length(retentions)` × `length(mzvalues)`.
 
 See also: [`AbstractMassScanMatrix`](@ref), [`retentions`](@ref), [`rawretentions`](@ref), 
 [`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzunit`](@ref), 
@@ -268,13 +268,13 @@ julia> ret = [1.0, 2.0]u"s"
 
 julia> msm = MassScanMatrix(ret, mzs, ints);
 
-julia> msm.retention_unit
+julia> msm.retentionunit
 s
 
-julia> isnothing(msm.mz_unit)
+julia> isnothing(msm.mzunit)
 true
 
-julia> isnothing(msm.intensity_unit)
+julia> isnothing(msm.intensityunit)
 true
 
 julia> size(msm.intensities)
@@ -289,7 +289,7 @@ Dict{String, Any}()
 """
 function MassScanMatrix(
     retentions::T1,
-    mz_values::T2,
+    mzvalues::T2,
     intensities::T3;
     level::T4=1,
     instrument::T5=NamedTuple(),
@@ -307,24 +307,24 @@ function MassScanMatrix(
         T8<:NamedTuple,
         T9<:AbstractDict{<:AbstractString, <:Any}}
 
-    retention_unitfree, retention_unit = strip_units_checked(retentions, "retentions")
-    mz_values_unitfree, mz_unit = strip_units_checked(mz_values, "m/z values")
-    intensities_unitfree, intensity_unit = strip_units_checked(intensities, "intensities")
+    retention_unitfree, retentionunit = strip_units_checked(retentions, "retentions")
+    mz_values_unitfree, mzunit = strip_units_checked(mzvalues, "m/z values")
+    intensities_unitfree, intensityunit = strip_units_checked(intensities, "intensities")
 
     # Convert metadata to Dict{String, Any}
     converted_extras = Dict{String, Any}(string(k) => v for (k, v) in extras)
 
     # Call the inner constructor with all provided and default arguments
     MassScanMatrix{
-        typeof(retention_unitfree), typeof(retention_unit),
-        typeof(mz_values_unitfree), typeof(mz_unit),
-        typeof(intensities_unitfree), typeof(intensity_unit),
+        typeof(retention_unitfree), typeof(retentionunit),
+        typeof(mz_values_unitfree), typeof(mzunit),
+        typeof(intensities_unitfree), typeof(intensityunit),
         typeof(level),
         typeof(instrument), typeof(acquisition), typeof(user), typeof(sample),
         Dict{String, Any}}(
-        retention_unitfree, retention_unit,
-        mz_values_unitfree, mz_unit,
-        intensities_unitfree, intensity_unit,
+        retention_unitfree, retentionunit,
+        mz_values_unitfree, mzunit,
+        intensities_unitfree, intensityunit,
         level,
         instrument, acquisition, user, sample,
         converted_extras)
@@ -337,7 +337,7 @@ Return a `MassScanMatrix` whose intensities are the elementwise difference
 `intensities(msm₁) .- intensities(msm₂)`, after verifying that retention coordinates, m/z
 values, MS level, and metadata match.
 
-Throws `DimensionMismatch` if any of `retentions`, `mz_values`, `level`, or metadata
+Throws `DimensionMismatch` if any of `retentions`, `mzvalues`, `level`, or metadata
 (`instrument`, `acquisition`, `user`, `sample`, `extras`) differ between the inputs.
 """
 function Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
