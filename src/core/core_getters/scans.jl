@@ -9,11 +9,8 @@ The attrs is stored as a `NamedTuple` and may contain additional contextual or
 acquisition-specific information beyond the primary measurement fields (e.g., scan ID, 
 instrument settings, annotations).
 
-# Arguments
-- `scan`: A subtype of `AbstractScan`
-
-# Returns
-A `NamedTuple` containing the attrs fields defined for the scan.
+`scan` is a subtype of `AbstractScan`. Returns a `NamedTuple` containing the attrs fields
+defined for the scan.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref).
 
@@ -47,16 +44,10 @@ If `intensity_unit` is `nothing`:
 This function does **not** assign units to raw values — it only performs conversions when a 
 unit is already stored.
 
-# Arguments
-- `scan`: A subtype of `AbstractChromScan`
-- `unit`: (Optional) target unit (e.g. `u"pA"`) — used only if a unit is stored
-
-# Returns
-- A `Quantity` in the scan’s stored or requested unit, if applicable
-- A plain `Real` value if no unit is stored and no `unit` is requested
-
-# Throws
-- `ArgumentError` if `unit` is specified for a scan with no stored `intensity_unit`
+`scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit (for
+example `u"pA"`), used only when the scan stores a unit. Returns a `Quantity` in the
+stored or requested unit when applicable, otherwise a plain `Real` value. Throws
+`ArgumentError` if `unit` is specified for a scan with no stored `intensity_unit`.
 
 See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`rawintensity`](@ref), 
 [`intensityunit`](@ref).
@@ -104,12 +95,8 @@ This function retrieves the `intensity_unit` field from any scan subtype, which 
 the physical unit used for the signal intensity or intensities (e.g. `u"pA"`, `u"counts"`). 
 If no unit was specified at construction, returns `nothing`.
 
-# Arguments
-- `scan`: A subtype of `AbstractScan`, such as `ChromScan` or `MassScan`
-
-# Returns
-- A `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified
-
+`scan` is a subtype of `AbstractScan` such as `ChromScan` or `MassScan`. Returns a
+`Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
 [`intensity`](@ref), [`rawintensity`](@ref), [`intensities`](@ref), 
@@ -141,20 +128,11 @@ This method supports both unitless and unitful scans. If `unit` is specified, th
 intensities are converted to the desired unit using `Unitful.uconvert`. If the scan is 
 unitless and a unit is requested, an error is thrown.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`
-- `unit`: Desired unit to convert intensities into (`Unitful.Units` subtype or `nothing`, 
-  default)
-
-# Returns
-A vector of intensity values. If a unit is provided, the values are returned in that unit.
-
-# Throws
-- `ArgumentError` if:
-  - The scan has no intensity unit and a unit conversion is requested.
-- `AssertionError` if:
-  - The scan claims to have a unit but `intensity_unit` is `nothing` (internal 
-    inconsistency)
+`scan` is a subtype of `AbstractMassScan`. `unit` is an optional target unit 
+(`Unitful.Units` subtype or `nothing`). Returns a vector of intensity values, converted
+to the requested unit when provided. Throws `ArgumentError` if the scan has no intensity
+unit and a conversion is requested, and `AssertionError` if the scan claims to have a unit
+but `intensity_unit` is `nothing`.
 
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawintensities`](@ref), 
@@ -195,12 +173,8 @@ The MS level indicates the stage of mass spectrometry at which the scan was acqu
 - `2` for MS/MS scans (e.g. product ion spectra),
 - Higher values for advanced fragmentation strategies (e.g. MS^n).
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`, such as `MassScan`
-
-# Returns
-- An `Integer` value representing the MS level (guaranteed to be ≥ 1)
-
+`scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns an `Integer` 
+representing the MS level (guaranteed to be ≥ 1).
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref).
 
@@ -225,12 +199,8 @@ This is a simple utility function that returns the length of the `mz_values` vec
 in a mass spectrometric scan. It reflects the number of data points (peaks) measured at a 
 given separation coordinate.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`, such as `MassScan`
-
-# Returns
-- An `Int` representing the number of m/z values in the scan
-
+`scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns an `Int`
+representing the number of m/z values in the scan.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
 [`rawmzvalues`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
@@ -255,12 +225,8 @@ Return the unit associated with the mass-to-charge (m/z) values of a scan.
 Typically, this is `nothing`, since m/z values are conventionally unitless. If a unit was
 explicitly provided during scan construction, it will be returned.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`, such as `MassScan`
-
-# Returns
-- A `Unitful.Units` subtype representing the m/z unit, or `nothing` if unspecified
-
+`scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns a `Unitful.Units`
+subtype representing the m/z unit, or `nothing` if unspecified.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
 [`rawmzvalues`](@ref).
@@ -286,20 +252,11 @@ This method supports both unitless and unitful scans. If the scan has an associa
 unit, values can be converted to a different unit using the optional `unit` argument. 
 If the scan is unitless and a unit is requested, an error is thrown.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`
-- `unit`: Desired unit to convert m/z values into (`Unitful.Units` subtype or `nothing`, 
-  default)
-
-# Returns
-A vector of m/z values. If a unit is specified, values are converted to that unit; 
-otherwise, values are returned in their stored form.
-
-# Throws
-- `ArgumentError` if:
-  - The scan is unitless and a unit is requested.
-- `AssertionError` if:
-  - The scan claims to have a unit but `mz_unit` is `nothing` (internal inconsistency)
+`scan` is a subtype of `AbstractMassScan`. `unit` is an optional target unit
+(`Unitful.Units` subtype or `nothing`). Returns a vector of m/z values, converted to the
+requested unit when specified, otherwise returned in stored form. Throws `ArgumentError`
+if the scan is unitless and a unit is requested, and `AssertionError` if the scan claims
+to have a unit but `mz_unit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawmzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
@@ -335,21 +292,11 @@ If the scan stores unitful intensities, the unit is stripped using `Unitful.ustr
 specific unit is requested via the `unit` keyword, the values are first converted to that
 unit before stripping.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`
-- `unit`: Desired unit to convert intensities into before stripping 
-  (`Unitful.Units` subtype or `nothing`, default)
-
-# Returns
-A vector of numeric (unitless) intensity values.
-
-# Throws
-- `ArgumentError` if:
-  - The scan is unitless but a unit conversion is requested.
-- `AssertionError` if:
-  - The scan claims to have a unit but `intensity_unit` is `nothing` (internal 
-    inconsistency)
-
+`scan` is a subtype of `AbstractMassScan`. `unit` is an optional target unit
+(`Unitful.Units` subtype or `nothing`). Returns a vector of numeric intensity values with
+units stripped. Throws `ArgumentError` if the scan is unitless but a unit conversion is
+requested, and `AssertionError` if the scan claims to have a unit but `intensity_unit` is
+`nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`intensities`](@ref), 
 [`intensityunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzcount`](@ref).
@@ -392,22 +339,13 @@ If `intensity_unit` is `nothing`:
 - and a `unit` is requested, an error is thrown
 - and no `unit` is requested, the raw numeric value is returned unchanged
 
-# Arguments
-- `scan`: A subtype of `AbstractChromScan`
-- `unit`: (Optional) target unit for conversion before stripping — must not be used for 
-  unitless scans
-
-# Returns
-A `Real` value with all units stripped.
-
-# Throws
-- `ArgumentError` if a `unit` is requested for a scan with no stored `intensity_unit`
-
-# Behavior Summary
-- If `intensity_unit ≠ nothing` and `unit` is provided → convert, then strip
-- If `intensity_unit ≠ nothing` and `unit == nothing` → strip using stored unit
-- If `intensity_unit == nothing` and `unit == nothing` → return raw value
-- If `intensity_unit == nothing` and `unit ≠ nothing` → throw `ArgumentError`
+`scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit and must not
+be used for unitless scans. Returns a `Real` value with all units stripped. Throws
+`ArgumentError` if a `unit` is requested for a scan with no stored `intensity_unit`.
+Behavior: if `intensity_unit ≠ nothing` and `unit` is provided, convert then strip; if
+`intensity_unit ≠ nothing` and `unit == nothing`, strip using the stored unit; if
+`intensity_unit == nothing` and `unit == nothing`, return the raw value; if
+`intensity_unit == nothing` and `unit ≠ nothing`, throw `ArgumentError`.
 
 See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`intensity`](@ref), 
 [`intensityunit`](@ref).
@@ -455,21 +393,11 @@ This method returns the numeric representation of m/z values, optionally convert
 to a different unit. If the scan is unitless and a unit conversion is requested, 
 an error is thrown.
 
-# Arguments
-- `scan`: A subtype of `AbstractMassScan`
-- `unit`: Desired unit to convert values into before stripping units 
-  (`Unitful.Units` subtype or `nothing`, default)
-
-# Returns
-A vector of plain numeric m/z values, optionally converted to the requested unit 
-and stripped of units.
-
-# Throws
-- `ArgumentError` if:
-  - The scan is unitless and a unit is requested.
-- `AssertionError` if:
-  - The scan claims to have a unit but `mz_unit` is `nothing` (internal inconsistency)
-
+`scan` is a subtype of `AbstractMassScan`. `unit` is an optional target unit
+(`Unitful.Units` subtype or `nothing`). Returns a vector of numeric m/z values, optionally
+converted to the requested unit and stripped of units. Throws `ArgumentError` if the scan
+is unitless and a unit is requested, and `AssertionError` if the scan claims to have a
+unit but `mz_unit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
@@ -509,22 +437,13 @@ If `retention_unit` is `nothing`:
 - and a `unit` is requested, an error is thrown
 - and no `unit` is requested, the raw numeric value is returned unchanged
 
-# Arguments
-- `scan`: A subtype of `AbstractScan`
-- `unit`: (Optional) target unit to convert to before unit stripping — must not be used for 
-  unitless scans
-
-# Returns
-A `Real` value with all units stripped.
-
-# Throws
-- `ArgumentError` if a `unit` is requested for a scan with no stored `retention_unit`
-
-# Behavior Summary
-- If `retention_unit ≠ nothing` and `unit` is provided → convert, then strip
-- If `retention_unit ≠ nothing` and `unit == nothing` → strip using stored unit
-- If `retention_unit == nothing` and `unit == nothing` → return raw value
-- If `retention_unit == nothing` and `unit ≠ nothing` → throw `ArgumentError`
+`scan` is a subtype of `AbstractScan`. `unit` is an optional target unit and must not be
+used for unitless scans. Returns a `Real` value with all units stripped. Throws
+`ArgumentError` if a `unit` is requested for a scan with no stored `retention_unit`.
+Behavior: if `retention_unit ≠ nothing` and `unit` is provided, convert then strip; if
+`retention_unit ≠ nothing` and `unit == nothing`, strip using the stored unit; if
+`retention_unit == nothing` and `unit == nothing`, return the raw value; if
+`retention_unit == nothing` and `unit ≠ nothing`, throw `ArgumentError`.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
 [`retention`](@ref), [`retentionunit`](@ref).
@@ -568,27 +487,13 @@ end
 
 Return the retention value of a scan, optionally converted to a specified unit.
 
-If the scan’s `retention_unit` is not `nothing`, the return value is a `Unitful.Quantity`. 
-If a `unit` is provided, the value is converted to that unit using `uconvert`.
+If the scan stores a `retention_unit`, the return value is a `Unitful.Quantity`, and any
+requested `unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value
+is returned unless a unit conversion is requested, which throws `ArgumentError`. This
+function does not assign units to unitless scans; it only converts when a unit is stored.
 
-If `retention_unit` is `nothing`:
-- and a `unit` is requested, an error is thrown
-- and no `unit` is requested, the raw numeric value is returned unchanged
-
-This function does **not** assign units to unitless scans — it only performs conversions 
-when a unit is already stored in `retention_unit`.
-
-# Arguments
-- `scan`: A subtype of `AbstractScan`
-- `unit`: (Optional) target unit (e.g. `u"s"` or `u"minute"`) — used only if a unit is 
-  stored
-
-# Returns
-- A `Quantity` in the scan’s stored or requested unit, if applicable
-- A plain `Real` value if the scan is unitless and no `unit` is requested
-
-# Throws
-- `ArgumentError` if a `unit` is requested for a unitless scan
+`scan` is a subtype of `AbstractScan`. `unit` is an optional target unit (for example
+`u"s"` or `u"minute"`), used only when a unit is stored.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
 [`rawretention`](@ref), [`retentionunit`](@ref).
@@ -636,11 +541,8 @@ This function retrieves the `retention_unit` field from any scan subtype, which 
 the physical unit used along the separation axis (e.g. `u"s"`, `u"minute"`). If no unit 
 was specified at construction, returns `nothing`.
 
-# Arguments
-- `scan`: A subtype of `AbstractScan`, such as `ChromScan` or `MassScan`
-
-# Returns
-- A `Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified
+`scan` is a subtype of `AbstractScan` such as `ChromScan` or `MassScan`. Returns a
+`Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
 [`retention`](@ref), [`rawretention`](@ref).

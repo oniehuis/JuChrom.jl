@@ -4,8 +4,10 @@
 AbstractScanSeries
 AbstractChromScanSeries
 ChromScanSeries
+ChromScanSeries(::AbstractVector{<:AbstractChromScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
 AbstractMassScanSeries
 MassScanSeries
+MassScanSeries(::AbstractVector{<:AbstractMassScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
 acquisition(::AbstractScanSeries)
 extras(::AbstractScanSeries)
 intensities(::AbstractChromScanSeries)

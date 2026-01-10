@@ -202,4 +202,17 @@ end
     @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), sections, extras) == true
 end
 
+@testset "ScanSeries show methods" begin
+    scans = [mkchrom(1, u"minute", u"pA"), mkchrom(2, u"minute", u"pA")]
+    css = ChromScanSeries(scans; instrument=(vendor="Acme",))
+    css_out = sprint(show, css)
+    @test occursin("ChromScanSeries", css_out)
+
+    mscans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
+              mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=2)]
+    mss = MassScanSeries(mscans; acquisition=(mode="FullScan",))
+    mss_out = sprint(show, mss)
+    @test occursin("MassScanSeries", mss_out)
+end
+
 end # module

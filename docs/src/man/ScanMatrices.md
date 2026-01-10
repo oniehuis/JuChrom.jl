@@ -3,6 +3,8 @@
 ```@docs
 AbstractMassScanMatrix
 MassScanMatrix
+MassScanMatrix(::AbstractVector{<:Real}, ::Union{Nothing, Unitful.Units}, ::AbstractVector{<:Real}, ::Union{Nothing, Unitful.Units}, ::AbstractMatrix{<:Real}, ::Union{Nothing, Unitful.Units}; level::Integer=1, instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::AbstractDict=Dict{String, Any}())
+MassScanMatrix(::AbstractVector{<:Union{Real, Unitful.Quantity{<:Real}}}, ::AbstractVector{<:Union{Real, Unitful.Quantity{<:Real}}}, ::AbstractMatrix{<:Union{Real, Unitful.Quantity{<:Real}}}; level::Integer=1, instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::AbstractDict=Dict{String, Any}())
 acquisition(::AbstractMassScanMatrix)
 extras(::AbstractMassScanMatrix)
 instrument(::AbstractMassScanMatrix)

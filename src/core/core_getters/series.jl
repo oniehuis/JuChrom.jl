@@ -8,14 +8,11 @@ Returns the acquisition metadata associated with the scan series.
 The acquisition metadata typically includes details such as scan mode, method parameters, 
 instrument configuration, or other context relevant to how the data was acquired.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
-
-# Returns
-A `NamedTuple` containing acquisition-related metadata.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
+acquisition-related metadata.
 
 See also [`AbstractScanSeries`](@ref), [`instrument`](@ref), [`user`](@ref), 
-[`sample`](@ref).
+[`sample`](@ref), [`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -42,11 +39,8 @@ Returns the unstructured extras associated with the scan series.
 This dictionary may contain arbitrary key-value pairs that are not captured by the 
 structured fields such as `instrument`, `acquisition`, `user`, or `sample`.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
-
-# Returns
-A `Dict{String, Any}` containing unstructured metadata.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns a `Dict{String, Any}`
+containing unstructured metadata.
 
 See also [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref).
 
@@ -82,22 +76,16 @@ Return the intensity values from each scan in a chromatographic scan series.
 If the scan series stores unitful intensities and a `unit` is specified, the values are 
 converted accordingly.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractChromScanSeries` containing chromatographic 
-  scans.
-- `unit`: *(optional)* A `Unitful.Units` object to convert intensities to. If omitted or 
-  `nothing`, intensities are returned as stored.
+`series` is a concrete subtype of `AbstractChromScanSeries` containing chromatographic
+scans. `unit` is an optional `Unitful.Units` object to convert intensities to; if omitted
+or `nothing`, intensities are returned as stored. Returns a vector of intensity values,
+either plain numbers or `Quantity`s depending on stored data. Throws `ArgumentError` if
+unitless intensities are stored but a unit conversion is requested, and `AssertionError`
+if the series contains no scans.
 
-# Returns
-- A vector of intensity values, either as plain numbers or `Quantity`s, depending on the 
-  stored data.
-
-# Throws
-- `ArgumentError` if the scan series stores unitless intensities but a unit conversion is 
-  requested.
-- `AssertionError` if the series contains no scans.
-
-See also [`AbstractChromScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref), 
+[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
+[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -128,18 +116,14 @@ end
 Returns the intensity values for the scan at the specified index within the given mass scan 
 series.
 
-# Arguments
-- `series::AbstractMassScanSeries`: The series of mass scans.
-- `scanindex::Integer`: The index of the scan to extract intensities from.
-- `unit::Union{Nothing, Unitful.Units}`: Optional unit to convert the returned 
-  intensities into. If `nothing`, the scan's native unit is used.
+`series` is the mass scan series, `scanindex` selects the scan, and `unit` is an optional
+target unit to convert intensities into. Returns an `AbstractVector` of intensity values
+(possibly unitful) for the specified scan. Throws `BoundsError` if `scanindex` is outside
+the valid range of the scan series.
 
-# Returns
-- An `AbstractVector` of intensity values (possibly unitful) corresponding to the scan at 
-  the specified index.
-
-# Throws
-- `BoundsError` if `scanindex` is outside the valid range of the scan series.
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans`](@ref), 
+[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
+[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -173,18 +157,14 @@ end
 Returns the intensity value for the chromatographic scan at the specified index within the 
 given chromatogram scan series.
 
-# Arguments
-- `series::AbstractChromScanSeries`: The series of chromatographic scans.
-- `scanindex::Integer`: The index of the scan to extract the intensity from.
-- `unit::Union{Nothing, Unitful.Units}`: Optional unit to convert the returned intensity 
-  into. If `nothing`, the scan's native unit is used.
+`series` is a subtype of `AbstractChromScanSeries`, `scanindex` selects the scan, and
+`unit` is an optional target unit to convert to. Returns a scalar intensity value (possibly
+unitful) for the specified scan. Throws `BoundsError` if `scanindex` is outside the valid
+range of the scan series.
 
-# Returns
-- A scalar `Real` (possibly unitful) representing the intensity of the scan at the 
-  specified index.
-
-# Throws
-- `BoundsError` if `scanindex` is outside the valid range of the scan series.
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref), 
+[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
+[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -219,11 +199,12 @@ Return the unit associated with the intensity values of a scan series.
 This function retrieves the intensity unit from the first scan in the series, assuming
 all scans have consistent units.
 
-# Arguments
-- `series`: A subtype of `AbstractScanSeries`.
+`series` is a subtype of `AbstractScanSeries`. Returns a `Unitful.Units` subtype
+representing the intensity unit, or `nothing` if unspecified.
 
-# Returns
-- A `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
+See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
+[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
+[`extras`](@ref), [`intensities`](@ref).
 
 # Examples
 ```julia
@@ -246,14 +227,12 @@ Returns the instrument metadata associated with the scan series.
 This typically includes information about the hardware used for data acquisition, such as 
 detector type, manufacturer, model, or configuration parameters.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
+instrument-specific metadata.
 
-# Returns
-A `NamedTuple` containing instrument-specific metadata.
-
-See also [`AbstractScanSeries`](@ref), [`acquisition`](@ref), [`user`](@ref), 
-[`sample`](@ref).
+See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
+[`intensities`](@ref).
 
 # Examples
 ```jldoctest
@@ -283,11 +262,12 @@ Scan levels typically indicate the stage of mass spectrometry (e.g. MS¹, MS²).
 function extracts the level from each scan, filters duplicates, and returns them in
 ascending order.
 
-# Arguments
-- `series::AbstractMassScanSeries`: The series of mass scans to analyze.
+`series` is the mass scan series to analyze. Returns a sorted vector of unique scan
+levels.
 
-# Returns
-- A sorted vector of unique scan levels.
+See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
+[`intensities`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -315,11 +295,12 @@ Return the unit associated with the m/z values of a mass scan series.
 This function retrieves the m/z unit from the first scan in the series, assuming
 all scans have consistent units.
 
-# Arguments
-- `series`: A subtype of `AbstractMassScanSeries`.
+`series` is a subtype of `AbstractMassScanSeries`. Returns a `Unitful.Units` subtype
+representing the m/z unit, or `nothing` if unspecified.
 
-# Returns
-- A `Unitful.Units` subtype representing the m/z unit, or `nothing` if unspecified.
+See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
+[`intensities`](@ref), [`mzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -345,19 +326,14 @@ If the scan stores unitful m/z values, they are optionally converted to the spec
 If no unit is specified, the scan's native unit is used. If the m/z values are unitless, 
 they are returned as-is.
 
-# Arguments
-- `series`: A mass scan series (`AbstractMassScanSeries`) to index into.
-- `scanindex`: The index of the scan to retrieve m/z values from.
-- `unit`: *(optional)* Unit to which m/z values should be converted. Must be `nothing` for 
-  scans with unitless m/z values.
+`series` is a mass scan series to index into, `scanindex` selects the scan, and `unit` is
+an optional target unit for m/z values (must be `nothing` for unitless scans). Returns a
+vector of m/z values for the specified scan. Throws `BoundsError` if the index is out of
+range and `ArgumentError` if a unit is requested for unitless m/z values.
 
-# Returns
-- An `AbstractVector{<:Real}` or `AbstractVector{<:Quantity}` containing the m/z values of 
-  the specified scan.
-
-# Throws
-- `BoundsError` if the index is out of range.
-- `ArgumentError` if a unit is requested for a scan with unitless m/z values.
+    See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
+[`intensities`](@ref), [`mzunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -388,19 +364,13 @@ If the scan’s `intensity_unit` is not `nothing`, the intensity values are opti
 converted to the user-specified `unit` using `uconvert`, then stripped of units. If no 
 `unit` is specified, the stored unit is used for stripping.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractChromScanSeries`.
-- `unit`: *(optional)* A `Unitful.Units` object to which raw intensities should be 
-  converted. If the scan series does not define intensity units, this must remain `nothing`.
+`series` is a concrete subtype of `AbstractChromScanSeries`. `unit` is an optional target
+unit for conversion before stripping and must be `nothing` for unitless series. Returns a
+vector of raw intensity values with optional conversion. Throws `ArgumentError` if a unit
+is requested but the scan series has no defined intensity unit.
 
-# Returns
-A vector of raw intensity values, one per scan, with optional unit conversion.
-
-# Throws
-- `ArgumentError` if a unit is requested but the scan series has no defined intensity unit.
-
-See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`rawintensity`](@ref), 
-[`scans`](@ref).
+See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`intensity`](@ref), 
+[`rawintensity`](@ref), [`intensityunit`](@ref), [`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -432,20 +402,15 @@ If the scan stores unitful intensities, the values are optionally converted to t
 specified unit and then stripped of units. If the intensities are already unitless, 
 no conversion is performed.
 
-# Arguments
-- `series::AbstractMassScanSeries`: The series of mass scans.
-- `scanindex::Integer`: The index of the scan to extract raw intensities from.
-- `unit::Union{Nothing, Unitful.Units}`: Optional unit to convert the intensities into 
-  before stripping. If `nothing`, the stored unit (if any) is used. If intensities are 
-  already unitless, `unit` must also be `nothing`.
+`series` is the mass scan series, `scanindex` selects the scan, and `unit` is an optional
+target unit for conversion before stripping (must be `nothing` for unitless scans).
+Returns a vector of unitless intensity values for the specified scan. Throws `BoundsError`
+if `scanindex` is out of range, `ArgumentError` if a unit is requested for unitless
+intensities, and `AssertionError` if the scan claims to have a unit but `intensity_unit`
+is `nothing`.
 
-# Returns
-- An `AbstractVector{<:Real}` of unitless intensity values from the specified scan.
-
-# Throws
-- `BoundsError` if `scanindex` is outside the valid range of the scan series.
-- `ArgumentError` if a unit is requested for a scan that stores unitless intensities.
-- `AssertionError` if the scan claims to have a unit but `intensity_unit` is `nothing`.
+See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`intensityunit`](@ref), 
+[`scans`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref).
 
 # Examples
 ```jldoctest
@@ -482,16 +447,13 @@ If the scan stores unitful retention values, they are optionally converted to th
 unit and then stripped of units. If retention values are already unitless, no conversion is 
 performed.
 
-# Arguments
-- `series`: A subtype of `AbstractScanSeries` whose scans define retention values.
-- `unit`: *(optional)* A `Unitful.Units` object to which each scan's retention value should 
-  be converted before stripping. Must be `nothing` for scans with unitless retention.
+`series` is a subtype of `AbstractScanSeries` whose scans define retention values. `unit`
+is an optional target unit for conversion before stripping and must be `nothing` for
+unitless scans. Returns a vector of raw, unitless retention values. Throws
+`ArgumentError` if a unit is requested for a scan that does not define a retention unit.
 
-# Returns
-- A `Vector{<:Real}` of raw, unitless retention values — one per scan in the series.
-
-# Throws
-- `ArgumentError` if a unit is requested for a scan that does not define a retention unit.
+See also [`AbstractScanSeries`](@ref), [`retentions`](@ref), [`retentionunit`](@ref), 
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -527,16 +489,13 @@ If the scan stores unitful retention values, the values are optionally converted
 specified unit. If no unit is specified, the scan's stored unit is used. If the retention 
 values are unitless, no conversion is performed and the values are returned as-is.
 
-# Arguments
-- `series`: A subtype of `AbstractScanSeries` whose scans define retention values.
-- `unit`: *(optional)* A `Unitful.Units` object to which each scan's retention value should 
-  be converted. Must be `nothing` for scans with unitless retention.
+`series` is a subtype of `AbstractScanSeries` whose scans define retention values. `unit`
+is an optional target unit for conversion and must be `nothing` for unitless scans.
+Returns a vector of retention values (plain or unitful). Throws `ArgumentError` if a unit
+is requested for a scan that does not define a retention unit.
 
-# Returns
-- A `Vector{<:Real}` or `Vector{<:Quantity}` of retention values, one per scan.
-
-# Throws
-- `ArgumentError` if a unit is requested for a scan that does not define a retention unit.
+See also [`AbstractScanSeries`](@ref), [`rawretentions`](@ref), [`retentionunit`](@ref), 
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -570,11 +529,12 @@ Return the unit associated with the retention values of a scan series.
 This function retrieves the retention unit from the first scan in the series, assuming
 all scans have consistent units (which should be enforced by the series constructor).
 
-# Arguments
-- `series`: A subtype of `AbstractScanSeries`, such as `MassScanSeries` or `ChromScanSeries`.
+`series` is a subtype of `AbstractScanSeries` such as `MassScanSeries` or
+`ChromScanSeries`. Returns a `Unitful.Units` subtype representing the retention unit, or
+`nothing` if unspecified.
 
-# Returns
-- A `Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified.
+See also [`AbstractScanSeries`](@ref), [`retentions`](@ref), [`rawretentions`](@ref), 
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -597,14 +557,11 @@ Returns the sample metadata associated with the scan series.
 This typically includes information about the analyzed sample, such as sample ID, origin, 
 preparation details, or treatment conditions.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
+sample-related metadata.
 
-# Returns
-A `NamedTuple` containing sample-related metadata.
-
-See also [`AbstractScanSeries`](@ref), [`instrument`](@ref), [`acquisition`](@ref), 
-[`user`](@ref).
+See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -630,15 +587,12 @@ Returns the scan at the specified index from the given scan series.
 
 This is a direct accessor for individual scans, supporting bounds-checked indexed access.
 
-# Arguments
-- `series::AbstractScanSeries`: The scan series to index into.
-- `scanindex::Integer`: The index of the scan to retrieve.
+`series` is the scan series to index into and `scanindex` selects the scan. Returns the
+`AbstractScan` at that index. Throws `BoundsError` if `scanindex` is outside the valid
+range.
 
-# Returns
-- An `AbstractScan` object corresponding to the requested index.
-
-# Throws
-- `BoundsError` if `scanindex` is outside the valid range of the scan series.
+See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -668,13 +622,11 @@ Returns the number of individual scan entries in the scan series.
 This is equivalent to `length(series)`, and reflects the total number of scan measurements 
 stored in the series.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns an `Int` representing the
+number of scan elements.
 
-# Returns
-An `Int` representing the number of scan elements.
-
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -696,12 +648,11 @@ scancount(series::AbstractScanSeries) = length(scans(series))
 
 Return the collection of scans contained in the given scan series.
 
-# Arguments
-- `series`: A subtype of `AbstractScanSeries`, such as `ChromScanSeries` or 
-  `MassScanSeries`.
+`series` is a subtype of `AbstractScanSeries` such as `ChromScanSeries` or
+`MassScanSeries`. Returns a vector of scan objects in acquisition order.
 
-# Returns
-- A vector of scan objects in acquisition order.
+See also [`AbstractScanSeries`](@ref), [`scan`](@ref), [`instrument`](@ref), 
+[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
 
 # Examples
 ```jldoctest
@@ -736,18 +687,14 @@ If the scans store unitful m/z values, they are optionally converted to the spec
 `unit`. If no unit is provided, the scan's native unit is used. If m/z values are unitless, 
 no  conversion is performed and values are returned as-is.
 
-# Arguments
-- `series`: The mass scan series to extract m/z values from.
-- `target_level`: *(optional)* The MS level to filter scans by (default: 1).
-- `unit`: *(optional)* Unit to which m/z values should be converted before deduplication. 
-  Must be `nothing` for unitless scans.
+`series` is the mass scan series, `target_level` selects the MS level (default 1), and
+`unit` is an optional target unit for conversion before deduplication (must be `nothing`
+for unitless scans). Returns a sorted vector of unique m/z values. Throws `ArgumentError`
+if no scans exist at the specified level or if a unit is requested for unitless m/z
+values.
 
-# Returns
-- A sorted vector of unique m/z values (`Real` or `Quantity`), depending on unit usage.
-
-# Throws
-- `ArgumentError` if no scans exist at the specified level.
-- `ArgumentError` if a unit is requested for a scan with unitless m/z values.
+See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`mzunit`](@ref),
+[`mzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -784,14 +731,11 @@ Returns the user metadata associated with the scan series.
 This typically includes information about the operator, analyst, or laboratory personnel 
 involved in the acquisition or processing of the scan data.
 
-# Arguments
-- `series`: A concrete subtype of `AbstractScanSeries`.
-
-# Returns
-A `NamedTuple` containing user-related metadata.
+`series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
+user-related metadata.
 
 See also [`AbstractScanSeries`](@ref), [`acquisition`](@ref), [`instrument`](@ref), 
-[`sample`](@ref).
+[`sample`](@ref), [`extras`](@ref), [`scans`](@ref).
 
 # Examples
 ```jldoctest

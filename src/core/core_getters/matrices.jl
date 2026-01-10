@@ -9,11 +9,8 @@ The acquisition metadata typically includes details such as scan mode, method pa
 instrument configuration, or other context relevant to how the mass spectrometry data was 
 acquired.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`.
-
-# Returns
-A `NamedTuple` containing acquisition-related metadata.
+`msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
+acquisition-related metadata.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`instrument`](@ref), 
 [`sample`](@ref), [`user`](@ref), [`extras`](@ref).
@@ -42,11 +39,8 @@ Returns the unstructured extras associated with the mass scan matrix.
 This dictionary may contain arbitrary key-value pairs that are not captured by the 
 structured fields such as `instrument`, `acquisition`, `user`, or `sample`.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`.
-
-# Returns
-A `Dict{String, Any}` containing unstructured metadata.
+`msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `Dict{String, Any}`
+containing unstructured metadata.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
 [`instrument`](@ref), [`sample`](@ref), [`user`](@ref).
@@ -82,11 +76,8 @@ Returns the instrument metadata associated with the mass scan matrix.
 This typically includes information about the hardware used for data acquisition, such as 
 detector type, manufacturer, model, or configuration parameters.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`.
-
-# Returns
-A `NamedTuple` containing instrument-specific metadata.
+`msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
+instrument-specific metadata.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
 [`sample`](@ref), [`user`](@ref), [`extras`](@ref).
@@ -122,18 +113,11 @@ If the matrix stores unitful intensities and a `unit` is specified, the values a
 converted accordingly. If the matrix stores unitless intensities, a unit conversion 
 request will throw an `ArgumentError`.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix` containing mass scans.
-- `unit`: *(optional)* A `Unitful.Units` object to convert intensities to. If omitted or 
-  `nothing`, intensities are returned as stored.
-
-# Returns
-- A matrix of intensity values, either as plain numbers or `Quantity`s, depending on the 
-  stored data.
-
-# Throws
-- `ArgumentError` if the scan matrix stores unitless intensities but a unit conversion is 
-  requested.
+`msm` is a concrete subtype of `AbstractMassScanMatrix` containing mass scans. `unit` is
+an optional `Unitful.Units` object to convert intensities to; if omitted or `nothing`,
+intensities are returned as stored. Returns a matrix of intensity values, either plain
+numbers or `Quantity`s depending on stored data. Throws `ArgumentError` if the scan matrix
+stores unitless intensities but a unit conversion is requested.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
 [`intensityunit`](@ref), [`rawintensities`](@ref), [`mzcount`](@ref), [`scancount`](@ref).
@@ -181,11 +165,8 @@ This function retrieves the `intensity_unit` field from any mass scan matrix sub
 which indicates the physical unit used for the signal intensities (e.g. `u"pA"`). If 
 no unit was specified at construction, returns `nothing`.
 
-# Arguments
-- `msm`: A subtype of `AbstractMassScanMatrix`, such as `MassScanMatrix`.
-
-# Returns
-- A `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
+`msm` is a subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns a
+`Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), 
 [`intensities`](@ref), [`rawintensities`](@ref).
@@ -217,11 +198,8 @@ The MS level indicates the stage of mass spectrometry at which the scans were ac
 - `2` for MS/MS scans (e.g. product ion spectra),
 - Higher values for advanced fragmentation strategies (e.g. MSⁿ).
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`, such as `MassScanMatrix`.
-
-# Returns
-An `Integer` value representing the MS level (guaranteed to be ≥ 1).
+`msm` is a concrete subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns
+an `Integer` value representing the MS level (guaranteed to be ≥ 1).
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`levels`](@ref), 
 [`levelscans`](@ref).
@@ -248,12 +226,8 @@ spectrometric scan matrix. It reflects the number of unique m/z data points (pea
 measured across all scans in the matrix, typically corresponding to the columns of the 
 intensity matrix.
 
-# Arguments
-- `msm::AbstractMassScanMatrix`: A mass scan matrix object, such as `MassScanMatrix`, 
-  containing multiple scans and their associated m/z values.
-
-# Returns
-- `Int`: The number of m/z values in the scan matrix.
+`msm` is a mass scan matrix object such as `MassScanMatrix` containing multiple scans and 
+their associated m/z values. Returns an `Int` number of m/z values in the scan matrix.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
 [`rawmzvalues`](@ref).
@@ -281,11 +255,8 @@ Return the unit associated with the mass-to-charge (m/z) values of a mass scan m
 Typically, this is `nothing`, since m/z values are conventionally unitless. If a unit was
 explicitly provided during matrix construction, it will be returned.
 
-# Arguments
-- `msm`: A subtype of `AbstractMassScanMatrix`, such as `MassScanMatrix`.
-
-# Returns
-- A `Unitful.Units` subtype representing the m/z unit, or `nothing` if unspecified.
+`msm` is a subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns a
+`Unitful.Units` subtype representing the m/z unit, or `nothing` if unspecified.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
 [`rawmzvalues`](@ref).
@@ -316,19 +287,11 @@ This method supports both unitless and unitful matrices. If the matrix has an as
 unit, values can be converted to a different unit using the optional `unit` argument. 
 If the matrix is unitless and a unit is requested, an error is thrown.
 
-# Arguments
-- `msm`: A subtype of `AbstractMassScanMatrix`.
-- `unit`: Desired unit to convert m/z values into (`Unitful.Units` subtype or `nothing`, default).
-
-# Returns
-A vector of m/z values. If a unit is specified, values are converted to that unit; 
-otherwise, values are returned in their stored form.
-
-# Throws
-- `ArgumentError` if:
-    - The matrix is unitless and a unit is requested.
-- `AssertionError` if:
-    - The matrix claims to have a unit but `mz_unit` is `nothing` (internal inconsistency).
+`msm` is a subtype of `AbstractMassScanMatrix`. `unit` is an optional target unit.
+Returns a vector of m/z values, converted to the requested unit when specified, otherwise
+returned in stored form. Throws `ArgumentError` if the matrix is unitless and a unit is
+requested, and `AssertionError` if the matrix claims to have a unit but `mz_unit` is
+`nothing`.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`rawmzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref).
@@ -380,17 +343,11 @@ converted to the user-specified `unit` using `uconvert`, then stripped of units.
 If the matrix does not define intensity units, requesting a unit conversion will throw an 
 `ArgumentError`.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`, such as `MassScanMatrix`.
-- `unit`: *(optional)* A `Unitful.Units` object to which the raw intensities should be 
-  converted. If the scan matrix does not define intensity units, this must remain `nothing`.
-
-# Returns
-A matrix of (unitless) intensity values, with optional unit conversion. Each row typically 
-corresponds to a scan, and each column to an m/z value.
-
-# Throws
-- `ArgumentError` if a unit is requested but the scan matrix has no defined intensity unit.
+`msm` is a concrete subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. `unit`
+is an optional `Unitful.Units` object to convert raw intensities before stripping; it must
+be `nothing` for unitless matrices. Returns a matrix of unitless intensity values with
+optional conversion (rows are scans, columns are m/z values). Throws `ArgumentError` if a
+unit is requested but the scan matrix has no defined intensity unit.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`intensities`](@ref), 
 [`intensityunit`](@ref), [`scancount`](@ref), [`mzcount`](@ref).
@@ -435,20 +392,10 @@ This method returns the numeric representation of m/z values, optionally convert
 to a different unit. If the matrix is unitless and a unit conversion is requested, 
 an error is thrown.
 
-# Arguments
-- `msm`: A subtype of `AbstractMassScanMatrix`.
-- `unit`: Desired unit to convert values into before stripping units 
-  (`Unitful.Units` subtype or `nothing`, default).
-
-# Returns
-A vector of plain numeric m/z values, optionally converted to the requested unit 
-and stripped of units.
-
-# Throws
-- `ArgumentError` if:
-    - The matrix is unitless and a unit is requested.
-- `AssertionError` if:
-    - The matrix claims to have a unit but `mz_unit` is `nothing` (internal inconsistency).
+`msm` is a subtype of `AbstractMassScanMatrix`. `unit` is an optional target unit.
+Returns a vector of numeric m/z values, optionally converted and stripped of units. Throws
+`ArgumentError` if the matrix is unitless and a unit is requested, and `AssertionError` if
+the matrix claims to have a unit but `mz_unit` is `nothing`.
 
 See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
 [`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref).
@@ -493,17 +440,10 @@ Returns the raw (unitless) retention values for all scans in the given mass scan
 If the scan matrix stores unitless retention values, they are returned as-is. If a unit is 
 requested via the `unit` keyword, an error is thrown since conversion is not possible.
 
-# Arguments
-- `msm`: A subtype of `AbstractMassScanMatrix` whose retentions are unitless.
-- `unit`: *(optional)* Must be `nothing` for unitless retention values; otherwise, 
-  an error is thrown.
-
-# Returns
-A `Vector{<:Real}` of raw, unitless retention values for the scan matrix.
-
-# Throws
-- `ArgumentError` if a unit is requested for a scan matrix that does not define a retention 
-  unit.
+`msm` is a subtype of `AbstractMassScanMatrix` with unitless retentions. `unit` must be
+`nothing` for unitless retention values. Returns a vector of raw, unitless retention
+values. Throws `ArgumentError` if a unit is requested for a scan matrix that does not
+define a retention unit.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`retentions`](@ref), 
 [`retentionunit`](@ref), [`scancount`](@ref).
@@ -553,17 +493,11 @@ If `retention_unit` is `nothing`:
 This function does **not** assign units to unitless scans — it only performs conversions 
 when a unit is already stored in `retention_unit`.
 
-# Arguments
-- `msm`: A subtype of `AbstractScan` whose `retention` field is a vector of values.
-- `unit`: (Optional) target unit (e.g. `u"s"` or `u"minute"`) — used only if a unit is 
-  stored.
-
-# Returns
-- A vector of `Quantity` values in the scan’s stored or requested unit, if applicable.
-- A plain vector of `Real` values if the scan is unitless and no `unit` is requested.
-
-# Throws
-- `ArgumentError` if a `unit` is requested for a unitless scan.
+`msm` is a subtype of `AbstractMassScanMatrix` whose retentions are stored as a vector.
+`unit` is an optional target unit (for example `u"s"` or `u"minute"`) used only when a
+unit is stored. Returns a vector of `Quantity` values when applicable, otherwise a plain
+vector of `Real` values. Throws `ArgumentError` if a `unit` is requested for a unitless
+scan.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
 [`rawretentions`](@ref), [`retentionunit`](@ref), [`scancount`](@ref).
@@ -611,11 +545,8 @@ This function retrieves the `retention_unit` field from any scan subtype, which 
 the physical unit used along the separation axis (e.g. `u"s"`, `u"minute"`). If no unit 
 was specified at construction, returns `nothing`.
 
-# Arguments
-- `scan`: A subtype of `AbstractScan`, such as `ChromScan` or `MassScan`.
-
-# Returns
-- A `Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified.
+`msm` is a subtype of `AbstractMassScanMatrix`. Returns a `Unitful.Units` subtype
+representing the retention unit, or `nothing` if unspecified.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
 [`retentions`](@ref), [`rawretentions`](@ref).
@@ -645,11 +576,8 @@ Returns the sample metadata associated with the mass scan matrix.
 This typically includes information about the analyzed sample, such as sample ID, origin, 
 preparation details, or treatment conditions.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`.
-
-# Returns
-A `NamedTuple` containing sample-related metadata.
+`msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
+sample-related metadata.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
 [`instrument`](@ref), [`user`](@ref), [`extras`](@ref).
@@ -677,12 +605,9 @@ This function returns the number of scan entries (e.g. time points or separation
 coordinates) in the mass scan matrix. It reflects the total number of scans stored in the 
 intensity matrix.
 
-# Arguments
-- `msm::AbstractMassScanMatrix`: A mass scan matrix object, such as `MassScanMatrix`, 
-  containing multiple scans and their associated retention times or separation coordinates.
-
-# Returns
-- `Int`: The number of scan elements in the matrix.
+`msm` is a mass scan matrix object such as `MassScanMatrix` containing multiple scans and
+their associated retention times or separation coordinates. Returns an `Int` number of
+scan elements in the matrix.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`retentions`](@ref).
 
@@ -709,11 +634,8 @@ Returns the user metadata associated with the mass scan matrix.
 This typically includes information about the operator, data analyst, or other
 user-specific annotations relevant to the acquisition or processing of the data.
 
-# Arguments
-- `msm`: A concrete subtype of `AbstractMassScanMatrix`.
-
-# Returns
-A `NamedTuple` containing user-related metadata.
+`msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
+user-related metadata.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
 [`instrument`](@ref), [`sample`](@ref), [`extras`](@ref).
