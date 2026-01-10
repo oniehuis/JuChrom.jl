@@ -9,8 +9,9 @@ return unitless numeric values. Unit-aware convenience functions (e.g., [`retent
 [`intensity`](@ref), [`mzvalues`](@ref)) preserve or convert units when available.
 
 ```julia
-rawretention(scan)  # -> 12.3
-retention(scan)     # -> 12.3u"s"
+rawretention(scan)               # -> 60.0
+retention(scan)                  # -> 60.0u"s"
+retention(scan, unit=u"minute")  # -> 1.0u"minute"
 ```
 
 ## Single-scan containers
@@ -50,7 +51,7 @@ conversions.
 
 Convenience:
 
-- [`retention`](@ref), [`intensity`](@ref), [`mzvalues`](@ref), [`intensities`](@ref)
+- [`intensities`](@ref), [`intensity`](@ref), [`mzvalues`](@ref), [`retention`](@ref)
 
 Concrete types such as `ChromScan` and `MassScan` are subtypes that implement these
 abstract interfaces.
@@ -73,7 +74,7 @@ Fields and accessors:
 
 Convenience:
 
-- [`retention`](@ref), [`intensity`](@ref), [`retentionunit`](@ref), [`intensityunit`](@ref)
+- [`intensity`](@ref), [`retention`](@ref)
 
 ### MassScan
 
@@ -92,7 +93,7 @@ Fields and accessors:
 
 Convenience:
 
-- [`retention`](@ref), [`mzvalues`](@ref), [`intensities`](@ref), [`mzcount`](@ref)
+- [`intensities`](@ref), [`mzcount`](@ref), [`mzvalues`](@ref), [`retention`](@ref)
 
 ## Scan series (batches of scans)
 
@@ -102,7 +103,7 @@ units.
 
 ### AbstractScanSeries and subtypes
 
-The abstract series types define the shared metadata and scanning interface.
+The abstract series types define the shared metadata and series API for scan access.
 
 **AbstractScanSeries** ([`AbstractScanSeries`](@ref)) expects:
 
@@ -138,7 +139,7 @@ Fields and accessors:
 
 Convenience:
 
-- [`retentions`](@ref), [`intensities`](@ref), [`scancount`](@ref)
+- [`intensities`](@ref), [`retentions`](@ref), [`scancount`](@ref)
 
 ### MassScanSeries
 
@@ -155,8 +156,8 @@ Fields and accessors:
 
 Convenience:
 
-- [`retentions`](@ref), [`intensities`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref),
-  [`levels`](@ref), [`uniquemzvalues`](@ref), [`scancount`](@ref)
+- [`levels`](@ref), [`mzunit`](@ref), [`retentions`](@ref), [`scancount`](@ref),
+  [`uniquemzvalues`](@ref)
 
 ## Mass-scan matrices (aligned grid)
 
@@ -164,7 +165,7 @@ Mass-scan matrices store aligned mass scans on a shared m/z grid.
 Use series when you need scan-level structure or heterogeneous m/z grids; use matrices
 for aligned m/z operations and linear algebra workflows.
 
-### AbstractMassScanMatrix
+### AbstractMassScanMatrix interface
 
 The abstract matrix type defines the aligned grid interface for mass scans.
 
@@ -208,7 +209,7 @@ Fields and accessors:
 
 Convenience:
 
-- [`retentions`](@ref), [`mzvalues`](@ref), [`intensities`](@ref), [`mzcount`](@ref),
+- [`intensities`](@ref), [`mzcount`](@ref), [`mzvalues`](@ref), [`retentions`](@ref),
   [`scancount`](@ref)
 
 Use `mscanmatrix(mss)` to convert a `MassScanSeries` to a `MassScanMatrix`:
