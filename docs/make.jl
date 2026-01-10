@@ -39,10 +39,12 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
         pages = [
             "Home" => "index.md",
             "Manual" => Any[
-                "man/Containers.md",
-                "man/Scans.md",
-                "man/ScanSeries.md",
-                "man/ScanMatrices.md",
+                "Core containers" => Any[
+                    "man/Containers.md",
+                    "man/Scans.md",
+                    "man/ScanSeries.md",
+                    "man/ScanMatrices.md",
+                ],
                 "man/loaders.md",
                 "man/convert.md",
                 "man/transform.md",
