@@ -55,10 +55,12 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `intensity::Real`, `intensityunit::Union{Unitful.Units, Nothing}`, and
 `attrs::NamedTuple`.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
-[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+See also: [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref),
+[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
+[`intensityunit(::AbstractScan)`](@ref),
+[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref),
+[`retentionunit(::AbstractScan)`](@ref).
 """
 struct ChromScan{
     T1<:Real,
@@ -203,10 +205,12 @@ Return `true` if two `ChromScan` objects have approximately equal retention and 
 values (`isapprox` defaults), identical retention and intensity units, and identical
 `attrs`.
 
-See also: [`AbstractChromScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
-[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+See also: [`AbstractChromScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref),
+[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
+[`intensityunit(::AbstractScan)`](@ref),
+[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref),
+[`retentionunit(::AbstractScan)`](@ref).
 """
 Base.:(==)(a::ChromScan, b::ChromScan) = 
     retention(a) ≈ retention(b) &&
