@@ -116,7 +116,7 @@ request will throw an `ArgumentError`.
 `msm` is a concrete subtype of `AbstractMassScanMatrix` containing mass scans. `unit` is
 an optional `Unitful.Units` object to convert intensities to; if omitted or `nothing`,
 intensities are returned as stored. Returns a matrix of intensity values, either plain
-numbers or `Quantity`s depending on stored data. Throws `ArgumentError` if the scan matrix
+numbers or `AbstractQuantity`s depending on stored data. Throws `ArgumentError` if the scan matrix
 stores unitless intensities but a unit conversion is requested.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
@@ -193,13 +193,10 @@ intensityunit(msm::AbstractMassScanMatrix) = msm.intensity_unit
 
 Return the MS level of a mass scan matrix.
 
-The MS level indicates the stage of mass spectrometry at which the scans were acquired:
-- `1` for full MS1 scans (e.g. precursor spectra),
-- `2` for MS/MS scans (e.g. product ion spectra),
-- Higher values for advanced fragmentation strategies (e.g. MSⁿ).
-
-`msm` is a concrete subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns
-an `Integer` value representing the MS level (guaranteed to be ≥ 1).
+The MS level indicates the stage of mass spectrometry at which the scans were acquired
+(for example `1` for MS1, `2` for MS/MS, higher values for MS^n). `msm` is a concrete
+subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns an `Integer` value
+representing the MS level (guaranteed to be ≥ 1).
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`levels`](@ref), 
 [`levelscans`](@ref).
@@ -479,25 +476,18 @@ end
 """
     retentions(msm::AbstractMassScanMatrix; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the vector of retention values for a scan object, optionally converted to a 
+Return the vector of retention values from a mass scan matrix, optionally converted to a
 specified unit.
 
-If the scan’s `retention_unit` is not `nothing`, the returned vector consists of 
-`Unitful.Quantity` values. If a `unit` is provided, all values are converted to that unit 
-using `uconvert.`.
-
-If `retention_unit` is `nothing`:
-- and a `unit` is requested, an error is thrown
-- and no `unit` is requested, the raw numeric vector is returned unchanged
-
-This function does **not** assign units to unitless scans — it only performs conversions 
-when a unit is already stored in `retention_unit`.
+If the matrix stores a `retention_unit`, values are returned as `Unitful.AbstractQuantity`s and
+any requested `unit` is applied via `uconvert`. If the matrix is unitless, the raw numeric
+vector is returned unless a unit conversion is requested, which throws `ArgumentError`.
+This function does not assign units to unitless matrices; it only converts when a unit is
+stored.
 
 `msm` is a subtype of `AbstractMassScanMatrix` whose retentions are stored as a vector.
 `unit` is an optional target unit (for example `u"s"` or `u"minute"`) used only when a
-unit is stored. Returns a vector of `Quantity` values when applicable, otherwise a plain
-vector of `Real` values. Throws `ArgumentError` if a `unit` is requested for a unitless
-scan.
+unit is stored.
 
 See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
 [`rawretentions`](@ref), [`retentionunit`](@ref), [`scancount`](@ref).

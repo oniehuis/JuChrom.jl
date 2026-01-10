@@ -41,6 +41,12 @@ struct ShimadzuMSOptions
     mode::Symbol  # :ms or :tic
 end
 
+"""
+    ShimadzuMSLoaderSpec{F}
+
+Loader specification for Shimadzu GC/MS files. Stores the file path, selected mode,
+and a format tag used by `load`.
+"""
 struct ShimadzuMSLoaderSpec{F<:ShimadzuMSFormat}
     path::String
     options::ShimadzuMSOptions

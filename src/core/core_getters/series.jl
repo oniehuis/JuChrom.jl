@@ -70,7 +70,7 @@ extras(series::AbstractScanSeries) = series.extras
 
 """
     intensities(series::AbstractChromScanSeries;
-    unit::Union{Nothing, Unitful.Units}=nothing) -> Vector{<:Real} or Vector{<:Quantity}
+    unit::Union{Nothing, Unitful.Units}=nothing) -> Vector{<:Real} or Vector{<:AbstractQuantity}
 
 Return the intensity values from each scan in a chromatographic scan series.  
 If the scan series stores unitful intensities and a `unit` is specified, the values are 
@@ -79,7 +79,7 @@ converted accordingly.
 `series` is a concrete subtype of `AbstractChromScanSeries` containing chromatographic
 scans. `unit` is an optional `Unitful.Units` object to convert intensities to; if omitted
 or `nothing`, intensities are returned as stored. Returns a vector of intensity values,
-either plain numbers or `Quantity`s depending on stored data. Throws `ArgumentError` if
+either plain numbers or `AbstractQuantity`s depending on stored data. Throws `ArgumentError` if
 unitless intensities are stored but a unit conversion is requested, and `AssertionError`
 if the series contains no scans.
 

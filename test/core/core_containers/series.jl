@@ -200,6 +200,16 @@ end
 
     extras = Dict("note" => "x" ^ 70, "nested" => (a=1, b=2))
     @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), sections, extras) == true
+
+    single_complex = [("Instrument", (config=(alpha=1, beta=2),))]
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), single_complex, Dict{String, Any}()) == true
+
+    single_long = [("Instrument", (comment="x" ^ 120,))]
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), single_long, Dict{String, Any}()) == true
+
+    multi_mixed = [("Instrument", (model="X", notes="x" ^ 120)),
+                   ("User", (name="A",))]
+    @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), multi_mixed, Dict{String, Any}()) == true
 end
 
 @testset "ScanSeries show methods" begin

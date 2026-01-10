@@ -32,22 +32,15 @@ attrs(scan::AbstractScan) = scan.attrs
 """
     intensity(scan::AbstractChromScan; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the intensity value of a chromatographic scan, optionally as a `Unitful.Quantity`.
+Return the intensity value of a chromatographic scan, optionally as a `Unitful.AbstractQuantity`.
 
-If the scan’s `intensity_unit` is not `nothing`, the intensity is returned as a quantity 
-in that unit. If a `unit` is specified, the value is converted using `uconvert`.
+If the scan stores an `intensity_unit`, the return value is an `AbstractQuantity`, and any requested
+`unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value is
+returned unless a unit conversion is requested, which throws `ArgumentError`. This
+function does not assign units to unitless scans; it only converts when a unit is stored.
 
-If `intensity_unit` is `nothing`:
-- and a `unit` is provided, an error is thrown
-- and no `unit` is provided, the raw numeric value is returned unchanged
-
-This function does **not** assign units to raw values — it only performs conversions when a 
-unit is already stored.
-
-`scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit (for
-example `u"pA"`), used only when the scan stores a unit. Returns a `Quantity` in the
-stored or requested unit when applicable, otherwise a plain `Real` value. Throws
-`ArgumentError` if `unit` is specified for a scan with no stored `intensity_unit`.
+`scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit (for example
+`u"pA"`), used only when a unit is stored.
 
 See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`rawintensity`](@ref), 
 [`intensityunit`](@ref).
@@ -168,13 +161,10 @@ end
 
 Return the MS level of a mass spectrometric scan.
 
-The MS level indicates the stage of mass spectrometry at which the scan was acquired:
-- `1` for full MS1 scans (e.g. precursor spectra),
-- `2` for MS/MS scans (e.g. product ion spectra),
-- Higher values for advanced fragmentation strategies (e.g. MS^n).
-
-`scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns an `Integer` 
-representing the MS level (guaranteed to be ≥ 1).
+The MS level indicates the stage of mass spectrometry at which the scan was acquired
+(for example `1` for MS1, `2` for MS/MS, higher values for MS^n). `scan` is a subtype of
+`AbstractMassScan` such as `MassScan`. Returns an `Integer` representing the MS level
+(guaranteed to be ≥ 1).
 
 See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref).
 
@@ -331,21 +321,13 @@ end
 
 Return the numeric intensity value of a chromatographic scan as a unitless `Real`.
 
-If the scan’s `intensity_unit` is not `nothing`, the intensity value is optionally 
-converted to the user-specified `unit` using `uconvert`, then stripped of units. If no 
-`unit` is specified, the stored unit is used for stripping.
-
-If `intensity_unit` is `nothing`:
-- and a `unit` is requested, an error is thrown
-- and no `unit` is requested, the raw numeric value is returned unchanged
+If the scan stores an `intensity_unit`, the value is optionally converted to `unit` via
+`uconvert` and then stripped. If the scan is unitless, the raw numeric value is returned
+unless a unit conversion is requested, which throws `ArgumentError`. This function does
+not assign units to unitless scans; it only converts when a unit is stored.
 
 `scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit and must not
-be used for unitless scans. Returns a `Real` value with all units stripped. Throws
-`ArgumentError` if a `unit` is requested for a scan with no stored `intensity_unit`.
-Behavior: if `intensity_unit ≠ nothing` and `unit` is provided, convert then strip; if
-`intensity_unit ≠ nothing` and `unit == nothing`, strip using the stored unit; if
-`intensity_unit == nothing` and `unit == nothing`, return the raw value; if
-`intensity_unit == nothing` and `unit ≠ nothing`, throw `ArgumentError`.
+be used for unitless scans.
 
 See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`intensity`](@ref), 
 [`intensityunit`](@ref).
@@ -429,21 +411,13 @@ end
 
 Return the numeric retention value of a scan, always as a unitless `Real`.
 
-If the scan’s `retention_unit` is not `nothing`, the value is optionally converted to the 
-user-specified `unit` using `uconvert`, then stripped of units. If no `unit` is specified, 
-the stored unit is used for stripping.
-
-If `retention_unit` is `nothing`:
-- and a `unit` is requested, an error is thrown
-- and no `unit` is requested, the raw numeric value is returned unchanged
+If the scan stores a `retention_unit`, the value is optionally converted to `unit` via
+`uconvert` and then stripped. If the scan is unitless, the raw numeric value is returned
+unless a unit conversion is requested, which throws `ArgumentError`. This function does
+not assign units to unitless scans; it only converts when a unit is stored.
 
 `scan` is a subtype of `AbstractScan`. `unit` is an optional target unit and must not be
-used for unitless scans. Returns a `Real` value with all units stripped. Throws
-`ArgumentError` if a `unit` is requested for a scan with no stored `retention_unit`.
-Behavior: if `retention_unit ≠ nothing` and `unit` is provided, convert then strip; if
-`retention_unit ≠ nothing` and `unit == nothing`, strip using the stored unit; if
-`retention_unit == nothing` and `unit == nothing`, return the raw value; if
-`retention_unit == nothing` and `unit ≠ nothing`, throw `ArgumentError`.
+used for unitless scans.
 
 See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
 [`retention`](@ref), [`retentionunit`](@ref).
@@ -487,7 +461,7 @@ end
 
 Return the retention value of a scan, optionally converted to a specified unit.
 
-If the scan stores a `retention_unit`, the return value is a `Unitful.Quantity`, and any
+If the scan stores a `retention_unit`, the return value is a `Unitful.AbstractQuantity`, and any
 requested `unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value
 is returned unless a unit conversion is requested, which throws `ArgumentError`. This
 function does not assign units to unitless scans; it only converts when a unit is stored.

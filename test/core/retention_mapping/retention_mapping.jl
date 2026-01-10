@@ -15,14 +15,15 @@ using Random
 using SparseArrays
 using Statistics
 using Unitful
+using Unitful: AbstractQuantity
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Unit tests
 # ─────────────────────────────────────────────────────────────────────────────
 
-# ── applymap(::RetentionMapper, ::Union{Real, Quantity}) ─────────────────────
+# ── applymap(::RetentionMapper, ::Union{Real, AbstractQuantity}) ─────────────────────
 
-@testset "applymap(rm, retention::Union{Real,Quantity})" begin
+@testset "applymap(rm, retention::Union{Real,AbstractQuantity})" begin
 
     # Helper: constant-spline mapper → always maps to rB_min (predictable)
     make_mapper(; unitful::Bool) = begin
@@ -60,16 +61,16 @@ using Unitful
     rm0 = make_mapper(unitful=false)
     @test applymap(rm0, 0.25) ≈ rm0.rB_min  # constant spline → rB_min
     @test applymap(rm0, -1.0) ≈ rm0.rB_min  # extrapolation still returns rB_min
-    @test_throws ArgumentError applymap(rm0, 0.25u"minute")  # unitless mapper rejects Quantity
+    @test_throws ArgumentError applymap(rm0, 0.25u"minute")  # unitless mapper rejects AbstractQuantity
 
-    # Unitful mapper: Quantity input required; output carries rB_unit (or requested unit)
+    # Unitful mapper: AbstractQuantity input required; output carries rB_unit (or requested unit)
     rmU = make_mapper(unitful=true)
     y1 = applymap(rmU, 0.5u"minute")  # accepted; time unit OK
     @test y1 ≈ rmU.rB_min * u"Th"  # constant spline ⇒ rB_min with B-unit
     y2 = applymap(rmU, 30.0u"s")  # convertible time units; ustrip handles conversion
     @test y2 ≈ rmU.rB_min * u"Th"
 
-    # Explicit unit override returns converted Quantity
+    # Explicit unit override returns converted AbstractQuantity
     y3 = applymap(rmU, 0.5u"minute"; unit=u"Th")  # same unit → equal value
     @test y3 ≈ rmU.rB_min * u"Th"
 
@@ -259,20 +260,20 @@ end
     @test (rm .=== rm) === true
 end
 
-# ── derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity}) ───
+# ── derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity}) ───
 
-@testset "derivinvmap(rm, retention::Union{Real,Quantity})" begin
+@testset "derivinvmap(rm, retention::Union{Real,AbstractQuantity})" begin
 
     # Build a small monotone mapper (minutes → Th)
     rA = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
     rB = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
     rm = fitmap(rA, rB)
 
-    # Unitful input required? (API accepts Quantity or Real; 
-    # with unitful mapper, Quantity is the valid path)
+    # Unitful input required? (API accepts AbstractQuantity or Real; 
+    # with unitful mapper, AbstractQuantity is the valid path)
     @test_throws ArgumentError derivinvmap(rm, 350.0)  # unitless input rejected for unitful rm
 
-    # Success: returns Quantity with unit rA_unit / rB_unit
+    # Success: returns AbstractQuantity with unit rA_unit / rB_unit
     dAB = derivinvmap(rm, 350.0u"Th")  # dA/dB at B=350 Th
     @test isfinite(ustrip(dAB)) && ustrip(dAB) > 0
     @test Unitful.unit(dAB) == u"minute"/u"Th"
@@ -298,7 +299,7 @@ end
         @test Unitful.unit(d_hi) == u"minute"/u"Th"
     end
 
-    # Unitless mapper variant: accepts Real; returns unitless; rejects Quantity
+    # Unitless mapper variant: accepts Real; returns unitless; rejects AbstractQuantity
     rA0 = ustrip.(rA)  # drop units
     rB0 = ustrip.(rB)
     rm0 = fitmap(rA0, rB0)
@@ -307,9 +308,9 @@ end
     @test (d0 isa Real) && isfinite(d0) && d0 > 0
 end
 
-# ── derivmap(rm, retention::Union{Real,Quantity}) ────────────────────────────
+# ── derivmap(rm, retention::Union{Real,AbstractQuantity}) ────────────────────────────
 
-@testset "derivmap(rm, retention::Union{Real,Quantity})" begin
+@testset "derivmap(rm, retention::Union{Real,AbstractQuantity})" begin
     # Helper: simple monotone mapper (tiny spline; no optimization)
     make_mapper(; unitful::Bool) = begin
         rA = [0.0, 0.5, 1.0]
@@ -342,9 +343,9 @@ end
         )
     end
 
-    # Unitful mapper: input must be Quantity; result has unit rB_unit/rA_unit
+    # Unitful mapper: input must be AbstractQuantity; result has unit rB_unit/rA_unit
     rmU = make_mapper(unitful=true)
-    q = derivmap(rmU, 0.5u"minute")  # ok, Quantity input
+    q = derivmap(rmU, 0.5u"minute")  # ok, AbstractQuantity input
     @test isfinite(ustrip(q)) && ustrip(q) > 0
     @test Unitful.unit(q) == u"Th"/u"minute"  # unit = rB_unit / rA_unit
     # Consistency with rawderivmap once units are stripped
@@ -354,7 +355,7 @@ end
     # Unit validation: unitful mapper rejects unitless input
     @test_throws ArgumentError derivmap(rmU, 0.5)
 
-    # Unitless mapper: accepts Real; returns unitless; rejects Quantity
+    # Unitless mapper: accepts Real; returns unitless; rejects AbstractQuantity
     rm0 = make_mapper(unitful=false)
     d0 = derivmap(rm0, 0.5)
     @test (d0 isa Real) && isfinite(d0) && d0 > 0
@@ -409,9 +410,9 @@ end
     @test y_after ≈ y_before atol=1e-12  # unitless mapper → unitless tolerance
 end
 
-# ── invmap(rm, retention::Union{<:Real, <:Quantity}) ─────────────────────────
+# ── invmap(rm, retention::Union{<:Real, <:AbstractQuantity}) ─────────────────────────
 
-@testset "invmap(rm, retention::Union{<:Real, <:Quantity})" begin
+@testset "invmap(rm, retention::Union{<:Real, <:AbstractQuantity})" begin
 
     # Synthetic monotone data (minutes → Th)
     rA = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
@@ -421,21 +422,21 @@ end
     # Basic success path
     xB = 350.0u"Th"
     yA = invmap(rm, xB)
-    @test yA isa Quantity
+    @test yA isa AbstractQuantity
     @test Unitful.unit(yA) == u"minute"
     @test isfinite(ustrip(yA))
     @test yA ≈ 5.312425320906996u"minute" atol=1e-10u"minute"  # regression target from docs
 
     # Unit conversion
     yA_s = invmap(rm, xB; unit=u"s")
-    @test yA_s isa Quantity
+    @test yA_s isa AbstractQuantity
     @test Unitful.unit(yA_s) == u"s"
     @test yA_s ≈ (ustrip(yA) * 60.0)u"s" atol=1e-8u"s"
 
     # Broadcasting over a small vector of outputs
     xsB = [250.0u"Th", 450.0u"Th"]
     ysA = invmap.(rm, xsB)
-    @test all(yi -> yi isa Quantity && Unitful.unit(yi) == u"minute", ysA)
+    @test all(yi -> yi isa AbstractQuantity && Unitful.unit(yi) == u"minute", ysA)
     @test isfinite(sum(ustrip, ysA))
     @test ysA ≈ [3.2283166885897936, 8.08686182716771]u"minute" atol=1e-10u"minute"
 
@@ -604,7 +605,7 @@ end
         Dict{String,Any}(),
     )
 
-    # Unitful: returns Quantity with rm.rA_unit
+    # Unitful: returns AbstractQuantity with rm.rA_unit
     @test mapmax(rm) ≈ 4.1u"minute" atol=1e-12u"minute"
 
     # Unitful with conversion
@@ -657,7 +658,7 @@ end
         Dict{String, Any}()
     )
 
-    # Unitful: returns Quantity with rm.rA_unit
+    # Unitful: returns AbstractQuantity with rm.rA_unit
     @test mapmin(rm) ≈ 1.2u"minute" atol=1e-12u"minute"
 
     # Unitful with conversion
@@ -670,9 +671,9 @@ end
     @test_throws ArgumentError mapmin(rm0, unit=u"s")
 end
 
-# ── rawapplymap(rm, retention::Quantity) ────────────────────────────────────
+# ── rawapplymap(rm, retention::AbstractQuantity) ────────────────────────────────────
 
-@testset "rawapplymap(rm, retention::Quantity)" begin
+@testset "rawapplymap(rm, retention::AbstractQuantity)" begin
     # Minimal strictly increasing mapper (minutes → Th), no optimizer needed
     rA = [0.0, 0.5, 1.0]  # domain A (unitful in mapper)
     rB = [10.0, 20.0, 30.0]  # domain B (unitful in mapper)
@@ -713,7 +714,7 @@ end
     # Validation: unitless input rejected for unitful mapper
     @test_throws ArgumentError rawapplymap(rm, 0.4)
 
-    # Unitless mapper variant accepts Quantity? → should error per docs
+    # Unitless mapper variant accepts AbstractQuantity? → should error per docs
     rm0 = JuChrom.RetentionMapper(
         rA, nothing, rA_min, rA_max, rA_norm_min, rA_norm_max,
         rB, nothing, rB_min, rB_max, rB_pred_min, rB_pred_max,
@@ -723,9 +724,9 @@ end
     @test_throws ArgumentError rawapplymap(rm0, 0.4u"minute")
 end
 
-# ── rawderivinvmap(rm, retention::Union{Real,Quantity}) ─────────────────────
+# ── rawderivinvmap(rm, retention::Union{Real,AbstractQuantity}) ─────────────────────
 
-@testset "rawderivinvmap(rm, retention::Union{Real,Quantity})" begin
+@testset "rawderivinvmap(rm, retention::Union{Real,AbstractQuantity})" begin
 
     # Build a small, strictly increasing mapper (unitful)
     rA = [0.0, 0.5, 1.0]
@@ -754,16 +755,16 @@ end
         Dict{String, Any}()
     )
 
-    # Unit validation (matches doc/implementation): unitful rm requires Quantity input
+    # Unit validation (matches doc/implementation): unitful rm requires AbstractQuantity input
     @test_throws ArgumentError rawderivinvmap(rmU, 20.0)
 
-    # Finite and positive derivative for a valid Quantity input (B domain)
+    # Finite and positive derivative for a valid AbstractQuantity input (B domain)
     dinv = rawderivinvmap(rmU, 20.0u"Th")
     @test isfinite(dinv) && dinv > 0
 
     # Check reciprocal relationship with rawderivmap at matched A/B points
     A = 0.6u"minute"
-    Bv = applymap(rmU, A)  # map A→B (Quantity out)
+    Bv = applymap(rmU, A)  # map A→B (AbstractQuantity out)
     dAB = rawderivmap(rmU, A)  # dB/dA (unitless)
     dBA = rawderivinvmap(rmU, Bv)  # dA/dB (unitless)
     @test dBA ≈ 1 / dAB  # reciprocals
@@ -784,9 +785,9 @@ end
     @test isfinite(d0) && d0 > 0
 end
 
-# ── rawderivmap(::RetentionMapper, ::Union{Real,Quantity}) ──────────────────
+# ── rawderivmap(::RetentionMapper, ::Union{Real,AbstractQuantity}) ──────────────────
 
-@testset "rawderivmap(rm, retention::Union{Real,Quantity})" begin
+@testset "rawderivmap(rm, retention::Union{Real,AbstractQuantity})" begin
     # Helper: simple monotone mapper (no optimization; tiny spline)
     make_mapper(; unitful::Bool) = begin
         rA = [0.0, 0.5, 1.0]
@@ -824,9 +825,9 @@ end
     rm0 = make_mapper(unitful=false)
     d0 = rawderivmap(rm0, 0.5)  # unitless input accepted
     @test isfinite(d0) && d0 > 0
-    @test_throws ArgumentError rawderivmap(rm0, 0.5u"minute")  # unitless mapper rejects Quantity
+    @test_throws ArgumentError rawderivmap(rm0, 0.5u"minute")  # unitless mapper rejects AbstractQuantity
 
-    # Unitful mapper: must receive Quantity; derivative finite and positive
+    # Unitful mapper: must receive AbstractQuantity; derivative finite and positive
     rmU = make_mapper(unitful=true)
     d1 = rawderivmap(rmU, 0.5u"minute")  # accepted
     @test isfinite(d1) && d1 > 0
@@ -838,9 +839,9 @@ end
     @test d2 ≈ d1 / 60
 end
 
-# ── rawinvmap(rm, retention::Quantity) ──────────────────────────────────────
+# ── rawinvmap(rm, retention::AbstractQuantity) ──────────────────────────────────────
 
-@testset "rawinvmap(rm, retention::Quantity)" begin
+@testset "rawinvmap(rm, retention::AbstractQuantity)" begin
 
     # Build a tiny, strictly increasing mapper (minutes → Th), no optimization
     rA = [0.0, 0.5, 1.0]
@@ -867,7 +868,7 @@ end
         Dict{String, Any}()
     )
 
-    # Basic success: Quantity in B-domain → raw (unitless) number in A-units
+    # Basic success: AbstractQuantity in B-domain → raw (unitless) number in A-units
     xB = 18.0u"Th"
     y_raw = rawinvmap(rm, xB)
     @test y_raw isa Real && isfinite(y_raw)
@@ -883,7 +884,7 @@ end
     # Validation: unitless input rejected for unitful mapper
     @test_throws ArgumentError rawinvmap(rm, 18.0)
 
-    # Unitless mapper variant rejects Quantity (per validation logic)
+    # Unitless mapper variant rejects AbstractQuantity (per validation logic)
     rm0 = JuChrom.RetentionMapper(
         rA, nothing, rA_min, rA_max, rA_norm_min, rA_norm_max,
         rB, nothing, rB_min, rB_max, rB_pred_min, rB_pred_max,

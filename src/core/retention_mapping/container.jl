@@ -369,7 +369,8 @@ returns the raw numeric values.
 
 ## Returns
 
-A vector of calibration input values. For unitful mappers, returns a vector of `Quantity` 
+A vector of calibration input values. For unitful mappers, returns a vector of
+`AbstractQuantity`
 objects with appropriate units (converted if `unit` is specified). For unitless mappers, 
 returns a vector of raw numeric values.
 
@@ -438,7 +439,8 @@ returns the raw numeric values.
 
 ## Returns
 
-A vector of calibration output values. For unitful mappers, returns a vector of `Quantity` 
+A vector of calibration output values. For unitful mappers, returns a vector of
+`AbstractQuantity`
 objects with appropriate units (converted if `unit` is specified). For unitless mappers, 
 returns a vector of raw numeric values.
 

@@ -2,12 +2,12 @@
 
 function _compute_retention_mapping(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     warn::Bool=false
 ) where {T<:Real}
 
-    if retention isa Quantity
+    if retention isa AbstractQuantity
         rA = ustrip(rm.rA_unit, retention)
     else
         rA = retention
@@ -44,7 +44,7 @@ function _compute_retention_mapping(
 end
 
 """
-    applymap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity{<:Real}}; 
+    applymap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}}; 
              domain_boundary_threshold::Real=1e-8,
              warn::Bool=false, 
              unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit)
@@ -55,7 +55,7 @@ fitted spline within the `RetentionMapper`.
 # Arguments
 - `rm::RetentionMapper`: A fitted retention mapper containing the spline and normalization 
   parameters.
-- `retention::Union{<:Real, <:Quantity{<:Real}}`: The retention value to be mapped from 
+- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: The retention value to be mapped from 
   domain A to domain B.
 - `domain_boundary_threshold::Real=1e-8`: Threshold for determining when to warn about
   extrapolation beyond the spline domain.
@@ -87,17 +87,17 @@ true
 """
 function applymap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     warn::Bool=false,
     unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit
 ) where {T<:Real}
 
     # Validate input unit compatibility (ADD THIS)
-    if rm.rA_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))
-    elseif rm.rA_unit isa Nothing && retention isa Quantity
+    elseif rm.rA_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rA_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -265,7 +265,7 @@ end
 
 #     # Determine new retention unit and strip units
 #     new_retention_unit = 
-#         first(new_rets) isa Quantity ? Unitful.unit(first(new_rets)) : nothing
+#         first(new_rets) isa AbstractQuantity ? Unitful.unit(first(new_rets)) : nothing
 #     new_retention_unitfree = ustrip.(new_rets)
 
 #     # Compute Jacobians for each retention coordinate
@@ -348,7 +348,7 @@ function applymap(
 
     # Determine new retention unit and strip units
     new_retention_unit = 
-        first(new_rets) isa Quantity ? Unitful.unit(first(new_rets)) : nothing
+        first(new_rets) isa AbstractQuantity ? Unitful.unit(first(new_rets)) : nothing
     new_retention_unitfree = ustrip.(new_rets)
 
     # Compute Jacobians for each retention coordinate
@@ -393,13 +393,13 @@ end
 
 function _compute_inverse_derivative_mapping(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     tol::Real=1e-8,
     warn::Bool=false
 ) where {T<:Real}
 
-    if retention isa Quantity
+    if retention isa AbstractQuantity
         rB = ustrip(rm.rB_unit, retention)
     else
         rB = retention
@@ -440,7 +440,7 @@ function _compute_inverse_derivative_mapping(
 end
 
 """
-    derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity{<:Real}};
+    derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
                 rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
                 warn::Bool=false) where {T1<:Union{Nothing, Unitful.Units}, 
                 T2<:Union{Nothing, Unitful.Units}, T3<:Real}
@@ -459,7 +459,7 @@ during spline fitting.
 ## Arguments
 
 - `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:Quantity{<:Real}}`: Output value (domain B) for which the 
+- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value (domain B) for which the 
   inverse derivative is computed.
 - `rA_unit`: Desired input unit for the derivative (defaults to the domain A unit used in 
   fitting).
@@ -511,7 +511,7 @@ true
 """
 function derivinvmap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
     rA_unit::T2=rm.rA_unit,
     rB_unit::T3=rm.rB_unit,
@@ -524,10 +524,10 @@ function derivinvmap(
     T4<:Real
 }
     # Validate input unit compatibility (FIXED - was missing this check)
-    if rm.rB_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rB_unit)."))
-    elseif rm.rB_unit isa Nothing && retention isa Quantity
+    elseif rm.rB_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rB_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -566,11 +566,11 @@ end
 # Core computation logic - always returns unitless derivative
 function _compute_derivative_mapping(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     warn::Bool=false
 ) where {T<:Real}
-    if retention isa Quantity
+    if retention isa AbstractQuantity
         rA = ustrip(rm.rA_unit, retention)
     else
         rA = retention
@@ -606,7 +606,7 @@ function _compute_derivative_mapping(
 end
 
 """
-    derivmap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity{<:Real}};
+    derivmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
              rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
              T1<:Union{Nothing, Unitful.Units}, T2<:Union{Nothing, Unitful.Units}}
 
@@ -620,7 +620,7 @@ adjusted to account for the normalization scales applied during spline fitting.
 ## Arguments
 
 - `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:Quantity{<:Real}}`: Input value (domain A) at which to 
+- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Input value (domain A) at which to 
   evaluate the derivative.
 - `rA_unit`: Desired input unit for the derivative (defaults to the domain A unit used in 
   fitting).
@@ -668,7 +668,7 @@ true
 """
 function derivmap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
     rA_unit::T2=rm.rA_unit,
     rB_unit::T3=rm.rB_unit,
@@ -679,10 +679,10 @@ function derivmap(
     T3<:Union{Nothing, Unitful.Units},
 }
     # Validate input unit compatibility (ADD THIS)
-    if rm.rA_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))
-    elseif rm.rA_unit isa Nothing && retention isa Quantity
+    elseif rm.rA_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rA_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -720,13 +720,13 @@ end
 
 function _compute_inverse_mapping(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     tol::Real=1e-8,
     warn::Bool=false
 ) where {T<:Real}
 
-    if retention isa Quantity
+    if retention isa AbstractQuantity
         rB = ustrip(rm.rB_unit, retention)
     else
         rB = retention
@@ -771,7 +771,7 @@ function _compute_inverse_mapping(
 end
 
 """
-    invmap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity{<:Real}};
+    invmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
            unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
            ) where {T1<:Unitful.TimeUnits, T2<:Real}
 
@@ -781,7 +781,7 @@ output value (domain B).
 ## Arguments
 
 - `rm::RetentionMapper`: The fitted retention mapper containing the spline and scaling info.
-- `retention::Union{<:Real, <:Quantity{<:Real}}`: Output value from domain B to invert back 
+- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value from domain B to invert back 
   to domain A.
 - `unit`: Desired output unit (defaults to the unit used for domain A during fitting).
 - `tol::Real=1e-8`: Tolerance for root-finding (default 1e-8).
@@ -829,7 +829,7 @@ true
 """
 function invmap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
     unit::T2=rm.rA_unit,
     tol::T3=1e-8,
@@ -841,10 +841,10 @@ function invmap(
     }
     
     # Validate input unit compatibility
-    if rm.rB_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rB_unit)."))
-    elseif rm.rB_unit isa Nothing && retention isa Quantity
+    elseif rm.rB_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rB_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -877,7 +877,7 @@ the raw numeric value.
   the requested unit.
 
 ## Returns
-The minimum predicted output value. For unitful mappers, returns a `Quantity` with 
+The minimum predicted output value. For unitful mappers, returns an `AbstractQuantity` with 
 appropriate units (converted if `unit` is specified). For unitless mappers, returns the 
 raw numeric value.
 
@@ -947,7 +947,7 @@ numeric value.
 
 ## Returns
 
-The maximum predicted output value. For unitful mappers, returns a `Quantity` with 
+The maximum predicted output value. For unitful mappers, returns an `AbstractQuantity` with 
 appropriate units (converted if `unit` is specified). For unitless mappers, returns the 
 raw numeric value.
 
@@ -1013,7 +1013,7 @@ the value with units; for unitless mappers, returns the raw numeric value.
   the requested unit.
 
 ## Returns
-The maximum input value from the calibration data. For unitful mappers, returns a `Quantity`
+The maximum input value from the calibration data. For unitful mappers, returns an `AbstractQuantity`
 with appropriate units (converted if `unit` is specified). For unitless mappers, returns
 the raw numeric value.
 
@@ -1077,7 +1077,7 @@ the value with units; for unitless mappers, returns the raw numeric value.
   the requested unit.
 
 ## Returns
-The minimum input value from the calibration data. For unitful mappers, returns a `Quantity`
+The minimum input value from the calibration data. For unitful mappers, returns an `AbstractQuantity`
 with appropriate units (converted if `unit` is specified). For unitless mappers, returns
 the raw numeric value.
 
@@ -1126,7 +1126,7 @@ end
 # ── rawapplymap ───────────────────────────────────────────────────────────────────────────
 
 """
-    rawapplymap(rm::RetentionMapper, retention::Quantity{<:Real};
+    rawapplymap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
                 warn::Bool=false, unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit)
 
 Apply the fitted mapping to transform an input value from domain A to domain B using the
@@ -1135,7 +1135,7 @@ fitted spline within the `RetentionMapper`, returning a unitless numeric result.
 ## Arguments
 - `rm::RetentionMapper`: A fitted retention mapper containing the spline and normalization
   parameters.
-- `retention::Quantity{<:Real}`: The input value with units to be mapped from domain A to 
+- `retention::AbstractQuantity{<:Real}`: The input value with units to be mapped from domain A to 
   domain B.
 - `warn::Bool=false`: If `true`, logs a warning when extrapolating beyond the spline domain.
 - `unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit`: Unit system for the output value 
@@ -1175,17 +1175,17 @@ true
 """
 function rawapplymap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     warn::Bool=false,
     unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit
 ) where {T<:Real}
 
     # Validate input unit compatibility
-    if rm.rA_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))
-    elseif rm.rA_unit isa Nothing && retention isa Quantity
+    elseif rm.rA_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rA_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -1198,7 +1198,7 @@ end
 # ── rawderivinvmap ────────────────────────────────────────────────────────────────────────
 
 """
-    rawderivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:Quantity{<:Real}};
+    rawderivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
                   rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
                   warn::Bool=false) where {T1<:Union{Nothing, Unitful.Units}, 
                   T2<:Union{Nothing, Unitful.Units}, T3<:Real}
@@ -1217,7 +1217,7 @@ during spline fitting.
 ## Arguments
 
 - `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:Quantity{<:Real}}`: Output value (domain B) for which the 
+- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value (domain B) for which the 
   inverse derivative is computed.
 - `rA_unit`: Input unit for the derivative calculation (defaults to the domain A unit used 
   in fitting).
@@ -1286,7 +1286,7 @@ ERROR: ArgumentError: Input cannot have units when rm.rB_unit is Nothing. Expect
 """
 function rawderivinvmap(
    rm::RetentionMapper,
-   retention::Union{<:Real, <:Quantity{<:Real}};
+   retention::Union{<:Real, <:AbstractQuantity{<:Real}};
    domain_boundary_threshold::T1=1e-8,
    rA_unit::T2=rm.rA_unit,
    rB_unit::T3=rm.rB_unit,
@@ -1299,10 +1299,10 @@ function rawderivinvmap(
     T4<:Real
 }
    # Validate input unit compatibility
-   if rm.rB_unit isa Unitful.Units && !(retention isa Quantity)
+   if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
        throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
                           "Expected units compatible with $(rm.rB_unit)."))
-   elseif rm.rB_unit isa Nothing && retention isa Quantity
+   elseif rm.rB_unit isa Nothing && retention isa AbstractQuantity
        throw(ArgumentError("Input cannot have units when rm.rB_unit is Nothing. " *
                           "Expected unitless input."))
    end
@@ -1339,7 +1339,7 @@ end
 # ── rawderivmap ───────────────────────────────────────────────────────────────────────────
 
 """
-    rawderivmap(rm::RetentionMapper, retention::Quantity{<:Real};
+    rawderivmap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
                 rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
                 T1<:Union{Nothing, Unitful.Units}, T2<:Union{Nothing, Unitful.Units}}
 
@@ -1352,7 +1352,7 @@ adjusted to account for the normalization scales applied during spline fitting.
 
 ## Arguments
 - `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Quantity{<:Real}`: Input value with units (domain A) at which to evaluate 
+- `retention::AbstractQuantity{<:Real}`: Input value with units (domain A) at which to evaluate 
   the derivative.
 - `rA_unit`: Input unit for the derivative calculation (defaults to the domain A unit used 
   in fitting).
@@ -1403,7 +1403,7 @@ true
 """
 function rawderivmap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
     rA_unit::T2=rm.rA_unit,
     rB_unit::T3=rm.rB_unit,
@@ -1414,10 +1414,10 @@ function rawderivmap(
     T3<:Union{Nothing, Unitful.Units},
 }
     # Validate input unit compatibility
-    if rm.rA_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))
-    elseif rm.rA_unit isa Nothing && retention isa Quantity
+    elseif rm.rA_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rA_unit is Nothing. " *
                            "Expected unitless input."))
     end
@@ -1455,7 +1455,7 @@ end
 # ── rawinvmap ─────────────────────────────────────────────────────────────────────────────
 
 """
-    rawinvmap(rm::RetentionMapper, retention::Quantity{<:Real};
+    rawinvmap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
               unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
               ) where {T1<:Unitful.TimeUnits, T2<:Real}
 
@@ -1465,7 +1465,7 @@ output value (domain B), returning a unitless numeric result.
 ## Arguments
 
 - `rm::RetentionMapper`: The fitted retention mapper containing the spline and scaling info.
-- `retention::Quantity{<:Real}`: Output value with units from domain B to invert back 
+- `retention::AbstractQuantity{<:Real}`: Output value with units from domain B to invert back 
   to domain A.
 - `unit`: Unit system for the output value before unit stripping (defaults to the unit used 
   for domain A during fitting).
@@ -1527,7 +1527,7 @@ ERROR: ArgumentError: Input cannot have units when rm.rB_unit is Nothing. Expect
 """
 function rawinvmap(
     rm::RetentionMapper,
-    retention::Union{<:Real, <:Quantity{<:Real}};
+    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
     unit::T2=rm.rA_unit,
     tol::T3=1e-8,
@@ -1538,10 +1538,10 @@ function rawinvmap(
     T3<:Real
 }
     # Validate input unit compatibility (same as invmap)
-    if rm.rB_unit isa Unitful.Units && !(retention isa Quantity)
+    if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rB_unit)."))
-    elseif rm.rB_unit isa Nothing && retention isa Quantity
+    elseif rm.rB_unit isa Nothing && retention isa AbstractQuantity
         throw(ArgumentError("Input cannot have units when rm.rB_unit is Nothing. " *
                            "Expected unitless input."))
     end

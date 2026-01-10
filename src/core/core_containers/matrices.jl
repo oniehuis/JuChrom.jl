@@ -224,9 +224,9 @@ end
 
 """
     MassScanMatrix(
-        retentions::AbstractVector{<:Union{Real, Quantity}},
-        mz_values::AbstractVector{<:Union{Real, Quantity}},
-        intensities::AbstractMatrix{<:Union{Real, Quantity}};
+        retentions::AbstractVector{<:Union{Real, AbstractQuantity}},
+        mz_values::AbstractVector{<:Union{Real, AbstractQuantity}},
+        intensities::AbstractMatrix{<:Union{Real, AbstractQuantity}};
         level::Integer=1,
         instrument::NamedTuple=NamedTuple(),
         acquisition::NamedTuple=NamedTuple(),
@@ -237,7 +237,7 @@ end
 
 Construct a `MassScanMatrix` representing a collection of aligned mass spectrometry scans.
 
-All inputs may contain raw numeric values or `Unitful.Quantity` values. If units are 
+All inputs may contain raw numeric values or `Unitful.AbstractQuantity` values. If units are 
 present, they are stripped and stored separately. Each input must either be entirely 
 unitless or use consistent units across its values.
 
@@ -297,9 +297,9 @@ function MassScanMatrix(
     user::T7=NamedTuple(),
     sample::T8=NamedTuple(),
     extras::T9=Dict{String, Any}()) where {
-        T1<:AbstractVector{<:Union{Real, Quantity{<:Real}}},
-        T2<:AbstractVector{<:Union{Real, Quantity{<:Real}}},
-        T3<:AbstractMatrix{<:Union{Real, Quantity{<:Real}}},
+        T1<:AbstractVector{<:Union{Real, AbstractQuantity{<:Real}}},
+        T2<:AbstractVector{<:Union{Real, AbstractQuantity{<:Real}}},
+        T3<:AbstractMatrix{<:Union{Real, AbstractQuantity{<:Real}}},
         T4<:Integer,
         T5<:NamedTuple,
         T6<:NamedTuple,

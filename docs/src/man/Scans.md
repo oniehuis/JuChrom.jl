@@ -4,9 +4,11 @@
 AbstractScan
 AbstractChromScan
 ChromScan
+ChromScan(::Unitful.AbstractQuantity, ::Unitful.AbstractQuantity; attrs::NamedTuple=NamedTuple())
 ChromScan(::Real, ::Union{Unitful.Units, Nothing}, ::Real, ::Union{Unitful.Units, Nothing}; attrs::NamedTuple=NamedTuple())
 AbstractMassScan
 MassScan
+MassScan(::Unitful.AbstractQuantity, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}; level::Integer=1, attrs::NamedTuple=NamedTuple())
 MassScan(::Real, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}; level::Integer=1, attrs::NamedTuple=NamedTuple())
 attrs(::AbstractScan)
 intensity(::AbstractChromScan{<:Any, Nothing})

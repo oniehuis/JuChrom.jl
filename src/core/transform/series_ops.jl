@@ -241,7 +241,7 @@ function retentiontrim(
     series::AbstractScanSeries{<:AbstractScan, <:Unitful.Units}; 
     start::T1=first(retentions(series)), 
     stop::T2=last(retentions(series))
-    ) where {T1<:Unitful.Quantity, T2<:Unitful.Quantity}
+    ) where {T1<:Unitful.AbstractQuantity, T2<:Unitful.AbstractQuantity}
 
     # Call the non-mutating helper to get the filtered scans
     filtered_scans = _retentiontrim(series, start, stop)
@@ -282,7 +282,7 @@ function retentiontrim(
     msmatrix::MassScanMatrix{<:Any, <:Unitful.Units}; 
     start::T1=first(retentions(msmatrix)), 
     stop::T2=last(retentions(msmatrix))
-    ) where {T1<:Unitful.Quantity, T2<:Unitful.Quantity}
+    ) where {T1<:Unitful.AbstractQuantity, T2<:Unitful.AbstractQuantity}
 
     _retentiontrim(msmatrix::MassScanMatrix, start, stop)
 end
@@ -374,7 +374,7 @@ function retentiontrim!(
     series::AbstractScanSeries{<:AbstractScan, <:Unitful.Units, <:Any}; 
     start::T1=first(retentions(series)), 
     stop::T2=last(retentions(series))
-    ) where {T1<:Unitful.Quantity, T2<:Unitful.Quantity}
+    ) where {T1<:Unitful.AbstractQuantity, T2<:Unitful.AbstractQuantity}
 
     start ≤ stop || throw(ArgumentError("`start` must be less than or equal to `stop`."))
 

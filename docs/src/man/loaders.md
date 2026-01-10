@@ -8,6 +8,8 @@ JuChrom.ChemStationMSLoader.ChemStationMSLoaderSpec
 JuChrom.ChemStationMSLoader.load
 JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec
 JuChrom.MassHunterMSLoader.MassHunterMS
+JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec
+JuChrom.ShimadzuMSLoader.ShimadzuMS
 ```
 
 Shimadzu loaders are available when PyCall is installed and loaded (extension).
@@ -43,19 +45,4 @@ You can verify the loader is available with:
 
 ```julia
 isdefined(JuChrom, :ShimadzuMSLoader)
-```
-
-```@eval
-using JuChrom
-using Markdown
-if isdefined(JuChrom, :ShimadzuMSLoader)
-    bt = Char(96)
-    docs_block = string(
-        bt, bt, bt, "@docs\n",
-        "JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec\n",
-        "JuChrom.ShimadzuMSLoader.ShimadzuMS\n",
-        bt, bt, bt
-    )
-    Markdown.parse(docs_block)
-end
 ```

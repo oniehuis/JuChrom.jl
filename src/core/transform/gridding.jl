@@ -319,7 +319,7 @@ coarse inflation, primary refinement, secondary refinement with enriched
 anchors).
 
 Requirements:
-* All elements of all inner vectors must be `Unitful.Quantity` with the **same
+* All elements of all inner vectors must be `Unitful.AbstractQuantity` with the **same
   physical dimension** (units themselves may differ).
 * `minwidth`, `maxwidth`, `tolerance` when provided must be quantities of that
   dimension (`nothing` allowed).
@@ -361,7 +361,7 @@ function densestgrid(
     end
 
     # Convert all values to the reference unit and strip them to plain Float64 so the
-    # numeric core can operate without carrying Quantity types.
+    # numeric core can operate without carrying AbstractQuantity types.
     strip = x -> Unitful.ustrip(uconvert(ref_unit, x))
     numeric_datasets = [strip.(v) for v in datavectors]
 
@@ -465,11 +465,11 @@ function densestgrid(
                 throw(ArgumentError("mixed physical dimensions in retention data"))
         end
         kw_ok(q) = q === nothing || isa(q, Unitful.AbstractQuantity) ||
-                   throw(ArgumentError("keyword must be Quantity or nothing for unitful data"))
+                   throw(ArgumentError("keyword must be AbstractQuantity or nothing for unitful data"))
         kw_ok(minwidth); kw_ok(maxwidth)
         tol_qty = tolerance === nothing ? 1e-8 * ref_unit :
                   isa(tolerance, Unitful.AbstractQuantity) ? tolerance :
-                  throw(ArgumentError("tolerance must be Quantity or nothing for unitful data"))
+                  throw(ArgumentError("tolerance must be AbstractQuantity or nothing for unitful data"))
 
         # Delegate to the unit-aware vector overload with minimally adjusted keywords.
         densestgrid(
@@ -550,7 +550,7 @@ Three-stage search (delegating to the numeric core):
    the bound.
 
 Unit handling:
-* All retentions must be either plain reals or `Unitful.Quantity` values sharing
+* All retentions must be either plain reals or `Unitful.AbstractQuantity` values sharing
   the same physical dimension.
 * If retentions are unitful, `minwidth`, `maxwidth`, and `tolerance` must be
   `nothing` or compatibly dimensioned quantities; default `tolerance` is
@@ -609,12 +609,12 @@ function densestgrid(
                 throw(ArgumentError("mixed physical dimensions in retention data"))
         end
         kw = q -> q === nothing || isa(q, Unitful.AbstractQuantity) ||
-                  throw(ArgumentError("keyword must be Quantity or nothing"))
+                  throw(ArgumentError("keyword must be AbstractQuantity or nothing"))
         kw(minwidth)
         kw(maxwidth)
         tol_qty = tolerance === nothing ? 1e-8 * ref_unit :
                   isa(tolerance, Unitful.AbstractQuantity) ? tolerance :
-                  throw(ArgumentError("tolerance must be Quantity or nothing"))
+                  throw(ArgumentError("tolerance must be AbstractQuantity or nothing"))
         # Send everything to the unit-aware vector overload, reusing the extracted datasets.
         return densestgrid(
             retention_vectors;

@@ -6,9 +6,23 @@ if get(ENV, "CI", "false") == "true"
     Pkg.instantiate()
 end
 
-using Documenter, JuChrom
+using Documenter
 using PyCall
+using JuChrom
 Base.retry_load_extensions()
+let ext = Base.get_extension(JuChrom, :PyCallExtension)
+    if ext === nothing
+        @info "PyCallExtension not loaded; forcing load for docs"
+        include(joinpath(@__DIR__, "..", "ext", "PyCallExtension.jl"))
+        ext = PyCallExtension
+    end
+    if !isdefined(JuChrom, :ShimadzuMSLoader)
+        @eval JuChrom const ShimadzuMSLoader = $(ext.ShimadzuMSLoader)
+    end
+end
+if isdefined(JuChrom, :ShimadzuMSLoader)
+    using JuChrom.ShimadzuMSLoader
+end
 
 DocMeta.setdocmeta!(JuChrom, :DocTestSetup, quote
     using JuChrom
@@ -19,7 +33,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
     makedocs(
 	    sitename = "JuChrom",
         format = Documenter.HTML(),
-        modules = [JuChrom],
+        modules = isdefined(JuChrom, :ShimadzuMSLoader) ? [JuChrom, JuChrom.ShimadzuMSLoader] : [JuChrom],
 	    authors = "Oliver Niehuis",
         root = @__DIR__,
         pages = [

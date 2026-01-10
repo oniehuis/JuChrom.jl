@@ -2,8 +2,8 @@
 # ── fitmap ────────────────────────────────────────────────────────────────────────────────
 
 """
-    fitmap(retentions_A::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}},
-           retentions_B::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}};
+    fitmap(retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},
+           retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
            smoothness_penalty_n::Integer=100,
            monotonicity_grid_size::Integer=10^5,
            λ_max::Real=1e2,
@@ -42,9 +42,9 @@ between any two monotonically related quantities:
 
 ## Arguments
 
-- `retentions_A::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}}`: Input domain values 
+- `retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}`: Input domain values 
   (strictly increasing, same units if using Unitful quantities).
-- `retentions_B::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}}`: Corresponding output 
+- `retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}`: Corresponding output 
   domain values.
 - `smoothness_penalty_n::Integer=100`: Number of evaluation points for curvature penalty.
 - `monotonicity_grid_size::Integer=10^5`: Number of grid points to enforce monotonicity.
@@ -79,8 +79,8 @@ true
 ```
 """
 function fitmap(
-    retentions_A::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}},
-    retentions_B::AbstractVector{<:Union{<:Real, <:Quantity{<:Real}}},;
+    retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},
+    retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},;
     smoothness_penalty_n::Integer=100,
     monotonicity_grid_size::Integer=10^5,
     λ_max::Real=1e2,
@@ -105,7 +105,7 @@ function fitmap(
         "retentions_B must all share the same unit"))
 
     # Strip units for numerical processing
-    if eltype(retentions_A) <: Quantity
+    if eltype(retentions_A) <: AbstractQuantity
         rA = ustrip.(retentions_A)
         rA_unit = unit(first(retentions_A))
     else
@@ -113,7 +113,7 @@ function fitmap(
         rA_unit = nothing
     end
    
-    if eltype(retentions_B) <: Quantity
+    if eltype(retentions_B) <: AbstractQuantity
         rB = ustrip.(retentions_B)
         rB_unit = unit(first(retentions_B))
     else

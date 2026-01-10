@@ -91,7 +91,7 @@ end
 
     # B) Unitful m/z series (Th)
     seriesU = _toy_series_unitful_mz()  # m/z carry u"Th"
-    # scalar selection as Quantity
+    # scalar selection as AbstractQuantity
     css_u_scalar = mzchrom(seriesU, 101.2u"Th")
     @test intensities(css_u_scalar) == [10, 5]
     # numeric tol is interpreted in Th
@@ -188,7 +188,7 @@ end
     msmU = mscanmatrix(seriesU)
     IU = intensities(msmU)
 
-    # Scalar selection as Quantity
+    # Scalar selection as AbstractQuantity
     cssU_q = mzchrom(msmU, 101.2u"Th"; by=:mz, warning=false)
     @test intensities(cssU_q) == [IU[1,2], IU[2,2]]  # [10, 5]
 

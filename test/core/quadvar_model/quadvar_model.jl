@@ -1911,7 +1911,7 @@ end
     p_units = QuadVarParams(1.0u"pA^2", 0.25u"pA", 0.1)
     y_unit = 3.0u"pA"
     res_unit = varpred(y_unit, p_units)
-    @test res_unit isa Unitful.Quantity
+    @test res_unit isa Unitful.AbstractQuantity
     @test Unitful.dimension(res_unit) == Unitful.dimension(1.0u"pA^2")
     p_units_floor = QuadVarParams(-1.0u"pA^2", 0.0u"pA", 0.0)
     @test varpred(0.0u"pA", p_units_floor; varfloor=1e-9) == 1e-9u"pA^2"
@@ -1995,7 +1995,7 @@ end
 
     # Unitful scalars inherit squared intensity units and auto-coerce floors
     res_unit = varpred(2.0u"pA", 1.0u"pA^2", 0.2u"pA", 0.1)
-    @test res_unit isa Unitful.Quantity
+    @test res_unit isa Unitful.AbstractQuantity
     @test Unitful.dimension(res_unit) == Unitful.dimension(1.0u"pA^2")
     @test varpred(0.0u"pA", -1.0u"pA^2", 0.0u"pA", 0.0; varfloor=1e-9) == 1e-9u"pA^2"
 end
@@ -2091,7 +2091,7 @@ end
     p_units = QuadVarParams(1.0u"pA^2", 0.25u"pA", 0.1)
     y_unit = 2.0u"pA"
     res_units = varpredbias(y_unit, p_units)
-    @test res_units isa Unitful.Quantity
+    @test res_units isa Unitful.AbstractQuantity
     @test Unitful.dimension(res_units) == Unitful.dimension(1.0u"pA^2")
     p_units_floor = QuadVarParams(-0.5u"pA^2", 0.0u"pA", 0.0)
     @test varpredbias(0.0u"pA", p_units_floor; varfloor=1e-9) == 1e-9u"pA^2"
