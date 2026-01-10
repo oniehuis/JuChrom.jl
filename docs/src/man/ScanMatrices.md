@@ -1,5 +1,13 @@
 # ScanMatrices
 
+Mass scan matrices are commonly built from a `MassScanSeries` using [`mscanmatrix`](@ref).
+This aligns the m/z grid across scans and produces a matrix representation.
+
+```julia
+# Convert a MassScanSeries to a MassScanMatrix
+msm = mscanmatrix(mss)
+```
+
 ```@docs
 AbstractMassScanMatrix
 MassScanMatrix
