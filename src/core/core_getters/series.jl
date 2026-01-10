@@ -11,8 +11,10 @@ instrument configuration, or other context relevant to how the data was acquired
 `series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
 acquisition-related metadata.
 
-See also [`AbstractScanSeries`](@ref), [`instrument`](@ref), [`user`](@ref), 
-[`sample`](@ref), [`extras`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`extras(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
+[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -42,7 +44,10 @@ structured fields such as `instrument`, `acquisition`, `user`, or `sample`.
 `series` is a concrete subtype of `AbstractScanSeries`. Returns a `Dict{String, Any}`
 containing unstructured metadata.
 
-See also [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`acquisition(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
+[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -83,9 +88,11 @@ either plain numbers or `AbstractQuantity`s depending on stored data. Throws `Ar
 unitless intensities are stored but a unit conversion is requested, and `AssertionError`
 if the series contains no scans.
 
-See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref), 
-[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
-[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`ChromScanSeries`](@ref), [`intensityunit(::AbstractScanSeries)`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref), 
+[`rawintensities(::AbstractChromScanSeries)`](@ref), 
+[`intensity(::AbstractChromScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -125,6 +132,12 @@ See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans
 [`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
 [`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
 
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
+[`MassScanSeries`](@ref), [`intensityunit(::AbstractScanSeries)`](@ref), 
+[`mzvalues(::AbstractMassScanSeries)`](@ref), 
+[`rawintensities(::AbstractMassScanSeries)`](@ref), 
+[`rawmzvalues(::AbstractMassScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref).
+
 # Examples
 ```jldoctest
 julia> ms1 = MassScan(1.0u"s", [100.0, 150.0], [10.0, 20.0]u"pA");
@@ -162,9 +175,11 @@ given chromatogram scan series.
 unitful) for the specified scan. Throws `BoundsError` if `scanindex` is outside the valid
 range of the scan series.
 
-See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), [`scans`](@ref), 
-[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
-[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`ChromScanSeries`](@ref), [`intensities(::AbstractChromScanSeries)`](@ref),
+[`intensityunit(::AbstractScanSeries)`](@ref), 
+[`rawintensities(::AbstractChromScanSeries)`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -202,9 +217,15 @@ all scans have consistent units.
 `series` is a subtype of `AbstractScanSeries`. Returns a `Unitful.Units` subtype
 representing the intensity unit, or `nothing` if unspecified.
 
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
-[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
-[`extras`](@ref), [`intensities`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref),
+[`intensities(::AbstractChromScanSeries)`](@ref), 
+[`intensities(::AbstractMassScanSeries)`](@ref), 
+[`intensity(::AbstractChromScanSeries)`](@ref), 
+[`rawintensities(::AbstractChromScanSeries)`](@ref),
+[`rawintensities(::AbstractMassScanSeries)`](@ref).
+
+Where is rawintensity(series::AbstractChromScanSeries)? 
 
 # Examples
 ```julia
@@ -230,9 +251,10 @@ detector type, manufacturer, model, or configuration parameters.
 `series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
 instrument-specific metadata.
 
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
-[`intensities`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
+[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -265,9 +287,7 @@ ascending order.
 `series` is the mass scan series to analyze. Returns a sorted vector of unique scan
 levels.
 
-See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
-[`intensities`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref).
+See also [`AbstractMassScanSeries`](@ref), [`MassScanSeries`](@ref).
 
 # Examples
 ```jldoctest
@@ -298,9 +318,10 @@ all scans have consistent units.
 `series` is a subtype of `AbstractMassScanSeries`. Returns a `Unitful.Units` subtype
 representing the m/z unit, or `nothing` if unspecified.
 
-See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
-[`intensities`](@ref), [`mzvalues`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
+[`MassScanSeries`](@ref), [`mzvalues(::AbstractMassScanSeries)`](@ref), 
+[`rawmzvalues(::AbstractMassScanSeries)`](@ref), 
+[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -331,9 +352,13 @@ an optional target unit for m/z values (must be `nothing` for unitless scans). R
 vector of m/z values for the specified scan. Throws `BoundsError` if the index is out of
 range and `ArgumentError` if a unit is requested for unitless m/z values.
 
-    See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scancount`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref), 
-[`intensities`](@ref), [`mzunit`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
+[`MassScanSeries`](@ref), [`intensities(::AbstractMassScanSeries)`](@ref), 
+[`mzcount(::AbstractMassScanSeries)`](@ref), [`mzunit(::AbstractMassScanSeries)`](@ref), 
+[`rawmzvalues(::AbstractMassScanSeries)`](@ref), 
+[`rawintensities(::AbstractMassScanSeries)`](@ref),
+[`scancount(::AbstractScanSeries)`](@ref), 
+[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -369,8 +394,11 @@ unit for conversion before stripping and must be `nothing` for unitless series. 
 vector of raw intensity values with optional conversion. Throws `ArgumentError` if a unit
 is requested but the scan series has no defined intensity unit.
 
-See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`intensity`](@ref), 
-[`rawintensity`](@ref), [`intensityunit`](@ref), [`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`ChromScanSeries`](@ref), [`intensities(::AbstractChromScanSeries)`](@ref), 
+[`intensity(::AbstractChromScanSeries)`](@ref), 
+[`intensityunit(::AbstractScanSeries)`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -409,8 +437,10 @@ if `scanindex` is out of range, `ArgumentError` if a unit is requested for unitl
 intensities, and `AssertionError` if the scan claims to have a unit but `intensityunit`
 is `nothing`.
 
-See also [`AbstractChromScanSeries`](@ref), [`intensities`](@ref), [`intensityunit`](@ref), 
-[`scans`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
+[`MassScanSeries`](@ref), [`intensities(::AbstractMassScanSeries)`](@ref), 
+[`intensityunit(::AbstractScanSeries)`](@ref), [`mzvalues(::AbstractMassScanSeries)`](@ref), 
+[`rawmzvalues(::AbstractMassScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -452,8 +482,10 @@ is an optional target unit for conversion before stripping and must be `nothing`
 unitless scans. Returns a vector of raw, unitless retention values. Throws
 `ArgumentError` if a unit is requested for a scan that does not define a retention unit.
 
-See also [`AbstractScanSeries`](@ref), [`retentions`](@ref), [`retentionunit`](@ref), 
-[`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`retentions(::AbstractScanSeries)`](@ref), [`retentionunit(::AbstractScanSeries)`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -494,8 +526,10 @@ is an optional target unit for conversion and must be `nothing` for unitless sca
 Returns a vector of retention values (plain or unitful). Throws `ArgumentError` if a unit
 is requested for a scan that does not define a retention unit.
 
-See also [`AbstractScanSeries`](@ref), [`rawretentions`](@ref), [`retentionunit`](@ref), 
-[`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`rawretentions(::AbstractScanSeries)`](@ref), [`retentionunit(::AbstractScanSeries)`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -533,8 +567,9 @@ all scans have consistent units (which should be enforced by the series construc
 `ChromScanSeries`. Returns a `Unitful.Units` subtype representing the retention unit, or
 `nothing` if unspecified.
 
-See also [`AbstractScanSeries`](@ref), [`retentions`](@ref), [`rawretentions`](@ref), 
-[`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -560,8 +595,10 @@ preparation details, or treatment conditions.
 `series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
 sample-related metadata.
 
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
+[`instrument(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -591,8 +628,9 @@ This is a direct accessor for individual scans, supporting bounds-checked indexe
 `AbstractScan` at that index. Throws `BoundsError` if `scanindex` is outside the valid
 range.
 
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -625,8 +663,9 @@ stored in the series.
 `series` is a concrete subtype of `AbstractScanSeries`. Returns an `Int` representing the
 number of scan elements.
 
-See also [`AbstractScanSeries`](@ref), [`scans`](@ref), [`instrument`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`scan(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -651,8 +690,9 @@ Return the collection of scans contained in the given scan series.
 `series` is a subtype of `AbstractScanSeries` such as `ChromScanSeries` or
 `MassScanSeries`. Returns a vector of scan objects in acquisition order.
 
-See also [`AbstractScanSeries`](@ref), [`scan`](@ref), [`instrument`](@ref), 
-[`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), [`extras`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`scancount(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -693,8 +733,9 @@ for unitless scans). Returns a sorted vector of unique m/z values. Throws `Argum
 if no scans exist at the specified level or if a unit is requested for unitless m/z
 values.
 
-See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`mzunit`](@ref),
-[`mzvalues`](@ref).
+See also [`AbstractMassScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`scans(::AbstractScanSeries)`](@ref), [`mzunit(::AbstractMassScanSeries)`](@ref), 
+[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
 
 # Examples
 ```jldoctest
@@ -734,8 +775,10 @@ involved in the acquisition or processing of the scan data.
 `series` is a concrete subtype of `AbstractScanSeries`. Returns a `NamedTuple` containing
 user-related metadata.
 
-See also [`AbstractScanSeries`](@ref), [`acquisition`](@ref), [`instrument`](@ref), 
-[`sample`](@ref), [`extras`](@ref), [`scans`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
+[`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
+[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
+[`instrument(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref).
 
 # Examples
 ```jldoctest

@@ -16,9 +16,10 @@ other form.
 The type parameter `I` indicates only the unit of the intensity data, not its structure
 or storage location. Subtypes should document how to access their intensity values.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`attrs`](@ref), 
-[`intensityunit(::AbstractScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`ChromScan`](@ref), 
+[`attrs`](@ref), [`MassScan`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractScan{R, I} end
 
@@ -35,8 +36,8 @@ Unitful.Units, Nothing}`, `intensity::Real`, `intensityunit::Union{Unitful.Units
 and `attrs::NamedTuple`. Subtypes may define additional fields as needed.
 
 See also: [`AbstractScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
-[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
 [`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
@@ -55,8 +56,8 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `attrs::NamedTuple`.
 
 See also: [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
-[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
 [`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 struct ChromScan{
@@ -203,8 +204,8 @@ values (`isapprox` defaults), identical retention and intensity units, and ident
 `attrs`.
 
 See also: [`AbstractChromScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
-[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
 [`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 Base.:(==)(a::ChromScan, b::ChromScan) = 
@@ -230,8 +231,10 @@ Unitful.Units, Nothing}`, `level::Integer`, and `attrs::NamedTuple`. Subtypes ma
 additional fields as needed.
 
 See also: [`AbstractScan`](@ref), [`MassScan`](@ref), [`attrs`](@ref), 
-[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensities`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`mzcount(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
+[`mzunit(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
+[`rawmzvalues(::AbstractMassScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
 [`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractMassScan{R, M, I} <: AbstractScan{R, I} end
@@ -252,10 +255,10 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `level::Integer`, and `attrs::NamedTuple`.
 
 See also: [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
-[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzcount`](@ref), [`mzunit`](@ref),
-[`mzvalues`](@ref), [`rawintensities`](@ref), 
-[`rawretention(::AbstractScan)`](@ref), [`rawmzvalues`](@ref),
+[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`mzcount(::AbstractMassScan)`](@ref), [`mzunit(::AbstractMassScan)`](@ref),
+[`mzvalues(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`rawmzvalues(::AbstractMassScan)`](@ref),
 [`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 struct MassScan{
@@ -348,11 +351,6 @@ non-finite, or not strictly increasing, if `mzvalues` or `intensities` mix unitf
 unitless values or have inconsistent units, if `intensities` are empty or contain non-finite
 values, or if `level < 1`. Throws `DimensionMismatch` if 
 `length(mzvalues) ≠ length(intensities)`.
-
-See also [`AbstractScan`](@ref), [`AbstractMassScan`](@ref), [`retention`](@ref), 
-[`rawretention`](@ref), [`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), 
-[`mzcount`](@ref), [`mzunit`](@ref) [`intensities`](@ref), [`rawintensities`](@ref), 
-[`intensityunit`](@ref), [`level`](@ref), [`attrs`](@ref).
 
 # Examples
 ```jldoctest
@@ -448,10 +446,10 @@ and intensities (`isapprox` defaults), identical m/z, retention, and intensity u
 same m/z length, the same `level`, and identical `attrs`.
 
 See also: [`AbstractMassScan`](@ref), [`MassScan`](@ref),[`attrs`](@ref), 
-[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzunit`](@ref), [`mzvalues`](@ref), 
-[`rawintensities`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`rawmzvalues`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`mzunit(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
+[`rawintensities(::AbstractMassScan)`](@ref), [`rawmzvalues(::AbstractMassScan)`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
 [`retentionunit(::AbstractScan)`](@ref).
 """
 Base.:(==)(a::MassScan, b::MassScan) = 

@@ -1,4 +1,4 @@
-# ScansSeries
+# ScanSeries
 
 ## AbstractScanSeries
 
@@ -53,4 +53,5 @@ MassScanSeries
 MassScanSeries(::AbstractVector{<:AbstractMassScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
 mscanmatrix
 mzchrom(::MassScanSeries)
+Base.:(==)(::ChromScanSeries, ::ChromScanSeries)
 ```

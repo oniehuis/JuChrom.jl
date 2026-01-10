@@ -116,6 +116,10 @@ The abstract series types define the shared metadata and series API for scan acc
 | `sample` | `NamedTuple` | [`sample`](@ref) |
 | `extras` | `Dict{String, Any}` | [`extras`](@ref) |
 
+Convenience:
+
+- [`scan`](@ref), [`scancount`](@ref)
+
 **AbstractChromScanSeries** ([`AbstractChromScanSeries`](@ref)) and
 **AbstractMassScanSeries** ([`AbstractMassScanSeries`](@ref)) specialize the scan type and
 enable series-level convenience getters such as [`retentions`](@ref),

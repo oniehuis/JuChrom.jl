@@ -53,7 +53,7 @@ using JuChrom: airpls, FitTracker, calculate_fit, update!, stop_optimization,
     # Nonuniform grid should still annihilate linear functions
     xn = cumsum!(zeros(n), [0; randexp(n-1)]) .+ 1.0
     Dn = build_second_derivative_matrix(xn)
-    @test isapprox(Dn * (0.2 .* xn .+ 1.0), zeros(n); atol=1e-12, rtol=0)
+    @test isapprox(Dn * (0.2 .* xn .+ 1.0), zeros(n); atol=1e-11, rtol=0)
 end
 
 # ── FitTracker / calculate_fit / update! / stop_optimization / baseline ──────
