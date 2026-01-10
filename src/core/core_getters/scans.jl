@@ -12,7 +12,8 @@ instrument settings, annotations).
 `scan` is a subtype of `AbstractScan`. Returns a `NamedTuple` containing the attrs fields
 defined for the scan.
 
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref).
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
+[`ChromScan`](@ref), [`MassScan`](@ref).
 
 # Examples
 ```jldoctest
@@ -42,8 +43,8 @@ function does not assign units to unitless scans; it only converts when a unit i
 `scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit (for example
 `u"pA"`), used only when a unit is stored.
 
-See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`rawintensity`](@ref), 
-[`intensityunit`](@ref).
+See also [`AbstractChromScan`](@ref), [`ChromScan`](@ref),
+[`intensityunit(::AbstractScan)`](@ref), [`rawintensity`](@ref).
 
 # Examples
 ```jldoctest
@@ -91,9 +92,9 @@ If no unit was specified at construction, returns `nothing`.
 `scan` is a subtype of `AbstractScan` such as `ChromScan` or `MassScan`. Returns a
 `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
 
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
-[`intensity`](@ref), [`rawintensity`](@ref), [`intensities`](@ref), 
-[`rawintensities`](@ref).
+See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref),
+[`ChromScan`](@ref), [`MassScan`](@ref), [`intensities`](@ref),
+[`intensity`](@ref), [`rawintensities`](@ref), [`rawintensity`](@ref).
 
 # Examples
 ```jldoctest
@@ -127,9 +128,8 @@ to the requested unit when provided. Throws `ArgumentError` if the scan has no i
 unit and a conversion is requested, and `AssertionError` if the scan claims to have a unit
 but `intensityunit` is `nothing`.
 
-
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawintensities`](@ref), 
-[`intensityunit`](@ref).
+See also: [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`intensityunit(::AbstractScan)`](@ref), [`mzcount`](@ref), [`rawintensities`](@ref).
 
 # Examples
 ```jldoctest
@@ -162,7 +162,7 @@ end
 Return the MS level of a mass spectrometric scan.
 
 The MS level indicates the stage of mass spectrometry at which the scan was acquired
-(for example `1` for MS1, `2` for MS/MS, higher values for MS^n). `scan` is a subtype of
+(for example `1` for MS¹, `2` for MS², higher values for MSⁿ). `scan` is a subtype of
 `AbstractMassScan` such as `MassScan`. Returns an `Integer` representing the MS level
 (guaranteed to be ≥ 1).
 
@@ -192,8 +192,8 @@ given separation coordinate.
 `scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns an `Int`
 representing the number of m/z values in the scan.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
-[`rawmzvalues`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
+See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`mzvalues`](@ref), [`rawmzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -218,8 +218,8 @@ explicitly provided during scan construction, it will be returned.
 `scan` is a subtype of `AbstractMassScan` such as `MassScan`. Returns a `Unitful.Units`
 subtype representing the m/z unit, or `nothing` if unspecified.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
-[`rawmzvalues`](@ref).
+See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`mzvalues`](@ref), [`rawmzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -248,8 +248,8 @@ requested unit when specified, otherwise returned in stored form. Throws `Argume
 if the scan is unitless and a unit is requested, and `AssertionError` if the scan claims
 to have a unit but `mzunit` is `nothing`.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`rawmzvalues`](@ref), 
-[`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
+See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`mzcount`](@ref), [`mzunit`](@ref), [`rawmzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -288,8 +288,8 @@ units stripped. Throws `ArgumentError` if the scan is unitless but a unit conver
 requested, and `AssertionError` if the scan claims to have a unit but `intensityunit` is
 `nothing`.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`intensities`](@ref), 
-[`intensityunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzcount`](@ref).
+See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), [`mzcount`](@ref).
 
 # Examples
 ```jldoctest
@@ -329,8 +329,8 @@ not assign units to unitless scans; it only converts when a unit is stored.
 `scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit and must not
 be used for unitless scans.
 
-See also [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`intensity`](@ref), 
-[`intensityunit`](@ref).
+See also [`AbstractChromScan`](@ref), [`intensity`](@ref),
+[`intensityunit(::AbstractScan)`](@ref).
 
 # Examples
 ```jldoctest
@@ -381,8 +381,8 @@ converted to the requested unit and stripped of units. Throws `ArgumentError` if
 is unitless and a unit is requested, and `AssertionError` if the scan claims to have a
 unit but `mzunit` is `nothing`.
 
-See also [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`mzvalues`](@ref), 
-[`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref), [`rawintensities`](@ref).
+See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
+[`mzcount`](@ref), [`mzunit`](@ref), [`mzvalues`](@ref).
 
 # Examples
 ```jldoctest
@@ -419,8 +419,9 @@ not assign units to unitless scans; it only converts when a unit is stored.
 `scan` is a subtype of `AbstractScan`. `unit` is an optional target unit and must not be
 used for unitless scans.
 
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
-[`retention`](@ref), [`retentionunit`](@ref).
+See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
+[`ChromScan`](@ref), [`MassScan`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 
 # Examples
 ```jldoctest
@@ -469,8 +470,9 @@ function does not assign units to unitless scans; it only converts when a unit i
 `scan` is a subtype of `AbstractScan`. `unit` is an optional target unit (for example
 `u"s"` or `u"minute"`), used only when a unit is stored.
 
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
-[`rawretention`](@ref), [`retentionunit`](@ref).
+See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
+[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 
 # Examples
 ```jldoctest
@@ -518,8 +520,9 @@ was specified at construction, returns `nothing`.
 `scan` is a subtype of `AbstractScan` such as `ChromScan` or `MassScan`. Returns a
 `Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified.
 
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
-[`retention`](@ref), [`rawretention`](@ref).
+See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
+[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref).
 
 # Examples
 ```jldoctest

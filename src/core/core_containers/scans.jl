@@ -16,10 +16,9 @@ other form.
 The type parameter `I` indicates only the unit of the intensity data, not its structure
 or storage location. Subtypes should document how to access their intensity values.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), 
-[`attrs(::AbstractScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`attrs`](@ref), 
+[`intensityunit(::AbstractScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractScan{R, I} end
 
@@ -35,7 +34,10 @@ Concrete subtypes are expected to define `retention::Real`, `retentionunit::Unio
 Unitful.Units, Nothing}`, `intensity::Real`, `intensityunit::Union{Unitful.Units, Nothing}`, 
 and `attrs::NamedTuple`. Subtypes may define additional fields as needed.
 
-See also: [`AbstractScan`](@ref).
+See also: [`AbstractScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
+[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
 
@@ -51,6 +53,11 @@ intensity unit type (`Unitful.Units` subtype or `Nothing`).
 Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`,
 `intensity::Real`, `intensityunit::Union{Unitful.Units, Nothing}`, and
 `attrs::NamedTuple`.
+
+See also: [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
+[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 struct ChromScan{
     T1<:Real,
@@ -110,10 +117,6 @@ the signal intensity (for example `1000` or `10u"pA"`), and `attrs` provides opt
 scan-level metadata as a `NamedTuple`. Returns a `ChromScan` instance where numeric values
 and their units are stored separately. Throws `ArgumentError` if `retention` or `intensity`
 is not finite.
-
-See also [`AbstractScan`](@ref), [`AbstractChromScan`](@ref), [`retention`](@ref), 
-[`rawretention`](@ref), [`retentionunit`](@ref), [`intensity`](@ref), 
-[`rawintensity`](@ref), [`intensityunit`](@ref), [`attrs`](@ref).
 
 # Examples
 ```jldoctest
@@ -199,9 +202,10 @@ Return `true` if two `ChromScan` objects have approximately equal retention and 
 values (`isapprox` defaults), identical retention and intensity units, and identical
 `attrs`.
 
-See also [`ChromScan`](@ref), [`retention`](@ref), [`rawretention`](@ref), 
-[`retentionunit`](@ref), [`intensity`](@ref), [`rawintensity`](@ref), 
-[`intensityunit`](@ref), [`attrs`](@ref).
+See also: [`AbstractChromScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
+[`intensity`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 Base.:(==)(a::ChromScan, b::ChromScan) = 
     retention(a) ≈ retention(b) &&
@@ -225,7 +229,10 @@ Unitful.Units, Nothing}`, `intensities::AbstractVector{<:Real}`, `intensityunit:
 Unitful.Units, Nothing}`, `level::Integer`, and `attrs::NamedTuple`. Subtypes may define 
 additional fields as needed.
 
-See also: [`AbstractScan`](@ref).
+See also: [`AbstractScan`](@ref), [`MassScan`](@ref), [`attrs`](@ref), 
+[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensities`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractMassScan{R, M, I} <: AbstractScan{R, I} end
 
@@ -243,6 +250,13 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `mzvalues::AbstractVector{<:Real}`, `mzunit::Union{Unitful.Units, Nothing}`,
 `intensities::AbstractVector{<:Real}`, `intensityunit::Union{Unitful.Units, Nothing}`,
 `level::Integer`, and `attrs::NamedTuple`.
+
+See also: [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
+[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`mzcount`](@ref), [`mzunit`](@ref),
+[`mzvalues`](@ref), [`rawintensities`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`rawmzvalues`](@ref),
+[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
 """
 struct MassScan{
     T1<:Real,
@@ -433,10 +447,12 @@ Return `true` if two `MassScan` objects have approximately equal retention, m/z 
 and intensities (`isapprox` defaults), identical m/z, retention, and intensity units, the
 same m/z length, the same `level`, and identical `attrs`.
 
-See also [`MassScan`](@ref), [`retention`](@ref), [`rawretention`](@ref),
-[`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzunit`](@ref),
-[`intensities`](@ref), [`rawintensities`](@ref), [`intensityunit`](@ref), [`level`](@ref),
-[`attrs`](@ref).
+See also: [`AbstractMassScan`](@ref), [`MassScan`](@ref),[`attrs`](@ref), 
+[`intensities`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+[`mzunit`](@ref), [`mzvalues`](@ref), 
+[`rawintensities`](@ref), [`rawretention(::AbstractScan)`](@ref), 
+[`rawmzvalues`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 """
 Base.:(==)(a::MassScan, b::MassScan) = 
     isapprox(retention(a), retention(b)) &&
