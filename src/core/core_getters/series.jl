@@ -13,8 +13,8 @@ acquisition-related metadata.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`extras(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
-[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`extras`](@ref JuChrom.extras(::AbstractScanSeries)), [`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -46,8 +46,8 @@ containing unstructured metadata.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
-[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -89,10 +89,10 @@ unitless intensities are stored but a unit conversion is requested, and `Asserti
 if the series contains no scans.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
-[`ChromScanSeries`](@ref), [`intensityunit(::AbstractScanSeries)`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref), 
-[`rawintensities(::AbstractChromScanSeries)`](@ref), 
-[`intensity(::AbstractChromScanSeries)`](@ref).
+[`ChromScanSeries`](@ref), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)).
 
 # Examples
 ```jldoctest
@@ -128,15 +128,15 @@ target unit to convert intensities into. Returns an `AbstractVector` of intensit
 (possibly unitful) for the specified scan. Throws `BoundsError` if `scanindex` is outside
 the valid range of the scan series.
 
-See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans`](@ref), 
-[`scancount`](@ref), [`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), 
-[`sample`](@ref), [`extras`](@ref), [`intensityunit`](@ref).
+See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), [`scans`](@ref JuChrom.scans(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), [`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), [`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)).
 
 See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
-[`MassScanSeries`](@ref), [`intensityunit(::AbstractScanSeries)`](@ref), 
-[`mzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawintensities(::AbstractMassScanSeries)`](@ref), 
-[`rawmzvalues(::AbstractMassScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref).
+[`MassScanSeries`](@ref), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -176,10 +176,10 @@ unitful) for the specified scan. Throws `BoundsError` if `scanindex` is outside 
 range of the scan series.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
-[`ChromScanSeries`](@ref), [`intensities(::AbstractChromScanSeries)`](@ref),
-[`intensityunit(::AbstractScanSeries)`](@ref), 
-[`rawintensities(::AbstractChromScanSeries)`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref).
+[`ChromScanSeries`](@ref), [`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -219,11 +219,11 @@ representing the intensity unit, or `nothing` if unspecified.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref),
-[`intensities(::AbstractChromScanSeries)`](@ref), 
-[`intensities(::AbstractMassScanSeries)`](@ref), 
-[`intensity(::AbstractChromScanSeries)`](@ref), 
-[`rawintensities(::AbstractChromScanSeries)`](@ref),
-[`rawintensities(::AbstractMassScanSeries)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)),
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)).
 
 Where is rawintensity(series::AbstractChromScanSeries)? 
 
@@ -253,8 +253,8 @@ instrument-specific metadata.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`sample(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -319,9 +319,9 @@ all scans have consistent units.
 representing the m/z unit, or `nothing` if unspecified.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
-[`MassScanSeries`](@ref), [`mzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawmzvalues(::AbstractMassScanSeries)`](@ref), 
-[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
+[`MassScanSeries`](@ref), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)).
 
 # Examples
 ```jldoctest
@@ -353,12 +353,12 @@ vector of m/z values for the specified scan. Throws `BoundsError` if the index i
 range and `ArgumentError` if a unit is requested for unitless m/z values.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
-[`MassScanSeries`](@ref), [`intensities(::AbstractMassScanSeries)`](@ref), 
-[`mzcount(::AbstractMassScanSeries)`](@ref), [`mzunit(::AbstractMassScanSeries)`](@ref), 
-[`rawmzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawintensities(::AbstractMassScanSeries)`](@ref),
-[`scancount(::AbstractScanSeries)`](@ref), 
-[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
+[`MassScanSeries`](@ref), [`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanSeries)), [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanSeries)), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)),
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)).
 
 # Examples
 ```jldoctest
@@ -395,10 +395,10 @@ vector of raw intensity values with optional conversion. Throws `ArgumentError` 
 is requested but the scan series has no defined intensity unit.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
-[`ChromScanSeries`](@ref), [`intensities(::AbstractChromScanSeries)`](@ref), 
-[`intensity(::AbstractChromScanSeries)`](@ref), 
-[`intensityunit(::AbstractScanSeries)`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref).
+[`ChromScanSeries`](@ref), [`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -438,9 +438,9 @@ intensities, and `AssertionError` if the scan claims to have a unit but `intensi
 is `nothing`.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractMassScanSeries`](@ref), 
-[`MassScanSeries`](@ref), [`intensities(::AbstractMassScanSeries)`](@ref), 
-[`intensityunit(::AbstractScanSeries)`](@ref), [`mzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawmzvalues(::AbstractMassScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref).
+[`MassScanSeries`](@ref), [`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -484,8 +484,8 @@ unitless scans. Returns a vector of raw, unitless retention values. Throws
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`retentions(::AbstractScanSeries)`](@ref), [`retentionunit(::AbstractScanSeries)`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref).
+[`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)), [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -528,8 +528,8 @@ is requested for a scan that does not define a retention unit.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentionunit(::AbstractScanSeries)`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref).
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -569,7 +569,7 @@ all scans have consistent units (which should be enforced by the series construc
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref).
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -597,8 +597,8 @@ sample-related metadata.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`instrument(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -630,7 +630,7 @@ range.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), [`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -665,7 +665,7 @@ number of scan elements.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`scan(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)), [`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -692,7 +692,7 @@ Return the collection of scans contained in the given scan series.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`scancount(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), [`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -734,8 +734,8 @@ if no scans exist at the specified level or if a unit is requested for unitless 
 values.
 
 See also [`AbstractMassScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`scans(::AbstractScanSeries)`](@ref), [`mzunit(::AbstractMassScanSeries)`](@ref), 
-[`uniquemzvalues(::AbstractMassScanSeries)`](@ref).
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanSeries)), 
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)).
 
 # Examples
 ```jldoctest
@@ -777,8 +777,8 @@ user-related metadata.
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`ChromScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`instrument(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), [`sample`](@ref JuChrom.sample(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest

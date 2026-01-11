@@ -1,7 +1,7 @@
 # ── attrs ──────────────────────────────────────────────────────────────────────────────
 
 """
-    attrs(scan::AbstractScan)
+    attrs(scan::AbstractScan) -> NamedTuple
 
 Return the scan-level attrs associated with the given `scan` object.
 
@@ -12,8 +12,10 @@ instrument settings, annotations).
 `scan` is a subtype of `AbstractScan`. Returns a `NamedTuple` containing the attrs fields
 defined for the scan.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
-[`ChromScan`](@ref), [`MassScan`](@ref).
+See also [`AbstractChromScan`](@ref JuChrom.AbstractChromScan), 
+[`AbstractMassScan`](@ref JuChrom.AbstractMassScan), 
+[`AbstractScan`](@ref JuChrom.AbstractScan), 
+[`ChromScan`](@ref JuChrom.ChromScan), [`MassScan`](@ref JuChrom.MassScan).
 
 # Examples
 ```jldoctest
@@ -33,18 +35,21 @@ attrs(scan::AbstractScan) = scan.attrs
 """
     intensity(scan::AbstractChromScan; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the intensity value of a chromatographic scan, optionally as a `Unitful.AbstractQuantity`.
+Return the intensity value of a chromatographic scan; the return type is unitful when the
+scan stores an intensity unit, otherwise it is a plain number.
 
-If the scan stores an `intensityunit`, the return value is an `AbstractQuantity`, and any requested
-`unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value is
-returned unless a unit conversion is requested, which throws `ArgumentError`. This
+If the scan stores an `intensityunit`, the return value is an `AbstractQuantity`, and any 
+requested `unit` is applied via `uconvert`. If the scan is unitless, the raw numeric value 
+is returned unless a unit conversion is requested, which throws `ArgumentError`. This
 function does not assign units to unitless scans; it only converts when a unit is stored.
 
 `scan` is a subtype of `AbstractChromScan`. `unit` is an optional target unit (for example
 `u"pA"`), used only when a unit is stored.
 
-See also [`AbstractChromScan`](@ref), [`ChromScan`](@ref),
-[`intensityunit(::AbstractScan)`](@ref), [`rawintensity(::AbstractChromScan)`](@ref).
+See also [`AbstractChromScan`](@ref JuChrom.AbstractChromScan), 
+[`ChromScan`](@ref JuChrom.ChromScan),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -93,9 +98,9 @@ If no unit was specified at construction, returns `nothing`.
 `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
 
 See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref),
-[`ChromScan`](@ref), [`MassScan`](@ref), [`intensities(::AbstractMassScan)`](@ref),
-[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
-[`rawintensities(::AbstractMassScan)`](@ref), [`rawintensity(::AbstractChromScan)`](@ref).
+[`ChromScan`](@ref), [`MassScan`](@ref), [`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})),
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -130,9 +135,9 @@ unit and a conversion is requested, and `AssertionError` if the scan claims to h
 but `intensityunit` is `nothing`.
 
 See also: [`AbstractMassScan`](@ref), [`MassScan`](@ref),
-[`intensityunit(::AbstractScan)`](@ref), [`mzcount(::AbstractMassScan)`](@ref), 
-[`mzvalues(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
-[`rawmzvalues(::AbstractMassScan)`](@ref), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), 
 
 # Examples
 ```jldoctest
@@ -195,8 +200,8 @@ in a mass spectrometric scan.
 representing the number of m/z values in the scan.
 
 See also [`AbstractMassScan`](@ref), [`MassScan`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
-[`rawintensities(::AbstractMassScan)`](@ref), [`rawmzvalues(AbstractMassScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -222,7 +227,7 @@ explicitly provided during scan construction, it will be returned.
 subtype representing the m/z unit, or `nothing` if unspecified.
 
 See also [`AbstractMassScan`](@ref), [`MassScan`](@ref), 
-[`mzvalues(::AbstractMassScan)`](@ref), [`rawmzvalues(::AbstractMassScan)`](@ref).
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -252,9 +257,9 @@ if the scan is unitless and a unit is requested, and `AssertionError` if the sca
 to have a unit but `mzunit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`MassScan`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`mzcount(::AbstractMassScan)`](@ref), 
-[`mzunit(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
-[`rawmzvalues(::AbstractMassScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -294,9 +299,9 @@ requested, and `AssertionError` if the scan claims to have a unit but `intensity
 `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`MassScan`](@ref),
-[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzcount(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
-[`rawmzvalues(::AbstractMassScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -337,8 +342,8 @@ not assign units to unitless scans; it only converts when a unit is stored.
 be used for unitless scans.
 
 See also [`AbstractChromScan`](@ref), [`ChromScan`](@ref), 
-[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
-[`intensityunit(::AbstractScan)`](@ref).
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)).
 
 # Examples
 ```jldoctest
@@ -390,9 +395,9 @@ is unitless and a unit is requested, and `AssertionError` if the scan claims to 
 unit but `mzunit` is `nothing`.
 
 See also [`AbstractMassScan`](@ref), [`MassScan`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`mzcount(::AbstractMassScan)`](@ref), 
-[`mzunit(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
-[`rawintensities(::AbstractMassScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -430,8 +435,8 @@ not assign units to unitless scans; it only converts when a unit is stored.
 used for unitless scans.
 
 See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
-[`ChromScan`](@ref), [`MassScan`](@ref), [`retention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+[`ChromScan`](@ref), [`MassScan`](@ref), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 
 # Examples
 ```jldoctest
@@ -481,8 +486,8 @@ function does not assign units to unitless scans; it only converts when a unit i
 `u"s"` or `u"minute"`), used only when a unit is stored.
 
 See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
-[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 
 # Examples
 ```jldoctest
@@ -531,8 +536,8 @@ was specified at construction, returns `nothing`.
 `Unitful.Units` subtype representing the retention unit, or `nothing` if unspecified.
 
 See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), 
-[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref).
+[`ChromScan`](@ref), [`MassScan`](@ref), [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
+[`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})).
 
 # Examples
 ```jldoctest
