@@ -12,8 +12,14 @@ acquired.
 `msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
 acquisition-related metadata.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`instrument`](@ref), 
-[`sample`](@ref), [`user`](@ref), [`extras`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -42,8 +48,14 @@ structured fields such as `instrument`, `acquisition`, `user`, or `sample`.
 `msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `Dict{String, Any}`
 containing unstructured metadata.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
-[`instrument`](@ref), [`sample`](@ref), [`user`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -79,8 +91,14 @@ detector type, manufacturer, model, or configuration parameters.
 `msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
 instrument-specific metadata.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
-[`sample`](@ref), [`user`](@ref), [`extras`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -119,8 +137,19 @@ intensities are returned as stored. Returns a matrix of intensity values, either
 numbers or `AbstractQuantity`s depending on stored data. Throws `ArgumentError` if the scan matrix
 stores unitless intensities but a unit conversion is requested.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
-[`intensityunit`](@ref), [`rawintensities`](@ref), [`mzcount`](@ref), [`scancount`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -168,8 +197,11 @@ no unit was specified at construction, returns `nothing`.
 `msm` is a subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns a
 `Unitful.Units` subtype representing the intensity unit, or `nothing` if unspecified.
 
-See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), 
-[`intensities`](@ref), [`rawintensities`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -194,12 +226,19 @@ intensityunit(msm::AbstractMassScanMatrix) = msm.intensityunit
 Return the MS level of a mass scan matrix.
 
 The MS level indicates the stage of mass spectrometry at which the scans were acquired
-(for example `1` for MS1, `2` for MS/MS, higher values for MS^n). `msm` is a concrete
+(for example `1` for MS¹, `2` for MS², higher values for MSⁿ). `msm` is a concrete
 subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns an `Integer` value
 representing the MS level (guaranteed to be ≥ 1).
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`levels`](@ref), 
-[`levelscans`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -226,8 +265,14 @@ intensity matrix.
 `msm` is a mass scan matrix object such as `MassScanMatrix` containing multiple scans and 
 their associated m/z values. Returns an `Int` number of m/z values in the scan matrix.
 
-See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
-[`rawmzvalues`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -255,8 +300,12 @@ explicitly provided during matrix construction, it will be returned.
 `msm` is a subtype of `AbstractMassScanMatrix` such as `MassScanMatrix`. Returns a
 `Unitful.Units` subtype representing the m/z unit, or `nothing` if unspecified.
 
-See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
-[`rawmzvalues`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -290,8 +339,14 @@ returned in stored form. Throws `ArgumentError` if the matrix is unitless and a 
 requested, and `AssertionError` if the matrix claims to have a unit but `mzunit` is
 `nothing`.
 
-See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`rawmzvalues`](@ref), 
-[`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -346,8 +401,18 @@ be `nothing` for unitless matrices. Returns a matrix of unitless intensity value
 optional conversion (rows are scans, columns are m/z values). Throws `ArgumentError` if a
 unit is requested but the scan matrix has no defined intensity unit.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`intensities`](@ref), 
-[`intensityunit`](@ref), [`scancount`](@ref), [`mzcount`](@ref).
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -394,8 +459,14 @@ Returns a vector of numeric m/z values, optionally converted and stripped of uni
 `ArgumentError` if the matrix is unitless and a unit is requested, and `AssertionError` if
 the matrix claims to have a unit but `mzunit` is `nothing`.
 
-See also [`AbstractMassScanMatrix`](@ref), [`AbstractMassScan`](@ref), [`mzvalues`](@ref), 
-[`mzunit`](@ref), [`mzcount`](@ref), [`intensities`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})).
 
 # Examples
 ```jldoctest
@@ -442,8 +513,12 @@ requested via the `unit` keyword, an error is thrown since conversion is not pos
 values. Throws `ArgumentError` if a unit is requested for a scan matrix that does not
 define a retention unit.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`retentions`](@ref), 
-[`retentionunit`](@ref), [`scancount`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -489,8 +564,12 @@ stored.
 `unit` is an optional target unit (for example `u"s"` or `u"minute"`) used only when a
 unit is stored.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
-[`rawretentions`](@ref), [`retentionunit`](@ref), [`scancount`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -538,8 +617,11 @@ was specified at construction, returns `nothing`.
 `msm` is a subtype of `AbstractMassScanMatrix`. Returns a `Unitful.Units` subtype
 representing the retention unit, or `nothing` if unspecified.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), 
-[`retentions`](@ref), [`rawretentions`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})).
 
 # Examples
 ```jldoctest
@@ -569,8 +651,14 @@ preparation details, or treatment conditions.
 `msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
 sample-related metadata.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
-[`instrument`](@ref), [`user`](@ref), [`extras`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -599,7 +687,11 @@ intensity matrix.
 their associated retention times or separation coordinates. Returns an `Int` number of
 scan elements in the matrix.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`retentions`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})).
 
 # Examples
 ```jldoctest
@@ -627,8 +719,14 @@ user-specific annotations relevant to the acquisition or processing of the data.
 `msm` is a concrete subtype of `AbstractMassScanMatrix`. Returns a `NamedTuple` containing
 user-related metadata.
 
-See also [`AbstractMassScanMatrix`](@ref), [`MassScanMatrix`](@ref), [`acquisition`](@ref), 
-[`instrument`](@ref), [`sample`](@ref), [`extras`](@ref).
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest

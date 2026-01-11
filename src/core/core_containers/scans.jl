@@ -1,5 +1,5 @@
 """
-    AbstractScan{R, I}
+    AbstractScan{R, I} <: Any
 
 Abstract supertype for all scan objects, such as individual chromatographic or mass
 spectrometric scan points. 
@@ -26,7 +26,7 @@ See also
 [`retention`](@ref JuChrom.retention(::AbstractScan)), 
 [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
-abstract type AbstractScan{R, I} end
+abstract type AbstractScan{R, I} <: Any end
 
 """
     AbstractChromScan{R, I} <: AbstractScan{R, I}

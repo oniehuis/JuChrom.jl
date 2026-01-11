@@ -7,14 +7,35 @@ Abstract supertype for all matrix-based representations of mass spectrometry sca
 m/z unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
 (`Unitful.Units` subtype or `Nothing`).
 
-Concrete subtypes are expected to define `retentions`, `mzvalues`, and `intensities`
-arrays, plus `level` and metadata fields (`instrument`, `acquisition`, `sample`, `user`)
-as `NamedTuple`s, with `extras::Dict{String, Any}` for unstructured metadata. Subtypes may
-include additional fields as needed.
+Concrete subtypes are expected to define `retentions::AbstractVector{<:Real}`,
+`retentionunit::Union{Unitful.Units, Nothing}`, `mzvalues::AbstractVector{<:Real}`,
+`mzunit::Union{Unitful.Units, Nothing}`, `intensities::AbstractMatrix{<:Real}`,
+`intensityunit::Union{Unitful.Units, Nothing}`, `level::Integer`, and metadata fields
+`instrument`, `acquisition`, `user`, and `sample` as `NamedTuple`s, with
+`extras::Dict{String, Any}` for unstructured metadata. Subtypes may include additional
+fields as needed.
 
-See also: [`MassScanMatrix`](@ref).
+See also
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 """
-abstract type AbstractMassScanMatrix{R, M, I} end
+abstract type AbstractMassScanMatrix{R, M, I} <: Any end
 
 """
     MassScanMatrix{R, M, I} <: AbstractMassScanMatrix{R, M, I}
@@ -27,12 +48,25 @@ retention and m/z axes with an intensity matrix. `MassScanMatrix` is a subtype o
 m/z unit type (`Unitful.Units` subtype or `Nothing`), and `I` is the intensity unit type
 (`Unitful.Units` subtype or `Nothing`).
 
-Fields include `retentions::AbstractVector{<:Real}`, `mzvalues::AbstractVector{<:Real}`,
-`intensities::AbstractMatrix{<:Real}`, optional units stored in 
-`retentionunit::Union{Unitful.Units, Nothing}`, `mzunit::Union{Unitful.Units, Nothing}`,
-and `intensityunit::Union{Unitful.Units, Nothing}`, an MS `level::Integer`, and metadata
-in `instrument::NamedTuple`, `acquisition::NamedTuple`, `user::NamedTuple`,
-`sample::NamedTuple`, and `extras::Dict{String, Any}`.
+See also
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractMassScanMatrix)), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 """
 struct MassScanMatrix{
     T1<:AbstractVector{<:Real},
@@ -253,12 +287,6 @@ non-finite values, if units are inconsistent, or if `level < 1`. Throws
 `DimensionMismatch` if the intensity matrix shape does not match
 `length(retentions)` × `length(mzvalues)`.
 
-See also: [`AbstractMassScanMatrix`](@ref), [`retentions`](@ref), [`rawretentions`](@ref), 
-[`retentionunit`](@ref), [`mzvalues`](@ref), [`rawmzvalues`](@ref), [`mzunit`](@ref), 
-[`intensities`](@ref), [`rawintensities`](@ref), [`intensityunit`](@ref), [`level`](@ref),
-[`instrument`](@ref), [`acquisition`](@ref), [`user`](@ref), [`sample`](@ref), 
-[`extras`](@ref).
-
 # Examples
 ```jldoctest
 julia> ret = [1.0, 2.0]u"s"
@@ -339,6 +367,18 @@ values, MS level, and metadata match.
 
 Throws `DimensionMismatch` if any of `retentions`, `mzvalues`, `level`, or metadata
 (`instrument`, `acquisition`, `user`, `sample`, `extras`) differ between the inputs.
+
+See also
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
+[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
+[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
+[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
 """
 function Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
     retentions(msm₁) == retentions(msm₂) || throw(DimensionMismatch(

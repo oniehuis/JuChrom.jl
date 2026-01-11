@@ -31,7 +31,7 @@ See also
 [`scans`](@ref JuChrom.scans(::AbstractScanSeries)), 
 [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 """
-abstract type AbstractScanSeries{S, R, M, I} end
+abstract type AbstractScanSeries{S, R, M, I} <: Any end
 
 Base.length(series::AbstractScanSeries) = length(scans(series))
 Base.iterate(series::AbstractScanSeries) = iterate(scans(series))
