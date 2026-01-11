@@ -94,8 +94,8 @@ If no unit was specified at construction, returns `nothing`.
 
 See also [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`AbstractScan`](@ref),
 [`ChromScan`](@ref), [`MassScan`](@ref), [`intensities(::AbstractMassScan)`](@ref),
-[`intensity(::AbstractChromScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
-[`rawintensity(::AbstractChromScan)`](@ref).
+[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
+[`rawintensities(::AbstractMassScan)`](@ref), [`rawintensity(::AbstractChromScan)`](@ref).
 
 # Examples
 ```jldoctest
@@ -337,7 +337,8 @@ not assign units to unitless scans; it only converts when a unit is stored.
 be used for unitless scans.
 
 See also [`AbstractChromScan`](@ref), [`ChromScan`](@ref), 
-[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref).
+[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
+[`intensityunit(::AbstractScan)`](@ref).
 
 # Examples
 ```jldoctest

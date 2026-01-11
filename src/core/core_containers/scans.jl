@@ -16,8 +16,8 @@ other form.
 The type parameter `I` indicates only the unit of the intensity data, not its structure
 or storage location. Subtypes should document how to access their intensity values.
 
-See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`ChromScan`](@ref), 
-[`attrs`](@ref), [`MassScan`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
+See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`JuChrom.ChromScan`](@ref),
+[`attrs`](@ref), [`JuChrom.MassScan`](@ref), [`intensityunit(::AbstractScan)`](@ref),
 [`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
 [`retentionunit(::AbstractScan)`](@ref).
 """
@@ -36,9 +36,11 @@ Unitful.Units, Nothing}`, `intensity::Real`, `intensityunit::Union{Unitful.Units
 and `attrs::NamedTuple`. Subtypes may define additional fields as needed.
 
 See also: [`AbstractScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
-[`intensity(::AbstractChromScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity(::AbstractChromScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})), 
+[`intensityunit(::AbstractScan)`](@ref), 
+[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
+[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
+[`retentionunit(::AbstractScan)`](@ref).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
 
