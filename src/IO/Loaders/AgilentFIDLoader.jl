@@ -276,15 +276,11 @@ function read_len_prefixed_string_ltoh(f::IO, bytes::Int=1)
     len == 0 && return ""
 
     raw = read_bytes_ltoh(f, len * bytes)
+    ENCODING = bytes == 1 ? ENCODING_1_byte : bytes == 2 ? ENCODING_2_bytes : "unknown"
 
     try
-        if bytes == 1
-            ENCODING = ENCODING_1_byte
-        elseif bytes == 2
-            ENCODING = ENCODING_2_bytes
-        else
+        bytes == 1 || bytes == 2 ||
             throw(ArgumentError("Unsupported byte size for string encoding: $bytes"))
-        end
         decode(raw, ENCODING)
     catch e
         throw(FileDecodingError("Could not decode $len bytes as $ENCODING: $e"))

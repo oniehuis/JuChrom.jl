@@ -14,6 +14,7 @@ using JuChrom
     @test JuChrom.consistentunits([1 * u"s", 2 * u"minute", 3 * u"s"]) === true
     @test JuChrom.consistentunits([1 * u"m", 2.0 * u"minute", 3.0 * u"kg"]) === false
     @test JuChrom.consistentunits([1 * u"s", 2.0, 3.0]) === false
+    @test JuChrom.consistentunits(Union{Real, Unitful.AbstractQuantity{<:Real}}[1.0, 2u"s"]) === false
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

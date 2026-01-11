@@ -78,6 +78,20 @@ function make_header_buf(version::String, type::String)
     ])
 end
 
+struct BadBytes end
+
+struct BadDecodeBuffer <: IO
+    buf::IOBuffer
+end
+
+Base.position(f::BadDecodeBuffer) = position(f.buf)
+Base.seek(f::BadDecodeBuffer, pos::Integer) = seek(f.buf, pos)
+Base.seekend(f::BadDecodeBuffer) = seekend(f.buf)
+Base.read(f::BadDecodeBuffer, ::Type{UInt8}) = read(f.buf, UInt8)
+Base.read(f::BadDecodeBuffer, n::Integer) = read(f.buf, n)
+
+read_bytes_ltoh(::BadDecodeBuffer, ::Integer) = BadBytes()
+
 # ── Constants ────────────────────────────────────────────────────────────────
 
 const TESTFILE = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
@@ -199,6 +213,43 @@ end
     @test hasproperty(css, :user)
     @test hasproperty(css, :sample)
     @test extras(css) == Dict()
+end
+
+@testset "readfile scan count guard" begin
+    buf = zeros(UInt8, 300)
+    header = take!(make_header_buf("2", "GC / MS Data File"))
+    copyto!(buf, 1, header, 1, length(header))
+
+    mktempdir(TEST_TMPDIR) do tmp
+        bad_zero = joinpath(tmp, "bad_zero.ms")
+        open(bad_zero, "w") do io
+            write(io, buf)
+        end
+        err_zero = try
+            readfile(bad_zero, :ms)
+            nothing
+        catch e
+            e
+        end
+        @test err_zero isa FileCorruptionError
+        @test occursin("Suspicious scan count", sprint(showerror, err_zero))
+
+        bad_large = joinpath(tmp, "bad_large.ms")
+        buf_large = copy(buf)
+        scancount = UInt32(1_000_001)
+        buf_large[279:282] = reinterpret(UInt8, [hton(scancount)])
+        open(bad_large, "w") do io
+            write(io, buf_large)
+        end
+        err_large = try
+            readfile(bad_large, :ms)
+            nothing
+        catch e
+            e
+        end
+        @test err_large isa FileCorruptionError
+        @test occursin("Suspicious scan count", sprint(showerror, err_large))
+    end
 end
 
 # ─── File Header Validation and Metadata Extraction ──────────────────────────
@@ -342,6 +393,16 @@ end
     s = "ABC"
     buf = IOBuffer([UInt8(length(s)+1); codeunits(s)...])
     @test_throws UnexpectedEOFError read_len_prefixed_string_ltoh(buf) == s
+
+    bad_buf = BadDecodeBuffer(IOBuffer([UInt8(1), 0xFF]))
+    err = try
+        read_len_prefixed_string_ltoh(bad_buf)
+        nothing
+    catch e
+        e
+    end
+    @test err isa FileDecodingError
+    @test occursin("Could not decode 1 bytes", sprint(showerror, err))
 end
 
 @testset "read_len_prefixed_string_ltoh_at" begin

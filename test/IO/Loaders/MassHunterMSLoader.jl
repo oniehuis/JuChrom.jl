@@ -16,7 +16,7 @@ using JuChrom.InputOutput
 using JuChrom.MassHunterMSLoader
 import JuChrom.MassHunterMSLoader: MassHunterMSOptions, MassHunterMSLoaderSpec, 
     MassHunterMSv1, MSScanBinV1, MSPeakBinV1, magicnumber, mspeakdata, msscandata, 
-    readfile, read_scan_data_ms, read_scan_data_tic
+    readfile, read_scan_data_ms, read_scan_data_tic, MSScanDataV1, scandatum_attrs
 
 # ── Helper functions and constants for unit tests ────────────────────────────
 
@@ -103,6 +103,11 @@ end
         spec = MassHunterMS(tmp; mode=:ms)
         @test_throws MissingFolderError load(spec)
     end
+
+    missing_path = joinpath(TEST_TMPDIR, "Missing.D")
+    ispath(missing_path) && rm(missing_path; recursive=true)
+    missing_spec = MassHunterMS(missing_path; mode=:ms)
+    @test_throws MissingFolderError load(missing_spec)
 
     mktempdir(TEST_TMPDIR) do tmp
         dfolder = joinpath(tmp, "Broken.D")
@@ -195,6 +200,32 @@ end
     @test last_scan.PointCount == 617
     @test last_scan.ByteCount == 9872
     @test isapprox(last_scan.ScanTime, 31.650783333333333; atol=eps(Float64))
+end
+
+@testset "MSScanDataV1 read + attrs" begin
+    values = (
+        Int32(1), Int32(2), Int32(3), Float64(4.5), Int32(6), Int32(7),
+        Float64(8.5), Float64(9.5), Float64(10.5), Int32(11), Int32(12),
+        Int32(13), Int32(14), Float64(15.5), Float64(16.5), Float64(17.5),
+        Float64(18.5), Float64(19.5), Float64(20.5), Float64(21.5),
+        Int32(22), Int32(23), Int32(24), Int64(25), Int32(26), Int32(27),
+        Float64(28.5), Float64(29.5), Float64(30.5), Float64(31.5)
+    )
+    io = IOBuffer()
+    for v in values
+        write(io, v)
+    end
+    seekstart(io)
+    datum = read(io, MSScanDataV1)
+    @test datum.ScanID == 1
+    @test datum.ScanTime == 4.5
+    @test datum.TIC == 8.5
+    @test datum.ByteCount == 26
+
+    attrs_all = scandatum_attrs(datum; include_tic=true)
+    @test haskey(attrs_all, :TIC)
+    attrs_no_tic = scandatum_attrs(datum; include_tic=false)
+    @test !haskey(attrs_no_tic, :TIC)
 end
 
 @testset "read_scan_data_tic" begin
