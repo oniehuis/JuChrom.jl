@@ -57,6 +57,30 @@ const TOTAL_POINTS = 5_212_860
 sha1hex(data::AbstractVector{UInt8}) = bytes2hex(sha1(Vector{UInt8}(data)))
 sha1hex(v::AbstractVector{<:Number}) = bytes2hex(sha1(Vector{UInt8}(reinterpret(UInt8, v))))
 
+struct ShimadzuBadStream <: AbstractString
+    tag::Symbol
+end
+
+Base.codeunit(::Type{ShimadzuBadStream}) = UInt8
+Base.ncodeunits(s::ShimadzuBadStream) = ncodeunits(string(s.tag))
+Base.codeunit(s::ShimadzuBadStream, i::Integer) = codeunit(string(s.tag), i)
+Base.isvalid(s::ShimadzuBadStream, i::Integer) = isvalid(string(s.tag), i)
+Base.iterate(s::ShimadzuBadStream) = iterate(string(s.tag))
+Base.iterate(s::ShimadzuBadStream, i::Integer) = iterate(string(s.tag), i)
+Base.length(s::ShimadzuBadStream) = length(string(s.tag))
+Base.getindex(s::ShimadzuBadStream, i::Int) = string(s.tag)[i]
+Base.String(s::ShimadzuBadStream) = string(s.tag)
+Base.show(io::IO, s::ShimadzuBadStream) = print(io, string(s.tag))
+
+function readbytestring(file::ShimadzuBadStream, streamname::Vector{String})
+    if file.tag == :bad_rt && streamname[end] == "Retention Time"
+        return zeros(UInt8, 5)
+    elseif file.tag == :bad_tic && streamname[end] == "TIC Data"
+        return zeros(UInt8, 10)
+    end
+    return zeros(UInt8, 8)
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests
 # ─────────────────────────────────────────────────────────────────────────────
@@ -211,6 +235,28 @@ end
         @test_throws FileCorruptionError load_mass_spectra(path)
         @test_throws FileCorruptionError load_tic(path)
     end
+end
+
+@testset "load_tic stream size checks" begin
+    bad_rt = ShimadzuBadStream(:bad_rt)
+    err_rt = try
+        load_tic(bad_rt)
+        nothing
+    catch e
+        e
+    end
+    @test err_rt isa FileCorruptionError
+    @test occursin("not divisible by 4 bytes", sprint(showerror, err_rt))
+
+    bad_tic = ShimadzuBadStream(:bad_tic)
+    err_tic = try
+        load_tic(bad_tic)
+        nothing
+    catch e
+        e
+    end
+    @test err_tic isa FileCorruptionError
+    @test occursin("not divisible by 8 bytes", sprint(showerror, err_tic))
 end
 
 end  # module TestShimadzuMSLoader

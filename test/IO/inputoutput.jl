@@ -8,8 +8,8 @@ using Test
 using JuChrom
 using Logging
 using JuChrom.AgilentFIDLoader: AgilentFID
-using JuChrom.InputOutput: FileDecodingError, FileFormatError, FileCorruptionError, 
-    FileIOError
+using JuChrom.InputOutput: FileDecodingError, FileFormatError, FileCorruptionError,
+    FileIOError, MissingFileError, MissingFolderError, UnexpectedEOFError
 
 # ──────────────────────────────────────────────────────────────────────────────────────────
 # Unit tests
@@ -29,6 +29,24 @@ using JuChrom.InputOutput: FileDecodingError, FileFormatError, FileCorruptionErr
     @test ff isa FileIOError
     @test fi isa FileCorruptionError
     @test fi isa FileIOError
+end
+
+# ── showerror formatting ──────────────────────────────────────────────────────────────────
+
+@testset "showerror formatting" begin
+    ff = FileFormatError("bad format")
+    mf = MissingFileError("missing.dat")
+    mfd = MissingFolderError("/tmp/data")
+    fc = FileCorruptionError("corrupt data")
+    fd = FileDecodingError("decode fail")
+    ue = UnexpectedEOFError("unexpected eof")
+
+    @test sprint(showerror, ff) == "FileFormatError: bad format"
+    @test sprint(showerror, mf) == "MissingFileError: File not found at \"missing.dat\""
+    @test sprint(showerror, mfd) == "MissingFolderError: Folder not found at \"/tmp/data\""
+    @test sprint(showerror, fc) == "FileCorruptionError: corrupt data"
+    @test sprint(showerror, fd) == "FileDecodingError: decode fail"
+    @test sprint(showerror, ue) == "unexpected eof"
 end
 
 # ── set_verbosity ─────────────────────────────────────────────────────────────────────────

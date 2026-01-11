@@ -243,6 +243,16 @@ end
     @test_throws MethodError intensities(nothing)
 end
 
+@testset "intensity(series::AbstractChromScanSeries, scanindex::Integer)" begin
+    @test intensity(CSS, 1) == INT
+    @test intensity(CSS, 2) == INT2
+    @test_throws ArgumentError intensity(CSS, 1; unit=u"pA")
+
+    css_unitful = ChromScanSeries([CHROMSCAN_UNITFUL_INT, ChromScan(2.0s, 60.0u"pA")])
+    @test intensity(css_unitful, 1) == 50.0u"pA"
+    @test intensity(css_unitful, 1; unit=u"nA") == 0.05u"nA"
+end
+
 @testset "rawintensity(series::AbstractChromScanSeries, scanindex::Integer)" begin
     # Unitless series returns raw numeric and errors if a unit is requested
     @test rawintensity(CSS, 1) == INT
@@ -269,9 +279,30 @@ end
     @test_throws MethodError rawintensity(CSS, nothing)
 end
 
+@testset "rawintensities(series::AbstractChromScanSeries)" begin
+    @test rawintensities(CSS) == [INT, INT2]
+
+    css_unitful = ChromScanSeries([CHROMSCAN_UNITFUL_INT, ChromScan(2.0s, 60.0u"pA")])
+    @test rawintensities(css_unitful) == [50.0, 60.0]
+    @test rawintensities(css_unitful; unit=u"nA") == [0.05, 0.06]
+end
+
+@testset "rawintensities(series::AbstractMassScanSeries, scanindex::Integer)" begin
+    @test rawintensities(MSS, 1) == INTS
+
+    ms_unitful = MassScan(1.0u"s", [100.0, 200.0], [10.0, 20.0]u"pA")
+    ms_unitful2 = MassScan(2.0u"s", [101.0, 201.0], [30.0, 40.0]u"pA")
+    mss_unitful = MassScanSeries([ms_unitful, ms_unitful2])
+    @test rawintensities(mss_unitful, 1) == [10.0, 20.0]
+    @test rawintensities(mss_unitful, 1; unit=u"nA") == [0.01, 0.02]
+end
+
 @testset "intensities(scanmatrix::AbstractScanMatrix)" begin
     # Test getter: intensities
     @test intensities(SM) == IM
+    msm_unitful = MassScanMatrix([1.0, 2.0]u"s", MZS, IM[1:2, :]u"pA")
+    @test intensities(msm_unitful) ≈ IM[1:2, :]u"pA"
+    @test intensities(msm_unitful, unit=u"nA") ≈ (IM[1:2, :] .* 1e-3)u"nA"
 
     # Error on invalid `intensities` type for getter
     @test_throws MethodError intensities("invalid type")
@@ -291,6 +322,10 @@ end
     @test_throws MethodError mzcount([1, 2, 3])
     @test_throws MethodError mzcount(1.0)
     @test_throws MethodError mzcount(nothing)
+end
+
+@testset "mzcount(scanmatrix::AbstractMassScanMatrix)" begin
+    @test mzcount(SM) == length(MZS)
 end
 
 # ── ions → mzvalues ─────────────────────────────────────────────────────────
@@ -313,6 +348,12 @@ end
     @test rawmzvalues(m_unitful) == [100.0, 200.0]
     @test rawmzvalues(m_unitful; unit=u"Th") == [100.0, 200.0]
     @test rawmzvalues(MASSSCAN) == MZS
+end
+
+@testset "rawmzvalues(scanmatrix::AbstractMassScanMatrix)" begin
+    msm_unitful_mz = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0]u"Th", [1.0 2.0; 3.0 4.0])
+    @test rawmzvalues(msm_unitful_mz) == [100.0, 200.0]
+    @test rawmzvalues(msm_unitful_mz; unit=u"kTh") == [0.1, 0.2]
 end
 
 @testset "mzvalues(series::AbstractScanSeries, scanindex::Integer)" begin
