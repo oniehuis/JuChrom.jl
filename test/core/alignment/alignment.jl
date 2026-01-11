@@ -72,4 +72,11 @@ using JuChrom
     @test score == 0.0
 end
 
+@testset "_gapalign_backtrack safety net" begin
+    trace = fill(JuChrom.Match, 2, 2)
+    trace[2, 2] = reinterpret(JuChrom.TraceAction, Int32(99))
+    assignment = JuChrom._gapalign_backtrack(trace, 1, 1)
+    @test assignment == Dict()
+end
+
 end

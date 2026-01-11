@@ -97,7 +97,12 @@ function gapalign(S::Matrix{<:Real}, γ::Real, τ::Real)
         end
     end
 
-    # Backtracking
+    assignment = _gapalign_backtrack(trace, m, n)
+
+    assignment, dp[m + 1, n + 1]
+end
+
+function _gapalign_backtrack(trace::Matrix{TraceAction}, m::Int, n::Int)
     i, j = m + 1, n + 1
     assignment = Dict{Int, Int}()
 
@@ -116,5 +121,5 @@ function gapalign(S::Matrix{<:Real}, γ::Real, τ::Real)
         end
     end
 
-    assignment, dp[m + 1, n + 1]
+    assignment
 end
