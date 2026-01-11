@@ -9,6 +9,25 @@ using JuChrom  # ChromScan, MassScan, ChromScanSeries, MassScanSeries
 mkchrom(i, rt_unit, I_unit) = ChromScan(i*1.0*rt_unit, (10i)*I_unit)
 mkms(rt, mzs, ints; level=1) = MassScan(rt, mzs, ints; level)
 
+struct ShortChromScan <: AbstractChromScan{Nothing, Nothing}
+    retention::Float64
+    retentionunit::Nothing
+    intensity::Float64
+    intensityunit::Nothing
+    attrs::NamedTuple
+end
+
+struct ShortMassScan <: AbstractMassScan{Nothing, Nothing, Nothing}
+    retention::Float64
+    retentionunit::Nothing
+    mzvalues::Vector{Float64}
+    mzunit::Nothing
+    intensities::Vector{Float64}
+    intensityunit::Nothing
+    level::Int
+    attrs::NamedTuple
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # ChromScanSeries
 # ─────────────────────────────────────────────────────────────────────────────
@@ -191,6 +210,34 @@ end
     JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2; 3 4], "", "", true)
     JuChrom.ScanSeriesDisplay.print_complex_value(io, [1 2 3; 4 5 6; 7 8 9], "", "", true)
 
+    nested_nt = (outer=(a=1,),)
+    nested_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_complex_value(io, nested_nt, "", "", true))
+    @test occursin("outer:", nested_out)
+    @test occursin("a = 1", nested_out)
+
+    long_nt = (note=("x" ^ 80),)
+    long_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_complex_value(io, long_nt, "", "", true))
+    @test occursin("note =", long_out)
+    @test occursin("\n", long_out)
+
+    nested_dict = Dict("outer" => Dict("a" => 1))
+    dict_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_complex_value(io, nested_dict, "", "", true))
+    @test occursin("outer:", dict_out)
+    @test occursin("a = 1", dict_out)
+
+    long_dict = Dict("note" => ("x" ^ 80))
+    long_dict_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_complex_value(io, long_dict, "", "", true))
+    @test occursin("note =", long_dict_out)
+    @test occursin("\n", long_dict_out)
+
+    struct DummyComplex
+        value::Int
+    end
+    dummy = DummyComplex(42)
+    dummy_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_complex_value(io, dummy, "", "", true))
+    @test occursin("DummyComplex", dummy_out)
+    @test occursin("42", dummy_out)
+
     empty_sections = [("Instrument", NamedTuple())]
     @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), empty_sections, Dict{String, Any}()) == false
 
@@ -210,6 +257,18 @@ end
     multi_mixed = [("Instrument", (model="X", notes="x" ^ 120)),
                    ("User", (name="A",))]
     @test JuChrom.ScanSeriesDisplay.print_annotations(IOBuffer(), multi_mixed, Dict{String, Any}()) == true
+
+    multi_complex = [("Instrument", (model="X", config=(alpha=1,),)),
+                     ("User", (name="A",))]
+    multi_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_annotations(io, multi_complex, Dict{String, Any}()))
+    @test occursin("config:", multi_out)
+    @test occursin("alpha = 1", multi_out)
+
+    meta = Dict("first" => "one", "second" => "two")
+    meta_out = sprint(io -> JuChrom.ScanSeriesDisplay.print_annotations(io, [("Instrument", (model="X",))], meta))
+    @test occursin("first = one", meta_out)
+    @test occursin("second = two", meta_out)
+    @test !endswith(meta_out, "\n")
 end
 
 @testset "ScanSeries show methods" begin
@@ -217,12 +276,34 @@ end
     css = ChromScanSeries(scans; instrument=(vendor="Acme",))
     css_out = sprint(show, css)
     @test occursin("ChromScanSeries", css_out)
+    @test occursin("├─ Scan type:\n", css_out)
 
     mscans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
               mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=2)]
     mss = MassScanSeries(mscans; acquisition=(mode="FullScan",))
     mss_out = sprint(show, mss)
     @test occursin("MassScanSeries", mss_out)
+    @test occursin("├─ Scan type:\n", mss_out)
+
+    mscans_same = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]; level=1),
+                   mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=1)]
+    mss_same = MassScanSeries(mscans_same; acquisition=(mode="FullScan",))
+    mss_same_out = sprint(show, mss_same)
+    @test occursin("MS Level: 1", mss_same_out)
+
+    short_scans = [ShortChromScan(1.0, nothing, 10.0, nothing, NamedTuple()),
+                   ShortChromScan(2.0, nothing, 20.0, nothing, NamedTuple())]
+    short_css = ChromScanSeries(short_scans)
+    short_css_out = sprint(show, short_css)
+    @test occursin("├─ Scan type:\n", short_css_out)
+    @test occursin("ShortChromScan", short_css_out)
+
+    short_mscans = [ShortMassScan(1.0, nothing, [100.0], nothing, [10.0], nothing, 1, NamedTuple()),
+                    ShortMassScan(2.0, nothing, [101.0], nothing, [12.0], nothing, 1, NamedTuple())]
+    short_mss = MassScanSeries(short_mscans)
+    short_mss_out = sprint(show, short_mss)
+    @test occursin("├─ Scan type:\n", short_mss_out)
+    @test occursin("ShortMassScan", short_mss_out)
 end
 
 end # module

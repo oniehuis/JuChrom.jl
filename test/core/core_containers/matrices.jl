@@ -195,4 +195,53 @@ end
     @test_throws ArgumentError MassScanMatrix([1.0, 2.0], [100.0, 200.0], [1.0 2.0; 3.0 4.0]; level=0) # level
 end
 
+@testset "MassScanMatrix – subtraction" begin
+    ret = mkret(2)
+    mzs = mkmzs(2)
+    im1 = [1.0 2.0; 3.0 4.0]
+    im2 = [0.5 1.0; 1.5 2.0]
+
+    msm1 = MassScanMatrix(ret, mzs, im1;
+                          level=2,
+                          instrument=(vendor="A",),
+                          acquisition=(mode="DDA",),
+                          user=(u="x",),
+                          sample=(s="y",),
+                          extras=Dict("k"=>1))
+    msm2 = MassScanMatrix(ret, mzs, im2;
+                          level=2,
+                          instrument=(vendor="A",),
+                          acquisition=(mode="DDA",),
+                          user=(u="x",),
+                          sample=(s="y",),
+                          extras=Dict("k"=>1))
+
+    msm_diff = msm1 - msm2
+    @test intensities(msm_diff) == im1 .- im2
+    @test retentions(msm_diff) == ret
+    @test mzvalues(msm_diff) == mzs
+    @test retentions(msm_diff) !== ret
+    @test mzvalues(msm_diff) !== mzs
+    @test extras(msm_diff) == extras(msm1)
+    @test extras(msm_diff) !== extras(msm1)
+
+    msm_ret_mismatch = MassScanMatrix(ret .+ 1, mzs, im1;
+                                      level=2,
+                                      instrument=(vendor="A",),
+                                      acquisition=(mode="DDA",),
+                                      user=(u="x",),
+                                      sample=(s="y",),
+                                      extras=Dict("k"=>1))
+    @test_throws DimensionMismatch msm1 - msm_ret_mismatch
+
+    msm_extra_mismatch = MassScanMatrix(ret, mzs, im1;
+                                        level=2,
+                                        instrument=(vendor="A",),
+                                        acquisition=(mode="DDA",),
+                                        user=(u="x",),
+                                        sample=(s="y",),
+                                        extras=Dict("k"=>2))
+    @test_throws DimensionMismatch msm1 - msm_extra_mismatch
+end
+
 end # module

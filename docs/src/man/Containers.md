@@ -1,4 +1,4 @@
-# Core Containers
+# Design overview
 
 JuChrom provides three core container types for chromatographic and mass spectrometric
 data. Single scans capture one measurement, while scan series and mass-scan matrices

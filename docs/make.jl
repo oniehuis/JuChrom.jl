@@ -40,13 +40,13 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
             "Home" => "index.md",
             "Manual" => Any[
                 "Core containers" => Any[
-                    "man/Containers.md",
+                    "Design overview" => "man/Containers.md",
                     "man/Scans.md",
                     "man/ScanSeries.md",
                     "man/ScanMatrices.md",
                 ],
                 "Loaders" => Any[
-                    "man/Loaders.md",
+                    "Loader API" => "man/LoaderAPI.md",
                     "man/AgilentFID.md",
                     "man/ChemStationMS.md",
                     "man/MassHunterMS.md",

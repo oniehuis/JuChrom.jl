@@ -1,4 +1,4 @@
-# Loaders
+# Loader API
 
 JuChrom ships loader APIs for several chromatographic file formats. Some vendor readers rely
 on reverse-engineered formats, so a given loader may not work with every file or file-set
