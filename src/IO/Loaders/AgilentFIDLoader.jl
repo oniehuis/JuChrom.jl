@@ -48,14 +48,17 @@ end
 # ── Loader Spec Constructors ─────────────────────────────────────────────────
 
 """
-    AgilentFIDLoaderSpec{F}(path::String)
+    AgilentFIDLoaderSpec{F}(path::String; unit=nothing)
 
-Internal structure representing a configured load request for Agilent FID data.
-This type encapsulates:
-- the source path, and
-- a type tag for format versioning.
+Internal structure representing a configured load request for Agilent FID data. The
+`path` can be either a directory (containing `FID1A.ch`) or a direct path to the file.
+The `unit` keyword sets the signal units (`nothing` for unitless or `u"pA"` for pA).
 
 Normally, this is constructed indirectly via `AgilentFID(...)`.
+
+See also 
+[`AgilentFID`](@ref JuChrom.AgilentFIDLoader.AgilentFID), 
+`load`.
 """
 function AgilentFIDLoaderSpec{F}(path::String; unit::U=nothing) where {F, U<:Union{Nothing, Unitful.Units}}
     unit ∈ SUPPORTED_UNITS || throw(ArgumentError(
@@ -66,10 +69,17 @@ end
 """
     AgilentFID(path::String) -> AgilentFIDLoaderSpec
 
-Construct a loader specification for Agilent FID data. The `path` can be
-either a directory (containing `FID1A.ch`) or a direct path to the file. 
+Construct a loader specification for Agilent FID data. The `path` can be either a directory
+(containing `FID1A.ch`) or a direct path to the file. The `unit` keyword sets the signal
+units (`nothing` for unitless or `u"pA"` for pA). This convenience constructor currently
+uses the `AgilentFIDv179` reader, but it may select other reader versions automatically in
+future releases.
 
 Returns a `AgilentFIDLoaderSpec` object used for deferred data loading via `load(...)`.
+
+See also 
+[`AgilentFIDLoaderSpec`](@ref JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec), 
+`load`.
 """
 function AgilentFID(path::String; unit::Union{Nothing, Unitful.Units}=nothing)
     unit ∈ SUPPORTED_UNITS || throw(ArgumentError(
@@ -79,17 +89,19 @@ end
 
 # ── Data Loading Interface ───────────────────────────────────────────────────
 
-# """
-#     load(req::AgilentFIDLoaderSpec{AgilentFIDv179}) -> ChromScanSeries
+"""
+    load(req::AgilentFIDLoaderSpec{AgilentFIDv179}) -> ChromScanSeries
 
-# Loads and parses FID data from Agilent FID (version 179) data files.
-# Takes a `AgilentFIDLoaderSpec` created via `AgilentFID(...)`.
+Loads and parses FID data from Agilent FID (version 179) data files. The request must be
+an `AgilentFIDLoaderSpec`, typically created via `AgilentFID(...)`. Returns a
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries) containing a vector of
+[`ChromScan`](@ref JuChrom.ChromScan) objects, along with parsed metadata (sample, user,
+acquisition, instrument).
 
-# Returns an`ChromScanSeries` object containing:
-# - a vector of `ChromScan` objects,
-
-# along with parsed metadata (sample, user, acquisition, instrument).
-# """
+See also 
+[`AgilentFID`](@ref JuChrom.AgilentFIDLoader.AgilentFID),
+[`AgilentFIDLoaderSpec`](@ref JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec).
+"""
 function load(req::AgilentFIDLoaderSpec{AgilentFIDv179})
     path = req.path
     if isdir(path)

@@ -53,15 +53,25 @@ end
 # ── Loader Spec Constructors ─────────────────────────────────────────────────
 
 """
-    MassHunterMSLoaderSpec{F}(path::String; mode::Symbol=:ms)
+    MassHunterMSLoaderSpec{F}(path::String; mode::Symbol=:ms, level=nothing,
+                              scantimetype=Nothing, iontype=Nothing, intensitytype=Nothing)
 
 Internal structure representing a configured load request for Agilent MassHunter MS data.
-This type encapsulates:
-- the source path,
-- selected mode (`:ms` or `:tic`), and
-- a type tag for format versioning.
+The `path` must point to a `.D` directory containing an `AcqData` folder. For the 
+`MassHunterMSv1` reader, that folder must include `MSScan.bin` and, for `mode=:ms`, 
+`MSPeak.bin`. The `mode` keyword selects full mass spectral data (`:ms`) or the total ion 
+chromatogram only (`:tic`). The `level` keyword filters by MS level, while `scantimetype`, 
+`iontype`, and `intensitytype` allow conversion of scan times (minutes), m/z values, and 
+intensities, respectively.
+
+Type specification allows conversion from storage types that are wider than the effective
+precision. Some MassHunter files store values in a wider floating-point type than their
+effective precision (for example, Float64 storage of Float32-precision data). Converting
+to an appropriate type can remove misleading numerical artifacts and reduce memory use.
 
 Normally, this is constructed indirectly via `MassHunterMS(...)`.
+
+See also [`MassHunterMS`](@ref JuChrom.MassHunterMSLoader.MassHunterMS), `load`.
 """
 function MassHunterMSLoaderSpec{F}(
     path::String;
@@ -84,16 +94,34 @@ function MassHunterMSLoaderSpec{F}(
 end
 
 """
-    MassHunterMS(path::String; mode::Symbol=:ms) -> MassHunterMSLoaderSpec
+    MassHunterMS(
+        path::String;
+        mode::Symbol=:ms,
+        level=nothing,
+        scantimetype=Nothing,
+        iontype=Nothing,
+        intensitytype=Nothing
+    ) -> MassHunterMSLoaderSpec
 
-Construct a loader specification for Agilent MassHunter GC/MS data. The `path` can be
-either a directory (containing `data.ms`) or a direct path to the file. 
+Construct a loader specification for Agilent MassHunter GC/MS data. The `path` must point to 
+a `.D` directory containing an `AcqData` folder with `MSScan.bin` and, for `mode=:ms`,
+`MSPeak.bin`. This convenience constructor currently uses the `MassHunterMSv1` reader, 
+which assumes those files are present in `AcqData`, but it may select other reader versions 
+automatically in future releases. The `mode` keyword selects full mass spectral data (`:ms`) 
+or the total ion chromatogram only (`:tic`). The `level` keyword filters by MS level, while 
+`scantimetype`, `iontype`, and `intensitytype` allow conversion of scan times (minutes), 
+m/z values, and intensities, respectively.
 
-The keyword argument `mode` determines the type of data to load:
-- `:ms`  → full mass spectral data (default)
-- `:tic` → total ion chromatogram only
+Type specification allows conversion from storage types that are wider than the effective
+precision. Some MassHunter files store values in a wider floating-point type than their
+effective precision (for example, Float64 storage of Float32-precision data). Converting
+to an appropriate type can remove misleading numerical artifacts and reduce memory use.
 
-Returns a `MassHunterMSLoaderSpec` object used for deferred data loading via `load(...)`.
+Returns a [`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec)
+object used for deferred data loading via `load(...)`.
+
+See also [`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec),
+`load`.
 """
 function MassHunterMS(
     path::String;
@@ -117,13 +145,15 @@ end
     load(req::MassHunterMSLoaderSpec{MassHunterMSv1}) -> AbstractScanSeries
 
 Loads and parses mass spectrometry data from Agilent MassHunter (version 1) GC/MS files.
-Takes a `MassHunterMSLoaderSpec` created via `MassHunterMS(...)`.
+The request must be a `MassHunterMSLoaderSpec`, typically created via `MassHunterMS(...)`.
+Returns an `AbstractScanSeries` subtype containing either a vector of 
+[`MassScan`](@ref JuChrom.MassScan) objects for `mode=:ms` or a vector of 
+[`ChromScan`](@ref JuChrom.ChromScan) objects for `mode=:tic`, along with parsed metadata 
+(sample, user, acquisition, instrument).
 
-Returns a `AbstractScanSeries` subtype object containing either:
-- a vector of `MassScan` objects (for `mode=:ms`), or
-- a vector of `ChromScan` objects (for `mode=:tic`),
-
-along with parsed metadata (sample, user, acquisition, instrument).
+See also
+[`MassHunterMS`](@ref JuChrom.MassHunterMSLoader.MassHunterMS),
+[`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec).
 """
 function load(req::MassHunterMSLoaderSpec{T}) where {T<:MassHunterMSv1}
     dfolder = req.path

@@ -15,8 +15,7 @@ loaded, its loader types and `load` methods become available without changing th
 Each module defines a loader *spec* type that encodes the reader version in its type 
 parameter `F` (for example, `MassHunterMSLoaderSpec{F}` where `F` is a concrete format type 
 such as `MassHunterMSv1`). The `load` method dispatches on that spec type, so multiple 
-reader versions can coexist and be selected by constructor helpers in the module. This is 
-how JuChrom can support different file versions with different reader implementations.
+reader versions can coexist and be selected by constructor helpers in the module.
 
 ## Loading a file
 
@@ -48,7 +47,7 @@ mss = load(spec)
 ```@docs
 JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec
 JuChrom.AgilentFIDLoader.AgilentFID
-JuChrom.AgilentFIDLoader.load
+JuChrom.AgilentFIDLoader.load(::JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec{JuChrom.AgilentFIDLoader.AgilentFIDv179})
 ```
 
 ## Aligent ChemStation MS
