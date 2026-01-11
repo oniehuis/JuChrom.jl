@@ -31,7 +31,7 @@ end; recursive = true)
 
 withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
     makedocs(
-	    sitename = "JuChrom",
+	    sitename = "JuChrom.jl",
         format = Documenter.HTML(),
         modules = isdefined(JuChrom, :ShimadzuMSLoader) ? [JuChrom, JuChrom.ShimadzuMSLoader] : [JuChrom],
 	    authors = "Oliver Niehuis",

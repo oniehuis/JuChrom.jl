@@ -17,9 +17,9 @@ The type parameter `I` indicates only the unit of the intensity data, not its st
 or storage location. Subtypes should document how to access their intensity values.
 
 See also: [`AbstractChromScan`](@ref), [`AbstractMassScan`](@ref), [`JuChrom.ChromScan`](@ref),
-[`attrs`](@ref), [`JuChrom.MassScan`](@ref), [`intensityunit(::AbstractScan)`](@ref),
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+[`attrs`](@ref), [`JuChrom.MassScan`](@ref), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)),
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 abstract type AbstractScan{R, I} end
 
@@ -37,10 +37,10 @@ and `attrs::NamedTuple`. Subtypes may define additional fields as needed.
 
 See also: [`AbstractScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref), 
 [`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})), 
-[`intensityunit(::AbstractScan)`](@ref), 
-[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref), 
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})), 
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 abstract type AbstractChromScan{R, I} <: AbstractScan{R, I} end
 
@@ -58,11 +58,11 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `attrs::NamedTuple`.
 
 See also: [`AbstractChromScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref),
-[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
-[`intensityunit(::AbstractScan)`](@ref),
-[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref),
-[`retentionunit(::AbstractScan)`](@ref).
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)),
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})),
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})),
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 struct ChromScan{
     T1<:Real,
@@ -208,11 +208,11 @@ values (`isapprox` defaults), identical retention and intensity units, and ident
 `attrs`.
 
 See also: [`AbstractChromScan`](@ref), [`ChromScan`](@ref), [`attrs`](@ref),
-[`intensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
-[`intensityunit(::AbstractScan)`](@ref),
-[`rawintensity(::AbstractChromScan{<:Any, Nothing})`](@ref),
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref),
-[`retentionunit(::AbstractScan)`](@ref).
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)),
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})),
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})),
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 Base.:(==)(a::ChromScan, b::ChromScan) = 
     retention(a) ≈ retention(b) &&
@@ -237,11 +237,11 @@ Unitful.Units, Nothing}`, `level::Integer`, and `attrs::NamedTuple`. Subtypes ma
 additional fields as needed.
 
 See also: [`AbstractScan`](@ref), [`MassScan`](@ref), [`attrs`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzcount(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
-[`mzunit(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
-[`rawmzvalues(::AbstractMassScan)`](@ref), [`rawretention(::AbstractScan)`](@ref), 
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
+[`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 abstract type AbstractMassScan{R, M, I} <: AbstractScan{R, I} end
 
@@ -261,11 +261,11 @@ Fields include `retention::Real`, `retentionunit::Union{Unitful.Units, Nothing}`
 `level::Integer`, and `attrs::NamedTuple`.
 
 See also: [`AbstractMassScan`](@ref), [`AbstractScan`](@ref), [`attrs`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzcount(::AbstractMassScan)`](@ref), [`mzunit(::AbstractMassScan)`](@ref),
-[`mzvalues(::AbstractMassScan)`](@ref), [`rawintensities(::AbstractMassScan)`](@ref), 
-[`rawretention(::AbstractScan)`](@ref), [`rawmzvalues(::AbstractMassScan)`](@ref),
-[`retention(::AbstractScan)`](@ref), [`retentionunit(::AbstractScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)),
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})),
+[`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 struct MassScan{
     T1<:Real,
@@ -452,11 +452,11 @@ and intensities (`isapprox` defaults), identical m/z, retention, and intensity u
 same m/z length, the same `level`, and identical `attrs`.
 
 See also: [`AbstractMassScan`](@ref), [`MassScan`](@ref),[`attrs`](@ref), 
-[`intensities(::AbstractMassScan)`](@ref), [`intensityunit(::AbstractScan)`](@ref), 
-[`mzunit(::AbstractMassScan)`](@ref), [`mzvalues(::AbstractMassScan)`](@ref), 
-[`rawintensities(::AbstractMassScan)`](@ref), [`rawmzvalues(::AbstractMassScan)`](@ref), 
-[`rawretention(::AbstractScan)`](@ref), [`retention(::AbstractScan)`](@ref), 
-[`retentionunit(::AbstractScan)`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
 Base.:(==)(a::MassScan, b::MassScan) = 
     isapprox(retention(a), retention(b)) &&

@@ -15,12 +15,12 @@ fields as needed.
 
 See also [`AbstractChromScanSeries`](@ref), [`ChromScanSeries`](@ref), 
 [`AbstractMassScanSeries`](@ref), [`MassScanSeries`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`instrument(::AbstractScanSeries)`](@ref), [`intensityunit(::AbstractScanSeries)`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref), 
-[`retentionunit(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref), 
-[`scan(::AbstractScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref), 
-[`scans(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref). 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), [`sample`](@ref JuChrom.sample(::AbstractScanSeries)), 
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)). 
 .
 """
 abstract type AbstractScanSeries{S, R, M, I} end
@@ -51,16 +51,16 @@ Concrete subtypes are expected to define `scans::AbstractVector{S}` along with `
 `extras::Dict{String, Any}`.
 
 See also [`AbstractChromScanSeries`](@ref), [`ChromScanSeries`](@ref), [`ChromScan`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`instrument(::AbstractScanSeries)`](@ref), 
-[`intensities(::AbstractChromScanSeries)`](@ref), 
-[`intensity(::AbstractChromScanSeries)`](@ref), 
-[`intensityunit(::AbstractScanSeries)`](@ref), 
-[`rawintensities(::AbstractChromScanSeries)`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref), 
-[`retentionunit(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref), 
-[`scan(::AbstractScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref), 
-[`scans(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), [`sample`](@ref JuChrom.sample(::AbstractScanSeries)), 
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 """
 abstract type AbstractChromScanSeries{S<:AbstractChromScan, R, I} <: AbstractScanSeries{S, R, Nothing, I} end
 
@@ -81,18 +81,18 @@ Concrete subtypes are expected to define `scans::AbstractVector{S}` along with `
 `extras::Dict{String, Any}`.
 
 See also [`AbstractScanSeries`](@ref), [`MassScanSeries`](@ref), [`AbstractMassScan`](@ref), 
-[`MassScan`](@ref), [`acquisition(::AbstractScanSeries)`](@ref), 
-[`extras(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
-[`intensities(::AbstractMassScanSeries)`](@ref), 
-[`intensityunit(::AbstractScanSeries)`](@ref), [`level(::AbstractMassScanSeries)`](@ref), 
-[`mzunit(::AbstractMassScanSeries)`](@ref), [`mzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawmzvalues(::AbstractMassScanSeries)`](@ref), 
-[`uniquemzvalues(::AbstractMassScanSeries)`](@ref), 
-[`rawintensities(::AbstractMassScanSeries)`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref), 
-[`retentionunit(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref), 
-[`scan(::AbstractScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref), 
-[`scans(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`MassScan`](@ref), [`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), 
+[`extras`](@ref JuChrom.extras(::AbstractScanSeries)), [`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), [`level`](@ref JuChrom.level(::AbstractMassScanSeries)), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanSeries)), [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), [`sample`](@ref JuChrom.sample(::AbstractScanSeries)), 
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 """
 abstract type AbstractMassScanSeries{S<:AbstractMassScan, R, M, I} <: AbstractScanSeries{S, R, M, I} end
 
@@ -112,16 +112,16 @@ Fields include `scans::AbstractVector{S}`, `instrument::NamedTuple`,
 
 See also [`AbstractScanSeries`](@ref), [`AbstractChromScanSeries`](@ref), 
 [`AbstractChromScan`](@ref), [`ChromScan`](@ref), 
-[`acquisition(::AbstractScanSeries)`](@ref), [`extras(::AbstractScanSeries)`](@ref), 
-[`instrument(::AbstractScanSeries)`](@ref), 
-[`intensities(::AbstractChromScanSeries)`](@ref), 
-[`intensity(::AbstractChromScanSeries)`](@ref), 
-[`intensityunit(::AbstractScanSeries)`](@ref), 
-[`rawintensities(::AbstractChromScanSeries)`](@ref), 
-[`rawretentions(::AbstractScanSeries)`](@ref), [`retentions(::AbstractScanSeries)`](@ref), 
-[`retentionunit(::AbstractScanSeries)`](@ref), [`sample(::AbstractScanSeries)`](@ref), 
-[`scan(::AbstractScanSeries)`](@ref), [`scancount(::AbstractScanSeries)`](@ref), 
-[`scans(::AbstractScanSeries)`](@ref), [`user(::AbstractScanSeries)`](@ref).
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), [`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
+[`rawretentions`](@ref JuChrom.rawretentions(::AbstractScanSeries)), [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)), 
+[`retentionunit`](@ref JuChrom.retentionunit(::AbstractScanSeries)), [`sample`](@ref JuChrom.sample(::AbstractScanSeries)), 
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)), [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), [`user`](@ref JuChrom.user(::AbstractScanSeries)).
 """
 struct ChromScanSeries{
     S<:AbstractChromScan,
@@ -245,10 +245,10 @@ Return `true` if two `ChromScanSeries` objects contain the same number of scans,
 corresponding scans compare equal, and all metadata fields (`instrument`, `acquisition`,
 `user`, `sample`, `extras`) are identical.
 
-See also: [`ChromScanSeries`](@ref), [`acquisition(::AbstractScanSeries)`](@ref), 
-[`extras(::AbstractScanSeries)`](@ref), [`instrument(::AbstractScanSeries)`](@ref), 
-[`sample(::AbstractScanSeries)`](@ref), [`scans(::AbstractScanSeries)`](@ref),
-[`user(::AbstractScanSeries)`](@ref).
+See also: [`ChromScanSeries`](@ref), [`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), 
+[`extras`](@ref JuChrom.extras(::AbstractScanSeries)), [`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), [`scans`](@ref JuChrom.scans(::AbstractScanSeries)),
+[`user`](@ref JuChrom.user(::AbstractScanSeries)).
 """
 Base.:(==)(a::ChromScanSeries, b::ChromScanSeries) =
     scancount(a) == scancount(b) &&
