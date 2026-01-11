@@ -1,4 +1,4 @@
-# Retention Mapper
+# Retention mapping
 
 ```@docs
 applymap

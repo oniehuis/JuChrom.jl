@@ -17,6 +17,8 @@ struct ShortChromScan <: AbstractChromScan{Nothing, Nothing}
     attrs::NamedTuple
 end
 
+Base.show(io::IO, ::Type{ShortChromScan}) = print(io, "ShortChromScan")
+
 struct ShortMassScan <: AbstractMassScan{Nothing, Nothing, Nothing}
     retention::Float64
     retentionunit::Nothing
@@ -27,6 +29,8 @@ struct ShortMassScan <: AbstractMassScan{Nothing, Nothing, Nothing}
     level::Int
     attrs::NamedTuple
 end
+
+Base.show(io::IO, ::Type{ShortMassScan}) = print(io, "ShortMassScan")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ChromScanSeries
@@ -295,15 +299,13 @@ end
                    ShortChromScan(2.0, nothing, 20.0, nothing, NamedTuple())]
     short_css = ChromScanSeries(short_scans)
     short_css_out = sprint(show, short_css)
-    @test occursin("├─ Scan type:\n", short_css_out)
-    @test occursin("ShortChromScan", short_css_out)
+    @test occursin("├─ Scan type: ShortChromScan", short_css_out)
 
     short_mscans = [ShortMassScan(1.0, nothing, [100.0], nothing, [10.0], nothing, 1, NamedTuple()),
                     ShortMassScan(2.0, nothing, [101.0], nothing, [12.0], nothing, 1, NamedTuple())]
     short_mss = MassScanSeries(short_mscans)
     short_mss_out = sprint(show, short_mss)
-    @test occursin("├─ Scan type:\n", short_mss_out)
-    @test occursin("ShortMassScan", short_mss_out)
+    @test occursin("├─ Scan type: ShortMassScan", short_mss_out)
 end
 
 end # module

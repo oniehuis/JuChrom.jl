@@ -1,4 +1,4 @@
-# Convert
+# Format conversion
 
 ```@docs
 JuChrom.mzchrom

@@ -52,12 +52,16 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/MassHunterMS.md",
                     "man/ShimadzuMS.md",
                 ],
-                "man/convert.md",
-                "man/transform.md",
-                "man/retention_mapper.md",
-                "man/quadvar_model.md",
-                "man/baseline.md",
-                "man/alignment.md"
+                "Data processing" => Any[
+                    "Alignment" => "man/alignment.md",
+                    "Baseline" => "man/baseline.md",
+                    "Binning and Gridding" => "man/binning_gridding.md",
+                    "Format conversion" => "man/convert.md",
+                    "Retention mapping" => "man/retention_mapper.md",
+                    "Transformation" => "man/transformation.md",
+                    "Trimming and Filtering" => "man/transform.md",
+                    "Variance modeling" => "man/quadvar_model.md",
+                ]
 			    ],
             "Internals" => Any[
                 "internals/transform.md",

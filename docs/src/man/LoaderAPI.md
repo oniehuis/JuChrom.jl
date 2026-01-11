@@ -44,8 +44,6 @@ mss = load(spec)
 
 ## Loader pages
 
-Each loader has its own page with the relevant docstrings.
-
 - [Agilent FID](AgilentFID.md)
 - [Agilent ChemStation MS](ChemStationMS.md)
 - [Agilent MassHunter MS](MassHunterMS.md)

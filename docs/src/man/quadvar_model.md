@@ -1,4 +1,4 @@
-# Quadratic Variance Model
+# Variance modeling
 
 ```@docs
 fitquadvarmodel
