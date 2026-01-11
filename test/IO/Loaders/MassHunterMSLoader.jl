@@ -17,7 +17,8 @@ using JuChrom.MassHunterMSLoader
 import JuChrom.MassHunterMSLoader: MassHunterMSOptions, MassHunterMSLoaderSpec, 
     MassHunterMSv1, MSScanBinV1, MSPeakBinV1, magicnumber, mspeakdata, msscandata, 
     readfile, read_scan_data_ms, read_scan_data_tic, MSScanDataV1, scandatum_attrs,
-    MSSCAN_ATTR_FIELDS, MSSCAN_ATTR_FIELDS_TIC, MSSCAN_ATTR_EXCLUDES, MSSCAN_ATTR_EXCLUDES_TIC
+    MSSCAN_ATTR_FIELDS, MSSCAN_ATTR_FIELDS_TIC, MSSCAN_ATTR_EXCLUDES, MSSCAN_ATTR_EXCLUDES_TIC,
+    _msscandata_attr_fields
 
 # ── Helper functions and constants for unit tests ────────────────────────────
 
@@ -230,6 +231,9 @@ end
 end
 
 @testset "MSSCAN_ATTR_FIELDS constants" begin
+    fields, fields_tic = _msscandata_attr_fields()
+    @test fields == MSSCAN_ATTR_FIELDS
+    @test fields_tic == MSSCAN_ATTR_FIELDS_TIC
     @test all(name -> name ∉ MSSCAN_ATTR_EXCLUDES, MSSCAN_ATTR_FIELDS)
     @test all(name -> name ∉ MSSCAN_ATTR_EXCLUDES_TIC, MSSCAN_ATTR_FIELDS_TIC)
     @test :TIC ∉ MSSCAN_ATTR_FIELDS_TIC

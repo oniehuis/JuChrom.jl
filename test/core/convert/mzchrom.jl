@@ -103,6 +103,10 @@ end
 
     # incompatible unit for tol should throw
     @test_throws ArgumentError mzchrom(seriesU, 101.2u"Th"; tol=1e-3u"s")
+    @test_throws ArgumentError mzchrom(seriesU, 101.2u"s")
+
+    @test_throws MethodError JuChrom.resolve_mz_index([1.0u"Th"], 1.0, 1.0u"Th";
+        mzunit="bad", warning=false)
 
     # metadata propagation
     css_meta = mzchrom(seriesA)
@@ -120,6 +124,14 @@ end
     cssI = mzchrom(seriesI, 100.0)
     @test intensityunit(cssI) == u"pA"
     @test intensities(cssI) == [10.0, 20.0]u"pA"
+
+    logger_empty = TestLogger()
+    with_logger(logger_empty) do
+        @test JuChrom.resolve_mz_index(Float64[], 101.0, 1e-3; warning=true) == 0
+    end
+    @test any(l -> l.level == Logging.Warn &&
+                occursin("m/z grid is empty", string(l.message)),
+            logger_empty.logs)
 end
 
 @testset "mzchrom(msm) — TIC/XIC, by=:mz|:index, tol, dedup, warnings, metadata" begin
@@ -167,6 +179,9 @@ end
     css_idx_scalar = mzchrom(msmA, 2; by=:index, warning=false)  # 1-based
     @test intensities(css_idx_scalar) == intensities(css_mz_scalar)
 
+    @test_throws ArgumentError mzchrom(msmA, 2.5; by=:index, warning=false)
+    @test_throws ArgumentError mzchrom(msmA, [2.0, 3.0]; by=:index, warning=false)
+
     # Vector of indices (exact); order/duplicates/out-of-bounds are handled:
     # - duplicates should be deduped
     # - out-of-bounds resolved to 0 then filtered out
@@ -182,6 +197,8 @@ end
     # Both selections resolve to column 2 (101.2) within tol; ensure not double-counted
     css_mz_dedup = mzchrom(msmA, [101.2001, 101.2002]; by=:mz, tol=1e-2, warning=false)
     @test intensities(css_mz_dedup) == [I[1,2], I[2,2]]  # not doubled
+
+    @test_throws ArgumentError mzchrom(msmA, [101.2]; by=:foo, warning=false)
 
     # Unitful m/z grid matrix
     seriesU = _toy_series_unitful_mz()  # m/z with u"Th"

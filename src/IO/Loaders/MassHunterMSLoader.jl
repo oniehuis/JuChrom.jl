@@ -225,8 +225,14 @@ end
 const MSSCAN_FIELDNAMES = fieldnames(MSScanDataV1)
 const MSSCAN_ATTR_EXCLUDES = Set((:ScanTime, :MSLevel, :ByteCount, :PointCount))
 const MSSCAN_ATTR_EXCLUDES_TIC = union(MSSCAN_ATTR_EXCLUDES, Set((:TIC,)))
-const MSSCAN_ATTR_FIELDS = Tuple(filter(name -> name ∉ MSSCAN_ATTR_EXCLUDES, MSSCAN_FIELDNAMES))
-const MSSCAN_ATTR_FIELDS_TIC = Tuple(filter(name -> name ∉ MSSCAN_ATTR_EXCLUDES_TIC, MSSCAN_FIELDNAMES))
+
+@noinline function _msscandata_attr_fields()
+    fields = Tuple(filter(name -> name ∉ MSSCAN_ATTR_EXCLUDES, MSSCAN_FIELDNAMES))
+    fields_tic = Tuple(filter(name -> name ∉ MSSCAN_ATTR_EXCLUDES_TIC, MSSCAN_FIELDNAMES))
+    return fields, fields_tic
+end
+
+const MSSCAN_ATTR_FIELDS, MSSCAN_ATTR_FIELDS_TIC = _msscandata_attr_fields()
 
 @inline function scandatum_attrs(scandatum::MSScanDataV1; include_tic::Bool=true)
     fields = include_tic ? MSSCAN_ATTR_FIELDS : MSSCAN_ATTR_FIELDS_TIC
