@@ -41,12 +41,6 @@ struct ShimadzuMSOptions
     mode::Symbol  # :ms or :tic
 end
 
-"""
-    ShimadzuMSLoaderSpec{F}
-
-Loader specification for Shimadzu GC/MS files. Stores the file path, selected mode,
-and a format tag used by `load`.
-"""
 struct ShimadzuMSLoaderSpec{F<:ShimadzuMSFormat}
     path::String
     options::ShimadzuMSOptions
@@ -58,13 +52,12 @@ end
 """
     ShimadzuMSLoaderSpec{F}(path::String; mode::Symbol=:ms)
 
-Internal structure representing a configured load request for Shimadzu MS data.
-This type encapsulates:
-- the source path,
-- selected mode (`:ms` or `:tic`), and
-- a type tag for format versioning.
+Internal structure representing a configured load request for Shimadzu MS data. The `path`
+must be a direct path to a `.qgd` or `.ms` file, and the `mode` keyword selects full mass
+data (`:ms`) or the total ion chromatogram only (`:tic`).
 
 Normally, this is constructed indirectly via `ShimadzuMS(...)`.
+See also [`ShimadzuMS`](@ref ShimadzuMS), `load`.
 """
 function ShimadzuMSLoaderSpec{F}(path::String; mode::Symbol=:ms) where {F}
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(
@@ -75,18 +68,18 @@ end
 """
     ShimadzuMS(path::String; mode::Symbol=:ms) -> ShimadzuMSLoaderSpec
 
-Construct a loader specification for Agilent Shimadzu GC/MS data. The `path` must be
-an explicit path to the `.qgd`/`.ms` file. 
+Construct a loader specification for Shimadzu GC/MS data. The `path` must be a direct path
+to a `.qgd` or `.ms` file, and the `mode` keyword selects full mass spectral data (`:ms`) or the
+total ion chromatogram only (`:tic`). This convenience constructor currently uses the 
+`ShimadzuMSv1` reader, but it may select other reader versions automatically in future 
+releases.
 
-The keyword argument `mode` determines the type of data to load:
-- `:ms`  → full mass spectral data (default)
-- `:tic` → total ion chromatogram only
+This loader is provided by the PyCall extension and depends on the Python `olefile` module. 
+See the Shimadzu section in the documentation for installation and setup steps.
 
 Returns a `ShimadzuMSLoaderSpec` object used for deferred data loading via `load(...)`.
 
-This loader is provided by the PyCall extension and depends on the Python `olefile`
-module. See the Shimadzu section in the documentation for installation and setup
-steps.
+See also [`ShimadzuMSLoaderSpec`](@ref ShimadzuMSLoaderSpec).
 """
 function ShimadzuMS(path::String; mode::Symbol=:ms)
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(
@@ -99,14 +92,15 @@ end
 """
     load(req::ShimadzuMSLoaderSpec{ShimadzuMSv1}) -> AbstractScanSeries
 
-Loads and parses mass spectrometry data from Agilent Shimadzu (version 1) GC/MS files.
-Takes a `ShimadzuMSLoaderSpec` created via `ShimadzuMS(...)`.
+Loads and parses mass spectrometry data from Shimadzu (version 1) GC/MS files. The request 
+must be a `ShimadzuMSLoaderSpec`, typically created via `ShimadzuMS(...)`. Returns an 
+`AbstractScanSeries` subtype containing either a vector of 
+[`MassScan`](@ref JuChrom.MassScan) objects for `mode=:ms` or a vector of 
+[`ChromScan`](@ref JuChrom.ChromScan) objects for `mode=:tic`, along with parsed metadata
+(sample, user, acquisition, instrument).
 
-Returns a `AbstractScanSeries` subtype object containing either:
-- a vector of `MassScan` objects (for `mode=:ms`), or
-- a vector of `ChromScan` objects (for `mode=:tic`),
-
-along with parsed metadata (sample, user, acquisition, instrument).
+See also [`ShimadzuMS`](@ref ShimadzuMS),
+[`ShimadzuMSLoaderSpec`](@ref ShimadzuMSLoaderSpec).
 """
 function load(req::ShimadzuMSLoaderSpec{ShimadzuMSv1})
     path = req.path

@@ -50,13 +50,14 @@ end
 """
     ChemStationMSLoaderSpec{F}(path::String; mode::Symbol=:ms)
 
-Internal structure representing a configured load request for ChemStation MS data.
-This type encapsulates:
-- the source path,
-- selected mode (`:ms` or `:tic`), and
-- a type tag for format versioning.
+Internal structure representing a configured load request for ChemStation MS data. The
+`path` can be either a directory (containing `data.ms`) or a direct path to the file. The
+`mode` keyword selects full mass spectral data (`:ms`) or the total ion chromatogram only
+(`:tic`).
 
 Normally, this is constructed indirectly via `ChemStationMS(...)`.
+
+See also [`ChemStationMS`](@ref ChemStationMS).
 """
 function ChemStationMSLoaderSpec{F}(path::String; mode::Symbol=:ms) where {F}
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(
@@ -68,13 +69,15 @@ end
     ChemStationMS(path::String; mode::Symbol=:ms) -> ChemStationMSLoaderSpec
 
 Construct a loader specification for Agilent ChemStation GC/MS data. The `path` can be
-either a directory (containing `data.ms`) or a direct path to the file. 
-
-The keyword argument `mode` determines the type of data to load:
-- `:ms`  → full mass spectral data (default)
-- `:tic` → total ion chromatogram only
+either a directory (containing `data.ms`) or a direct path to the file. The `mode` keyword
+selects full mass spectral data (`:ms`) or the total ion chromatogram only (`:tic`). This
+convenience constructor currently uses the `ChemStationMSv2` reader, but it may select other 
+reader versions automatically in future releases.
 
 Returns a `ChemStationMSLoaderSpec` object used for deferred data loading via `load(...)`.
+
+See also 
+[`ChemStationMSLoaderSpec`](@ref ChemStationMSLoaderSpec).
 """
 function ChemStationMS(path::String; mode::Symbol=:ms)
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(
@@ -88,13 +91,15 @@ end
     load(req::ChemStationMSLoaderSpec{ChemStationMSv2}) -> AbstractScanSeries
 
 Loads and parses mass spectrometry data from Agilent ChemStation (version 2) GC/MS files.
-Takes a `ChemStationMSLoaderSpec` created via `ChemStationMS(...)`.
+The request must be a `ChemStationMSLoaderSpec`, typically created via `ChemStationMS(...)`.
+Returns an `AbstractScanSeries` subtype containing either a vector of
+[`MassScan`](@ref JuChrom.MassScan) objects for `mode=:ms` or a vector of
+[`ChromScan`](@ref JuChrom.ChromScan) objects for `mode=:tic`, along with parsed metadata
+(sample, user, acquisition, instrument).
 
-Returns a `AbstractScanSeries` subtype object containing either:
-- a vector of `MassScan` objects (for `mode=:ms`), or
-- a vector of `ChromScan` objects (for `mode=:tic`),
-
-along with parsed metadata (sample, user, acquisition, instrument).
+See also 
+[`ChemStationMS`](@ref ChemStationMS),
+[`ChemStationMSLoaderSpec`](@ref ChemStationMSLoaderSpec).
 """
 function load(req::ChemStationMSLoaderSpec{ChemStationMSv2})
     path = req.path

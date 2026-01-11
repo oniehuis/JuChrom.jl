@@ -71,7 +71,7 @@ to an appropriate type can remove misleading numerical artifacts and reduce memo
 
 Normally, this is constructed indirectly via `MassHunterMS(...)`.
 
-See also [`MassHunterMS`](@ref JuChrom.MassHunterMSLoader.MassHunterMS), `load`.
+See also [`MassHunterMS`](@ref MassHunterMS).
 """
 function MassHunterMSLoaderSpec{F}(
     path::String;
@@ -117,11 +117,10 @@ precision. Some MassHunter files store values in a wider floating-point type tha
 effective precision (for example, Float64 storage of Float32-precision data). Converting
 to an appropriate type can remove misleading numerical artifacts and reduce memory use.
 
-Returns a [`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec)
-object used for deferred data loading via `load(...)`.
+Returns a [`MassHunterMSLoaderSpec`](@ref MassHunterMSLoaderSpec) object used for deferred 
+data loading via `load(...)`.
 
-See also [`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec),
-`load`.
+See also [`MassHunterMSLoaderSpec`](@ref MassHunterMSLoaderSpec).
 """
 function MassHunterMS(
     path::String;
@@ -152,8 +151,8 @@ Returns an `AbstractScanSeries` subtype containing either a vector of
 (sample, user, acquisition, instrument).
 
 See also
-[`MassHunterMS`](@ref JuChrom.MassHunterMSLoader.MassHunterMS),
-[`MassHunterMSLoaderSpec`](@ref JuChrom.MassHunterMSLoader.MassHunterMSLoaderSpec).
+[`MassHunterMS`](@ref MassHunterMS),
+[`MassHunterMSLoaderSpec`](@ref MassHunterMSLoaderSpec).
 """
 function load(req::MassHunterMSLoaderSpec{T}) where {T<:MassHunterMSv1}
     dfolder = req.path

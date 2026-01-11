@@ -99,7 +99,7 @@ pyimport_conda("olefile", "olefile")
 You can verify availability with `isdefined(JuChrom, :ShimadzuMSLoader)`.
 
 ```@docs
-JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec
-JuChrom.ShimadzuMSLoader.ShimadzuMS
-JuChrom.ShimadzuMSLoader.load(::JuChrom.ShimadzuMSLoader.ShimadzuMSLoaderSpec{JuChrom.ShimadzuMSLoader.ShimadzuMSv1})
+Main.PyCallExtension.ShimadzuMSLoader.ShimadzuMSLoaderSpec
+Main.PyCallExtension.ShimadzuMSLoader.ShimadzuMS
+Main.PyCallExtension.ShimadzuMSLoader.load(::Main.PyCallExtension.ShimadzuMSLoader.ShimadzuMSLoaderSpec{Main.PyCallExtension.ShimadzuMSLoader.ShimadzuMSv1})
 ```

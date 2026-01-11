@@ -56,9 +56,7 @@ The `unit` keyword sets the signal units (`nothing` for unitless or `u"pA"` for 
 
 Normally, this is constructed indirectly via `AgilentFID(...)`.
 
-See also 
-[`AgilentFID`](@ref JuChrom.AgilentFIDLoader.AgilentFID), 
-`load`.
+See also [`AgilentFID`](@ref AgilentFID).
 """
 function AgilentFIDLoaderSpec{F}(path::String; unit::U=nothing) where {F, U<:Union{Nothing, Unitful.Units}}
     unit ∈ SUPPORTED_UNITS || throw(ArgumentError(
@@ -77,9 +75,7 @@ future releases.
 
 Returns a `AgilentFIDLoaderSpec` object used for deferred data loading via `load(...)`.
 
-See also 
-[`AgilentFIDLoaderSpec`](@ref JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec), 
-`load`.
+See also [`AgilentFIDLoaderSpec`](@ref AgilentFIDLoaderSpec).
 """
 function AgilentFID(path::String; unit::Union{Nothing, Unitful.Units}=nothing)
     unit ∈ SUPPORTED_UNITS || throw(ArgumentError(
@@ -99,8 +95,8 @@ an `AgilentFIDLoaderSpec`, typically created via `AgilentFID(...)`. Returns a
 acquisition, instrument).
 
 See also 
-[`AgilentFID`](@ref JuChrom.AgilentFIDLoader.AgilentFID),
-[`AgilentFIDLoaderSpec`](@ref JuChrom.AgilentFIDLoader.AgilentFIDLoaderSpec).
+[`AgilentFID`](@ref AgilentFID),
+[`AgilentFIDLoaderSpec`](@ref AgilentFIDLoaderSpec).
 """
 function load(req::AgilentFIDLoaderSpec{AgilentFIDv179})
     path = req.path
