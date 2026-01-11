@@ -234,10 +234,19 @@ const MSSCAN_ATTR_FIELDS_TIC = Tuple(filter(name -> name ∉ MSSCAN_ATTR_EXCLUDE
     NamedTuple{fields}(values)
 end
 
-for type in (MSScanDataV1, )
-    expr = Expr(:call, type, map(ft -> Expr(:call, :ltoh, Expr(:call, :read, :io, ft)), 
-        fieldtypes(type))...)
-    @eval Base.read(io::IO, ::Type{$type}) = $expr
+function _define_msscandata_read()
+    for type in (MSScanDataV1,)
+        expr = Expr(:call, type, map(ft -> Expr(:call, :ltoh, Expr(:call, :read, :io, ft)),
+            fieldtypes(type))...)
+        @eval Base.read(io::IO, ::Type{$type}) = $expr
+    end
+    nothing
+end
+
+_define_msscandata_read()
+
+function __init__()
+    _define_msscandata_read()
 end
 
 function msscandata(::MSScanBinV1, file::AbstractString)

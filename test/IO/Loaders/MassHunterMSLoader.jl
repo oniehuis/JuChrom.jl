@@ -16,7 +16,8 @@ using JuChrom.InputOutput
 using JuChrom.MassHunterMSLoader
 import JuChrom.MassHunterMSLoader: MassHunterMSOptions, MassHunterMSLoaderSpec, 
     MassHunterMSv1, MSScanBinV1, MSPeakBinV1, magicnumber, mspeakdata, msscandata, 
-    readfile, read_scan_data_ms, read_scan_data_tic, MSScanDataV1, scandatum_attrs
+    readfile, read_scan_data_ms, read_scan_data_tic, MSScanDataV1, scandatum_attrs,
+    MSSCAN_ATTR_FIELDS, MSSCAN_ATTR_FIELDS_TIC, MSSCAN_ATTR_EXCLUDES, MSSCAN_ATTR_EXCLUDES_TIC
 
 # ── Helper functions and constants for unit tests ────────────────────────────
 
@@ -226,6 +227,13 @@ end
     @test haskey(attrs_all, :TIC)
     attrs_no_tic = scandatum_attrs(datum; include_tic=false)
     @test !haskey(attrs_no_tic, :TIC)
+end
+
+@testset "MSSCAN_ATTR_FIELDS constants" begin
+    @test all(name -> name ∉ MSSCAN_ATTR_EXCLUDES, MSSCAN_ATTR_FIELDS)
+    @test all(name -> name ∉ MSSCAN_ATTR_EXCLUDES_TIC, MSSCAN_ATTR_FIELDS_TIC)
+    @test :TIC ∉ MSSCAN_ATTR_FIELDS_TIC
+    @test :TIC ∈ MSSCAN_ATTR_FIELDS
 end
 
 @testset "read_scan_data_tic" begin
