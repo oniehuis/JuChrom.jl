@@ -2,8 +2,7 @@
 
 JuChrom is a Julia package for loading, storing, and analyzing chromatographic data,
 with an emphasis on gas chromatography-mass spectrometry (GC-MS). The core API is pure
-Julia, while some vendor-specific loaders (for example, the Shimadzu MS loader) rely on
-optional extensions that use PyCall and the Python `olefile` module.
+Julia; some vendor-specific loaders are provided via optional extensions.
 
 ## Installation
 
@@ -26,8 +25,7 @@ julia> using JuChrom
   and m/z values), scan series, and matrices, including metadata. Retention times,
   intensities, and m/z values can carry `Unitful` units.
 - Loaders for proprietary vendor formats, including Agilent MassHunter GC-MS,
-  Agilent ChemStation MS, Agilent FID, and Shimadzu GC-MS data (the Shimadzu loader is
-  available when the PyCall extension is loaded).
+  Agilent ChemStation MS, Agilent FID, and Shimadzu GC-MS data.
 - Conversions between representations, including extracted-ion and total ion
   chromatograms from MS scan series or matrices.
 - Transformations such as retention trimming, retention binning, and m/z binning within

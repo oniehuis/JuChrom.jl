@@ -85,31 +85,8 @@ The keyword argument `mode` determines the type of data to load:
 Returns a `ShimadzuMSLoaderSpec` object used for deferred data loading via `load(...)`.
 
 This loader is provided by the PyCall extension and depends on the Python `olefile`
-module. To enable it in your session:
-
-```julia
-using JuChrom
-using PyCall # triggers the extension
-```
-
-To install PyCall (and select a Python if needed):
-
-```julia
-import Pkg
-Pkg.add("PyCall")
-# Optional: point PyCall to a specific Python before rebuilding
-# ENV["PYTHON"] = "/path/to/python"
-Pkg.build("PyCall")
-```
-
-To install the Python dependency:
-
-```julia
-using PyCall
-pyimport_conda("olefile", "olefile")
-```
-
-You can verify availability with `isdefined(JuChrom, :ShimadzuMSLoader)`.
+module. See the Shimadzu section in the documentation for installation and setup
+steps.
 """
 function ShimadzuMS(path::String; mode::Symbol=:ms)
     mode ∈ SUPPORTED_MODES || throw(ArgumentError(

@@ -45,7 +45,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/ScanSeries.md",
                     "man/ScanMatrices.md",
                 ],
-                "man/loaders.md",
+                "man/Loaders.md",
                 "man/convert.md",
                 "man/transform.md",
                 "man/retention_mapper.md",

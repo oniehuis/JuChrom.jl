@@ -1,9 +1,7 @@
 module InputOutput
 
 using Logging
-import FileIO: load
 
-export as, @as
 export DEFAULT_VERBOSITY
 export FileCorruptionError
 export FileDecodingError
@@ -13,9 +11,6 @@ export MissingFileError
 export MissingFolderError
 export set_verbosity
 export UnexpectedEOFError
-
-# export load
-# export LoaderSpec
 
 # Default global verbosity setting for all loaders using this base
 const DEFAULT_VERBOSITY = Ref{LogLevel}(Logging.Info)
@@ -31,53 +26,6 @@ const DEFAULT_VERBOSITY = Ref{LogLevel}(Logging.Info)
 function set_verbosity(level::LogLevel)
     DEFAULT_VERBOSITY[] = level
     global_logger(SimpleLogger(stderr, level))
-end
-
-# """
-#     LoaderSpec{T}
-
-# A wrapper struct to specify the loader format type T and associated file path.
-
-# Used to disambiguate between loaders when calling load.
-# """
-# struct LoaderSpec{T}
-#     path::String
-# end
-
-
-# """
-#     load(req::LoaderSpec)
-
-# Generic interface to load data from the given LoaderSpec.
-
-# Specific loaders should extend this method for their types.
-# """
-# function load(req::LoaderSpec)
-#     throw(MethodError(load, (req,)))
-# end
-
-
-# """
-#     as(::Type{T}, path::String) where T
-
-# Construct a LoaderSpec instance specifying the loader format type T and path.
-
-# Example:
-#     req = as(AgilentFID, "/path/to/data")
-#     data = load(req)
-# """
-as(::Type{T}, path::String) where T = LoaderSpec{T}(path)
-
-# """
-#     @as T "path"
-
-# Macro version of as for creating a LoaderSpec instance.
-
-# Example:
-#     data = load(@as AgilentFID "/path/to/data")
-# """
-macro as(T, str)
-    return :(LoaderSpec{$T}($str))
 end
 
 # """

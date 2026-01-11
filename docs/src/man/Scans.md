@@ -3,49 +3,49 @@
 ## AbstractScan
 
 ```@docs
-AbstractScan
-attrs(::AbstractScan)
-intensityunit(::AbstractScan)
-rawretention(::AbstractScan{Nothing})
-retention(::AbstractScan{Nothing})
-retentionunit(::AbstractScan)
+JuChrom.AbstractScan
+JuChrom.attrs(::AbstractScan)
+JuChrom.intensityunit(::AbstractScan)
+JuChrom.rawretention(::AbstractScan{Nothing})
+JuChrom.retention(::AbstractScan{Nothing})
+JuChrom.retentionunit(::AbstractScan)
 ```
 
 ## AbstractChromScan
 
 ```@docs
-AbstractChromScan
-intensity(::AbstractChromScan{<:Any, Nothing})
-rawintensity(::AbstractChromScan{<:Any, Nothing})
+JuChrom.AbstractChromScan
+JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})
+JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})
 ```
 
-## ChromScan (concrete type)
+## ChromScan
 
 ```@docs
-ChromScan
-ChromScan(::Unitful.AbstractQuantity, ::Unitful.AbstractQuantity; attrs::NamedTuple=NamedTuple())
-ChromScan(::Real, ::Union{Unitful.Units, Nothing}, ::Real, ::Union{Unitful.Units, Nothing}; attrs::NamedTuple=NamedTuple())
-Base.:(==)(::ChromScan, ::ChromScan)
+JuChrom.ChromScan
+JuChrom.ChromScan(::Unitful.AbstractQuantity, ::Unitful.AbstractQuantity; attrs::NamedTuple=NamedTuple())
+JuChrom.ChromScan(::Real, ::Union{Unitful.Units, Nothing}, ::Real, ::Union{Unitful.Units, Nothing}; attrs::NamedTuple=NamedTuple())
+Base.:(==)(::JuChrom.ChromScan, ::JuChrom.ChromScan)
 ```
 
 ## AbstractMassScan
 
 ```@docs
-AbstractMassScan
-intensities(::AbstractMassScan{<:Any, <:Any, Nothing})
-level(::AbstractMassScan)
-mzcount(::AbstractMassScan)
-mzunit(::AbstractMassScan)
-mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})
-rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})
-rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})
+JuChrom.AbstractMassScan
+JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})
+JuChrom.level(::AbstractMassScan)
+JuChrom.mzcount(::AbstractMassScan)
+JuChrom.mzunit(::AbstractMassScan)
+JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})
+JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})
+JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})
 ```
 
-## MassScan (concrete type)
+## MassScan
 
 ```@docs
-MassScan
-MassScan(::Unitful.AbstractQuantity, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}; level::Integer=1, attrs::NamedTuple=NamedTuple())
-MassScan(::Real, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}; level::Integer=1, attrs::NamedTuple=NamedTuple())
+JuChrom.MassScan
+JuChrom.MassScan(::Unitful.AbstractQuantity, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}; level::Integer=1, attrs::NamedTuple=NamedTuple())
+JuChrom.MassScan(::Real, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}, ::AbstractVector{<:Real}, ::Union{Unitful.Units, Nothing}; level::Integer=1, attrs::NamedTuple=NamedTuple())
 Base.:(==)(::MassScan, ::MassScan)
 ```

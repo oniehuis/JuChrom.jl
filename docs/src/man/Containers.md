@@ -162,6 +162,9 @@ Fields and accessors:
 Convenience:
 
 - [`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)),
+  [`intensity`](@ref JuChrom.intensities(::AbstractChromScanSeries, ::Integer)),
+  [`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)),
+  [`rawintensity`](@ref JuChrom.rawintensities(::AbstractChromScanSeries, ::Integer)),
   [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)),
   [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries))
 
@@ -180,8 +183,10 @@ Fields and accessors:
 
 Convenience:
 
-- [`levels`](@ref JuChrom.levels(::AbstractMassScanSeries)),
+- [`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)),
+  [`levels`](@ref JuChrom.levels(::AbstractMassScanSeries)),
   [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanSeries)),
+  [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)),
   [`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)),
   [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
   [`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer))
@@ -245,7 +250,7 @@ Convenience:
   [`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})),
   [`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix))
 
-Use [`mscanmatrix(mss)`](@ref JuChrom.mscanmatrix(::JuChrom.MassScanSeries, ::JuChrom.AbstractMatrixFormat)) 
+Use [`mscanmatrix`](@ref JuChrom.mscanmatrix(::JuChrom.MassScanSeries, ::JuChrom.AbstractMatrixFormat)) 
 to convert a [`MassScanSeries`](@ref JuChrom.MassScanSeries) to a 
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix):
 
@@ -254,4 +259,4 @@ msm = mscanmatrix(mss)
 ```
 
 See the dedicated container pages for the full API reference:
-[`Scans`](Scans.md), [`ScanSeries`](ScanSeries.md), and [`ScanMatrices`](ScanMatrices.md).
+[`Scans`](Scans.md), [`Scan Series`](ScanSeries.md), and [`Scan Matrices`](ScanMatrices.md).

@@ -15,19 +15,6 @@ using JuChrom.InputOutput: FileDecodingError, FileFormatError, FileCorruptionErr
 # Unit tests
 # ──────────────────────────────────────────────────────────────────────────────────────────
 
-# ── as/@as ────────────────────────────────────────────────────────────────────────────────
-
-@testset "as/@as" begin
-    # Method exists for type/path signature
-    @test hasmethod(as, Tuple{DataType, String})
-
-    # Macro expands to a LoaderSpec call without evaluating
-    ex = @macroexpand @as AgilentFID "path/to/other"
-    @test ex isa Expr
-    @test ex.head == :call
-    @test occursin("LoaderSpec", string(ex))
-end
-
 # ── FileIOError ───────────────────────────────────────────────────────────────────────────
 
 @testset "FileIOError" begin

@@ -451,6 +451,23 @@ function MassScanSeries(
         scans, instrument, acquisition, user, sample, converted_extras)
 end
 
+"""
+    Base.:(==)(a::MassScanSeries, b::MassScanSeries)
+
+Return `true` if two `MassScanSeries` objects contain the same number of scans, all
+corresponding scans compare equal, and all metadata fields (`instrument`, `acquisition`,
+`user`, `sample`, `extras`) are identical.
+
+See also 
+[`MassScanSeries`](@ref JuChrom.MassScanSeries), 
+[`acquisition`](@ref JuChrom.acquisition(::AbstractScanSeries)), 
+[`extras`](@ref JuChrom.extras(::AbstractScanSeries)), 
+[`instrument`](@ref JuChrom.instrument(::AbstractScanSeries)), 
+[`sample`](@ref JuChrom.sample(::AbstractScanSeries)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)), 
+[`user`](@ref JuChrom.user(::AbstractScanSeries)).
+"""
 Base.:(==)(a::MassScanSeries, b::MassScanSeries) =
     scancount(a) == scancount(b) &&
     all(x == y for (x, y) in zip(scans(a), scans(b))) &&

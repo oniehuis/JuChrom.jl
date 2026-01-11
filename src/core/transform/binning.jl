@@ -477,7 +477,7 @@ A new `MassScanSeries` with binned m/z values and aggregated intensities.
 # Throws
 - `AssertionError` if the input series is empty.
 
-See also [`MassScanSeries`](@ref), [`integer`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref), 
+See also [`MassScanSeries`](@ref JuChrom.MassScanSeries), [`integer`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref), 
 [`intensities`](@ref), [`intensityunit`](@ref), [`scans`](@ref), [`scan`](@ref).
 
 # Examples

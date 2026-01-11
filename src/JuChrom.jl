@@ -151,13 +151,8 @@ include("IO/InputOutput.jl")
 using .InputOutput
 
 export FileFormatError
-export LoaderSpec
-
-export as
 export load
 export set_verbosity
-
-export @as
 
 include("IO/Loaders/AgilentFIDLoader.jl")
 include("IO/Loaders/ChemStationMSLoader.jl")

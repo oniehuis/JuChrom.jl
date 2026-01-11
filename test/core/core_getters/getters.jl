@@ -243,6 +243,32 @@ end
     @test_throws MethodError intensities(nothing)
 end
 
+@testset "rawintensity(series::AbstractChromScanSeries, scanindex::Integer)" begin
+    # Unitless series returns raw numeric and errors if a unit is requested
+    @test rawintensity(CSS, 1) == INT
+    @test rawintensity(CSS, 2) == INT2
+    @test_throws ArgumentError rawintensity(CSS, 1; unit=u"pA")
+
+    # Unitful series strips units and handles conversion
+    css_unitful = ChromScanSeries([CHROMSCAN_UNITFUL_INT, ChromScan(2.0s, 60.0u"pA")])
+    @test rawintensity(css_unitful, 1) == 50.0
+    @test rawintensity(css_unitful, 2; unit=u"fA") == 60_000.0
+
+    # Bounds errors
+    @test_throws BoundsError rawintensity(CSS, 0)
+    @test_throws BoundsError rawintensity(CSS, 3)
+
+    # Error on invalid `rawintensity` types
+    @test_throws MethodError rawintensity("invalid type", 1)
+    @test_throws MethodError rawintensity([1, 2, 3], 1)
+    @test_throws MethodError rawintensity(1.0, 1)
+    @test_throws MethodError rawintensity(nothing, 1)
+    @test_throws MethodError rawintensity(CSS, "invalid type")
+    @test_throws MethodError rawintensity(CSS, [1, 2, 3])
+    @test_throws MethodError rawintensity(CSS, 1.0)
+    @test_throws MethodError rawintensity(CSS, nothing)
+end
+
 @testset "intensities(scanmatrix::AbstractScanMatrix)" begin
     # Test getter: intensities
     @test intensities(SM) == IM

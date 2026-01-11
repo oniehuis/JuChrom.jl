@@ -104,10 +104,11 @@ See also
 [`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
 [`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
 [`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
 [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
-[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
-[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)).
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScanSeries, ::Integer)), 
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)). 
 
 # Examples
 ```jldoctest
@@ -196,6 +197,7 @@ See also
 [`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
 [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScanSeries, ::Integer)),
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)), 
 [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
@@ -222,6 +224,55 @@ julia> intensity(css, 2; unit=u"pA")
     intensity(scan(series, scanindex); unit=unit)
 end
 
+# ── rawintensity ─────────────────────────────────────────────────────────────────────────
+
+"""
+    rawintensity(series::AbstractChromScanSeries, scanindex::Integer;
+                 unit::Union{Nothing, Unitful.Units}=nothing) -> Real
+
+Return the numeric (unitless) intensity value for the chromatographic scan at the
+specified index within the series.
+
+If the scan stores an `intensityunit`, the value is optionally converted to `unit` and
+then stripped. If the scan is unitless, the raw numeric value is returned unless a unit
+conversion is requested, which throws `ArgumentError`. Throws `BoundsError` if
+`scanindex` is outside the valid range.
+
+`series` is a subtype of `AbstractChromScanSeries`, `scanindex` selects the scan, and
+`unit` is an optional target unit for conversion before stripping.
+
+See also
+[`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries),
+[`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries),
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries),
+[`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)),
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)),
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
+
+# Examples
+```jldoctest
+julia> cs1 = ChromScan(1.0u"s", 1.5u"nA");
+
+julia> cs2 = ChromScan(2.0u"s", 2.5u"nA");
+
+julia> css = ChromScanSeries([cs1, cs2]; acquisition=(mode="TIC",));
+
+julia> rawintensity(css, 1)
+1.5
+
+julia> rawintensity(css, 2; unit=u"pA")
+2500.0
+```
+"""
+@inline function rawintensity(
+    series::AbstractChromScanSeries,
+    scanindex::Integer;
+    unit::Union{Nothing, Unitful.Units}=nothing)
+
+    rawintensity(scan(series, scanindex); unit=unit)
+end
+
 # ── intensityunit ─────────────────────────────────────────────────────────────────────────
 
 """
@@ -245,9 +296,8 @@ See also
 [`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)), 
 [`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractChromScanSeries)),
-[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)).
-
-Where is rawintensity(series::AbstractChromScanSeries)? 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)), 
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScanSeries, ::Integer)).
 
 # Examples
 ```julia
@@ -438,6 +488,7 @@ See also
 [`intensities`](@ref JuChrom.intensities(::AbstractChromScanSeries)), 
 [`intensity`](@ref JuChrom.intensity(::AbstractChromScanSeries, ::Integer)), 
 [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScanSeries)), 
+[`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScanSeries, ::Integer)), 
 [`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)).
 
 # Examples

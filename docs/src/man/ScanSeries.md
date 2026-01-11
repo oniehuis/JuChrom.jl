@@ -1,57 +1,59 @@
-# ScanSeries
+# Scan Series
 
 ## AbstractScanSeries
 
 ```@docs
-AbstractScanSeries
-acquisition(::AbstractScanSeries)
-extras(::AbstractScanSeries)
-instrument(::AbstractScanSeries)
-intensityunit(::AbstractScanSeries)
-rawretentions(::AbstractScanSeries)
-retentions(::AbstractScanSeries)
-retentionunit(::AbstractScanSeries)
-sample(::AbstractScanSeries)
-scan(::AbstractScanSeries, ::Integer)
-scancount(::AbstractScanSeries)
-scans(::AbstractScanSeries)
-user(::AbstractScanSeries) 
+JuChrom.AbstractScanSeries
+JuChrom.acquisition(::AbstractScanSeries)
+JuChrom.extras(::AbstractScanSeries)
+JuChrom.instrument(::AbstractScanSeries)
+JuChrom.intensityunit(::AbstractScanSeries)
+JuChrom.rawretentions(::AbstractScanSeries)
+JuChrom.retentions(::AbstractScanSeries)
+JuChrom.retentionunit(::AbstractScanSeries)
+JuChrom.sample(::AbstractScanSeries)
+JuChrom.scan(::AbstractScanSeries, ::Integer)
+JuChrom.scancount(::AbstractScanSeries)
+JuChrom.scans(::AbstractScanSeries)
+JuChrom.user(::AbstractScanSeries) 
 ```
 
 ## AbstractChromScanSeries
 
 ```@docs
-AbstractChromScanSeries
-intensities(::AbstractChromScanSeries)
-intensity(::AbstractChromScanSeries, ::Integer)
-rawintensities(::AbstractChromScanSeries)
+JuChrom.AbstractChromScanSeries
+JuChrom.intensities(::AbstractChromScanSeries)
+JuChrom.intensity(::AbstractChromScanSeries, ::Integer)
+JuChrom.rawintensity(::AbstractChromScanSeries, ::Integer)
+JuChrom.rawintensities(::AbstractChromScanSeries)
 ```
 
-## ChromScanSeries (concrete type)
+## ChromScanSeries
 
 ```@docs
-ChromScanSeries
-ChromScanSeries(::AbstractVector{<:AbstractChromScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
+JuChrom.ChromScanSeries
+JuChrom.ChromScanSeries(::AbstractVector{<:AbstractChromScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
+Base.:(==)(::ChromScanSeries, ::ChromScanSeries)
 ```
 
 ## AbstractMassScanSeries
 
 ```@docs
-AbstractMassScanSeries
-intensities(::AbstractMassScanSeries, ::Integer)
-levels(::AbstractMassScanSeries)
-mzunit(::AbstractMassScanSeries)
-mzvalues(::AbstractMassScanSeries, ::Integer)
-rawintensities(::AbstractMassScanSeries, ::Integer)
-uniquemzvalues(::AbstractMassScanSeries, ::Integer)
+JuChrom.AbstractMassScanSeries
+JuChrom.intensities(::AbstractMassScanSeries, ::Integer)
+JuChrom.levels(::AbstractMassScanSeries)
+JuChrom.mzunit(::AbstractMassScanSeries)
+JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)
+JuChrom.rawintensities(::AbstractMassScanSeries, ::Integer)
+JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)
 ```
 
-## MassScanSeries (concrete type)
+## MassScanSeries
 
 ```@docs
-MassScanSeries
-MassScanSeries(::AbstractVector{<:AbstractMassScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
-mscanmatrix
-mzchrom(::MassScanSeries)
-Base.:(==)(::ChromScanSeries, ::ChromScanSeries)
+JuChrom.MassScanSeries
+JuChrom.MassScanSeries(::AbstractVector{<:AbstractMassScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
+JuChrom.mscanmatrix
+JuChrom.mzchrom(::MassScanSeries)
+Base.:(==)(::MassScanSeries, ::MassScanSeries)
 ```
