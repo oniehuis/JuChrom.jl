@@ -1,4 +1,4 @@
-# Scan Matrices
+# Scan matrices
 
 ## AbstractMassScanMatrix
 

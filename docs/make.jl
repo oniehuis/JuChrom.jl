@@ -53,11 +53,14 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/ShimadzuMS.md",
                 ],
                 "Data processing" => Any[
+                    "Retention mapping" => Any[
+                        "Mapping rational" => "man/mapping_rational.md",
+                        "Mapping tools" => "man/mapping_tools.md",
+                    ],
                     "Alignment" => "man/alignment.md",
                     "Baseline" => "man/baseline.md",
                     "Binning and Gridding" => "man/binning_gridding.md",
                     "Format conversion" => "man/convert.md",
-                    "Retention mapping" => "man/retention_mapper.md",
                     "Transformation" => "man/transformation.md",
                     "Trimming and Filtering" => "man/transform.md",
                     "Variance modeling" => "man/quadvar_model.md",

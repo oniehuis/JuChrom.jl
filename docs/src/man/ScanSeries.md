@@ -1,4 +1,4 @@
-# Scan Series
+# Scan series
 
 ## AbstractScanSeries
 
