@@ -70,10 +70,67 @@ nothing # hide
 
 ![](retention_mapper.svg)
 
+While the inferred mapping is fully satisfactory, you may want to tune the smoothing 
+strength if the anchor points themselves are noisy or not fully trustworthy. Raising `λ_min` 
+prevents overfitting (less wiggle, more stability), while raising `λ_max` can help recover 
+monotonicity when a fit would otherwise fail. Here we increase `λ_min` from its default 
+(`1e-20`) to `1e-7` and examine the effect on the derivative plots.
+
+```@example 1
+# Fit mapping function with λ_min set to 1e-7
+mapper_λ_min_set = fitmap(retention_times, kovats_indices, λ_min=1e-7)
+fig = plot(mapper_λ_min_set; reverse=true, size=(900, 600))
+save("retention_mapper_λ_min_set.svg", fig)
+nothing # hide
+```
+
+![](retention_mapper_λ_min_set.svg)
+
+In the derivative plots the mapping is noticeably smoother, but it no longer passes exactly 
+through the anchor points, as shown by the residuals. Whether the suppressed wiggles reflect 
+real structure that should be modeled or are noise that should be smoothed away is a 
+judgment call for the analyst.
+
+Let's continue with the mapper inferred using the default `λ_min` and use it to compute
+retention indices for a few retention times, including extrapolation beyond the domain.
+
+```@example 1
+ri = applymap(mapper, 41.5u"minute")  # single value
+```
+
+```@example 1
+rts = [10, 29.3, 35.0]u"minute"
+ri = applymap.(mapper, rts)  # dot form broadcasts over the vector
+```
+
+Note that the first retention time lies below the spline's lower domain boundary
+(27.972 minute). In that case the function extrapolates linearly using the slope at the
+nearest boundary. Set `warn=true` to emit a warning when extrapolation occurs (default
+`false`).
+
+```@example 1
+ri = applymap.(mapper, rts, warn=true)  # dot form broadcasts over the vector
+```
+
+```@example 1
+ris = [1853.2, 3137.3, 3501.0]
+rts = invmap.(mapper, ris, warn=true)  # dot form broadcasts over the vector
+```
+
+To transform intensities with the Jacobian, use the derivative of the mapping. If
+`ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area you divide the
+intensity by this slope at the same time point.
+
+```@example 1
+scantimes = [1802.5, 1803.0, 1803.5]u"s"
+intensities = [1000, 4000, 3500]
+
+ris = applymap.(mapper, scantimes, warn=true)
+jacobian = derivmap.(mapper, scantimes)
+ints_transformed = intensities ./ jacobian
+```
+
 ## References
 
-- Kováts E (1958): Gas-Chromatographische Charakterisierung organischer Verbindungen. Teil 
-1: Retentionsindices aliphatischer Halogenide, Alkohole, Aldehyde und Ketone. Helvetica 
-Chimica Acta 41: 1915-1932.
-- Skoog DA, Holler FJ, Crouch SR (2007): Principles of Instrumental Analysis. 6th ed. Thomson 
-Brooks/Cole.
+- Kováts E (1958): Gas-Chromatographische Charakterisierung organischer Verbindungen. Teil 1: Retentionsindices aliphatischer Halogenide,Alkohole, Aldehyde und Ketone. Helvetica Chimica Acta 41: 1915-1932.
+- Skoog DA, Holler FJ, Crouch SR (2007): Principles of Instrumental Analysis. 6th ed. Thomson Brooks/Cole.
