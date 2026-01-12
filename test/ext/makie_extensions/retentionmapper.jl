@@ -126,8 +126,9 @@ end
     ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     @test ext.format_inverse_derivative_unit_string(u"s", nothing) == " [s]"
-    @test ext.format_inverse_derivative_unit_string(nothing, u"s") == " [s⁻¹]"
-    @test ext.format_inverse_derivative_unit_string(u"minute", u"s") == " [minute × s⁻¹]"
+    norm_unit = s -> replace(s, "⁻¹" => "^-1")
+    @test norm_unit(ext.format_inverse_derivative_unit_string(nothing, u"s")) == " [s^-1]"
+    @test norm_unit(ext.format_inverse_derivative_unit_string(u"minute", u"s")) == " [minute × s^-1]"
 end
 
 @testset "RetentionMapper derivative unit string" begin
@@ -139,7 +140,8 @@ end
     ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     @test ext.format_derivative_unit_string(nothing, u"s") == " [s]"
-    @test ext.format_derivative_unit_string(u"s", nothing) == " [s⁻¹]"
+    norm_unit = s -> replace(s, "⁻¹" => "^-1")
+    @test norm_unit(ext.format_derivative_unit_string(u"s", nothing)) == " [s^-1]"
 end
 
 @testset "RetentionMapper validation" begin
