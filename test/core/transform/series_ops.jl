@@ -54,6 +54,22 @@ end
     @test JuChrom.intensities(t) == [2.0, 3.0, 4.0]
 end
 
+@testset "retentiontrim(series; start/stop unitless)" begin
+    css = _make_css([
+        _make_cs(0.5, 1.0),
+        _make_cs(1.0, 2.0),
+        _make_cs(1.5, 3.0),
+        _make_cs(2.0, 4.0),
+        _make_cs(2.5, 5.0),
+    ])
+
+    t = retentiontrim(css; start=1.0, stop=2.0)
+    @test scancount(t) == 3
+    @test retentions(t) == [1.0, 1.5, 2.0]
+    @test JuChrom.intensities(t) == [2.0, 3.0, 4.0]
+    @test scancount(css) == 5
+end
+
 @testset "retentiontrim!(series; start/stop with units)" begin
     css = _make_css([
         _make_cs(0.5u"s", 1.0),
@@ -66,6 +82,68 @@ end
     retentiontrim!(css; start=1.0u"s", stop=2.0u"s")
     @test scancount(css) == 3
     @test retentions(css) == [1.0, 1.5, 2.0]u"s"
+end
+
+@testset "retentiontrim(msmatrix; start/stop with units)" begin
+    ret = [0.5, 1.0, 1.5, 2.0, 2.5]u"s"
+    mz = [100.0, 200.0]
+    ints = [1.0 2.0;
+            3.0 4.0;
+            5.0 6.0;
+            7.0 8.0;
+            9.0 10.0]
+    msm = MassScanMatrix(
+        ret,
+        mz,
+        ints;
+        level=2,
+        instrument=(model="X",),
+        acquisition=(mode="scan",),
+        user=(name="tester",),
+        sample=(id="S1",),
+        extras=Dict("note" => "ok"),
+    )
+
+    trimmed = retentiontrim(msm; start=1.0u"s", stop=2.0u"s")
+    @test retentions(trimmed) == [1.0, 1.5, 2.0]u"s"
+    @test rawintensities(trimmed) == ints[2:4, :]
+    @test retentionunit(trimmed) == u"s"
+    @test mzvalues(trimmed) == mz
+    @test mzunit(trimmed) === nothing
+    @test intensityunit(trimmed) === nothing
+    @test level(trimmed) == 2
+    @test extras(trimmed) == Dict("note" => "ok")
+    @test retentions(msm) == ret
+end
+
+@testset "retentiontrim(msmatrix; start/stop unitless)" begin
+    ret = [0.5, 1.0, 1.5, 2.0, 2.5]
+    mz = [100.0, 200.0]
+    ints = [1.0 2.0;
+            3.0 4.0;
+            5.0 6.0;
+            7.0 8.0;
+            9.0 10.0]
+    msm = MassScanMatrix(
+        ret,
+        mz,
+        ints;
+        level=1,
+        extras=Dict("note" => "ok"),
+    )
+
+    trimmed = retentiontrim(msm; start=1.0, stop=2.0)
+    @test retentions(trimmed) == [1.0, 1.5, 2.0]
+    @test rawintensities(trimmed) == ints[2:4, :]
+    @test retentionunit(trimmed) === nothing
+    @test mzvalues(trimmed) == mz
+    @test mzunit(trimmed) === nothing
+    @test intensityunit(trimmed) === nothing
+    @test level(trimmed) == 1
+    @test extras(trimmed) == Dict("note" => "ok")
+    @test retentions(msm) == ret
+    @test_throws ArgumentError retentiontrim(msm; start=2.0, stop=1.0)
+    @test_throws ArgumentError retentiontrim(msm; start=10.0, stop=11.0)
 end
 
 

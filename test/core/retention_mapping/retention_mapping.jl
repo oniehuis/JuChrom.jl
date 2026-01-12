@@ -304,6 +304,8 @@ end
     dAB_s = derivinvmap(rm, 350.0u"Th"; rA_unit=u"s", rB_unit=u"Th")
     @test Unitful.unit(dAB_s) == u"s"/u"Th"
     @test ustrip(dAB_s) ≈ ustrip(u"s"/u"Th", dAB)  # same physical value in requested units
+    @test_throws ArgumentError derivinvmap(rm, 350.0u"Th"; rA_unit=nothing)
+    @test_throws ArgumentError derivinvmap(rm, 350.0u"Th"; rB_unit=nothing)
 
     # Extrapolation branches (silence @info logs)
     with_logger(SimpleLogger(devnull, Logging.Warn)) do
@@ -321,6 +323,8 @@ end
     @test_throws ArgumentError derivinvmap(rm0, 350.0u"Th")
     d0 = derivinvmap(rm0, 350.0)
     @test (d0 isa Real) && isfinite(d0) && d0 > 0
+    @test_throws ArgumentError derivinvmap(rm0, 350.0; rA_unit=u"s")
+    @test_throws ArgumentError derivinvmap(rm0, 350.0; rB_unit=u"Th")
 
     # Mixed-unit mappers to exercise rA_unit/rB_unit conversion branches
     rA1 = [0.0, 0.5, 1.0]

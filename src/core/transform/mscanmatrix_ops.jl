@@ -25,15 +25,14 @@ function subtract(msmatrix_A::MassScanMatrix{<:Any, <:Nothing}, msmatrix_B::Mass
         throw(ArgumentError("MassScanMatrices must have matching extras."))
 
     resulting_intensities = intensities(msmatrix_A) .- intensities(msmatrix_B)
-
-    resulting_intensities[resulting_rawintensities .< floor] .= floor
+    resulting_intensities[resulting_intensities .< floor] .= floor
 
     MassScanMatrix(
             copy(rawretentions(msmatrix_A)),
             retentionunit(msmatrix_A),
             copy(rawmzvalues(msmatrix_A)),
             mzunit(msmatrix_A),
-            resulting_rawintensities,
+            resulting_intensities,
             intensityunit(msmatrix_A),
             level=level(msmatrix_A),
             instrument=deepcopy(instrument(msmatrix_A)),

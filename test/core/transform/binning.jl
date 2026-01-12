@@ -118,6 +118,11 @@ _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
 
         vars_unitful = fill(0.1, 2) .* (u"pA"^2)
         @test_throws ArgumentError binretentions(rets, ints, [0.0, 1.0, 2.0], vars_unitful)
+
+        rets_u = rets .* u"s"
+        ints_u2 = ints .* u"pA"
+        vars_unitless = [0.1, 0.2]
+        @test_throws ArgumentError binretentions(rets_u, ints_u2, [0.0, 1.0, 2.0] .* u"s", vars_unitless)
     end
 end
 
@@ -148,6 +153,24 @@ end
     msm_unitless = MassScanMatrix([0.0, 0.5], [100.0], reshape([1.0, 2.0], 2, 1))
     @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], 
         QuadVarParams(0.1, 0.0, 0.0), 0.0; zero_threshold=1e-6u"pA"^2)
+    msm_unitless_ok = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
+        reshape([1.0, 2.0, 3.0], 3, 1))
+    msm_binned_unitless, vars_unitless = binretentions(
+        msm_unitless_ok,
+        [0.0, 0.5, 1.0],
+        QuadVarParams(0.1, 0.0, 0.0),
+        0.0;
+        jacobian_scale=_ -> 2.0,
+    )
+    @test intensityunit(msm_binned_unitless) === nothing
+    @test all(!JuChrom.isunitful, vars_unitless[:, 1])
+
+    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+        jacobian_scale=[1.0, 2.0])
+    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+        jacobian_scale=[1.0, 0.0, 2.0])
+    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+        jacobian_scale=t -> (t == 0.5u"s" ? 0.0 : 1.0))
 
     @test_throws Unitful.DimensionError QuadVarParams(0.1u"pA^2", 0.0, 0.0)
 

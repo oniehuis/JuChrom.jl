@@ -311,7 +311,7 @@ function _retentiontrim(msmatrix::MassScanMatrix, start, stop)
 
     # Create and return a new MassScanMatrix with the filtered scans 
     MassScanMatrix(
-        retentions(msmatrix)[indices],
+        rawretentions(msmatrix)[indices],
         retentionunit(msmatrix),
         mzvalues(msmatrix),
         mzunit(msmatrix),
