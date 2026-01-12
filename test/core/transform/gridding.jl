@@ -98,12 +98,38 @@ using JuChrom
         @test all(isapprox.(edges_vec, expected_edges; atol=1e-10u"s"))
         @test isapprox(width_vec, 0.5u"s"; atol=1e-10u"s")
 
+        edges_dict_u, width_dict_u = densestgrid(
+            Dict(:a => msmu1, :b => msmu2);
+            minwidth=0.1u"s",
+            maxwidth=2.0u"s",
+        )
+        @test width_dict_u ≥ 0.1u"s"
+        @test width_dict_u ≤ 2.0u"s"
+        @test edges_dict_u[1] ≈ 0.0u"s"
+        @test edges_dict_u[end] ≥ 1.0u"s"
+        @test issorted(edges_dict_u)
+
         @test_throws ArgumentError densestgrid(Dict(:a => msmu1, :b => msmu2); minwidth=0.1)
         @test_throws ArgumentError densestgrid(Dict(:a => msmu1, :b => msmu2); maxwidth=0.1)
         @test_throws ArgumentError densestgrid(Dict(:a => msmu1, :b => msmu2); tolerance=1e-8)
 
         msmu_bad = MassScanMatrix([0.0, 0.5, 1.0] .* u"Th", mzs2, ints_u1)
         @test_throws ArgumentError densestgrid(Dict(:a => msmu1, :b => msmu_bad))
+
+        edges_vec_unitless, width_vec_unitless = densestgrid(
+            [msm1, msm2];
+            minwidth=0.1,
+            maxwidth=2.0,
+            tolerance=1e-9,
+        )
+        @test width_vec_unitless ≥ 0.1
+        @test width_vec_unitless ≤ 2.0
+        @test edges_vec_unitless[1] ≈ 0.0
+
+        @test_throws ArgumentError densestgrid([msm1, msm2]; minwidth=0.1u"s")
+        @test_throws ArgumentError densestgrid([msm1, msm2]; maxwidth=0.1u"s")
+        @test_throws ArgumentError densestgrid([msm1, msm2]; tolerance=1e-8u"s")
+        @test_throws ArgumentError densestgrid([msm1, msmu1])
     end
 end
 

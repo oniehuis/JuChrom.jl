@@ -236,10 +236,6 @@ function densestgrid(
             if mid == w_low || mid == w_high
                 break
             end
-            if width_immediately_invalid(mid)
-                w_low = mid
-                continue
-            end
             ok, edges = edges_for_width(mid; enriched=enriched)
             if ok
                 w_high = mid
@@ -253,11 +249,17 @@ function densestgrid(
 
     # Exponentially inflate the width until a viable anchor is found.
     function coarse_stage(lb, wmax, inflation)
-        w_fail = lb
-        w = lb
         edges_found = nothing
         w_succ = nothing
-        while w ≤ wmax
+        widths = Iterators.takewhile(
+            x -> x ≤ wmax,
+            Iterators.flatten((
+                (lb,),
+                Iterators.accumulate(*, Iterators.repeated(inflation); init=lb),
+            )),
+        )
+        w_fail = lb
+        for w in widths
             if !width_immediately_invalid(w)
                 ok, edges = edges_for_width(w; enriched=false)
                 if ok
@@ -267,7 +269,6 @@ function densestgrid(
                 end
             end
             w_fail = w
-            w *= inflation
         end
         w_succ === nothing && throw(
             ArgumentError("Could not find occupancy width up to maxwidth"))
@@ -472,7 +473,7 @@ function densestgrid(
                   throw(ArgumentError("tolerance must be AbstractQuantity or nothing for unitful data"))
 
         # Delegate to the unit-aware vector overload with minimally adjusted keywords.
-        densestgrid(
+        return densestgrid(
             retention_vectors;
             minwidth=minwidth,
             maxwidth=maxwidth,
