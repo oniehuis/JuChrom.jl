@@ -88,6 +88,16 @@ using Unitful
     # Case 8: Input validation (wrong shapes should throw)
     @test_throws AssertionError boundedlsβ₂(rand(3,3), rand(3), (0.0, 0.0))  # needs 2 columns
     @test_throws DimensionMismatch boundedlsβ₂(rand(3,2), rand(2), (0.0, 0.0))  # b length mismatch
+
+    # Case 9: No feasible active-set pattern forces fallback to clamped A\b
+    A_fallback = I(2)
+    b_fallback = [-1.0, -2.0]
+    β_fallback = boundedlsβ₂(Matrix(A_fallback), b_fallback, (0.0, 0.0); feas_tol=-1e-6)
+    @test β_fallback == (0.0, 0.0)
+
+    # Case 10: Force no feasible active-set with -Inf tolerance
+    β_fallback_inf = boundedlsβ₂(Matrix(A_fallback), b_fallback, (0.0, 0.0); feas_tol=-Inf)
+    @test β_fallback_inf == (0.0, 0.0)
 end
 
 # ── broadcastable(::QuadVarFit) ──────────────────────────────────────────────
@@ -187,6 +197,15 @@ end
 
     # Size mismatch should error (length(w) ≠ size(DTD,1))
     @test_throws DimensionMismatch cholridge(ones(n-1), DTD, λ)
+end
+
+# ── _strip_mz_value ──────────────────────────────────────────────────────────
+
+@testset "_strip_mz_value" begin
+    @test JuChrom._strip_mz_value(100.0, nothing) === 100.0
+    @test JuChrom._strip_mz_value(100.0, u"Th") === 100.0
+    @test JuChrom._strip_mz_value(100.0u"Th", u"Th") == 100.0
+    @test_throws ArgumentError JuChrom._strip_mz_value(100.0u"Th", nothing)
 end
 
 # ── clampvarparams ───────────────────────────────────────────────────────────
@@ -554,6 +573,21 @@ end
     @test isfinite(csmall) && csmall > 0
     @test all(isfinite, (psmall.σ₀², psmall.ϕ, psmall.κ))
 
+    # Empty variance summary returns default params
+    s_empty = [1.0, 2.0, 3.0]
+    r_empty = zeros(0, 1)
+    pempty, cempty = fitquadvar([s_empty], [r_empty])
+    expected_c = max(quantile(s_empty, 0.97), 1e-12)
+    @test pempty == QuadVarParams(1.0, 0.0, 0.0)
+    @test isapprox(cempty, expected_c; rtol=0, atol=1e-12)
+
+    s_empty2 = [0.5, 1.5]
+    r_empty2 = zeros(0, 2)
+    pempty2, cempty2 = fitquadvar([s_empty2], [r_empty2])
+    expected_c2 = max(quantile(s_empty2, 0.97), 1e-12)
+    @test pempty2 == QuadVarParams(1.0, 0.0, 0.0)
+    @test isapprox(cempty2, expected_c2; rtol=0, atol=1e-12)
+
     # The fitted curve should be nonnegative on the observed grid
     @test all(varpred(sall, phat; varfloor=0.0) .≥ 0)
 
@@ -777,6 +811,15 @@ end
     @test length(qidx.params) == 3
     @test size(qidx.observed[2][1]) == (T2, 3)
 
+    # show_progress logs first-selected m/z info
+    @test_logs (:info, r"m/z") begin
+        fitquadvarmodel(series_batches; mzsel=[1], show_progress=true)
+    end
+
+    @test_logs (:info, r"m/z") (:info, r"m/z") begin
+        fitquadvarmodel(series_batches; mzsel=[1, 2], show_progress=true, progress_every=2)
+    end
+
     # Observed really matches the selected columns from the raw data
     # Compare batch 1, replicate 2, column 2 vs 4 vs 6
     M12 = rawintensities(mscanmatrix(series_batches[1][2]))
@@ -789,6 +832,9 @@ end
         show_progress=false)
     @test qval.mz_idx == [1, 5]
     @test qval.mzvalues == [mz_ref[1], mz_ref[5]]
+    @test_logs (:info, r"m/z") begin
+        fitquadvarmodel(series_batches; mzsel=[mz_ref[1]], show_progress=true)
+    end
 
     # Unitful m/z grids are preserved
     mz_ref_unit = mz_ref .* u"Th"
@@ -801,6 +847,15 @@ end
     @test qunit.mz_ref == mz_ref
     @test all(x -> !JuChrom.isunitful(x), qunit.mz_ref)
     @test qunit.mzvalues == mz_ref
+
+    @test_logs (:info, r"m/z") begin
+        fitquadvarmodel(series_batches_unit; mzsel=[mz_ref_unit[1]], show_progress=true)
+    end
+
+    @test_logs (:info, r"m/z") (:info, r"m/z") begin
+        fitquadvarmodel(series_batches_unit; mzsel=[mz_ref_unit[1], mz_ref_unit[3]],
+            show_progress=true, progress_every=2)
+    end
 
     qunit_sel = fitquadvarmodel(series_batches_unit; mzsel=[mz_ref_unit[2], mz_ref_unit[4]], show_progress=false)
     @test qunit_sel.mzunit == u"Th"
@@ -847,6 +902,12 @@ end
 
     # Error: mzsel with values not in grid
     @test_throws ArgumentError fitquadvarmodel(series_batches; mzsel=[999.0], 
+        show_progress=false)
+
+    # Error: unsupported mzsel type
+    @test_throws ArgumentError fitquadvarmodel(series_batches; mzsel="bad", 
+        show_progress=false)
+    @test_throws ArgumentError fitquadvarmodel(series_batches; mzsel=Set([1, 2]), 
         show_progress=false)
 end
 
