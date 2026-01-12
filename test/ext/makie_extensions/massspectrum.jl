@@ -22,7 +22,7 @@ CairoMakie.activate!()  # headless backend for tests
 @testset "massspectrum argument names" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
     @test ext !== nothing
-    @test Makie.argument_names(ext.MassSpectrum, 2) == (:mzvalues, :intensities)
+    @test ext.argument_names(ext.MassSpectrum) == (:mzvalues, :intensities)
 end
 
 @testset "massspectrum Makie plot (unitless)" begin
