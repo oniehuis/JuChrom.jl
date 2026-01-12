@@ -103,14 +103,13 @@ rts = [10, 29.3, 35.0]u"minute"
 ri = applymap.(mapper, rts)  # dot form broadcasts over the vector
 ```
 
-Note that the first retention time lies below the spline's lower domain boundary
-(27.972 minute). In that case the function extrapolates linearly using the slope at the
-nearest boundary. Set `warn=true` to emit a warning when extrapolation occurs (default
-`false`).
+!!! warning "Domain limits and extrapolation"
+    Mappings are defined over the anchor domain. Values outside that domain are linearly 
+    extrapolated using the slope at the nearest boundary. Use `warn=true` on `applymap`/
+    `invmap`/`derivmap`/`derivinvmap` or the `raw*` variants to surface extrapolation during
+    analysis.
 
-```@example 1
-ri = applymap.(mapper, rts, warn=true)  # dot form broadcasts over the vector
-```
+To invert the mapping (e.g., from Kováts to retention time), use `invmap`.
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
@@ -118,7 +117,7 @@ rts = invmap.(mapper, ris, warn=true)  # dot form broadcasts over the vector
 ```
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
-`ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area you divide the
+`ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area, you divide the
 intensity by this slope at the same time point.
 
 ```@example 1
@@ -126,9 +125,41 @@ scantimes = [1802.5, 1803.0, 1803.5]u"s"
 intensities = [1000, 4000, 3500]
 
 ris = applymap.(mapper, scantimes, warn=true)
-jacobian = derivmap.(mapper, scantimes)
-ints_transformed = intensities ./ jacobian
+dridt = derivmap.(mapper, scantimes)
 ```
+
+Note that you can supply mapping inputs in any compatible time unit; values are converted
+automatically.
+
+The derivative tells you how much the Kováts retention index changes per unit time. To
+transform the intensities associated with each scan time, divide by the Jacobian (i.e.,
+multiply by its inverse).
+
+```@example 1
+ints_transformed = intensities ./ dridt
+```
+
+The transformed intensities are now expressed per unit of retention index rather than per
+unit time, reflecting the change of variables.
+
+## Mapping tools at a glance
+
+| Function | Use case |
+| --- | --- |
+| `applymap` | Map retention time → index |
+| `invmap` | Map index → retention time |
+| `derivmap` | Jacobian `d(ri)/dt` for intensity scaling |
+| `derivinvmap` | Inverse mapping derivative |
+| `rawapplymap` | Unitless variant of `applymap` |
+| `rawinvmap` | Unitless variant of `invmap` |
+| `rawderivmap` | Unitless variant of `derivmap` |
+| `rawderivinvmap` | Unitless variant of `derivinvmap` |
+| `retentions_A`, `retentions_B` | Anchor vectors used to fit the mapper |
+| `rawretentions_A`, `rawretentions_B` | Unitless anchor vectors |
+| `retentionunit_A`, `retentionunit_B` | Stored units for the anchor domains |
+| `extras` | Metadata attached to the mapper |
+
+For full API details, see [Mapping tools](mapping_tools.md).
 
 ## References
 
