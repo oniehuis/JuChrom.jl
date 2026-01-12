@@ -16,6 +16,7 @@ using SparseArrays
 using Statistics
 using Unitful
 using Unitful: AbstractQuantity
+using JuChrom: tune_lambda_for_monotonic_spline
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Unit tests
@@ -1330,6 +1331,32 @@ end
         )
     end
 
+    make_rm_units(rB_shift) = begin
+        rA = [0.0, 0.5, 1.0]
+        rB = [10.0, 20.0, 30.0] .+ rB_shift
+        rA_min, rA_max = 0.0, 1.0
+        rB_min, rB_max = minimum(rB), maximum(rB)
+        rA_norm_min, rA_norm_max = 0.0, 1.0
+        rB_pred_min, rB_pred_max = rB_min, rB_max
+        rB_pred_norm_min, rB_pred_norm_max = 0.0, 1.0
+
+        order = BSplineOrder(4)
+        knots = collect(LinRange(0.0, 1.0, 8))
+        B = BSplineBasis(order, knots)
+        coefs = zeros(length(B))
+        spline = Spline(B, coefs)
+
+        JuChrom.RetentionMapper(
+            rA, u"minute",
+            rA_min, rA_max, rA_norm_min, rA_norm_max,
+            rB, u"Th",
+            rB_min, rB_max, rB_pred_min, rB_pred_max,
+            rB_pred_norm_min, rB_pred_norm_max,
+            knots, coefs, spline,
+            Dict{String, Any}("tag" => "rm$(rB_shift)")
+        )
+    end
+
     mappers = [make_rm(0.0), make_rm(5.0)]
 
     s = sprint(io -> show(io, MIME"text/plain"(), mappers))
@@ -1343,6 +1370,59 @@ end
     @test occursin("avg residual:", s)
     # Last entry uses terminal tree prefix
     @test occursin("└─ [2] ", s)
+
+    mappers_u = [make_rm_units(0.0), make_rm_units(5.0)]
+    su = sprint(io -> show(io, MIME"text/plain"(), mappers_u))
+    @test occursin("minute→Th", su)
+end
+
+# ── tune_lambda_for_monotonic_spline ────────────────────────────────────────
+
+@testset "tune_lambda_for_monotonic_spline" begin
+    order = BSplineOrder(4)
+    knots = collect(LinRange(0.0, 1.0, 8))
+    B = BSplineBasis(order, knots)
+    rA_norm_min, rA_norm_max = 0.0, 1.0
+
+    function fit_spline_with_penalty(::Real)
+        coefs = zeros(length(B))
+        return coefs, JuChrom.MOI.OPTIMAL
+    end
+
+    @test_throws ArgumentError tune_lambda_for_monotonic_spline(
+        fit_spline_with_penalty,
+        B,
+        rA_norm_min,
+        rA_norm_max,
+        1e-3,
+        1e-1,
+        1e-6,
+        5,
+        10,
+    )
+
+    order2 = BSplineOrder(2)
+    knots2 = collect(0.0:0.25:1.0)
+    B2 = BSplineBasis(order2, knots2)
+
+    function fit_spline_with_penalty_monotonic(::Real)
+        coefs = collect(0.0:(length(B2)-1))
+        return coefs, JuChrom.MOI.OPTIMAL
+    end
+
+    @test_logs (:warn, r"Reached maximum iterations") begin
+        tune_lambda_for_monotonic_spline(
+            fit_spline_with_penalty_monotonic,
+            B2,
+            rA_norm_min,
+            rA_norm_max,
+            1e-6,
+            1.0,
+            1e-12,
+            1,
+            10,
+        )
+    end
 end
 
 # ── Base.show(::OptimizationError) ───────────────────────────────────────────
@@ -1418,6 +1498,42 @@ end
     @test occursin("Metadata:", s)
     @test occursin("source", s)
     @test occursin("note", s)
+
+    # Unitful rA should include units in residual calculation path
+    rm_u = JuChrom.RetentionMapper(
+        rA, u"minute",
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, u"Th",
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}(),
+    )
+    su = sprint(io -> show(io, rm_u))
+    @test occursin("unitless→unitless", su) == false
+    @test occursin("minute", su)
+
+    rm_complex = JuChrom.RetentionMapper(
+        rA, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, nothing,
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}(
+            "nested" => Dict("a" => 1, "b" => 2),
+            "long" => repeat("x", 80),
+        ),
+    )
+    scomplex = sprint(io -> show(io, rm_complex))
+    @test occursin("nested", scomplex)
+    @test occursin("a =", scomplex)
+    @test occursin("long =", scomplex)
+    @test occursin("\n", scomplex)
 end
 
 end  # module
