@@ -205,6 +205,81 @@ end
     vars = @. 1e-4 + 1e-4 * (1 + sin(0.5 * x))^2
     b̂v = airpls(x, y; variances=vars, λ=5e5, max_iter=200)
     @test length(b̂v) == n && all(isfinite, b̂v)
+
+    # Force non-convergence warning path
+    @test_logs (:warn, r"airPLS did not converge") begin
+        airpls(x, y; λ=1e6, max_iter=1, no_improvement_limit=5)
+    end
+end
+
+# ── airpls(::MassScanMatrix; ...) ────────────────────────────────────────────
+
+@testset "airpls(::MassScanMatrix; ...)" begin
+    Random.seed!(42)
+    n_scans = 80
+    n_mzs = 4
+    ret = collect(range(0.0, 4.0; length=n_scans))
+    mzs = [100.0, 150.0, 200.0, 250.0]
+
+    baseline = @. 0.3 + 0.01 * ret^2
+    ints = zeros(n_scans, n_mzs)
+    for j in 1:n_mzs
+        center = 0.6 + 0.8 * j
+        width = 0.12 + 0.02 * j
+        amp = 0.8 + 0.3 * j
+        @. ints[:, j] = baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
+    end
+    ints .+= 0.01 .* randn(n_scans, n_mzs)
+    ints .= max.(ints, 0.0)
+
+    msm = MassScanMatrix(ret, mzs, ints; instrument=(id=1,), extras=Dict("k" => 1))
+    bmsm = airpls(msm; λ=1e5, max_iter=200, no_improvement_limit=15)
+
+    @test bmsm isa MassScanMatrix
+    @test JuChrom.rawretentions(bmsm) == ret
+    @test JuChrom.rawmzvalues(bmsm) == mzs
+    @test size(JuChrom.rawintensities(bmsm)) == size(ints)
+    @test all(isfinite, JuChrom.rawintensities(bmsm))
+    @test all(JuChrom.rawintensities(bmsm) .≥ 0)
+    @test bmsm.instrument == msm.instrument
+    @test bmsm.extras == msm.extras
+    @test JuChrom.rawretentions(bmsm) !== JuChrom.rawretentions(msm)
+    @test JuChrom.rawmzvalues(bmsm) !== JuChrom.rawmzvalues(msm)
+end
+
+# ── airpls(::MassScanMatrix, ::AbstractMatrix; ...) ──────────────────────────
+
+@testset "airpls(::MassScanMatrix, ::AbstractMatrix; ...)" begin
+    Random.seed!(24)
+    n_scans = 60
+    n_mzs = 3
+    ret = collect(range(0.0, 3.0; length=n_scans))
+    mzs = [110.0, 160.0, 210.0]
+    baseline = @. 0.4 + 0.02 * ret
+    ints = zeros(n_scans, n_mzs)
+    for j in 1:n_mzs
+        center = 0.5 + 0.9 * j
+        width = 0.1 + 0.015 * j
+        amp = 0.6 + 0.2 * j
+        @. ints[:, j] = baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
+    end
+    ints .+= 0.01 .* randn(n_scans, n_mzs)
+    ints .= max.(ints, 0.0)
+    vars = fill(0.05, n_scans, n_mzs)
+
+    msm = MassScanMatrix(ret, mzs, ints; instrument=(id=2,), extras=Dict("source" => "sim"))
+    bmsm = airpls(msm, vars; λ=8e4, max_iter=150, no_improvement_limit=12)
+
+    @test bmsm isa MassScanMatrix
+    @test JuChrom.rawretentions(bmsm) == ret
+    @test JuChrom.rawmzvalues(bmsm) == mzs
+    @test size(JuChrom.rawintensities(bmsm)) == size(ints)
+    @test all(isfinite, JuChrom.rawintensities(bmsm))
+    @test all(JuChrom.rawintensities(bmsm) .≥ 0)
+    @test bmsm.instrument == msm.instrument
+    @test bmsm.extras == msm.extras
+
+    @test_throws ArgumentError airpls(msm, vars[1:end-1, :])
 end
 
 end # module

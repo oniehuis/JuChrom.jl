@@ -1915,6 +1915,7 @@ end
     @test Unitful.dimension(res_unit) == Unitful.dimension(1.0u"pA^2")
     p_units_floor = QuadVarParams(-1.0u"pA^2", 0.0u"pA", 0.0)
     @test varpred(0.0u"pA", p_units_floor; varfloor=1e-9) == 1e-9u"pA^2"
+    @test_throws Unitful.DimensionError varpred(y_unit, p_units; varfloor=1.0u"s")
 end
 
 # ── varpred ──────────────────────────────────────────────────────────────────
