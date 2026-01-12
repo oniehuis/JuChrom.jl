@@ -86,6 +86,14 @@ end
     @test length(axes_off) == 1
     @test length([p for p in axes_off[1].scene.plots if p isa Makie.Lines]) >= 1
 
+    fig_range = Makie.plot(qvf; mzi=1, batch=1, mode=:align, scan_range=2:10, figsize=(300, 200), legend=false)
+    ax_range = only([c for c in fig_range.content if c isa Makie.Axis])
+    limits = ax_range.finallimits[]
+    xmin = limits.origin[1]
+    xmax = limits.origin[1] + limits.widths[1]
+    @test isapprox(xmin, 2.0; atol=1e-12)
+    @test isapprox(xmax, 3.0; atol=1e-12)
+
     # unitful m/z title renders unit
     mzunit = u"Th"
     qvf_unit = QuadVarFit(

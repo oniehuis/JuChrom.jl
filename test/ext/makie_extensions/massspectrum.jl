@@ -19,6 +19,12 @@ end
 
 CairoMakie.activate!()  # headless backend for tests
 
+@testset "massspectrum argument names" begin
+    ext = Base.get_extension(JuChrom, :MakieExtension)
+    @test ext !== nothing
+    @test Makie.argument_names(ext.MassSpectrum, 2) == (:mzvalues, :intensities)
+end
+
 @testset "massspectrum Makie plot (unitless)" begin
     mz = [100.0, 200.0, 300.0]
     intensities = [10.0, 5.0, 8.0]

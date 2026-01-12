@@ -179,9 +179,8 @@ function densestgrid(
     function compute_bins(w, off)
         first_edge = global_min - off
         n_bins = ceil(Int, (global_max - first_edge)/w)
-        if first_edge + n_bins * w < global_max - 2 * eps(global_max)
-            n_bins += 1
-        end
+        needs_extra = first_edge + n_bins * w < global_max - 2 * eps(global_max)
+        n_bins += needs_extra ? 1 : 0
         first_edge, n_bins
     end
 
