@@ -113,6 +113,10 @@ end
         mzunit="bad", warning=false)
     @test_throws MethodError JuChrom.resolve_mz_index([1.0u"Th"], 1.0, 1.0u"Th";
         mzunit=missing, warning=false)
+    @test_throws MethodError JuChrom.resolve_mz_index([1.0, 2.0], 1.0u"Th", 1.0;
+        mzunit="bad", warning=false)
+    @test_throws MethodError JuChrom.resolve_mz_index([1.0, 2.0], 1.0, 1.0u"Th";
+        mzunit="bad", warning=false)
 
     # metadata propagation
     css_meta = mzchrom(seriesA)

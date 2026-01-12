@@ -1977,6 +1977,8 @@ end
     p_units_floor = QuadVarParams(-1.0u"pA^2", 0.0u"pA", 0.0)
     @test varpred(0.0u"pA", p_units_floor; varfloor=1e-9) == 1e-9u"pA^2"
     @test_throws Unitful.DimensionError varpred(y_unit, p_units; varfloor=1.0u"s")
+    @test JuChrom.coerce_like_reference(1.0u"pA^2", 2.0u"pA^2", "varfloor") ==
+        1.0u"pA^2"
 end
 
 # ── varpred ──────────────────────────────────────────────────────────────────
