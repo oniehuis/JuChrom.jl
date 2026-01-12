@@ -113,7 +113,7 @@ To invert the mapping (e.g., from Kováts to retention time), use `invmap`.
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
-rts = invmap.(mapper, ris, warn=true)  # dot form broadcasts over the vector
+rts = invmap.(mapper, ris)  # dot form broadcasts over the vector
 ```
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
@@ -124,7 +124,6 @@ intensity by this slope at the same time point.
 scantimes = [1802.5, 1803.0, 1803.5]u"s"
 intensities = [1000, 4000, 3500]
 
-ris = applymap.(mapper, scantimes, warn=true)
 dridt = derivmap.(mapper, scantimes)
 ```
 
@@ -145,7 +144,7 @@ unit time, reflecting the change of variables.
 ## Mapping tools at a glance
 
 | Function | Use case |
-| --- | --- |
+| :--- | :--- |
 | `applymap` | Map retention time → index |
 | `invmap` | Map index → retention time |
 | `derivmap` | Jacobian `d(ri)/dt` for intensity scaling |
