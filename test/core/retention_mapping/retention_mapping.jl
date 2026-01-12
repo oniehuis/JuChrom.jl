@@ -61,14 +61,28 @@ using JuChrom: tune_lambda_for_monotonic_spline
     # Unitless mapper: Real input required; output is raw number = rB_min
     rm0 = make_mapper(unitful=false)
     @test applymap(rm0, 0.25) ≈ rm0.rB_min  # constant spline → rB_min
-    @test applymap(rm0, -1.0) ≈ rm0.rB_min  # extrapolation still returns rB_min
+    logger_left = TestLogger()
+    with_logger(logger_left) do
+        @test applymap(rm0, -1.0; warn=true, domain_boundary_threshold=0.0) ≈ rm0.rB_min
+    end
+    @test any(l -> l.level == Logging.Info &&
+                occursin("below the spline domain boundary", string(l.message)),
+            logger_left.logs)
     @test_throws ArgumentError applymap(rm0, 0.25u"minute")  # unitless mapper rejects AbstractQuantity
 
     # Unitful mapper: AbstractQuantity input required; output carries rB_unit (or requested unit)
     rmU = make_mapper(unitful=true)
     y1 = applymap(rmU, 0.5u"minute")  # accepted; time unit OK
     @test y1 ≈ rmU.rB_min * u"Th"  # constant spline ⇒ rB_min with B-unit
-    y2 = applymap(rmU, 30.0u"s")  # convertible time units; ustrip handles conversion
+    y2 = zero(rmU.rB_min * u"Th")
+    logger_right = TestLogger()
+    with_logger(logger_right) do
+        y2 = applymap(rmU, 90.0u"s"; warn=true, domain_boundary_threshold=0.0)
+        @test y2 ≈ rmU.rB_min * u"Th"
+    end
+    @test any(l -> l.level == Logging.Info &&
+                occursin("above the spline domain boundary", string(l.message)),
+            logger_right.logs)
     @test y2 ≈ rmU.rB_min * u"Th"
 
     # Explicit unit override returns converted AbstractQuantity
@@ -307,6 +321,51 @@ end
     @test_throws ArgumentError derivinvmap(rm0, 350.0u"Th")
     d0 = derivinvmap(rm0, 350.0)
     @test (d0 isa Real) && isfinite(d0) && d0 > 0
+
+    # Mixed-unit mappers to exercise rA_unit/rB_unit conversion branches
+    rA1 = [0.0, 0.5, 1.0]
+    rB1 = [10.0, 20.0, 30.0]
+    rA_min, rA_max = 0.0, 1.0
+    rB_min, rB_max = 10.0, 30.0
+    rA_norm_min, rA_norm_max = 0.0, 1.0
+    rB_pred_min, rB_pred_max = rB_min, rB_max
+    rB_pred_norm_min, rB_pred_norm_max = 0.0, 1.0
+
+    order = BSplineOrder(4)
+    knots = collect(LinRange(0.0, 1.0, 10))
+    B = BSplineBasis(order, knots)
+    coefs = collect(range(0.0, 1.0, length(B)))
+    spline = Spline(B, coefs)
+
+    rmA_unit = JuChrom.RetentionMapper(
+        rA1, u"minute",
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB1, nothing,
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}()
+    )
+    dA = derivinvmap(rmA_unit, 20.0; rA_unit=u"s", rB_unit=nothing)
+    @test dA isa Unitful.AbstractQuantity
+    @test Unitful.unit(dA) == u"s"
+
+    rmB_unit = JuChrom.RetentionMapper(
+        rA1, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB1, u"Th",
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}()
+    )
+    dB = derivinvmap(rmB_unit, 20.0u"Th"; rA_unit=nothing, rB_unit=u"Th")
+    @test dB isa Unitful.AbstractQuantity
+    @test Unitful.unit(dB) == inv(u"Th")
 end
 
 # ── derivmap(rm, retention::Union{Real,AbstractQuantity}) ────────────────────────────
@@ -355,12 +414,64 @@ end
 
     # Unit validation: unitful mapper rejects unitless input
     @test_throws ArgumentError derivmap(rmU, 0.5)
+    @test_throws ArgumentError derivmap(rmU, 0.5u"minute"; rA_unit=nothing)
+    @test_throws ArgumentError derivmap(rmU, 0.5u"minute"; rB_unit=nothing)
 
     # Unitless mapper: accepts Real; returns unitless; rejects AbstractQuantity
     rm0 = make_mapper(unitful=false)
     d0 = derivmap(rm0, 0.5)
     @test (d0 isa Real) && isfinite(d0) && d0 > 0
     @test_throws ArgumentError derivmap(rm0, 0.5u"minute")
+    @test_throws ArgumentError derivmap(rm0, 0.5; rA_unit=u"s")
+    @test_throws ArgumentError derivmap(rm0, 0.5; rB_unit=u"Th")
+
+    logger_left = TestLogger()
+    with_logger(logger_left) do
+        d_left = derivmap(rm0, -1.0; warn=true, domain_boundary_threshold=0.0)
+        @test isfinite(d_left) && d_left > 0
+    end
+    @test any(l -> l.level == Logging.Info &&
+                occursin("below the spline domain boundary", string(l.message)),
+            logger_left.logs)
+
+    logger_right = TestLogger()
+    with_logger(logger_right) do
+        d_right = derivmap(rm0, 2.0; warn=true, domain_boundary_threshold=0.0)
+        @test isfinite(d_right) && d_right > 0
+    end
+    @test any(l -> l.level == Logging.Info &&
+                occursin("above the spline domain boundary", string(l.message)),
+            logger_right.logs)
+
+    rmA_unit = JuChrom.RetentionMapper(
+        rmU.rA, u"minute",
+        rmU.rA_min, rmU.rA_max,
+        rmU.rA_norm_min, rmU.rA_norm_max,
+        rmU.rB, nothing,
+        rmU.rB_min, rmU.rB_max,
+        rmU.rB_pred_min, rmU.rB_pred_max,
+        rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
+        rmU.knots, rmU.coefs, rmU.spline,
+        Dict{String, Any}()
+    )
+    dA = derivmap(rmA_unit, 0.5u"minute"; rA_unit=u"s", rB_unit=nothing)
+    @test dA isa Unitful.AbstractQuantity
+    @test Unitful.unit(dA) == inv(u"s")
+
+    rmB_unit = JuChrom.RetentionMapper(
+        rmU.rA, nothing,
+        rmU.rA_min, rmU.rA_max,
+        rmU.rA_norm_min, rmU.rA_norm_max,
+        rmU.rB, u"Th",
+        rmU.rB_min, rmU.rB_max,
+        rmU.rB_pred_min, rmU.rB_pred_max,
+        rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
+        rmU.knots, rmU.coefs, rmU.spline,
+        Dict{String, Any}()
+    )
+    dB = derivmap(rmB_unit, 0.5; rA_unit=nothing, rB_unit=u"Th")
+    @test dB isa Unitful.AbstractQuantity
+    @test Unitful.unit(dB) == u"Th"
 end
 
 # ── extras(rm::AbstractRetentionMapper) ──────────────────────────────────────
@@ -460,6 +571,14 @@ end
     # Respect requested output units in round-trip (seconds)
     bB2 = applymap(rm, 7.5u"minute")
     @test invmap(rm, bB2; unit=u"s") ≈ (7.5 * 60)u"s" atol=1e-6u"s"
+
+    # Unitless mapper rejects unitful input and returns raw value otherwise
+    rA0 = ustrip.(rA)
+    rB0 = ustrip.(rB)
+    rm0 = fitmap(rA0, rB0)
+    @test_throws ArgumentError invmap(rm0, 350.0u"Th"; unit=u"s")
+    y0 = invmap(rm0, 350.0; unit=u"s")
+    @test y0 isa Real
 end
 
 # ── invmapmax(rm; unit=…) ────────────────────────────────────────────────────
@@ -773,6 +892,38 @@ end
     # Unit parameter effects: change rA_unit/rB_unit and confirm proper rescaling/stripping.
     dBA_s = rawderivinvmap(rmU, Bv; rA_unit=u"s", rB_unit=u"Th")  # input in Th, output stripped to s/Th
     @test dBA_s ≈ dBA * 60  # A in seconds ⇒ derivative ×60 compared to minutes
+    @test_throws ArgumentError rawderivinvmap(rmU, 20.0u"Th"; rA_unit=nothing)
+    @test_throws ArgumentError rawderivinvmap(rmU, 20.0u"Th"; rB_unit=nothing)
+
+    rmA_unit = JuChrom.RetentionMapper(
+        rA, u"minute",
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, nothing,
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}()
+    )
+    dA_min = rawderivinvmap(rmA_unit, 20.0; rA_unit=u"minute", rB_unit=nothing)
+    dA_s = rawderivinvmap(rmA_unit, 20.0; rA_unit=u"s", rB_unit=nothing)
+    @test dA_s ≈ dA_min * 60
+
+    rmB_unit = JuChrom.RetentionMapper(
+        rA, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, u"Th",
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        Dict{String, Any}()
+    )
+    dB_th = rawderivinvmap(rmB_unit, 20.0u"Th"; rA_unit=nothing, rB_unit=u"Th")
+    dB_kth = rawderivinvmap(rmB_unit, 20.0u"Th"; rA_unit=nothing, rB_unit=u"kTh")
+    @test dB_kth ≈ dB_th * 1000
 
     # Unitless mapper variant: must receive Real; returns unitless number.
     rm0 = JuChrom.RetentionMapper(
@@ -784,6 +935,8 @@ end
     @test_throws ArgumentError rawderivinvmap(rm0, 20.0u"Th")
     d0 = rawderivinvmap(rm0, 20.0)
     @test isfinite(d0) && d0 > 0
+    @test_throws ArgumentError rawderivinvmap(rm0, 20.0; rA_unit=u"s")
+    @test_throws ArgumentError rawderivinvmap(rm0, 20.0; rB_unit=u"Th")
 end
 
 # ── rawderivmap(::RetentionMapper, ::Union{Real,AbstractQuantity}) ──────────────────
@@ -833,11 +986,45 @@ end
     d1 = rawderivmap(rmU, 0.5u"minute")  # accepted
     @test isfinite(d1) && d1 > 0
     @test_throws ArgumentError rawderivmap(rmU, 0.5)  # unitful mapper rejects unitless input
+    @test_throws ArgumentError rawderivmap(rmU, 0.5u"minute"; rA_unit=nothing)
+    @test_throws ArgumentError rawderivmap(rmU, 0.5u"minute"; rB_unit=nothing)
+    @test_throws ArgumentError rawderivmap(rm0, 0.5; rA_unit=u"s")
+    @test_throws ArgumentError rawderivmap(rm0, 0.5; rB_unit=u"Th")
 
     # Changing input unit rescales dB/dA inversely with A's unit scale
     # (minute → second multiplies A by 60 ⇒ derivative divided by 60)
     d2 = rawderivmap(rmU, 30.0u"s"; rA_unit=u"s")  # same physical input; different unit
     @test d2 ≈ d1 / 60
+
+    rmA_unit = JuChrom.RetentionMapper(
+        rmU.rA, u"minute",
+        rmU.rA_min, rmU.rA_max,
+        rmU.rA_norm_min, rmU.rA_norm_max,
+        rmU.rB, nothing,
+        rmU.rB_min, rmU.rB_max,
+        rmU.rB_pred_min, rmU.rB_pred_max,
+        rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
+        rmU.knots, rmU.coefs, rmU.spline,
+        Dict{String, Any}()
+    )
+    dA_min = rawderivmap(rmA_unit, 0.5u"minute"; rA_unit=u"minute", rB_unit=nothing)
+    dA_s = rawderivmap(rmA_unit, 0.5u"minute"; rA_unit=u"s", rB_unit=nothing)
+    @test dA_s ≈ dA_min / 60
+
+    rmB_unit = JuChrom.RetentionMapper(
+        rmU.rA, nothing,
+        rmU.rA_min, rmU.rA_max,
+        rmU.rA_norm_min, rmU.rA_norm_max,
+        rmU.rB, u"Th",
+        rmU.rB_min, rmU.rB_max,
+        rmU.rB_pred_min, rmU.rB_pred_max,
+        rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
+        rmU.knots, rmU.coefs, rmU.spline,
+        Dict{String, Any}()
+    )
+    dB_th = rawderivmap(rmB_unit, 0.5; rA_unit=nothing, rB_unit=u"Th")
+    dB_kth = rawderivmap(rmB_unit, 0.5; rA_unit=nothing, rB_unit=u"kTh")
+    @test dB_kth ≈ dB_th / 1000
 end
 
 # ── rawinvmap(rm, retention::AbstractQuantity) ──────────────────────────────────────
