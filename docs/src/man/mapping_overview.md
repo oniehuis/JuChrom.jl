@@ -16,7 +16,7 @@ smooth interpolation, and avoids artifacts from piecewise or discontinuous mappi
 
 Mapping points are typically collected from standards with known reference positions. In 
 gas chromatography, a common example is an n-alkane ladder, which yields paired arrays of 
-retention times and [Kováts retention index](https://en.wikipedia.org/wiki/Kovats_retention_index) 
+retention times and [Kováts retention indices](https://en.wikipedia.org/wiki/Kovats_retention_index) 
 (Kováts 1958). Another approach uses a curated set of internal standards (e.g., a few stable 
 compounds spiked into every run), producing matched retention pairs that anchor the mapping 
 across batches (Skoog et al. 2007).
@@ -24,8 +24,9 @@ across batches (Skoog et al. 2007).
 ## JuChrom retention mapping
 
 JuChrom provides [`fitmap`](@ref JuChrom.fitmap) to infer an empirical, smooth mapping 
-function from these paired points. The fit constructs a cubic B-spline and chooses the 
-smallest smoothing penalty that still enforces a strictly increasing curve. Concretely, 
+function from paired retention values in domain A (e.g., retention times) and reference 
+values in domain B (e.g., Kováts indices). The fit constructs a cubic B-spline and chooses 
+the smallest smoothing penalty that still enforces a strictly increasing curve. Concretely, 
 the objective minimizes squared residuals plus a curvature penalty based on the spline’s 
 second derivative: large changes in slope are penalized, which discourages wiggles and 
 yields a smoother, more stable mapping between anchor points. In parallel, nonnegative 
@@ -42,7 +43,8 @@ searches for the smallest λ that still yields a strictly monotonic fit.
 JuChrom includes visual diagnostics for a fitted mapper, letting you inspect the forward 
 and inverse fits side by side. The plotting helpers load automatically once a 
 [Makie](https://docs.makie.org) backend is available. 
-Example:
+
+## Example
 
 ```@example 1
 # Load JuChrom

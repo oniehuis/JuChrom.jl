@@ -4,7 +4,7 @@
 
 ```@docs
 JuChrom.AbstractRetentionMapper
-JuChrom.extras
+JuChrom.extras(::JuChrom.AbstractRetentionMapper)
 JuChrom.invmapmin
 JuChrom.invmapmax
 JuChrom.mapmax

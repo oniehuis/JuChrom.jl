@@ -55,7 +55,6 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                 "Data processing" => Any[
                     "Retention mapping" => Any[
                         "Mapping overview" => "man/mapping_overview.md",
-                        "Mapping overview" => "man/mapping_overview.md",
                         "Mapping tools" => "man/mapping_tools.md",
                     ],
                     "Alignment" => "man/alignment.md",
