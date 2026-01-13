@@ -80,7 +80,7 @@ true
 """
 function fitmap(
     retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},
-    retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},;
+    retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
     smoothness_penalty_n::Integer=100,
     monotonicity_grid_size::Integer=10^5,
     λ_max::Real=1e2,

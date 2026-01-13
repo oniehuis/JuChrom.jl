@@ -1,5 +1,105 @@
+"""
+    AbstractRetentionMapper{A, B} <: Any
+
+Abstract supertype for fitted retention-time mappings between two domains.
+
+`A` is the unit type for the input domain (`Unitful.Units` subtype or `Nothing`), and
+`B` is the unit type for the output domain (`Unitful.Units` subtype or `Nothing`).
+
+Concrete subtypes are expected to define 
+`rA::AbstractVector{<:Real}` – the raw numeric calibration data values from the input domain, 
+`rA_unit::Union{Unitful.Units, Nothing}` – the unit associated with the input domain, 
+`rA_min::Real` – the minimum predicted value of the input domain, 
+`rA_max::Real` – the minimum predicted value of the input domain,
+`rB::AbstractVector{<:Real}` – the raw numeric calibration data values from the output domain,
+`rB_unit::Union{Unitful.Units, Nothing}` – the unit associated with the output domain, 
+`rB_min::Real` – the minimum predicted value of the output domain,
+`rB_max::Real` – the maximum predicted value of the output domain, and
+`extras::Dict{String, Any}` – a metadata dictionary associated with the retention mapper.
+
+See also
+[`RetentionMapper`](@ref RetentionMapper), 
+[`extras`](@ref extras(::AbstractRetentionMapper)),
+[`fitmap`](@ref fitmap(::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}, 
+                       ::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}})
+[`invmapmin`](@ref invmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
+[`invmapmax`](@ref invmapmax(::AbstractRetentionMapper{<:Any, Nothing})),
+[`mapmax`](@ref mapmax(::AbstractRetentionMapper{Nothing})),
+[`mapmin`](@ref mapmin(::AbstractRetentionMapper{Nothing})),
+[`rawinvmapmax`](@ref rawinvmapmax(::AbstractRetentionMapper{<:Any, Nothing}),
+[`rawinvmapmin`](@ref rawinvmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
+[`rawmapmax`](@ref rawmapmax(::AbstractRetentionMapper{Nothing})),
+[`rawmapmin`](@ref rawmapmin(::AbstractRetentionMapper{Nothing})).
+[`rawretentions_A`](@ref rawretentions_A(::AbstractRetentionMapper)), 
+[`rawretentions_B`](@ref rawretentions_B(::AbstractRetentionMapper)), 
+[`retentions_A`](@ref retentions_A(::AbstractRetentionMapper)), 
+[`retentions_B`](@ref retentions_B(::AbstractRetentionMapper)), 
+[`retentionunit_A`](@ref retentionunit_A(::AbstractRetentionMapper)), 
+[`retentionunit_B`](@ref retentionunit_B(::AbstractRetentionMapper)).
+"""
 abstract type AbstractRetentionMapper{A, B} end
 
+"""
+    RetentionMapper{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17} <: AbstractRetentionMapper{T2, T8}
+
+Concrete container for a fitted monotone mapping between two retention domains.
+
+`T2` and `T8` encode the input and output unit types (each a `Unitful.Units` subtype
+or `Nothing`). The remaining type parameters capture the stored numeric arrays,
+normalization bounds, and spline coefficients used by the mapping functions.
+
+Fields include 
+`rA::AbstractVector{<:Real}` – the raw numeric calibration data values from the input domain,
+`rA_unit::Union{Unitful.Units, Nothing}` – the unit associated with the input domain,
+`rA_min::Real` – the minimum value of the input domain data,
+`rA_max::Real` – the maximum value of the input domain data,
+`rA_norm_min::Real` – the minimum normalized input value used for the spline fit,
+`rA_norm_max::Real` – the maximum normalized input value used for the spline fit,
+  where `rA_norm = (rA - rA_min) / (rA_max - rA_min)`,
+`rB::AbstractVector{<:Real}` – the raw numeric calibration data values from the output domain,
+`rB_unit::Union{Unitful.Units, Nothing}` – the unit associated with the output domain,
+`rB_min::Real` – the minimum value of the output domain data,
+`rB_max::Real` – the maximum value of the output domain data,
+`rB_pred_min::Real` – the minimum predicted output value over the fitted domain,
+`rB_pred_max::Real` – the maximum predicted output value over the fitted domain,
+`rB_pred_norm_min::Real` – the minimum normalized predicted output value,
+`rB_pred_norm_max::Real` – the maximum normalized predicted output value,
+  where `rB_pred_norm = (rB_pred - rB_min) / (rB_max - rB_min)`,
+`knots::AbstractVector{<:Real}` – the B-spline knot sequence,
+`coefs::AbstractVector{<:Real}` – the spline coefficients,
+`spline::Spline` – the fitted spline object, and
+`extras::Dict{String, Any}` – a metadata dictionary associated with the retention mapper.
+
+See also
+[`AbstractRetentionMapper`](@ref AbstractRetentionMapper), 
+[`applymap`](@ref applymap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`applymap`](@ref applymap(::RetentionMapper, ::MassScanSeries)),
+[`applymap`](@ref applymap(::RetentionMapper, ::MassScanMatrix)),
+[`derivinvmap`](@ref derivinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`derivmap`](@ref derivmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`extras`](@ref extras(::AbstractRetentionMapper)),
+[`fitmap`](@ref fitmap(::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}, 
+                       ::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}})
+[`invmap`](@ref invmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`invmapmax`](@ref invmapmax(::AbstractRetentionMapper{<:Any, Nothing})),
+[`invmapmin`](@ref invmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
+[`mapmax`](@ref mapmax(::AbstractRetentionMapper{Nothing})),
+[`mapmin`](@ref mapmin(::AbstractRetentionMapper{Nothing})),
+[`rawapplymap`](@ref rawapplymap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`rawderivinvmap`](@ref rawderivinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`rawderivmap`](@ref rawderivmap(::RetentionMapper, ::AbstractQuantity{<:Real})),
+[`rawinvmap`](@ref rawinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`rawinvmapmax`](@ref rawinvmapmax(::AbstractRetentionMapper{<:Any, Nothing}),
+[`rawinvmapmin`](@ref rawinvmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
+[`rawmapmax`](@ref rawmapmax(::AbstractRetentionMapper{Nothing})),
+[`rawmapmin`](@ref rawmapmin(::AbstractRetentionMapper{Nothing})),
+[`rawretentions_A`](@ref rawretentions_A(::AbstractRetentionMapper)), 
+[`rawretentions_B`](@ref rawretentions_B(::AbstractRetentionMapper)), 
+[`retentions_A`](@ref retentions_A(::AbstractRetentionMapper)), 
+[`retentions_B`](@ref retentions_B(::AbstractRetentionMapper)), 
+[`retentionunit_A`](@ref retentionunit_A(::AbstractRetentionMapper)), 
+[`retentionunit_B`](@ref retentionunit_B(::AbstractRetentionMapper)).
+"""
 struct RetentionMapper{
     T1<:AbstractVector{<:Real},
     T2<:Union{Nothing, Unitful.Units},

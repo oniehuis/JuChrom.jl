@@ -1,40 +1,45 @@
-# Mapping rational
+# Overview
 
 Retention mapping converts an irregular axis (time or distance) into a stable, comparable 
 index so chromatograms from different runs can be aligned, interpolated, and compared on a 
 common grid. This makes retention behavior reproducible across batches, instruments, and 
 methods while preserving ordering and monotonicity.
 
-A continuous, differentiable mapping does more than align coordinates: it enables intensity-
-aware transforms via the Jacobian. When you warp the axis, the mapping derivative provides a 
-principled way to rescale intensities so areas and peak shapes remain physically meaningful. 
-This yields consistent peak integrals across transformed domains, supports smooth 
-interpolation, and avoids artifacts from piecewise or discontinuous mappings.
+A continuous, differentiable mapping does more than align coordinates: it enables 
+intensity-aware transforms via the [`Jacobian`](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant) 
+(in 1-D this is just the derivative). When you warp the axis, the mapping derivative 
+provides a principled way to rescale intensities so areas and peak shapes remain physically 
+meaningful. This yields consistent peak integrals across transformed domains, supports 
+smooth interpolation, and avoids artifacts from piecewise or discontinuous mappings.
 
-Mapping points are typically collected from standards with known reference positions. A 
-common example is an n-alkane ladder, which yields paired arrays of retention times and 
-Kováts retention indices (Kováts 1958). Another example is a curated set of internal 
-standards (e.g., a few stable compounds spiked into every run), producing matched retention 
-pairs that anchor the mapping across batches (Skoog et al. 2007).
+Mapping points are typically collected from standards with known reference positions. In 
+gas chromatography, a common example is an n-alkane ladder, which yields paired arrays of 
+retention times and [Kováts retention index](https://en.wikipedia.org/wiki/Kovats_retention_index) 
+(Kováts 1958). Another approach uses a curated set of internal standards (e.g., a few stable 
+compounds spiked into every run), producing matched retention pairs that anchor the mapping 
+across batches (Skoog et al. 2007).
 
-JuChrom provides `fitmap` to infer an empirical, smooth mapping function from these paired 
-points. The fit constructs a cubic B-spline and chooses the smallest smoothing penalty that 
-still enforces a strictly increasing curve. Concretely, the objective minimizes squared 
-residuals plus a curvature penalty based on the spline’s second derivative: large changes 
-in slope are penalized, which discourages wiggles and yields a smoother, more stable mapping 
-between anchor points. In parallel, nonnegative first-derivative values are enforced at a 
-dense grid of points to guarantee monotonicity. This yields a continuous, differentiable, 
-and invertible function (stored in a `RetentionMapper`) that supports both forward mapping 
-and reliable reverse mapping via the monotonic inverse.
+JuChrom provides [`fitmap`](@ref JuChrom.fitmap) to infer an empirical, smooth mapping 
+function from these paired points. The fit constructs a cubic B-spline and chooses the 
+smallest smoothing penalty that still enforces a strictly increasing curve. Concretely, 
+the objective minimizes squared residuals plus a curvature penalty based on the spline’s 
+second derivative: large changes in slope are penalized, which discourages wiggles and 
+yields a smoother, more stable mapping between anchor points. In parallel, nonnegative 
+first-derivative values are enforced at a dense grid of points to guarantee monotonicity. 
+This yields a continuous, differentiable, and invertible function (stored in a 
+[`RetentionMapper`](@ref RetentionMapper)) that supports both forward mapping and 
+reliable reverse mapping via the monotonic inverse.
 
-For most users, the primary tuning parameter when applying `fitmap` is smoothing strength 
-(λ). Larger values emphasize smoothness over exact fit to the anchor points, while smaller 
-values track the anchors more tightly. The default automatically searches for the smallest λ 
-that still yields a strictly monotonic fit.
+For most users, the primary tuning parameter when applying [`fitmap`](@ref JuChrom.fitmap) 
+is smoothing strength (λ). Larger values emphasize smoothness over exact fit to the anchor 
+points, while smaller values track the anchors more tightly. The default automatically 
+searches for the smallest λ that still yields a strictly monotonic fit.
 
-JuChrom also includes Makie-based diagnostics for a fitted mapper, so you can inspect the 
-forward and inverse fits visually. JuChrom reexports Unitful, so unit literals like 
-`u"minute"` work without an explicit `using Unitful`. Example:
+JuChrom includes visual diagnostics for a fitted mapper, letting you inspect the forward 
+and inverse fits side by side. The plotting helpers load automatically once a 
+[Makie](https://docs.makie.org) backend, such as 
+[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie), is available. 
+Example:
 
 ```@example 1
 # Load JuChrom
@@ -44,11 +49,13 @@ using JuChrom
 using CairoMakie
 CairoMakie.activate!()
 
-# Known mapping points: retention times (minutes) and Kováts indices
+# Known mapping points: retention times (minutes) and Kováts indices.
+# JuChrom reexports Unitful, so unit literals work without `using Unitful`.
 retention_times = [
     27.972, 30.043, 32.011, 33.884, 35.679, 37.398, 39.049, 40.636, 42.164,
     43.636, 45.058, 46.431, 47.759, 49.046, 50.296, 51.669, 53.266, 55.149,
 ]u"minute"
+
 kovats_indices = [
     1800.0, 1900.0, 2000.0, 2100.0, 2200.0, 2300.0, 2400.0, 2500.0, 2600.0,
     2700.0, 2800.0, 2900.0, 3000.0, 3100.0, 3200.0, 3300.0, 3400.0, 3500.0,
@@ -58,8 +65,9 @@ kovats_indices = [
 mapper = fitmap(retention_times, kovats_indices)
 ```
 
-The printed `RetentionMapper` summary provides a compact overview. For a closer look,
-plot the forward and inverse maps (including derivatives) and the residuals.
+The printed [`RetentionMapper`](@ref RetentionMapper) summary provides a compact overview. 
+For a closer look, plot the forward and inverse maps (including derivatives) and the 
+residuals.
 
 ```@example 1
 # Visual diagnostics (forward/inverse maps and residuals)
@@ -105,11 +113,19 @@ ri = applymap.(mapper, rts)  # dot form broadcasts over the vector
 
 !!! warning "Domain limits and extrapolation"
     Mappings are defined over the anchor domain. Values outside that domain are linearly 
-    extrapolated using the slope at the nearest boundary. Use `warn=true` on `applymap`/
-    `invmap`/`derivmap`/`derivinvmap` or the `raw*` variants to surface extrapolation during
+    extrapolated using the slope at the nearest boundary. Use `warn=true` on 
+    [`applymap`](@ref)
+    /
+    [`invmap`](@ref)
+    /
+    [`derivmap`](@ref)
+    /
+    [`derivinvmap`](@ref)
+    or the `raw*` variants to surface extrapolation during
     analysis.
 
-To invert the mapping (e.g., from Kováts to retention time), use `invmap`.
+To invert the mapping (e.g., from Kováts to retention time), use 
+[`invmap`](@ref).
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
@@ -145,20 +161,41 @@ unit time, reflecting the change of variables.
 
 | Function | Use case |
 | :--- | :--- |
-| `applymap` | Map retention time → index |
-| `invmap` | Map index → retention time |
-| `derivmap` | Jacobian `d(ri)/dt` for intensity scaling |
-| `derivinvmap` | Inverse mapping derivative |
-| `rawapplymap` | Unitless variant of `applymap` |
-| `rawinvmap` | Unitless variant of `invmap` |
-| `rawderivmap` | Unitless variant of `derivmap` |
-| `rawderivinvmap` | Unitless variant of `derivinvmap` |
-| `retentions_A`, `retentions_B` | Anchor vectors used to fit the mapper |
-| `rawretentions_A`, `rawretentions_B` | Unitless anchor vectors |
-| `retentionunit_A`, `retentionunit_B` | Stored units for the anchor domains |
-| `extras` | Metadata attached to the mapper |
+| [`fitmap`](@ref) | Infer mapping function from these paired points |
+| :--- | :--- |
+| [`applymap`](@ref) | Map retention domain A → retention domain B |
+| [`invmap`](@ref) | Map retention domain B → retention domain A |
+| [`derivmap`](@ref) | Jacobian `d(ri)/dt` for intensity scaling |
+| [`derivinvmap`](@ref) | Inverse mapping derivative |
+| [`rawapplymap`](@ref) | Unitless variant of [`applymap`](@ref) |
+| [`rawinvmap`](@ref) | Unitless variant of [`invmap`](@ref) |
+| [`rawderivmap`](@ref) | Unitless variant of [`derivmap`](@ref) |
+| [`rawderivinvmap`](@ref) | Unitless variant of [`derivinvmap`](@ref) |
+| :--- | :--- |
+| [`retentions_A`](@ref), [`retentions_B`](@ref) | Anchor vectors used to fit the mapper |
+| [`rawretentions_A`](@ref), [`rawretentions_B`](@ref) | Unitless anchor vectors |
+| [`retentionunit_A`](@ref), [`retentionunit_B`](@ref) | Stored units for the anchor domains |
+| [`extras`](@ref) | Metadata attached to the mapper |
+| :--- | :--- |
+| [`mapmin`](@ref), [`mapmax`](@ref) | Numeric minimum and maximum value of the input domain |
+| [`invmapmin`](@ref), [`invmapmax`](@ref) | Numeric minimum and maximum value of the output domain |
+| [`rawmapmin`](@ref), [`rawmapmax`](@ref) | Unitless variant of [`mapmin`](@ref) and [`mapmax`](@ref) |
+| [`rawinvmapmin`](@ref), [`rawinvmapmax`](@ref) | Unitless variant of [`invmapmin`](@ref), [`invmapmax`](@ref) |
 
 For full API details, see [Mapping tools](mapping_tools.md).
+
+JuChrom also ships a JLD2 extension so `RetentionMapper` objects can be stored and 
+restored with JLD2. The extension loads automatically once JLD2 is available.
+
+```@example 1
+using JLD2
+
+# Save
+jldsave("retention_mapper.jld2"; mapper)
+
+# Load
+mapper_loaded = load("retention_mapper.jld2", "mapper")
+```
 
 ## References
 

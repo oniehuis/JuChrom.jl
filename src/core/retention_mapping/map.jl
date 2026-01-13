@@ -44,10 +44,13 @@ function _compute_retention_mapping(
 end
 
 """
-    applymap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}}; 
-             domain_boundary_threshold::Real=1e-8,
-             warn::Bool=false, 
-             unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit)
+    applymap(
+        rm::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}}; 
+        domain_boundary_threshold::Real=1e-8,
+        warn::Bool=false, 
+        unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rm)
+    )
 
 Apply the fitted mapping to transform a retention value from domain A to domain B using the 
 fitted spline within the `RetentionMapper`.
@@ -88,10 +91,10 @@ true
 function applymap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
-    domain_boundary_threshold::T=1e-8,
+    domain_boundary_threshold::T1=1e-8,
     warn::Bool=false,
-    unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit
-) where {T<:Real}
+    unit::T2=retentionunit_B(rm)
+    ) where {T1<:Real, T2<:Union{Nothing, Unitful.Units}}
 
     # Validate input unit compatibility (ADD THIS)
     if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
@@ -109,10 +112,13 @@ end
 
 
 """
-    applymap(rmap::RetentionMapper, series::MassScanSeries;
-             domain_boundary_threshold::Real=1e-8,
-             unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit,
-             warn::Bool=false) -> MassScanSeries
+    applymap(
+        rmap::RetentionMapper,
+        series::MassScanSeries;
+        domain_boundary_threshold::Real=1e-8,
+        unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rmap),
+        warn::Bool=false
+    ) -> MassScanSeries
 
 Apply retention mapping `rmap` to `series`, transforming retention coordinates and scaling 
 intensities by the Jacobian to preserve peak areas.
@@ -137,10 +143,9 @@ function applymap(
     rmap::RetentionMapper,
     series::MassScanSeries;
     domain_boundary_threshold::T1=1e-8,
-    unit::T2=rmap.rB_unit,
+    unit::T2=retentionunit_B(rmap),
     warn::Bool=false,
-) where {T1<:Real,
-         T2<:Union{Nothing, Unitful.Units}}
+    ) where {T1<:Real, T2<:Union{Nothing, Unitful.Units}}
 
     @assert scancount(series) > 0 "Cannot transform empty series."
     
@@ -305,12 +310,13 @@ end
 # end
 
 """
-    applymap(rmap::RetentionMapper,
-             msm::MassScanMatrix;
-             domain_boundary_threshold::Real=1e-8,
-             unit=rmap.rB_unit,
-             warn::Bool=false)
-        -> MassScanMatrix
+    applymap(
+        rmap::RetentionMapper,
+        msm::MassScanMatrix;
+        domain_boundary_threshold::Real=1e-8,
+        unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rmap),
+        warn::Bool=false
+    ) -> MassScanMatrix
 
 Apply retention mapper `rmap` to `msm`, transforming retention coordinates and
 scaling intensities by the Jacobian to preserve peak areas.
@@ -333,10 +339,9 @@ function applymap(
     rmap::RetentionMapper,
     msm::MassScanMatrix;
     domain_boundary_threshold::T1=1e-8,
-    unit::T2=rmap.rB_unit,
+    unit::T2=retentionunit_B(rmap),
     warn::Bool=false
-) where {T1<:Real,
-         T2<:Union{<:Nothing, Unitful.Units}}
+    ) where {T1<:Real, T2<:Union{<:Nothing, Unitful.Units}}
 
     # Get original retention coordinates
     ret = retentions(msm)
@@ -373,7 +378,7 @@ function applymap(
     end
 
     # Return new MassScanMatrix
-    msm_out = MassScanMatrix(
+    MassScanMatrix(
         new_retention_unitfree,
         new_retention_unit,
         deepcopy(rawmzvalues(msm)),
@@ -440,10 +445,15 @@ function _compute_inverse_derivative_mapping(
 end
 
 """
-    derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
-                rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
-                warn::Bool=false) where {T1<:Union{Nothing, Unitful.Units}, 
-                T2<:Union{Nothing, Unitful.Units}, T3<:Real}
+    derivinvmap(
+        rmap::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        domain_boundary_threshold::Real=1e-8,
+        rA_unit::Union{Nothing, Unitful.Units}=retentionunit_A(rmap)),
+        rB_unit::Union{Nothing, Unitful.Units}=retentionunit_B(rmap)),
+        tol::Real=1e-8, 
+        warn::Bool=false
+    )
 
 Compute the derivative of the inverse mapping, i.e. d(A)/d(B), at a given output value 
 (domain B).
@@ -513,16 +523,16 @@ function derivinvmap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
-    rA_unit::T2=rm.rA_unit,
-    rB_unit::T3=rm.rB_unit,
+    rA_unit::T2=retentionunit_A(rm),
+    rB_unit::T3=retentionunit_B(rm),
     tol::T4=1e-8,
     warn::Bool=false
-) where {
-    T1<:Real,
-    T2<:Union{Nothing, Unitful.Units},
-    T3<:Union{Nothing, Unitful.Units},
-    T4<:Real
-}
+    ) where {
+        T1<:Real,
+        T2<:Union{Nothing, Unitful.Units},
+        T3<:Union{Nothing, Unitful.Units},
+        T4<:Real
+    }
     # Validate input unit compatibility (FIXED - was missing this check)
     if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
@@ -569,7 +579,8 @@ function _compute_derivative_mapping(
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
     warn::Bool=false
-) where {T<:Real}
+    ) where {T<:Real}
+
     if retention isa AbstractQuantity
         rA = ustrip(rm.rA_unit, retention)
     else
@@ -606,9 +617,13 @@ function _compute_derivative_mapping(
 end
 
 """
-    derivmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
-             rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
-             T1<:Union{Nothing, Unitful.Units}, T2<:Union{Nothing, Unitful.Units}}
+    derivmap(
+        rm::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        rA_unit::Union{Nothing, Unitful.Units}=retentionunit_A(rm),
+        rB_unit::Union{Nothing, Unitful.Units}=retentionunit_B(rm),
+        warn::Bool=false
+    )
 
 Compute the first derivative of the fitted mapping with respect to the input (domain A) 
 at a given input value.
@@ -670,8 +685,8 @@ function derivmap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
-    rA_unit::T2=rm.rA_unit,
-    rB_unit::T3=rm.rB_unit,
+    rA_unit::T2=retentionunit_A(rm),
+    rB_unit::T3=retentionunit_B(rm),
     warn::Bool=false
 ) where {
     T1<:Real,
@@ -771,9 +786,14 @@ function _compute_inverse_mapping(
 end
 
 """
-    invmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
-           unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
-           ) where {T1<:Unitful.TimeUnits, T2<:Real}
+    invmap(
+        rm::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        domain_boundary_threshold::Real=1e-8,
+        unit::Union{Nothing, Unitful.Units}=retentionunit_A(rm),
+        tol::Real=1e-8,
+        warn::Bool=false
+    )
 
 Invert the fitted mapping by computing the input value (domain A) corresponding to a given 
 output value (domain B).
@@ -836,7 +856,7 @@ function invmap(
     warn::Bool=false
     ) where {
         T1<:Real,
-        T2<:Unitful.TimeUnits,
+        T2<:Union{Nothing, Unitful.Units},
         T3<:Real
     }
     
@@ -863,7 +883,7 @@ end
 # ── invmapmin ─────────────────────────────────────────────────────────────────────────────
 
 """
-invmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
+    invmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
 Return the minimum predicted value of the output domain (domain B) for the fitted retention 
 mapper. This corresponds to the predicted output value at the minimum input value and 
@@ -1000,7 +1020,7 @@ end
 # ── mapmax ────────────────────────────────────────────────────────────────────────────────
 
 """
-mapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
+    mapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
 Return the maximum value of the input domain (domain A) for the fitted retention mapper.
 This corresponds to the largest input value used during calibration and represents
@@ -1126,8 +1146,13 @@ end
 # ── rawapplymap ───────────────────────────────────────────────────────────────────────────
 
 """
-    rawapplymap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
-                warn::Bool=false, unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit)
+    rawapplymap(
+        rm::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        domain_boundary_threshold::Real=1e-8,
+        unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rm),
+        warn::Bool=false
+    )
 
 Apply the fitted mapping to transform an input value from domain A to domain B using the
 fitted spline within the `RetentionMapper`, returning a unitless numeric result.
@@ -1177,9 +1202,9 @@ function rawapplymap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T=1e-8,
-    warn::Bool=false,
-    unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit
-) where {T<:Real}
+    unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rm),
+    warn::Bool=false
+    ) where {T<:Real}
 
     # Validate input unit compatibility
     if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
@@ -1198,10 +1223,15 @@ end
 # ── rawderivinvmap ────────────────────────────────────────────────────────────────────────
 
 """
-    rawderivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity{<:Real}};
-                  rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, tol::T3=1e-8, 
-                  warn::Bool=false) where {T1<:Union{Nothing, Unitful.Units}, 
-                  T2<:Union{Nothing, Unitful.Units}, T3<:Real}
+    rawderivinvmap(
+        rm::RetentionMapper,
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        domain_boundary_threshold::Real=1e-8,
+        rA_unit::Union{Nothing, Unitful.Units}=retentionunit_A(rm),
+        rB_unit::Union{Nothing, Unitful.Units}=retentionunit_B(rm),
+        tol::Real=1e-8, 
+        warn::Bool=false
+    )
 
 Compute the derivative of the inverse mapping, i.e. d(A)/d(B), at a given output value 
 (domain B), returning a unitless numeric result.
@@ -1288,8 +1318,8 @@ function rawderivinvmap(
    rm::RetentionMapper,
    retention::Union{<:Real, <:AbstractQuantity{<:Real}};
    domain_boundary_threshold::T1=1e-8,
-   rA_unit::T2=rm.rA_unit,
-   rB_unit::T3=rm.rB_unit,
+   rA_unit::T2=retentionunit_A(rm),
+   rB_unit::T3=retentionunit_B(rm),
    tol::T4=1e-8,
    warn::Bool=false
 ) where {
@@ -1339,9 +1369,14 @@ end
 # ── rawderivmap ───────────────────────────────────────────────────────────────────────────
 
 """
-    rawderivmap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
-                rA_unit::T1=rm.rA_unit, rB_unit::T2=rm.rB_unit, warn::Bool=false) where {
-                T1<:Union{Nothing, Unitful.Units}, T2<:Union{Nothing, Unitful.Units}}
+    rawderivmap(
+        rm::RetentionMapper,
+        retention::AbstractQuantity{<:Real};
+        domain_boundary_threshold::Real=1e-8,
+        rA_unit::Union{Nothing, Unitful.Units}=retentionunit_A(rm), 
+        rB_unit::Union{Nothing, Unitful.Units}=retentionunit_B(rm), 
+        warn::Bool=false
+    )
 
 Compute the first derivative of the fitted mapping with respect to the input (domain A)
 at a given input value, returning a unitless numeric result.
@@ -1405,14 +1440,13 @@ function rawderivmap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
-    rA_unit::T2=rm.rA_unit,
-    rB_unit::T3=rm.rB_unit,
+    rA_unit::T2=retentionunit_A(rm),
+    rB_unit::T3=retentionunit_B(rm),
     warn::Bool=false
-) where {
-    T1<:Real,
-    T2<:Union{Nothing, Unitful.Units},
-    T3<:Union{Nothing, Unitful.Units},
-}
+    ) where {T1<:Real,
+        T2<:Union{Nothing, Unitful.Units},
+        T3<:Union{Nothing, Unitful.Units},
+    }
     # Validate input unit compatibility
     if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
@@ -1455,9 +1489,14 @@ end
 # ── rawinvmap ─────────────────────────────────────────────────────────────────────────────
 
 """
-    rawinvmap(rm::RetentionMapper, retention::AbstractQuantity{<:Real};
-              unit::T1=rm.rA_unit, tol::T2=1e-8, warn::Bool=false
-              ) where {T1<:Unitful.TimeUnits, T2<:Real}
+    rawinvmap(
+        rm::RetentionMapper, 
+        retention::Union{<:Real, <:AbstractQuantity{<:Real}};
+        domain_boundary_threshold::Real=1e-8, 
+        unit::Union{Nothing, Unitful.Units}=retentionunit_A(rm), 
+        tol::Real=1e-8,
+        warn::Bool=false
+    )
 
 Invert the fitted mapping by computing the input value (domain A) corresponding to a given 
 output value (domain B), returning a unitless numeric result.
@@ -1529,12 +1568,12 @@ function rawinvmap(
     rm::RetentionMapper,
     retention::Union{<:Real, <:AbstractQuantity{<:Real}};
     domain_boundary_threshold::T1=1e-8,
-    unit::T2=rm.rA_unit,
+    unit::T2=retentionunit_A(rm),
     tol::T3=1e-8,
     warn::Bool=false
 ) where {
     T1<:Real,
-    T2<:Union{Nothing, Unitful.TimeUnits},
+    T2<:Union{Nothing, Unitful.Units},
     T3<:Real
 }
     # Validate input unit compatibility (same as invmap)
@@ -1685,7 +1724,7 @@ end
 # ── rawmapmax ─────────────────────────────────────────────────────────────────────────────
 
 """
-rawmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
+    rawmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
 Return the raw numeric maximum value of the input domain (domain A), stripped of units.
 This function always returns the numeric value without units, regardless of whether
