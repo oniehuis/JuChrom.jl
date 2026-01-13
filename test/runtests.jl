@@ -1,9 +1,23 @@
 using Pkg
 using SafeTestsets
 
-if Base.active_project() != joinpath(@__DIR__, "Project.toml")
+const TEST_PROJECT = normpath(joinpath(@__DIR__, "Project.toml"))
+
+if normpath(Base.active_project()) != TEST_PROJECT
     Pkg.activate(@__DIR__)
 end
+
+# Avoid leaking packages from the user default environment (@v#.#).
+if LOAD_PATH != ["@", "@stdlib"]
+    empty!(LOAD_PATH)
+    append!(LOAD_PATH, ["@", "@stdlib"])
+end
+
+# Ensure the local package is available when running runtests.jl directly.
+if !haskey(Pkg.project().dependencies, "JuChrom")
+    Pkg.develop(PackageSpec(path=normpath(joinpath(@__DIR__, ".."))))
+end
+
 Pkg.instantiate()
 
 # Core

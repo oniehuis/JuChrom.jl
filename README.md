@@ -12,3 +12,11 @@
 
 [codecov-img]: https://codecov.io/gh/oniehuis/JuChrom.jl/branch/main/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/oniehuis/JuChrom.jl
+
+## Testing
+
+Run tests with the dedicated test environment to match CI:
+
+```bash
+julia --project=test -e 'import Pkg; Pkg.test()'
+```
