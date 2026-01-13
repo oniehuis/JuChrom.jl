@@ -194,11 +194,16 @@ JuChrom also ships a [`JLD2`](https://github.com/JuliaIO/JLD2.jl) extension so
 ```@example 1
 using JLD2
 
-# Save
+# Save and load single mapper
 save_object("retention_mapper.jld2", mapper)
-
-# Load
 mapper_loaded = load_object("retention_mapper.jld2")
+
+# Save multiple mappers under their own names and load them back
+jldsave("retention_mappers.jld2"; mapper, mapper_λ_min_set)
+mapper_reloaded = JLD2.load("retention_mappers.jld2", "mapper")
+```
+```@example 1
+mapper_λ_min_set_loaded = JLD2.load("retention_mappers.jld2", "mapper_λ_min_set")
 ```
 
 ## References
