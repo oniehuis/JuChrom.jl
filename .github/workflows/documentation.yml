@@ -61,7 +61,11 @@ jobs:
           julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+
+      - name: Verify gh-pages HEAD
+        run: |
+          git fetch origin gh-pages
+          git log -1 --oneline origin/gh-pages
 
       - name: Clean up unused packages and artifacts
         run: julia -e 'using Pkg; Pkg.gc()'
