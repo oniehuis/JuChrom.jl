@@ -182,7 +182,7 @@ unit time, reflecting the change of variables.
 | [`rawmapmin`](@ref), [`rawmapmax`](@ref) | Unitless variant of [`mapmin`](@ref) and [`mapmax`](@ref) |
 | [`rawinvmapmin`](@ref), [`rawinvmapmax`](@ref) | Unitless variant of [`invmapmin`](@ref), [`invmapmax`](@ref) |
 
-For full API details, see [Mapping tools](Mapping_tools.md).
+For full API details, see [Mapping tools](mapping_tools.md).
 
 ## JLD2 support
 

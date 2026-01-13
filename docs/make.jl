@@ -37,40 +37,41 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
 	    authors = "Oliver Niehuis",
         root = @__DIR__,
         pages = [
-            "Home" => "Index.md",
+            "Home" => "index.md",
             "Manual" => Any[
                 "Core containers" => Any[
-                    "Design overview" => "man/Containers.md",
-                    "man/Scans.md",
-                    "man/ScanSeries.md",
-                    "man/ScanMatrices.md",
+                    "Design overview" => "man/containers.md",
+                    "man/scans.md",
+                    "man/scanseries.md",
+                    "man/scanmatrices.md",
                 ],
                 "Loaders" => Any[
-                    "Loader API" => "man/LoaderAPI.md",
-                    "man/AgilentFID.md",
-                    "man/ChemStationMS.md",
-                    "man/MassHunterMS.md",
-                    "man/ShimadzuMS.md",
+                    "Loader API" => "man/loaderapi.md",
+                    "man/agilentfid.md",
+                    "man/chemstationms.md",
+                    "man/masshunterms.md",
+                    "man/shimadzums.md",
                 ],
                 "Data processing" => Any[
                     "Retention mapping" => Any[
-                        "Mapping overview" => "man/Mapping_overview.md",
-                        "Mapping tools" => "man/Mapping_tools.md",
+                        "Mapping overview" => "man/mapping_overview.md",
+                        "Mapping overview" => "man/mapping_overview.md",
+                        "Mapping tools" => "man/mapping_tools.md",
                     ],
-                    "Alignment" => "man/Alignment.md",
-                    "Baseline" => "man/Baseline.md",
-                    "Binning and Gridding" => "man/Binning_gridding.md",
-                    "Format conversion" => "man/Convert.md",
-                    "Transformation" => "man/Transformation.md",
-                    "Trimming and Filtering" => "man/Transform.md",
-                    "Variance modeling" => "man/Quadvar_model.md",
+                    "Alignment" => "man/alignment.md",
+                    "Baseline" => "man/baseline.md",
+                    "Binning and Gridding" => "man/binning_gridding.md",
+                    "Format conversion" => "man/convert.md",
+                    "Transformation" => "man/transformation.md",
+                    "Trimming and Filtering" => "man/transform.md",
+                    "Variance modeling" => "man/quadvar_model.md",
                 ]
 			    ],
             "Internals" => Any[
-                "internals/Transform.md",
-                "internals/Utils.md"
+                "internals/transform.md",
+                "internals/utils.md"
 		        ],
-            "Index" => "man/Register.md"
+            "Index" => "man/register.md"
         ]
     )
 end

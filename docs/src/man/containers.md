@@ -259,4 +259,4 @@ msm = mscanmatrix(mss)
 ```
 
 See the dedicated container pages for the full API reference:
-[`Scans`](Scans.md), [`Scan Series`](ScanSeries.md), and [`Scan Matrices`](ScanMatrices.md).
+[`Scans`](scans.md), [`Scan Series`](scanseries.md), and [`Scan Matrices`](scanmatrices.md).

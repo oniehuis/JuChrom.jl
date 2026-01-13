@@ -44,7 +44,7 @@ mss = load(spec)
 
 ## Loader pages
 
-- [Agilent FID](AgilentFID.md)
-- [Agilent ChemStation MS](ChemStationMS.md)
-- [Agilent MassHunter MS](MassHunterMS.md)
-- [Shimadzu MS](ShimadzuMS.md)
+- [Agilent FID](agilentfid.md)
+- [Agilent ChemStation MS](chemstationms.md)
+- [Agilent MassHunter MS](masshunterms.md)
+- [Shimadzu MS](shimadzums.md)
