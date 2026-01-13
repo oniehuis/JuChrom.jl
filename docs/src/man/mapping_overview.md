@@ -186,10 +186,9 @@ For full API details, see [Mapping tools](mapping_tools.md).
 
 ## JLD2 support
 
-JuChrom also ships a [`JLD2`](https://github.com/JuliaIO/JLD2.jl) extension so 
-[`RetentionMapper`](@ref) objects can be stored and restored with 
-[`JLD2`](https://github.com/JuliaIO/JLD2.jl). The extension loads automatically once 
-[`JLD2`](https://github.com/JuliaIO/JLD2.jl) is available.
+JuChrom also ships a `JLD2` extension so [`RetentionMapper`](@ref) objects can be stored 
+and restored with [`JLD2`](https://github.com/JuliaIO/JLD2.jl). The extension loads 
+automatically once `JLD2` is available.
 
 ```@example 1
 using JLD2

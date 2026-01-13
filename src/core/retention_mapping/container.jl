@@ -18,24 +18,23 @@ Concrete subtypes are expected to define
 `extras::Dict{String, Any}` – a metadata dictionary associated with the retention mapper.
 
 See also
-[`RetentionMapper`](@ref RetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper), 
 [`extras`](@ref extras(::AbstractRetentionMapper)),
-[`fitmap`](@ref fitmap(::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}, 
-                       ::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}})
-[`invmapmin`](@ref invmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
-[`invmapmax`](@ref invmapmax(::AbstractRetentionMapper{<:Any, Nothing})),
-[`mapmax`](@ref mapmax(::AbstractRetentionMapper{Nothing})),
-[`mapmin`](@ref mapmin(::AbstractRetentionMapper{Nothing})),
-[`rawinvmapmax`](@ref rawinvmapmax(::AbstractRetentionMapper{<:Any, Nothing}),
-[`rawinvmapmin`](@ref rawinvmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
-[`rawmapmax`](@ref rawmapmax(::AbstractRetentionMapper{Nothing})),
-[`rawmapmin`](@ref rawmapmin(::AbstractRetentionMapper{Nothing})).
-[`rawretentions_A`](@ref rawretentions_A(::AbstractRetentionMapper)), 
-[`rawretentions_B`](@ref rawretentions_B(::AbstractRetentionMapper)), 
-[`retentions_A`](@ref retentions_A(::AbstractRetentionMapper)), 
-[`retentions_B`](@ref retentions_B(::AbstractRetentionMapper)), 
-[`retentionunit_A`](@ref retentionunit_A(::AbstractRetentionMapper)), 
-[`retentionunit_B`](@ref retentionunit_B(::AbstractRetentionMapper)).
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref).
+[`rawretentions_A`](@ref), 
+[`rawretentions_B`](@ref), 
+[`retentions_A`](@ref), 
+[`retentions_B`](@ref), 
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 """
 abstract type AbstractRetentionMapper{A, B} end
 
@@ -71,34 +70,31 @@ Fields include
 `extras::Dict{String, Any}` – a metadata dictionary associated with the retention mapper.
 
 See also
-[`AbstractRetentionMapper`](@ref AbstractRetentionMapper), 
-[`applymap`](@ref applymap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`applymap`](@ref applymap(::RetentionMapper, ::MassScanSeries)),
-[`applymap`](@ref applymap(::RetentionMapper, ::MassScanMatrix)),
-[`derivinvmap`](@ref derivinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`derivmap`](@ref derivmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
 [`extras`](@ref extras(::AbstractRetentionMapper)),
-[`fitmap`](@ref fitmap(::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}, 
-                       ::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}})
-[`invmap`](@ref invmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`invmapmax`](@ref invmapmax(::AbstractRetentionMapper{<:Any, Nothing})),
-[`invmapmin`](@ref invmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
-[`mapmax`](@ref mapmax(::AbstractRetentionMapper{Nothing})),
-[`mapmin`](@ref mapmin(::AbstractRetentionMapper{Nothing})),
-[`rawapplymap`](@ref rawapplymap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`rawderivinvmap`](@ref rawderivinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`rawderivmap`](@ref rawderivmap(::RetentionMapper, ::AbstractQuantity{<:Real})),
-[`rawinvmap`](@ref rawinvmap(::RetentionMapper, ::Union{<:Real, <:AbstractQuantity{<:Real}})),
-[`rawinvmapmax`](@ref rawinvmapmax(::AbstractRetentionMapper{<:Any, Nothing}),
-[`rawinvmapmin`](@ref rawinvmapmin(::AbstractRetentionMapper{<:Any, Nothing})),
-[`rawmapmax`](@ref rawmapmax(::AbstractRetentionMapper{Nothing})),
-[`rawmapmin`](@ref rawmapmin(::AbstractRetentionMapper{Nothing})),
-[`rawretentions_A`](@ref rawretentions_A(::AbstractRetentionMapper)), 
-[`rawretentions_B`](@ref rawretentions_B(::AbstractRetentionMapper)), 
-[`retentions_A`](@ref retentions_A(::AbstractRetentionMapper)), 
-[`retentions_B`](@ref retentions_B(::AbstractRetentionMapper)), 
-[`retentionunit_A`](@ref retentionunit_A(::AbstractRetentionMapper)), 
-[`retentionunit_B`](@ref retentionunit_B(::AbstractRetentionMapper)).
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref), 
+[`rawretentions_B`](@ref), 
+[`retentions_A`](@ref), 
+[`retentions_B`](@ref), 
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 """
 struct RetentionMapper{
     T1<:AbstractVector{<:Real},
@@ -278,30 +274,18 @@ end
 """
     extras(rm::AbstractRetentionMapper)
 
-Retrieve the metadata dictionary associated with the retention mapper.
+Return the metadata dictionary associated with a retention mapper.
 
-The metadata can store additional information about the mapper, such as the calibration 
-file name, creation date, experimental conditions, or other user-defined properties 
-that were stored during mapper creation or added subsequently.
+The metadata can store additional information such as calibration file name, creation
+date, experimental conditions, or other user-defined properties. It is a mutable
+dictionary and does not affect the mapping operations.
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref).
 
-- `rm::AbstractRetentionMapper`: The retention mapper from which to retrieve metadata.
-
-## Returns
-
-A `Dict{String, Any}` containing the metadata key-value pairs. Returns an empty 
-dictionary if no metadata was stored.
-
-## Notes
-
-- Metadata is stored as a mutable dictionary and can be modified after mapper creation.
-- Common metadata keys include "cal_file", "creation_date", "instrument", etc.
-- The metadata does not affect the mathematical mapping operations.
-
-See also [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
@@ -333,32 +317,31 @@ extras(rm::AbstractRetentionMapper) = rm.extras
     rawretentions_A(rm::AbstractRetentionMapper;
                     unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric calibration data values from the input domain (domain A), stripped 
-of units.
+Return the raw numeric calibration inputs from domain A, with units stripped.
 
-This function always returns the numeric values without units, regardless of whether 
-the mapper was created with unitful or unitless data.
+For unitful mappers, `unit` converts the values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention A to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_B`](@ref),
+[`retentions_A`](@ref),
+[`retentions_B`](@ref),
+[`retentionunit_A`](@ref),
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping. 
-  For unitless mappers, this parameter is ignored.
-
-## Returns
-
-A vector of raw numeric calibration input values (no units), optionally converted to the 
-specified unit first.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A to a unit".
-
-See also [`retentions_A`](@ref), [`retentions_B`](@ref), [`rawretentions_B`](@ref), 
-[`mapmin`](@ref), [`mapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -399,32 +382,31 @@ end
     rawretentions_B(rm::AbstractRetentionMapper;
                     unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric calibration data values from the output domain (domain B), 
-stripped of units.
+Return the raw numeric calibration outputs from domain B, with units stripped.
 
-This function always returns the numeric values without units, regardless of whether 
-the mapper was created with unitful or unitless data.
+For unitful mappers, `unit` converts the values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention B to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref),
+[`retentions_A`](@ref),
+[`retentions_B`](@ref),
+[`retentionunit_A`](@ref),
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping. 
-  For unitless mappers, this parameter is ignored.
-
-## Returns
-
-A vector of raw numeric calibration output values (no units), optionally converted to the 
-specified unit first.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B to a unit".
-
-See also [`retentions_B`](@ref), [`retentions_A`](@ref), [`rawretentions_A`](@ref), 
-[`mapmin`](@ref), [`mapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -454,36 +436,32 @@ end
 """
     retentions_A(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the calibration data values from the input domain (domain A) used to fit the 
-retention mapper.
+Return the calibration inputs from domain A used to fit the mapper.
 
-This function provides access to the original input values that were used during 
-calibration. For unitful mappers, returns the values with units; for unitless mappers, 
-returns the raw numeric values.
+For unitful mappers, values are returned with units and can be converted with `unit`.
+For unitless mappers, raw numeric values are returned and `unit` must be `nothing`;
+otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention A to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref),
+[`rawretentions_B`](@ref),
+[`retentions_B`](@ref),
+[`retentionunit_A`](@ref),
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to 
-  the requested unit.
-
-## Returns
-
-A vector of calibration input values. For unitful mappers, returns a vector of
-`AbstractQuantity`
-objects with appropriate units (converted if `unit` is specified). For unitless mappers, 
-returns a vector of raw numeric values.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A to a unit".
-
-See also [`rawretentions_A`](@ref), [`retentions_B`](@ref), [`rawretentions_B`](@ref), 
-[`mapmin`](@ref), [`mapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
-
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -521,38 +499,34 @@ end
 # ── retentions_B ──────────────────────────────────────────────────────────────────────────
 
 """
-    retentions_B(rm::AbstractRetentionMapper;
-    unit::Union{Nothing, Unitful.Units}=nothing)
+    retentions_B(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the calibration data values from the output domain (domain B) used to fit the 
-retention mapper.
+Return the calibration outputs from domain B used to fit the mapper.
 
-This function provides access to the original output values that were used during 
-calibration. For unitful mappers, returns the values with units; for unitless mappers, 
-returns the raw numeric values.
+For unitful mappers, values are returned with units and can be converted with `unit`.
+For unitless mappers, raw numeric values are returned and `unit` must be `nothing`;
+otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention B to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref),
+[`rawretentions_B`](@ref),
+[`retentions_A`](@ref),
+[`retentionunit_A`](@ref),
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to 
-  the requested unit.
-
-## Returns
-
-A vector of calibration output values. For unitful mappers, returns a vector of
-`AbstractQuantity`
-objects with appropriate units (converted if `unit` is specified). For unitless mappers, 
-returns a vector of raw numeric values.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B to a unit".
-
-See also [`rawretentions_B`](@ref), [`retentions_A`](@ref), [`rawretentions_A`](@ref), 
-[`mapmin`](@ref), [`mapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -584,21 +558,28 @@ end
 
 Return the unit associated with the input domain (domain A) of the retention mapper.
 
-For unitful mappers, this returns the `Unitful.Units` object representing the unit 
-of the input values. For unitless mappers, this returns `Nothing`.
+For unitful mappers, this returns the `Unitful.Units` object representing the unit of
+the input values. For unitless mappers, it returns `nothing`.
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref),
+[`rawretentions_B`](@ref),
+[`retentions_A`](@ref),
+[`retentions_B`](@ref),
+[`retentionunit_B`](@ref).
 
-- `mapper::AbstractRetentionMapper`: The fitted retention mapper.
-
-## Returns
-
-The unit of the input domain. Returns a `Unitful.Units` object for unitful mappers, 
-or `Nothing` for unitless mappers.
-
-See also [`retentions_A`](@ref), [`rawretentions_A`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -624,21 +605,28 @@ retentionunit_A(mapper::AbstractRetentionMapper) = mapper.rA_unit
 
 Return the unit associated with the output domain (domain B) of the retention mapper.
 
-For unitful mappers, this returns the `Unitful.Units` object representing the unit 
-of the output values. For unitless mappers, this returns `Nothing`.
+For unitful mappers, this returns the `Unitful.Units` object representing the unit of
+the output values. For unitless mappers, it returns `nothing`.
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper),
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref),
+[`rawretentions_B`](@ref),
+[`retentions_A`](@ref),
+[`retentions_B`](@ref),
+[`retentionunit_A`](@ref).
 
-- `mapper::AbstractRetentionMapper`: The fitted retention mapper.
-
-## Returns
-
-The unit of the output domain. Returns a `Unitful.Units` object for unitful mappers, 
-or `Nothing` for unitless mappers.
-
-See also [`retentions_B`](@ref), [`rawretentions_B`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]

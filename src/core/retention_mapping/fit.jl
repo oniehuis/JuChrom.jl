@@ -17,55 +17,52 @@ Constructs a strictly increasing, smooth cubic B-spline that maps values from do
 (`retentions_A`) to domain B (`retentions_B`), subject to a monotonicity constraint and 
 smoothness penalty.
 
-The fitted spline minimizes a regularized least-squares objective: data fidelity (squared 
-residuals) and a smoothness penalty (second derivative norm), subject to non-negativity of 
-the first derivative.
+The fitted spline minimizes a regularized least-squares objective: data fidelity
+(squared residuals) and a smoothness penalty (second derivative norm), subject to
+non-negativity of the first derivative.
 
 The smoothing parameter `λ` is automatically determined via binary search: it selects the 
 smallest value that yields a monotonic spline while fitting the data as closely as possible, 
 thus ensuring both stability and high fidelity without introducing spurious oscillations.
 
-This method offers a principled and robust way to construct a physically meaningful mapping
-between any two monotonically related quantities:
+Inputs are monotonic `retentions_A`/`retentions_B` vectors (unitful or unitless), optional
+controls for smoothness (`smoothness_penalty_n`, `λ_min`, `λ_max`, `max_lambda_iters`) and
+monotonicity enforcement (`monotonicity_grid_size`), optional metadata (`extras`), and an
+optimizer constructor. `logλ_tolerance` is the stopping tolerance on `log10(λ)` used by the
+binary search that tunes the smoothing parameter: when the log-range width falls below
+this value, the search stops (smaller values mean tighter λ tuning at higher cost).
 
-- **Monotonicity enforcement** ensures the fitted function is strictly increasing, which is
-  appropriate when the relationship between the two variables is expected to be monotonic.
+Returns a `RetentionMapper` containing the fitted spline and metadata.
 
-- **Automatic regularization strength selection** identifies the highest level of smoothing
-  that still maintains monotonicity, balancing accurate data representation with robustness
-  against overfitting and numerical instability.
+See also 
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper), 
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`extras`](@ref extras(::AbstractRetentionMapper)),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`rawretentions_A`](@ref), 
+[`rawretentions_B`](@ref), 
+[`retentions_A`](@ref), 
+[`retentions_B`](@ref), 
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref). 
 
-- **Invertibility** is guaranteed due to strict monotonicity, enabling reliable backward
-  mapping from domain B to domain A.
-
-- **Numerical robustness** is achieved through convex optimization over normalized data,
-  ensuring convergence and stability across a wide range of inputs.
-
-## Arguments
-
-- `retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}`: Input domain values 
-  (strictly increasing, same units if using Unitful quantities).
-- `retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}}`: Corresponding output 
-  domain values.
-- `smoothness_penalty_n::Integer=100`: Number of evaluation points for curvature penalty.
-- `monotonicity_grid_size::Integer=10^5`: Number of grid points to enforce monotonicity.
-- `λ_max::Real=1e2`: Upper bound for smoothness parameter search.
-- `λ_min::Real=1e-20`: Lower bound for smoothness parameter search.
-- `logλ_tolerance::Real=1e-4`: Tolerance for log₁₀(λ) convergence in binary search.
-- `max_lambda_iters::Integer=100`: Maximum number of iterations for λ search.
-- `extras::AbstractDict{<:AbstractString, <:Any}`: Optional metadata to attach to the 
-  mapper.
-- `optimizer_factory=HiGHS.Optimizer`: Optimizer constructor (advanced/testing).
-
-## Returns
-
-A `RetentionMapper` object containing the fitted monotonic spline and associated metadata.
-
-See also [`extras`](@ref), [`mapmin`](@ref), [`rawmapmin`](@ref), [`mapmax`](@ref), 
-[`rawmapmax`](@ref), [`invmapmin`](@ref), [`rawinvmapmin`](@ref), [`invmapmax`](@ref), 
-[`rawinvmapmax`](@ref), [`applymap`](@ref), [`invmap`](@ref), [`derivinvmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];

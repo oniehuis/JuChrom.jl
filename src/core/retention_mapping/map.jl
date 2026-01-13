@@ -55,24 +55,34 @@ end
 Apply the fitted mapping to transform a retention value from domain A to domain B using the 
 fitted spline within the `RetentionMapper`.
 
-# Arguments
-- `rm::RetentionMapper`: A fitted retention mapper containing the spline and normalization 
-  parameters.
-- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: The retention value to be mapped from 
-  domain A to domain B.
-- `domain_boundary_threshold::Real=1e-8`: Threshold for determining when to warn about
-  extrapolation beyond the spline domain.
-- `warn::Bool=false`: If `true`, logs a warning when extrapolating beyond the spline domain.
-- `unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit`: Desired output unit (defaults to the 
-  unit used for domain B during fitting).
+Inputs are a fitted `rm`, a retention value (unitful or unitless), and `unit` for output
+conversion. `domain_boundary_threshold` sets how far beyond the normalized spline
+domain a value must lie before logging an extrapolation warning when `warn=true`.
 
-# Behavior
-- For inputs outside the spline domain, linear extrapolation is performed using the 
-  spline's first derivative at the boundary
-- Returns the predicted output value on the original scale with appropriate units
+Out-of-domain values are extrapolated linearly using the boundary slope, and the result
+is returned on the original scale with appropriate units.
 
-See also [`rawapplymap`](@ref), [`invmap`](@ref), [`derivmap`](@ref), [`derivinvmap`](@ref), 
-[`fitmap`](@ref).
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
 # Examples
 ```jldoctest
@@ -126,10 +136,8 @@ intensities by the Jacobian to preserve peak areas.
 For parameter descriptions and basic behavior, see [`applymap`](@ref) for single retention 
 values.
 
-# Returns
-- New `MassScanSeries` with mapped retentions and Jacobian-corrected intensities
+Returns a new `MassScanSeries` with mapped retentions and Jacobian-corrected intensities.
 
-# Important Notes
 `applymap` treats intensities as densities with respect to retention coordinates. Monotonic 
 reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your 
 data are integrated counts per scan with variable dwell times, convert to densities first 
@@ -324,10 +332,8 @@ scaling intensities by the Jacobian to preserve peak areas.
 For additional parameter descriptions and basic behavior, see [`applymap`](@ref) for 
 single retention values.
 
-# Returns
-- New `MassScanMatrix` with mapped retentions and Jacobian-corrected intensities
+Returns a new `MassScanMatrix` with mapped retentions and Jacobian-corrected intensities.
 
-# Important Notes
 `applymap` treats intensities as densities with respect to retention coordinates. Monotonic 
 reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your 
 data are integrated counts per scan with variable dwell times, convert to densities first 
@@ -466,35 +472,40 @@ output value is outside the supported domain, extrapolation is performed using t
 derivative. The derivative is adjusted to account for the normalization scales applied 
 during spline fitting.
 
-## Arguments
+Inputs are a fitted `rm`, an output value in domain B, optional `rA_unit`/`rB_unit` for
+unit conversion, and `tol` for root-finding (absolute bisection tolerance when solving the 
+inverse; smaller values increase accuracy at higher cost). `domain_boundary_threshold` sets 
+how far beyond the normalized inverse spline domain a value must lie before logging an
+extrapolation warning when `warn=true`.
 
-- `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value (domain B) for which the 
-  inverse derivative is computed.
-- `rA_unit`: Desired input unit for the derivative (defaults to the domain A unit used in 
-  fitting).
-- `rB_unit`: Desired output unit for the derivative (defaults to the domain B unit used in 
-  fitting).
-- `tol::Real=1e-8`: Tolerance for root-finding when locating the corresponding input value.
-- `warn::Bool=false`: Whether to emit informational messages when extrapolating outside the 
-  spline domain.
+Returns the derivative d(A)/d(B) with units of `rA_unit/rB_unit`. This is the reciprocal
+of [`derivmap`](@ref), is always positive under the monotonic constraint, and uses
+root-finding to locate the corresponding input value. Out-of-domain values use the
+boundary derivative.
 
-## Returns
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-The derivative d(A)/d(B) at the specified output value, with units of `rA_unit/rB_unit`.
-
-## Notes
-
-- For retention time/retention index mappings, this gives the local "time per retention 
-  index unit" rate.
-- This is the reciprocal of the forward derivative from `derivmap`.
-- The derivative is always positive due to the monotonicity constraint.
-- Root-finding is used to locate the corresponding input value before computing the 
-  derivative.
-
-See also [`derivmap`](@ref), [`applymap`](@ref), [`invmap`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
@@ -632,34 +643,39 @@ This function evaluates the derivative of the fitted monotonic B-spline, extrapo
 using boundary derivatives if the input lies outside the spline domain. The derivative is 
 adjusted to account for the normalization scales applied during spline fitting.
 
-## Arguments
+Inputs are a fitted `rm`, an input value in domain A, optional `rA_unit`/`rB_unit` for
+unit conversion, and `warn` to log extrapolation messages. `domain_boundary_threshold`
+sets how far beyond the normalized spline domain a value must lie before logging an
+extrapolation warning when `warn=true`.
 
-- `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Input value (domain A) at which to 
-  evaluate the derivative.
-- `rA_unit`: Desired input unit for the derivative (defaults to the domain A unit used in 
-  fitting).
-- `rB_unit`: Desired output unit for the derivative (defaults to the domain B unit used in 
-  fitting).
-- `warn::Bool=false`: Whether to emit informational messages when extrapolating outside the 
-  spline domain.
+Returns the derivative d(B)/d(A) with units of `rB_unit/rA_unit`. For retention
+time/retention index mappings, this gives the local “retention index per unit time” rate.
+The derivative is always positive due to the monotonicity constraint, and extrapolation
+uses constant boundary derivatives outside the fitted domain.
 
-## Returns
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-The derivative d(B)/d(A) at the specified input value, with units of `rB_unit/rA_unit`.
-
-## Notes
-
-- For retention time/retention index mappings, this gives the local "retention index per 
-  unit time" rate.
-- The derivative is always positive due to the monotonicity constraint, indicating the 
-  rate of increase.
-- Extrapolation uses constant derivatives at the boundaries, ensuring smooth behavior 
-  outside the fitted domain.
-
-See also [`derivinvmap`](@ref), [`applymap`](@ref), [`invmap`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
@@ -798,30 +814,40 @@ end
 Invert the fitted mapping by computing the input value (domain A) corresponding to a given 
 output value (domain B).
 
-## Arguments
+Inputs are a fitted `rm`, an output value in domain B, an optional `unit` for output 
+conversion, `tol` for root-finding (absolute bisection tolerance when solving the inverse; 
+smaller values increase accuracy at higher cost), and `warn` to log extrapolation messages.
 
-- `rm::RetentionMapper`: The fitted retention mapper containing the spline and scaling info.
-- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value from domain B to invert back 
-  to domain A.
-- `unit`: Desired output unit (defaults to the unit used for domain A during fitting).
-- `tol::Real=1e-8`: Tolerance for root-finding (default 1e-8).
-- `warn::Bool=false`: If `true`, logs warnings when extrapolating beyond spline domain.
-
-## Behavior
-
-- Normalizes the input value to the spline domain.
-- Performs linear extrapolation beyond the spline range using derivative at the boundaries.
-- Uses numerical root-finding (bisection method) within the spline domain for precise 
-  inversion.
-- Converts result back to original domain A scale with requested units.
+The inversion normalizes the input to the spline domain, extrapolates linearly using the
+boundary derivative, uses bisection within the domain, and returns the result on the
+original domain A scale with requested units.
 
 This function leverages the strict monotonicity of the fitted spline to provide reliable 
 inverse mapping, enabling bidirectional conversion between the two domains.
 
-See also [`rawinvmap`](@ref), [`applymap`](@ref), [`derivmap`](@ref), [`derivinvmap`](@ref), 
-[`fitmap`](@ref).
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
@@ -885,30 +911,38 @@ end
 """
     invmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the minimum predicted value of the output domain (domain B) for the fitted retention 
-mapper. This corresponds to the predicted output value at the minimum input value and 
-represents the lower bound of the output range that can be reliably inverted back to input 
-values. For unitful mappers, returns the value with units; for unitless mappers, returns 
-the raw numeric value.
+Return the minimum predicted value of domain B.
 
-## Arguments
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to 
-  the requested unit.
-
-## Returns
-The minimum predicted output value. For unitful mappers, returns an `AbstractQuantity` with 
-appropriate units (converted if `unit` is specified). For unitless mappers, returns the 
-raw numeric value.
-
-## Throws
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B minimum to a unit".
+For unitful mappers, the result carries units and can be converted with `unit`. For
+unitless mappers, `unit` must be `nothing`; otherwise `ArgumentError` is thrown with the
+message "Cannot convert unitless retention B minimum to a unit".
 
 See also [`rawinvmapmin`](@ref), [`invmapmax`](@ref), [`rawinvmapmax`](@ref), 
 [`fitmap`](@ref).
 
-## Examples
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
+
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -951,35 +985,35 @@ end
 """
     invmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the maximum predicted value of the output domain (domain B) for the fitted 
-retention mapper.
+Return the maximum predicted value of domain B.
 
-This corresponds to the predicted output value at the maximum input value and represents 
-the upper bound of the output range that can be reliably inverted back to input values.
-For unitful mappers, returns the value with units; for unitless mappers, returns the raw 
-numeric value.
+For unitful mappers, the result carries units and can be converted with `unit`. For
+unitless mappers, `unit` must be `nothing`; otherwise `ArgumentError` is thrown with the
+message "Cannot convert unitless retention B maximum to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to 
-  the requested unit.
-
-## Returns
-
-The maximum predicted output value. For unitful mappers, returns an `AbstractQuantity` with 
-appropriate units (converted if `unit` is specified). For unitless mappers, returns the 
-raw numeric value.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B maximum to a unit".
-
-See also [`rawinvmapmax`](@ref), [`invmapmin`](@ref), [`rawinvmapmin`](@ref), 
-[`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1022,28 +1056,35 @@ end
 """
     mapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the maximum value of the input domain (domain A) for the fitted retention mapper.
-This corresponds to the largest input value used during calibration and represents
-the upper bound of the reliable interpolation range. For unitful mappers, returns
-the value with units; for unitless mappers, returns the raw numeric value.
+Return the maximum input value from domain A used during calibration.
 
-## Arguments
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to 
-  the requested unit.
+For unitful mappers, the result carries units and can be converted with `unit`. For
+unitless mappers, `unit` must be `nothing`; otherwise `ArgumentError` is thrown with the
+message "Cannot convert unitless retention A maximum to a unit".
 
-## Returns
-The maximum input value from the calibration data. For unitful mappers, returns an `AbstractQuantity`
-with appropriate units (converted if `unit` is specified). For unitless mappers, returns
-the raw numeric value.
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Throws
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A maximum to a unit".
-
-See also [`rawmapmax`](@ref), [`mapmin`](@ref), [`rawmapmin`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1086,28 +1127,35 @@ end
 """
     mapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the minimum value of the input domain (domain A) for the fitted retention mapper.
-This corresponds to the smallest input value used during calibration and represents
-the lower bound of the reliable interpolation range. For unitful mappers, returns
-the value with units; for unitless mappers, returns the raw numeric value.
+Return the minimum input value from domain A used during calibration.
 
-## Arguments
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: Desired output unit (optional). If specified for unitful mappers, converts to
-  the requested unit.
+For unitful mappers, the result carries units and can be converted with `unit`. For
+unitless mappers, `unit` must be `nothing`; otherwise `ArgumentError` is thrown with the
+message "Cannot convert unitless retention A minimum to a unit".
 
-## Returns
-The minimum input value from the calibration data. For unitful mappers, returns an `AbstractQuantity`
-with appropriate units (converted if `unit` is specified). For unitless mappers, returns
-the raw numeric value.
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Throws
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A minimum to a unit".
-
-See also [`rawmapmin`](@ref), [`mapmax`](@ref), [`rawmapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1157,29 +1205,40 @@ end
 Apply the fitted mapping to transform an input value from domain A to domain B using the
 fitted spline within the `RetentionMapper`, returning a unitless numeric result.
 
-## Arguments
-- `rm::RetentionMapper`: A fitted retention mapper containing the spline and normalization
-  parameters.
-- `retention::AbstractQuantity{<:Real}`: The input value with units to be mapped from domain A to 
-  domain B.
-- `warn::Bool=false`: If `true`, logs a warning when extrapolating beyond the spline domain.
-- `unit::Union{<:Nothing, Unitful.Units}=rm.rB_unit`: Unit system for the output value 
-  before unit stripping (defaults to the unit used for domain B during fitting).
+Inputs are a fitted `rm`, a unitful retention value, `warn` for extrapolation logs, and
+`unit` for output conversion before stripping.
 
-## Behavior
-- Input value is normalized before spline evaluation.
-- If the input lies outside the spline domain, linear extrapolation is performed using the
-  spline's first derivative at the boundary.
-- Returns the predicted output value as a unitless number in the specified unit system.
-- Requires input with units (use [`applymap`](@ref) for unitless inputs).
+The input is normalized before spline evaluation. Out-of-domain values are extrapolated
+linearly using the boundary slope, and the result is returned as a unitless number in the
+requested unit system. This method requires unitful input (use [`applymap`](@ref) for
+unitless inputs).
 
 This function provides the same transformation as [`applymap`](@ref) but strips units from 
 the result, which is useful for downstream calculations that require raw numeric values.
 
-See also [`applymap`](@ref), [`invmap`](@ref), [`derivmap`](@ref), [`derivinvmap`](@ref), 
-[`fitmap`](@ref).
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
@@ -1244,40 +1303,44 @@ output value is outside the supported domain, extrapolation is performed using t
 derivative. The derivative is adjusted to account for the normalization scales applied 
 during spline fitting.
 
-## Arguments
+Inputs are a fitted `rm`, an output value in domain B, optional `rA_unit`/`rB_unit` for 
+unit conversion, and `tol` for root-finding (absolute bisection tolerance when solving the 
+inverse; smaller values increase accuracy at higher cost). `domain_boundary_threshold` sets 
+how far beyond the normalized inverse spline domain a value must lie before logging an
+extrapolation warning when `warn=true`.
 
-- `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::Union{<:Real, <:AbstractQuantity{<:Real}}`: Output value (domain B) for which the 
-  inverse derivative is computed.
-- `rA_unit`: Input unit for the derivative calculation (defaults to the domain A unit used 
-  in fitting).
-- `rB_unit`: Output unit for the derivative calculation (defaults to the domain B unit used 
-  in fitting).
-- `tol::Real=1e-8`: Tolerance for root-finding when locating the corresponding input value.
-- `warn::Bool=false`: Whether to emit informational messages when extrapolating outside the 
-  spline domain.
+Returns the derivative d(A)/d(B) as a unitless number in the `rA_unit/rB_unit` system
+before stripping. This is the reciprocal of [`rawderivmap`](@ref), is always positive
+under the monotonic constraint, and uses root-finding to locate the corresponding input
+value. Out-of-domain values use the boundary derivative.
 
-## Returns
+This function provides the same transformation as [`derivinvmap`](@ref) but strips units 
+from the result, which is useful for downstream calculations that require raw numeric 
+values.
 
-The derivative d(A)/d(B) at the specified output value as a unitless number, expressed in 
-the unit system of `rA_unit/rB_unit` before unit stripping.
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Notes
-
-- For retention time/retention index mappings, this gives the local "time per retention 
-  index unit" rate as a raw numeric value.
-- This is the reciprocal of the forward derivative from [`rawderivmap`](@ref).
-- The derivative is always positive due to the monotonicity constraint.
-- Root-finding is used to locate the corresponding input value before computing the 
-  derivative.
-
-This function provides the same transformation as [`derivinvmap`](@ref) but strips units from 
-the result, which is useful for downstream calculations that require raw numeric values.
-
-See also [`derivinvmap`](@ref), [`derivmap`](@ref), [`applymap`](@ref), [`invmap`](@ref), 
-[`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
@@ -1385,36 +1448,42 @@ This function evaluates the derivative of the fitted monotonic B-spline, extrapo
 using boundary derivatives if the input lies outside the spline domain. The derivative is
 adjusted to account for the normalization scales applied during spline fitting.
 
-## Arguments
-- `rm::RetentionMapper`: The retention mapper containing spline and scaling parameters.
-- `retention::AbstractQuantity{<:Real}`: Input value with units (domain A) at which to evaluate 
-  the derivative.
-- `rA_unit`: Input unit for the derivative calculation (defaults to the domain A unit used 
-  in fitting).
-- `rB_unit`: Output unit for the derivative calculation (defaults to the domain B unit used 
-  in fitting).
-- `warn::Bool=false`: Whether to emit informational messages when extrapolating outside the
-  spline domain.
+Inputs are a fitted `rm`, a unitful input value in domain A, optional `rA_unit`/`rB_unit`
+for unit conversion, and `warn` to log extrapolation messages. `domain_boundary_threshold`
+sets how far beyond the normalized spline domain a value must lie before logging an
+extrapolation warning when `warn=true`.
 
-## Returns
-The derivative d(B)/d(A) at the specified input value as a unitless number, expressed in 
-the unit system of `rB_unit/rA_unit` before unit stripping.
-
-## Notes
-- Requires input with units (use [`derivmap`](@ref) for unitless inputs).
-- For retention time/retention index mappings, this gives the local "retention index per
-  unit time" rate as a raw numeric value.
-- The derivative is always positive due to the monotonicity constraint.
-- Extrapolation uses constant derivatives at the boundaries, ensuring smooth behavior
-  outside the fitted domain.
+Returns the derivative d(B)/d(A) as a unitless number in the `rB_unit/rA_unit` system
+before stripping. This method requires unitful input (use [`derivmap`](@ref) for unitless
+inputs). The derivative is always positive under the monotonic constraint, and
+extrapolation uses constant boundary derivatives outside the fitted domain.
 
 This function provides the same transformation as [`derivmap`](@ref) but strips units from 
 the result, which is useful for downstream calculations that require raw numeric values.
 
-See also [`derivmap`](@ref), [`derivinvmap`](@ref), [`applymap`](@ref), [`invmap`](@ref), 
-[`fitmap`](@ref).
+See also 
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
@@ -1501,33 +1570,43 @@ end
 Invert the fitted mapping by computing the input value (domain A) corresponding to a given 
 output value (domain B), returning a unitless numeric result.
 
-## Arguments
+Inputs are a fitted `rm`, a unitful output value in domain B, an optional `unit` for
+conversion before stripping, `tol` for root-finding (absolute bisection tolerance when 
+solving the inverse; smaller values increase accuracy at higher cost), and `warn` to log 
+extrapolation messages.
 
-- `rm::RetentionMapper`: The fitted retention mapper containing the spline and scaling info.
-- `retention::AbstractQuantity{<:Real}`: Output value with units from domain B to invert back 
-  to domain A.
-- `unit`: Unit system for the output value before unit stripping (defaults to the unit used 
-  for domain A during fitting).
-- `tol::Real=1e-8`: Tolerance for root-finding (default 1e-8).
-- `warn::Bool=false`: If `true`, logs warnings when extrapolating beyond spline domain.
-
-## Behavior
-
-- Normalizes the input value to the spline domain.
-- Performs linear extrapolation beyond the spline range using derivative at the boundaries.
-- Uses numerical root-finding (bisection method) within the spline domain for precise 
-  inversion.
-- Returns the result as a unitless number in the specified unit system.
-- Requires input with units (use [`invmap`](@ref) for unitless inputs).
+The inversion normalizes the input to the spline domain, extrapolates linearly using the
+boundary derivative, uses bisection within the domain, and returns a unitless result in
+the requested unit system. This method requires unitful input (use [`invmap`](@ref) for
+unitless inputs).
 
 This function leverages the strict monotonicity of the fitted spline to provide reliable 
 inverse mapping, enabling bidirectional conversion between the two domains while returning
 raw numeric values useful for downstream calculations.
 
-See also [`invmap`](@ref), [`applymap`](@ref), [`derivmap`](@ref), [`derivinvmap`](@ref), 
-[`fitmap`](@ref).
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
@@ -1601,31 +1680,35 @@ end
 """
     rawinvmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric maximum predicted value of the output domain (domain B), stripped 
-of units.
+Return the maximum predicted value of domain B with units stripped.
 
-This function always returns the numeric value without units, regardless of whether the 
-mapper was created with unitful or unitless data.
+For unitful mappers, `unit` converts values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention B maximum to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping. 
-  For unitless mappers, this parameter is ignored.
-
-## Returns
-
-The maximum predicted output value as a raw number (no units), optionally converted to 
-the specified unit first.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B maximum to a unit".
-
-See also [`invmapmax`](@ref), [`invmapmin`](@ref), [`rawinvmapmin`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1662,31 +1745,35 @@ end
 """
     rawinvmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric minimum predicted value of the output domain (domain B), stripped 
-of units.
+Return the minimum predicted value of domain B with units stripped.
 
-This function always returns the numeric value without units, regardless of whether 
-the mapper was created with unitful or unitless data.
+For unitful mappers, `unit` converts values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention B minimum to a unit".
 
-## Arguments
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawmapmax`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping. 
-  For unitless mappers, this parameter is ignored.
-
-## Returns
-
-The minimum predicted output value as a raw number (no units), optionally converted to the 
-specified unit first.
-
-## Throws
-
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention B minimum to a unit".
-
-See also [`invmapmin`](@ref), [`invmapmax`](@ref), [`rawinvmapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1726,26 +1813,35 @@ end
 """
     rawmapmax(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric maximum value of the input domain (domain A), stripped of units.
-This function always returns the numeric value without units, regardless of whether
-the mapper was created with unitful or unitless data.
+Return the maximum input value of domain A with units stripped.
 
-## Arguments
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping.
-  For unitless mappers, this parameter is ignored.
+For unitful mappers, `unit` converts values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention A maximum to a unit".
 
-## Returns
-The maximum input value as a raw number (no units), optionally converted to the specified 
-unit first.
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmin`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Throws
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A maximum to a unit".
-
-See also [`mapmax`](@ref), [`mapmin`](@ref), [`rawmapmin`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
@@ -1788,26 +1884,35 @@ end
 """
     rawmapmin(rm::AbstractRetentionMapper; unit::Union{Nothing, Unitful.Units}=nothing)
 
-Return the raw numeric minimum value of the input domain (domain A), stripped of units.
-This function always returns the numeric value without units, regardless of whether
-the mapper was created with unitful or unitless data.
+Return the minimum input value of domain A with units stripped.
 
-## Arguments
-- `rm::AbstractRetentionMapper`: The fitted retention mapper.
-- `unit`: For unitful mappers, specifies the unit to convert to before stripping.
-  For unitless mappers, this parameter is ignored.
+For unitful mappers, `unit` converts values before stripping. For unitless mappers,
+`unit` must be `nothing`; otherwise `ArgumentError` is thrown with the message
+"Cannot convert unitless retention A minimum to a unit".
 
-## Returns
-The minimum input value as a raw number (no units), optionally converted to the specified
-unit first.
+See also
+[`AbstractRetentionMapper`](@ref JuChrom.AbstractRetentionMapper), 
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`applymap`](@ref),
+[`derivinvmap`](@ref),
+[`derivmap`](@ref),
+[`fitmap`](@ref),
+[`invmap`](@ref),
+[`invmapmax`](@ref),
+[`invmapmin`](@ref),
+[`mapmax`](@ref),
+[`mapmin`](@ref),
+[`rawapplymap`](@ref),
+[`rawderivinvmap`](@ref),
+[`rawderivmap`](@ref),
+[`rawinvmap`](@ref),
+[`rawinvmapmax`](@ref),
+[`rawinvmapmin`](@ref),
+[`rawmapmax`](@ref),
+[`retentionunit_A`](@ref), 
+[`retentionunit_B`](@ref).
 
-## Throws
-- `ArgumentError`: When attempting to specify a `unit` for a unitless mapper. The error
-  message will be "Cannot convert unitless retention A minimum to a unit".
-
-See also [`mapmin`](@ref), [`mapmax`](@ref), [`rawmapmax`](@ref), [`fitmap`](@ref).
-
-## Examples
+# Examples
 ```jldoctest
 julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
