@@ -10,6 +10,7 @@ import Base: broadcastable
 using BSplineKit
 using LinearAlgebra
 using Logging
+using MathOptInterface
 using Printf
 using Random
 using SparseArrays
@@ -17,6 +18,9 @@ using Statistics
 using Unitful
 using Unitful: AbstractQuantity
 using JuChrom: tune_lambda_for_monotonic_spline
+
+const MOI = MathOptInterface
+const MOIU = MOI.Utilities
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Unit tests
@@ -1634,6 +1638,31 @@ end
     @test occursin("λ = 5", s)
     @test occursin("NUMERICAL_ERROR", s)
     @test !occursin("OptimizationError:", s)  # concise message only
+end
+
+# ── fitmap optimizer failure ────────────────────────────────────────────────
+
+@testset "fitmap optimizer failure" begin
+    function failing_optimizer()
+        mock = MOIU.MockOptimizer(MOIU.Model{Float64}())
+        MOIU.set_mock_optimize!(mock, m -> begin
+            MOI.set(m, MOI.TerminationStatus(), MOI.INFEASIBLE)
+            MOI.set(m, MOI.ResultCount(), 0)
+            return
+        end)
+        mock
+    end
+
+    rA = [1.0, 2.0, 3.0]
+    rB = [10.0, 20.0, 30.0]
+    err = try
+        fitmap(rA, rB; optimizer_factory=failing_optimizer, max_lambda_iters=1,
+               monotonicity_grid_size=5)
+        nothing
+    catch e
+        e
+    end
+    @test err isa JuChrom.OptimizationError
 end
 
 # ── Base.show(::RetentionMapper) ─────────────────────────────────────────────

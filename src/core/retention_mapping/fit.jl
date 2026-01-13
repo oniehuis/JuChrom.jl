@@ -10,7 +10,8 @@
            λ_min::Real=1e-20,
            logλ_tolerance::Real=1e-4,
            max_lambda_iters::Integer=100,
-           extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}())
+           extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
+           optimizer_factory=HiGHS.Optimizer)
 
 Constructs a strictly increasing, smooth cubic B-spline that maps values from domain A 
 (`retentions_A`) to domain B (`retentions_B`), subject to a monotonicity constraint and 
@@ -54,6 +55,7 @@ between any two monotonically related quantities:
 - `max_lambda_iters::Integer=100`: Maximum number of iterations for λ search.
 - `extras::AbstractDict{<:AbstractString, <:Any}`: Optional metadata to attach to the 
   mapper.
+- `optimizer_factory=HiGHS.Optimizer`: Optimizer constructor (advanced/testing).
 
 ## Returns
 
@@ -88,6 +90,7 @@ function fitmap(
     logλ_tolerance::Real=1e-4,
     max_lambda_iters::Integer=100,
     extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
+    optimizer_factory=HiGHS.Optimizer,
     )
     
     converted_extras = Dict{String, Any}(string(k) => v for (k, v) in extras)
@@ -150,8 +153,12 @@ function fitmap(
     # Define spline fitting procedure with L2 penalty and monotonicity constraint
     function fit_spline_with_penalty(λ)
         # Set up optimization model
-        model = Model(HiGHS.Optimizer)
-        set_silent(model)
+        model = Model(optimizer_factory)
+        try
+            set_silent(model)
+        catch e
+            isa(e, MOI.UnsupportedAttribute) || rethrow()
+        end
 
         # Define spline coefficients as decision variables
         @variable(model, coefs[1:coefs_n])
@@ -168,7 +175,9 @@ function fitmap(
         optimize!(model)
 
         # Return fitted coefficients and solver status
-        value.(coefs), termination_status(model)
+        status = termination_status(model)
+        status == MOI.OPTIMAL || throw(OptimizationError(λ, status))
+        value.(coefs), status
     end
 
     # Find the smallest λ that yields a strictly monotonic spline

@@ -41,8 +41,7 @@ searches for the smallest λ that still yields a strictly monotonic fit.
 
 JuChrom includes visual diagnostics for a fitted mapper, letting you inspect the forward 
 and inverse fits side by side. The plotting helpers load automatically once a 
-[Makie](https://docs.makie.org) backend, such as 
-[CairoMakie.jl](https://github.com/MakieOrg/Makie.jl/tree/master/CairoMakie), is available. 
+[Makie](https://docs.makie.org) backend is available. 
 Example:
 
 ```@example 1
@@ -152,7 +151,7 @@ automatically.
 
 The derivative tells you how much the Kováts retention index changes per unit time. To
 transform the intensities associated with each scan time, divide by the Jacobian (i.e.,
-multiply by its inverse).
+`d(ri)/dt`).
 
 ```@example 1
 ints_transformed = intensities ./ dridt
@@ -165,8 +164,7 @@ unit time, reflecting the change of variables.
 
 | Function | Use case |
 | :--- | :--- |
-| [`fitmap`](@ref) | Infer mapping function from these paired points |
-| :--- | :--- |
+| [`fitmap`](@ref) | Infer mapping function from paired points |
 | [`applymap`](@ref) | Map retention domain A → retention domain B |
 | [`invmap`](@ref) | Map retention domain B → retention domain A |
 | [`derivmap`](@ref) | Jacobian `d(ri)/dt` for intensity scaling |
@@ -184,21 +182,23 @@ unit time, reflecting the change of variables.
 | [`rawmapmin`](@ref), [`rawmapmax`](@ref) | Unitless variant of [`mapmin`](@ref) and [`mapmax`](@ref) |
 | [`rawinvmapmin`](@ref), [`rawinvmapmax`](@ref) | Unitless variant of [`invmapmin`](@ref), [`invmapmax`](@ref) |
 
-For full API details, see [Mapping tools](mapping_tools.md).
+For full API details, see [Mapping tools](Mapping_tools.md).
 
-## JLD2 Support
+## JLD2 support
 
-JuChrom also ships a JLD2 extension so `RetentionMapper` objects can be stored and 
-restored with JLD2. The extension loads automatically once JLD2 is available.
+JuChrom also ships a [`JLD2`](https://github.com/JuliaIO/JLD2.jl) extension so 
+[`RetentionMapper`](@ref) objects can be stored and restored with 
+[`JLD2`](https://github.com/JuliaIO/JLD2.jl). The extension loads automatically once 
+[`JLD2`](https://github.com/JuliaIO/JLD2.jl) is available.
 
 ```@example 1
 using JLD2
 
 # Save
-jldsave("retention_mapper.jld2"; mapper)
+save_object("retention_mapper.jld2", mapper)
 
 # Load
-mapper_loaded = load("retention_mapper.jld2", "mapper")
+mapper_loaded = load_object("retention_mapper.jld2")
 ```
 
 ## References

@@ -54,8 +54,8 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                 ],
                 "Data processing" => Any[
                     "Retention mapping" => Any[
-                        "Mapping rational" => "man/mapping_rational.md",
-                        "Mapping tools" => "man/mapping_tools.md",
+                        "Mapping overview" => "man/Mapping_overview.md",
+                        "Mapping tools" => "man/Mapping_tools.md",
                     ],
                     "Alignment" => "man/alignment.md",
                     "Baseline" => "man/baseline.md",
