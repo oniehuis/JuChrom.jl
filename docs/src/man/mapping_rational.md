@@ -1,5 +1,7 @@
 # Overview
 
+## Mapping rationale
+
 Retention mapping converts an irregular axis (time or distance) into a stable, comparable 
 index so chromatograms from different runs can be aligned, interpolated, and compared on a 
 common grid. This makes retention behavior reproducible across batches, instruments, and 
@@ -18,6 +20,8 @@ retention times and [Kováts retention index](https://en.wikipedia.org/wiki/Kova
 (Kováts 1958). Another approach uses a curated set of internal standards (e.g., a few stable 
 compounds spiked into every run), producing matched retention pairs that anchor the mapping 
 across batches (Skoog et al. 2007).
+
+## JuChrom retention mapping
 
 JuChrom provides [`fitmap`](@ref JuChrom.fitmap) to infer an empirical, smooth mapping 
 function from these paired points. The fit constructs a cubic B-spline and chooses the 
@@ -171,18 +175,18 @@ unit time, reflecting the change of variables.
 | [`rawinvmap`](@ref) | Unitless variant of [`invmap`](@ref) |
 | [`rawderivmap`](@ref) | Unitless variant of [`derivmap`](@ref) |
 | [`rawderivinvmap`](@ref) | Unitless variant of [`derivinvmap`](@ref) |
-| :--- | :--- |
 | [`retentions_A`](@ref), [`retentions_B`](@ref) | Anchor vectors used to fit the mapper |
 | [`rawretentions_A`](@ref), [`rawretentions_B`](@ref) | Unitless anchor vectors |
 | [`retentionunit_A`](@ref), [`retentionunit_B`](@ref) | Stored units for the anchor domains |
 | [`extras`](@ref) | Metadata attached to the mapper |
-| :--- | :--- |
 | [`mapmin`](@ref), [`mapmax`](@ref) | Numeric minimum and maximum value of the input domain |
 | [`invmapmin`](@ref), [`invmapmax`](@ref) | Numeric minimum and maximum value of the output domain |
 | [`rawmapmin`](@ref), [`rawmapmax`](@ref) | Unitless variant of [`mapmin`](@ref) and [`mapmax`](@ref) |
 | [`rawinvmapmin`](@ref), [`rawinvmapmax`](@ref) | Unitless variant of [`invmapmin`](@ref), [`invmapmax`](@ref) |
 
 For full API details, see [Mapping tools](mapping_tools.md).
+
+## JLD2 Support
 
 JuChrom also ships a JLD2 extension so `RetentionMapper` objects can be stored and 
 restored with JLD2. The extension loads automatically once JLD2 is available.
