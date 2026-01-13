@@ -57,7 +57,7 @@ jobs:
       #       libxi-dev libxext-dev
 
       - name: Set up testing environment
-        shell: julia --project=test-env {0}
+        shell: julia --project=test {0}
         run: |
           using Pkg;
           ENV["JULIA_PKG_PRECOMPILE_AUTO"] = "0"
@@ -74,7 +74,7 @@ jobs:
           PYTHON: ${{ env.pythonLocation }}/bin/python
         run: >
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
-          julia --color=yes --project=test-env -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
+          julia --color=yes --project=test -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
 
       - uses: julia-actions/julia-processcoverage@v1
 

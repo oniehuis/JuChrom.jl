@@ -37,7 +37,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
 	    authors = "Oliver Niehuis",
         root = @__DIR__,
         pages = [
-            "Home" => "index.md",
+            "Home" => "Index.md",
             "Manual" => Any[
                 "Core containers" => Any[
                     "Design overview" => "man/Containers.md",
@@ -57,20 +57,20 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                         "Mapping overview" => "man/Mapping_overview.md",
                         "Mapping tools" => "man/Mapping_tools.md",
                     ],
-                    "Alignment" => "man/alignment.md",
-                    "Baseline" => "man/baseline.md",
-                    "Binning and Gridding" => "man/binning_gridding.md",
-                    "Format conversion" => "man/convert.md",
-                    "Transformation" => "man/transformation.md",
-                    "Trimming and Filtering" => "man/transform.md",
-                    "Variance modeling" => "man/quadvar_model.md",
+                    "Alignment" => "man/Alignment.md",
+                    "Baseline" => "man/Baseline.md",
+                    "Binning and Gridding" => "man/Binning_gridding.md",
+                    "Format conversion" => "man/Convert.md",
+                    "Transformation" => "man/Transformation.md",
+                    "Trimming and Filtering" => "man/Transform.md",
+                    "Variance modeling" => "man/Quadvar_model.md",
                 ]
 			    ],
             "Internals" => Any[
-                "internals/transform.md",
-                "internals/utils.md"
+                "internals/Transform.md",
+                "internals/Utils.md"
 		        ],
-            "Index" => "man/register.md"
+            "Index" => "man/Register.md"
         ]
     )
 end
