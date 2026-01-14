@@ -461,26 +461,23 @@ end
 """
     binmzvalues(series::MassScanSeries, mzbin_fn::Function=integer) -> MassScanSeries
 
-Return a new `MassScanSeries` where m/z values in each scan are grouped using `mzbin_fn`,
-and intensities within each bin are summed.
+Return a new `MassScanSeries` with per-scan m/z values grouped by `mzbin_fn` and
+intensities summed within each bin. All other fields are copied from the input series.
 
-This method is fully type-stable and constructs a concrete `MassScanSeries` whose element 
-types reflect the output of `mzbin_fn`.
+The output series uses concrete element types inferred from `mzbin_fn`.
 
-# Arguments
-- `series::MassScanSeries`: The input mass scan series.
-- `mzbin_fn::Function`: Function used to assign m/z values to bins (default: `integer`).
+See also
+[`AbstractMassScanSeries`](@ref JuChrom.AbstractMassScanSeries),
+[`MassScanSeries`](@ref JuChrom.MassScanSeries),
+[`integer`](@ref),
+[`intensities`](@ref),
+[`intensityunit`](@ref),
+[`mzvalues`](@ref),
+[`mzunit`](@ref),
+[`uniquemzvalues`](@ref),
+[`scan`](@ref),
+[`scans`](@ref).
 
-# Returns
-A new `MassScanSeries` with binned m/z values and aggregated intensities.
-
-# Throws
-- `AssertionError` if the input series is empty.
-
-See also [`MassScanSeries`](@ref JuChrom.MassScanSeries), [`integer`](@ref), [`mzvalues`](@ref), [`mzunit`](@ref), 
-[`intensities`](@ref), [`intensityunit`](@ref), [`scans`](@ref), [`scan`](@ref).
-
-# Examples
 ```jldoctest
 julia> scan1 = MassScan(1.0u"s", [101.2, 101.6, 102.1], [10, 20, 30])
        scan2 = MassScan(1.0u"s", [100.9, 101.2, 102.6], [20, 5, 30])
@@ -488,11 +485,15 @@ julia> scan1 = MassScan(1.0u"s", [101.2, 101.6, 102.1], [10, 20, 30])
 
 julia> binned = binmzvalues(series);
 
-julia> mzvalues(binned, 1) == [101, 102]
-true
+julia> mzvalues(binned, 1)
+2-element Vector{Int64}:
+ 101
+ 102
 
-julia> intensities(binned, 1) == [30, 30]
-true
+julia> intensities(binned, 1)
+2-element Vector{Int64}:
+ 30
+ 30
 ```
 """
 function binmzvalues(series::MassScanSeries, mzbin_fn::F=integer) where {F<:Function}
@@ -585,20 +586,8 @@ end
 Assigns a real number `value` to an integer bin such that the integer bin `n` includes
 the interval [n - offset, n + (1 - offset)).
 
-# Arguments
-- `value::Real`: The number to assign to a bin.
-- `offset::Real=0.3`: Determines the left edge of the bin around each integer. Must be in 
-  the range [0, 1).
-
-# Returns
-- An `Int` representing the bin number for `value`.
-
-# Throws
-- `ArgumentError` if `offset` is not in [0, 1).
-
 See also [`binmzvalues`](@ref).
 
-# Examples
 ```julia
 julia> integer(3.2)
 3

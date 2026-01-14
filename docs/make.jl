@@ -54,12 +54,15 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                 ],
                 "Data processing" => Any[
                     "Retention mapping" => Any[
-                        "Mapping overview" => "man/mapping_overview.md",
+                        "Overview" => "man/mapping_overview.md",
                         "Mapping tools" => "man/mapping_tools.md",
+                    ],
+                    "Binning and Gridding" => Any[
+                        "m/z binning" => "man/mz_binning.md",
+                        "Retention binning and gridding" => "man/binning_gridding.md",
                     ],
                     "Alignment" => "man/alignment.md",
                     "Baseline" => "man/baseline.md",
-                    "Binning and Gridding" => "man/binning_gridding.md",
                     "Format conversion" => "man/convert.md",
                     "Transformation" => "man/transformation.md",
                     "Trimming and Filtering" => "man/transform.md",
