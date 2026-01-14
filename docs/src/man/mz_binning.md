@@ -4,39 +4,49 @@
 
 Mass spectra are measured at high precision, with centroiding yielding continuous m/z
 values rather than discrete integer bins. In many instruments, centroiding is performed
-on the fly during acquisition: the detector’s continuous profile signal is reduced to
-peak centers and intensities before storage. As a result, scans are lists of peak centers
-with non-uniform spacing in the m/z domain, not evenly sampled vectors. Many downstream
-workflows, however, operate on a fixed m/z grid. Binning consolidates nearby m/z values
-into shared bins, which reduces spectrum sparsity, stabilizes signal across scans, and
-makes spectra comparable for alignment, similarity scoring, and matrix-based processing.
-It also provides a simple, deterministic way to handle small instrument-to-instrument or
-run-to-run shifts without overfitting to noise.
+during acquisition such that the detector’s profile signal is summarized as peak centers
+and intensities before storage, and scans are therefore stored as sparse peak lists with
+non-uniform spacing in the m/z domain. Many downstream workflows, however, operate on a
+fixed m/z grid. Binning consolidates nearby m/z values into shared bins, which reduces
+spectrum sparsity, stabilizes signal across scans, and makes spectra comparable for
+alignment, similarity scoring, and matrix-based processing. This discretization is
+standard in low-resolution GC–MS workflows, where spectra are treated as nominal-mass
+vectors rather than accurate-mass distributions.
 
-For GC-MS data, integer binning with boundaries at -0.3 (lower) and +0.7 (upper) around
-each integer m/z is meaningful because fragment masses cluster around nominal integers
-once you account for elemental mass defects (O'Callaghan et al. 2012). If $w(X)$ is the 
-atomic weight of element $X$ and $\Delta(X) = w(X) - \mathrm{round}(w(X))$, then 
-$\Delta(^{12}\mathrm{C}) = 0$, $\Delta(^{14}\mathrm{N}) \approx 0.00022$, 
-$\Delta(^{16}\mathrm{O}) \approx -0.00032$, and $\Delta(^{1}\mathrm{H}) \approx 0.00783$. 
-For a fragment $Y$ with composition $k_1 X_1 + \cdots + k_r X_r$, the mass defect is
-$\Delta(Y) = k_1 \Delta(X_1) + \cdots + k_r \Delta(X_r)$. Typical GC-MS fragments 
-(m/z ≤ 550) cannot accumulate large negative defects because they rarely contain many 
-P/Si/O atoms, and those elements are the main contributors to negative mass defect. They 
-also cannot accumulate large positive defects because the hydrogen count is limited, so the
-feasible defect range is roughly bounded between about -0.13 and +0.63 for fragments in
-the GC-MS mass range. A bin that spans $[n-0.3, n+0.7)$ around each integer $n$ thus 
-comfortably contains the physically plausible defect window for a nominal mass, reducing 
-the chance that a real fragment sits near a bin edge.
+For unit-mass GC–MS (e.g., quadrupole electron ionization (EI) instruments), spectra are 
+acquired as centroided floating-point m/z values, whereas interpretation, library matching, 
+and fingerprinting operate on nominal integer mass channels. As a result, centroid masses 
+must be mapped onto an integer grid by assigning each measured m/z value to a nominal mass 
+bin. The physically meaningful placement of such bins is governed by the systematic offset
+between exact and nominal masses arising from elemental mass defects. Let $w(X)$ be the
+monoisotopic atomic mass of element $X$, and define the elemental mass defect as
+$\Delta(X) = w(X) - \mathrm{round}(w(X))$. For a fragment ion $Y$ with elemental
+composition $Y = \sum_{i=1}^{r} k_i X_i$, where $X_i$ denotes the $i$-th element present,
+$k_i$ is the number of atoms of that element, and $r$ is the number of distinct elements
+in the fragment, the total mass defect is $\Delta(Y) = \sum_{i=1}^{r} k_i \Delta(X_i)$.
+Because typical GC–EI fragments are composed primarily of C, H, N, and O, with only
+limited incorporation of heavier heteroatoms, their exact masses are systematically
+offset from nominal integers but remain well separated from adjacent nominal channels.
+As a result, mapping floating-point centroid m/z values onto integer mass bins is a
+natural and physically meaningful discretization step for low-resolution GC–MS.
+
+From a theoretical perspective, there is no unique binning interval: any asymmetric
+window that captures the physically plausible mass-defect range and exceeds instrumental
+centroid uncertainty is acceptable. Accordingly, multiple asymmetric binning schemes are
+valid in principle. In practice, however, a window spanning $[n-0.3, n+0.7)$ around each
+integer $n$ has become the most widely adopted convention in nominal-mass GC–MS
+workflows. This interval provides sufficient tolerance for mass defect, centroid jitter,
+and modest mass-axis drift while maintaining clear separation between adjacent nominal
+channels.
 
 ## JuChrom m/z binning
 
 JuChrom provides [`binmzvalues`](@ref), which applies a binning function to the m/z values
 in each scan of a `MassScanSeries` and sums intensities within each bin to produce a new
 `MassScanSeries` on a consistent grid. By default it uses [`integer`](@ref), which 
-implements the $[n-0.3, n+0.7)$ integer binning convention described above, but any custom 
-binning function can be supplied to target a different bin width or precision (for example, 
-rounding to a fixed decimal grid).
+implements the $[n-0.3, n+0.7)$ integer binning convention described above. However, users 
+can apply [`integer`](@ref) with a different offset or supply custom binning functions to 
+target a different bin width or precision (for example, rounding to a fixed decimal grid).
 
 ## Example
 
@@ -60,13 +70,6 @@ mss_mz_binned = binmzvalues(mss)  # Returns new MassScanSeries object
 # Unique m/z values after binning
 uniquemzvalues(mss_mz_binned)
 ```
-
-## References
-
-- O'Callaghan S, De Souza DP, Isaac A, Wang Q, Hodkinson L, Olshansky M, Erwin T, Appelbe B, 
-Tull DL, Roessner U, Bacic A, McConville MJ, Likic VA (2012): PyMS: a Python toolkit for 
-processing of gas chromatography-mass spectrometry (GC-MS) data. Application and 
-comparative study of selected tools. BMC Bioinformatics 13: 115.
 
 ## m/z binning tools
 
