@@ -46,7 +46,12 @@ in each scan of a `MassScanSeries` and sums intensities within each bin to produ
 `MassScanSeries` on a consistent grid. By default it uses [`integer`](@ref), which 
 implements the $[n-0.3, n+0.7)$ integer binning convention described above. However, users 
 can apply [`integer`](@ref) with a different offset or supply custom binning functions to 
-target a different bin width or precision (for example, rounding to a fixed decimal grid).
+target a different bin width or precision (for example, rounding to a fixed decimal grid). 
+Once the m/z values of a [`MassScanSeries`](@ref JuChrom.MassScanSeries) are on a consistent 
+grid, you can convert the container to a [`MassScanMatrix`](@ref JuChrom.MassScanMatrix)
+with [`mscanmatrix`](@ref). This makes the fixed m/z grid explicit and enables efficient
+matrix-based workflows (dense or sparse storage, linear algebra, and downstream binning or
+mapping that operate on matrices).
 
 ## Example
 
@@ -69,6 +74,9 @@ mss_mz_binned = binmzvalues(mss)  # Returns new MassScanSeries object
 
 # Unique m/z values after binning
 uniquemzvalues(mss_mz_binned)
+
+# Optional conversion to MassScanMatrix for efficient matrix-based workflows
+msm = mscanmatrix(mss_mz_binned)
 ```
 
 ## m/z binning tools

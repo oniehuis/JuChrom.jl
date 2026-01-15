@@ -53,7 +53,5 @@ JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)
 ```@docs
 JuChrom.MassScanSeries
 JuChrom.MassScanSeries(::AbstractVector{<:AbstractMassScan}; instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::Dict{<:AbstractString, <:Any}=Dict())
-JuChrom.mscanmatrix
-JuChrom.mzchrom(::MassScanSeries)
 Base.:(==)(::MassScanSeries, ::MassScanSeries)
 ```
