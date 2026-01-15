@@ -1,13 +1,14 @@
 # Format conversion
 
-Conversion tools change representation without changing the underlying data. In JuChrom
-this means moving between a scan-oriented view (`MassScanSeries`) and a grid-oriented view
-(`MassScanMatrix`), or extracting chromatograms from selected m/z values. These conversions
-are often useful after preprocessing (for example, m/z binning to a fixed grid) because
-they make the data shape explicit and unlock workflows that benefit from a matrix
-representation. Conversion itself does not bin or resample; `mzchrom` can sum intensities
-across selected m/z values or tolerances, but it does not merge nearby m/z into new bins.
-Binning and resampling are handled by the [binning tools](@ref).
+Conversion tools change representation without changing the underlying data. In JuChrom this 
+means moving between a scan-oriented view ([`MassScanSeries`](@ref JuChrom.MassScanSeries)) 
+and a grid-oriented view ([`MassScanMatrix`](@ref JuChrom.MassScanMatrix)), or extracting 
+chromatograms from selected m/z values. These conversions are often useful after 
+preprocessing (for example, m/z binning to a fixed grid) because they make the data shape 
+explicit and unlock workflows that benefit from a matrix representation. Conversion itself 
+does not bin or resample; [`mzchrom`](@ref) can sum intensities across selected m/z values 
+or tolerances, but it does not merge nearby m/z into new bins. Binning and resampling are 
+handled by the [binning tools](@ref).
 
 ## Example
 
@@ -36,6 +37,8 @@ tic = mzchrom(mss_binned)
 # Convert the binned series to a matrix for matrix-based workflows
 msm = mscanmatrix(mss_binned)  # dense by default; use SPARSE for sparse storage
 ```
+
+# Conversion tools
 
 ```@docs
 JuChrom.mscanmatrix

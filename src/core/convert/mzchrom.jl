@@ -114,18 +114,21 @@ end
 
 Extract a chromatogram scan series from a `MassScanSeries`.
 
-- `selection`: either `nothing` (TIC) or a scalar/collection of m/z targets. When a
-  scalar or vector is given, intensities at the selected m/z are summed per scan
-  (XIC).  
-- `tol`: the absolute tolerance used when matching `selection` m/z values to each scan’s
-  discrete m/z grid. The nearest m/z value within `tol` is chosen for each target. `tol` 
-  may be numeric or unitful. If the series’ m/z are unitless, `tol` must be unitless 
-  (unitful `tol` errors). If the series’ m/z have a unit, numeric `tol` is interpreted in 
-  that unit; unitful `tol` is converted to the m/z unit; incompatible units error.
-- `warning`: whether to emit warnings if m/z values are not found or indices are out
-  of bounds.
+Use `selection = nothing` to return the TIC. When `selection` is a scalar or a collection
+of m/z targets, intensities at the selected m/z values are summed per scan to produce an
+XIC. `tol` is the absolute tolerance used when matching `selection` to each scan's
+discrete m/z grid; the nearest m/z within `tol` is chosen per target. `tol` may be numeric
+or unitful. If the series m/z values are unitless, `tol` must be unitless; if the series
+m/z values carry a unit, numeric `tol` is interpreted in that unit and unitful `tol` is
+converted to the m/z unit, with incompatible units raising an error. `warning` controls
+whether missing matches or out-of-bounds indices emit warnings.
 
 Returns a `ChromScanSeries` with retention time and intensity units preserved.
+
+See also
+[`mscanmatrix`](@ref),
+[`MassScanSeries`](@ref JuChrom.MassScanSeries),
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries).
 """
 function mzchrom(series::MassScanSeries, selection=nothing; tol=3e-4, warning::Bool=true)
     N = length(scans(series))
@@ -164,23 +167,31 @@ end
 """
     mzchrom(msm::MassScanMatrix, 
             selection::Union{Nothing, <:Number, AbstractVector{<:Number}}=nothing;
-            by::Symbol=:mz, tol::Number=3e-4, warning::Bool=true)
+            by::Symbol=:mz,
+            tol::Number=3e-4,
+            warning::Bool=true
+    ) -> ChromScanSeries
 
 Extract a chromatogram scan series from a `MassScanMatrix`.
 
-- `selection`: either `nothing` (TIC) or a scalar/collection of m/z or index targets.
-  When given, intensities at the selected m/z or column indices are summed per scan.  
-- `by`: specifies whether `selection` refers to m/z values (`:mz`, default) or to
-  column indices (`:index`) in the matrix.  
-- `tol`: the absolute tolerance used when matching `selection` m/z values to the discrete 
-  m/z grid of the matrix. The nearest m/z value within `tol` is chosen for each target. 
-  `tol` may be numeric or unitful. If the matrix m/z are unitless, `tol` must be unitless 
-  (unitful `tol` errors). If the matrix m/z have a unit, numeric `tol` is interpreted in 
-  that unit; unitful `tol` is converted to the m/z unit; incompatible units error.    
-- `warning`: whether to emit warnings if m/z values are not found or indices are out
-  of bounds.
+If `selection` is `nothing` (default), the Total Ion Current (TIC) is returned. If
+`selection` is a scalar or a collection of m/z targets or column indices, an extracted
+ion chromatogram (XIC) is returned. In case of a collection, intensities of the selected
+m/z values or column indices are summed per scan. Whether the targets in `selection` are
+interpreted as m/z values (`:mz`, default) or column indices (`:index`) is controlled by
+the `by` keyword argument. `tol` is the absolute tolerance used when matching m/z selections
+to the discrete m/z grid; the nearest m/z within `tol` is chosen per target. `tol` may be 
+numeric or unitful. If the matrix m/z values are unitless, `tol` must be unitless; if the 
+m/z values carry a unit, numeric `tol` is interpreted in that unit and unitful `tol` is 
+converted to the m/z unit, with incompatible units raising an error. `warning` controls 
+whether missing matches or out-of-bounds indices emit warnings.
 
 Returns a `ChromScanSeries` with retention time and intensity units preserved.
+
+See also
+[`mscanmatrix`](@ref),
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries).
 """
 function mzchrom(msm::MassScanMatrix,
     selection::Union{Nothing, <:Number, AbstractVector{<:Number}}=nothing;

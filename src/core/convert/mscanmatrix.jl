@@ -10,17 +10,26 @@ const DENSE = DenseMatrix()
 const SPARSE = SparseMatrix()
 
 """
-    mscanmatrix(series::MassScanSeries, format::AbstractMatrixFormat; 
-                target_level::Integer=1, threshold::Real=0.0)
+    mscanmatrix(
+        series::MassScanSeries,
+        format::AbstractMatrixFormat; 
+        target_level::Integer=1,
+        threshold::Real=0.0
+    ) -> MassScanMatrix
 
 Convert a MassScanSeries to a MassScanMatrix with the specified matrix format.
 
-# Arguments
-- `series`: The input MassScanSeries
-- `format`: Matrix format - `DENSE` or `SPARSE` (or `DenseMatrix()`, `SparseMatrix()`); 
-  default is `DENSE`
-- `target_level`: Scan level to filter for (default: 1)
-- `threshold`: Minimum intensity threshold for inclusion (default: 0.0)
+`series` supplies the input scans, and `format` selects `DENSE` or `SPARSE` storage (or
+`DenseMatrix()` / `SparseMatrix()`), with `DENSE` as the default. `DENSE` stores the full
+retention × m/z grid as a standard dense matrix, while `SPARSE` stores only the nonzero
+entries in a sparse matrix to reduce memory for sparse spectra. `target_level` filters
+scans by MS level, and `threshold` excludes intensities below the specified minimum.
+
+See also
+[`MassScanSeries`](@ref JuChrom.MassScanSeries),
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)),
+[`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
