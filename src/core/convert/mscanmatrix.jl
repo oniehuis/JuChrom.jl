@@ -27,9 +27,7 @@ scans by MS level, and `threshold` excludes intensities below the specified mini
 
 See also
 [`MassScanSeries`](@ref JuChrom.MassScanSeries),
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)),
-[`retentions`](@ref JuChrom.retentions(::AbstractScanSeries)).
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix).
 
 # Examples
 ```jldoctest

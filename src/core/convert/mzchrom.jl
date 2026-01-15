@@ -114,21 +114,24 @@ end
 
 Extract a chromatogram scan series from a `MassScanSeries`.
 
-Use `selection = nothing` to return the TIC. When `selection` is a scalar or a collection
-of m/z targets, intensities at the selected m/z values are summed per scan to produce an
-XIC. `tol` is the absolute tolerance used when matching `selection` to each scan's
-discrete m/z grid; the nearest m/z within `tol` is chosen per target. `tol` may be numeric
-or unitful. If the series m/z values are unitless, `tol` must be unitless; if the series
-m/z values carry a unit, numeric `tol` is interpreted in that unit and unitful `tol` is
-converted to the m/z unit, with incompatible units raising an error. `warning` controls
+If `selection` is `nothing` (default), the Total Ion Current (TIC) is returned. If
+`selection` is a scalar or a collection of m/z targets or column indices, an extracted
+ion chromatogram (XIC) is returned. In case of a collection, intensities of the selected
+m/z values or column indices are summed per scan. Whether the targets in `selection` are
+interpreted as m/z values (`:mz`, default) or column indices (`:index`) is controlled by
+the `by` keyword argument. `tol` is the absolute tolerance used when matching m/z selections
+to the discrete m/z grid; the nearest m/z within `tol` is chosen per target. `tol` may be 
+numeric or unitful. If the matrix m/z values are unitless, `tol` must be unitless; if the 
+m/z values carry a unit, numeric `tol` is interpreted in that unit and unitful `tol` is 
+converted to the m/z unit, with incompatible units raising an error. `warning` controls 
 whether missing matches or out-of-bounds indices emit warnings.
 
 Returns a `ChromScanSeries` with retention time and intensity units preserved.
 
 See also
-[`mscanmatrix`](@ref),
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries),
 [`MassScanSeries`](@ref JuChrom.MassScanSeries),
-[`ChromScanSeries`](@ref JuChrom.ChromScanSeries).
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries, ::Integer)).
 """
 function mzchrom(series::MassScanSeries, selection=nothing; tol=3e-4, warning::Bool=true)
     N = length(scans(series))
@@ -174,24 +177,18 @@ end
 
 Extract a chromatogram scan series from a `MassScanMatrix`.
 
-If `selection` is `nothing` (default), the Total Ion Current (TIC) is returned. If
-`selection` is a scalar or a collection of m/z targets or column indices, an extracted
-ion chromatogram (XIC) is returned. In case of a collection, intensities of the selected
-m/z values or column indices are summed per scan. Whether the targets in `selection` are
-interpreted as m/z values (`:mz`, default) or column indices (`:index`) is controlled by
-the `by` keyword argument. `tol` is the absolute tolerance used when matching m/z selections
-to the discrete m/z grid; the nearest m/z within `tol` is chosen per target. `tol` may be 
-numeric or unitful. If the matrix m/z values are unitless, `tol` must be unitless; if the 
-m/z values carry a unit, numeric `tol` is interpreted in that unit and unitful `tol` is 
-converted to the m/z unit, with incompatible units raising an error. `warning` controls 
-whether missing matches or out-of-bounds indices emit warnings.
+This method follows the same TIC/XIC behavior and unit handling as
+`mzchrom(series::MassScanSeries, ...)`. The additional `by` keyword controls whether
+`selection` targets m/z values (`:mz`, default) or column indices (`:index`) in the matrix.
 
 Returns a `ChromScanSeries` with retention time and intensity units preserved.
 
 See also
-[`mscanmatrix`](@ref),
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries),
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`ChromScanSeries`](@ref JuChrom.ChromScanSeries).
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)),
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})).
 """
 function mzchrom(msm::MassScanMatrix,
     selection::Union{Nothing, <:Number, AbstractVector{<:Number}}=nothing;
