@@ -470,13 +470,13 @@ See also
 [`AbstractMassScanSeries`](@ref JuChrom.AbstractMassScanSeries),
 [`MassScanSeries`](@ref JuChrom.MassScanSeries),
 [`integer`](@ref),
-[`intensities`](@ref),
-[`intensityunit`](@ref),
-[`mzvalues`](@ref),
-[`mzunit`](@ref),
-[`uniquemzvalues`](@ref),
-[`scan`](@ref),
-[`scans`](@ref).
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanSeries, ::Integer)),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanSeries, ::Integer)),
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanSeries, ::Integer)),
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanSeries)),
+[`uniquemzvalues`](@ref JuChrom.uniquemzvalues(::AbstractMassScanSeries)),
+[`scan`](@ref JuChrom.scan(::AbstractScanSeries, ::Integer)),
+[`scans`](@ref  JuChrom.scan(::AbstractScanSeries)).
 
 ```jldoctest
 julia> scan1 = MassScan(1.0u"s", [101.2, 101.6, 102.1], [10, 20, 30])
