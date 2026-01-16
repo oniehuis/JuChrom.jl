@@ -15,11 +15,15 @@ resulting scan list is empty.
     
 See also
 [`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
+[`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`AbstractMassScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
+[`MassScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`indextrim!`](@ref), 
 [`retentiontrim`](@ref),
 [`retentiontrim!`](@ref), 
-[`scancount`](@ref)
-[`scans`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -84,12 +88,16 @@ indices are out of bounds, and `ArgumentError` if `start > stop` or the resultin
 list is empty. 
 
 See also 
-[`AbstractScanSeries`](@ref), 
+[`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
+[`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`AbstractMassScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
+[`MassScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`indextrim`](@ref),
 [`retentiontrim`](@ref), 
 [`retentiontrim!`](@ref), 
-[`scancount`](@ref)
-[`scans`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -144,9 +152,10 @@ original unchanged. It throws `ArgumentError` if no scans exist at the requested
     
 See also
 [`AbstractMassScanSeries`](@ref),
+[`MassScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`levels`](@ref levels(::AbstractMassScanSeries)),
-[`scancount`](@ref), 
-[`scans`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -194,12 +203,16 @@ range covered by the series. It throws `ArgumentError` if `start > stop` or no s
 remain after trimming. 
 
 See also
-[`AbstractScanSeries`](@ref), 
+[`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
+[`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`AbstractMassScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
+[`MassScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`indextrim`](@ref),
 [`indextrim!`](@ref), 
 [`retentiontrim!`](@ref), 
-[`scancount`](@ref),
-[`scans`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
@@ -273,12 +286,16 @@ retention values and trims the underlying scan vector. It throws `ArgumentError`
 `start > stop` or no scans remain after filtering. 
 
 See also 
-[`AbstractScanSeries`](@ref),
+[`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
+[`AbstractChromScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`AbstractMassScanSeries`](@ref JuChrom.AbstractChromScanSeries), 
+[`ChromScanSeries`](@ref JuChrom.ChromScanSeries), 
+[`MassScanSeries`](@ref JuChrom.ChromScanSeries), 
 [`indextrim`](@ref), 
 [`indextrim!`](@ref), 
 [`retentiontrim`](@ref), 
-[`scancount`](@ref),
-[`scans`](@ref).
+[`scancount`](@ref JuChrom.scancount(::AbstractScanSeries)),
+[`scans`](@ref JuChrom.scans(::AbstractScanSeries)).
 
 # Examples
 ```jldoctest
