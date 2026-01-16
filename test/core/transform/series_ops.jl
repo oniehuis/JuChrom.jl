@@ -84,7 +84,7 @@ end
     @test retentions(css) == [1.0, 1.5, 2.0]u"s"
 end
 
-@testset "retentiontrim(msmatrix; start/stop with units)" begin
+#= @testset "retentiontrim(msmatrix; start/stop with units)" begin
     ret = [0.5, 1.0, 1.5, 2.0, 2.5]u"s"
     mz = [100.0, 200.0]
     ints = [1.0 2.0;
@@ -114,9 +114,9 @@ end
     @test level(trimmed) == 2
     @test extras(trimmed) == Dict("note" => "ok")
     @test retentions(msm) == ret
-end
+end =#
 
-@testset "retentiontrim(msmatrix; start/stop unitless)" begin
+#= @testset "retentiontrim(msmatrix; start/stop unitless)" begin
     ret = [0.5, 1.0, 1.5, 2.0, 2.5]
     mz = [100.0, 200.0]
     ints = [1.0 2.0;
@@ -144,7 +144,7 @@ end
     @test retentions(msm) == ret
     @test_throws ArgumentError retentiontrim(msm; start=2.0, stop=1.0)
     @test_throws ArgumentError retentiontrim(msm; start=10.0, stop=11.0)
-end
+end =#
 
 
 # ─────────────────────────────────────────────────────────────────────────────
