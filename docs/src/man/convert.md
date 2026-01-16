@@ -13,9 +13,11 @@ handled by the [binning tools](@ref).
 ## Example
 
 ```@example 1
+# Load JuChrom and the Agilent ChemStation MS loader
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
+# Load an example Agilent ChemStation GC-MS run
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 

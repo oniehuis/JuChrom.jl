@@ -26,8 +26,8 @@ entries in a sparse matrix to reduce memory for sparse spectra. `target_level` f
 scans by MS level, and `threshold` excludes intensities below the specified minimum.
 
 See also
-[`MassScanSeries`](@ref JuChrom.MassScanSeries),
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix).
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
+[`MassScanSeries`](@ref JuChrom.MassScanSeries).
 
 # Examples
 ```jldoctest
