@@ -1,38 +1,36 @@
 # ── binretentions ─────────────────────────────────────────────────────────────────────────
 
 """
-    binretentions(retentions::AbstractVector{<:Number}, intensities::AbstractVector{<:Number}, 
-        bin_edges::AbstractVector{<:Number}, variances::AbstractVector{<:Number};
-        zero_threshold::Number=1e-8, rho_lag1::Real=0.0, rho_max::Real=0.8)
+    binretentions(
+        retentions::AbstractVector{<:Number},
+        intensities::AbstractVector{<:Number}, 
+        bin_edges::AbstractVector{<:Number}, 
+        variances::AbstractVector{<:Number};
+        zero_threshold::Number=1e-8, 
+        rho_lag1::Real=0.0, 
+        rho_max::Real=0.8
+    ) -> (retention_centers::Vector, bin_intensities::Vector, bin_vars::Vector)
 
-Aggregate scan intensities into retention-coordinate bins via inverse-variance weighting.
+Return bin centers, binned intensities, and propagated variances by aggregating
+`retentions` and their `corresponding` intensity pairs into the bins defined by 
+`bin_edges` using inverse-variance weighted means.
 
-Each observation contributes to the bin covering its retention value (time or index),
-after clamping its variance to `zero_threshold` (with units promoted when needed). The
-weighted bin mean is `Σ wᵢ yᵢ / Σ wᵢ` with `wᵢ = 1 / Varᵢ`, and the reported variance is
-inflated by the lag-1 correlation factor controlled through `rho_lag1` and `rho_max`.
-Inputs may be plain numbers or Unitful quantities. Retentions must share the same
-dimension as the bin edges, and unitful intensities require variances expressed in the
-corresponding squared intensity units (unitless intensities must use unitless variances).
+Each observation contributes to the bin covering its retention value. Variances are
+clamped to `zero_threshold` before weighting, the bin mean is computed as
+`Σ wᵢ yᵢ / Σ wᵢ` with `wᵢ = 1 / Varᵢ`, and reported variances are inflated by a lag-1
+correlation term controlled by `rho_lag1` and `rho_max`. Retentions and `bin_edges`
+must both be unitless or share the same physical dimension. Bin edges must be a
+monotonic vector defining left-closed, right-open intervals `[eᵢ, eᵢ₊₁)`; the final edge
+is exclusive. Unitful intensities require variances with squared intensity units, and 
+negative intensities are preserved so baseline-corrected signals can contribute. The 
+function returns `(centers, bin_means, bin_vars)` and throws `ArgumentError` for empty 
+inputs, mismatched lengths, negative variances, or invalid bin edges, and 
+`Unitful.DimensionError` for incompatible units.
 
-# Arguments
-- `retentions`: Vector of retention coordinates for each observation.
-- `intensities`: Vector of signal values aligned with `retentions`.
-- `bin_edges`: Monotonic vector defining closed-open bin intervals `[eᵢ, eᵢ₊₁)`.
-- `variances`: Vector of variance estimates for each intensity.
-
-# Keyword Arguments
-- `zero_threshold`: Minimum variance allowed after clamping (supports units).
-- `rho_lag1`: Lag-1 residual correlation used to inflate bin variances.
-- `rho_max`: Upper bound on the effective correlation (default `0.8`).
-
-# Notes
-- Negative intensities are kept so residual or baseline-corrected signals can contribute
-  to the weighted mean.
-
-# Returns
-`(centers, bin_means, bin_vars)` — bin centers, weighted mean intensities,
-and inflated variance estimates.
+See also
+[`vif`](@ref JuChrom.vif),
+[`varpredbias`](@ref JuChrom.varpredbias(::Number, ::QuadVarParams)),
+[`QuadVarParams`](@ref JuChrom.QuadVarParams).
 
 # Examples
 ```jldoctest
@@ -211,51 +209,34 @@ function binretentions(
 end
 
 """
-    binretentions(msm::MassScanMatrix, bin_edges, quadvar_params, rho_lag1;
-                  jacobian_scale=nothing, zero_threshold=1e-8, rho_max=0.8)
+    binretentions(
+        msm::MassScanMatrix, 
+        bin_edges::AbstractVector{<:Number}, 
+        quadvar_params::Union{AbstractVector{<:QuadVarParams}, QuadVarParams}, 
+        rho_lag1::Union{AbstractVector{<:Real}, Real};          
+        jacobian_scale=nothing::Union{Nothing, AbstractVector{<:Real}, Function}, 
+        zero_threshold::Number=1e-8, 
+        rho_max::Real=0.8
+    ) -> (msm_binned::MassScanMatrix, var_matrix::Matrix)
 
-Bin every m/z column of a `MassScanMatrix` into retention bins while propagating
-heteroscedastic variance models (via `varpredbias`) and optional Jacobian scaling.
-If the matrix stores unitful intensities, both the per-scan variances and the
-output bin variances retain the corresponding squared intensity units while
-`msm_binned` continues to store stripped (unitless) numeric intensities plus
-metadata.
+Return a binned `MassScanMatrix` and per-bin variances by applying
+[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}))
+to each m/z trace in `msm`.
 
-For each m/z trace this method:
-1. Predicts per-scan variances with `varpredbias` using the supplied `QuadVarParams`.
-2. Applies an optional Jacobian scaling factor `(f'(t))⁻²` supplied via `jacobian_scale`
-   (either a per-scan vector or a callable).
-3. Calls the scalar `binretentions` helper with the matching lag-1 correlation from
-   `rho_lag1` to obtain inverse-variance weighted bin means and inflated variances.
+This method differs from the scalar `binretentions` in that it predicts per-scan variances 
+via `QuadVarParams`, optionally applies a Jacobian scale `(f'(t))⁻²`, and processes all 
+m/z columns in a matrix. If the matrix stores unitful intensities, per-scan and binned 
+variances retain squared intensity units, while `msm_binned` stores stripped numeric 
+intensities and carries the original metadata. Scalar `quadvar_params` and `rho_lag1` 
+inputs are broadcast across m/z columns, and `zero_threshold` is promoted to squared 
+intensity units when needed.
 
-# Arguments
-- `msm::MassScanMatrix`: Input data cube (retentions × m/z × intensities).
-- `bin_edges::AbstractVector`: Edges defining the retention bins (unitful or unitless).
-- `quadvar_params`: Vector of `QuadVarParams` (one per m/z) or a single `QuadVarParams`
-  reused for every column.
-- `rho_lag1`: Lag-1 residual correlations per m/z (vector or scalar broadcast).
-
-# Keyword Arguments
-- `jacobian_scale`: `nothing`, a vector of `f'(t)` values (length = scans), 
-  or a callable `t -> f'(t)`.
-- `zero_threshold`: Minimum variance after clamping (supports unitful values when
-  `msm` carries intensity units; otherwise must be unitless).
-- `rho_max`: Upper bound for the variance-inflation correlation cap.
-
-# Returns
-`(msm_binned, var_matrix)` where `msm_binned` is the binned `MassScanMatrix` (retentions
-become the bin centers, intensities become weighted means) and `var_matrix` holds the
-inflated variances for each bin/m/z pair.
-
-# Notes
-- Metadata (`instrument`, `acquisition`, `user`, `sample`, `extras`) is deep-copied from 
-  `msm`.
-- `quadvar_params` and `rho_lag1` accept scalars for convenience; they are broadcast
-  internally when needed.
-- Negative intensities are preserved; only variances are clamped at `zero_threshold`.
-- When `msm` has unitful intensities, `zero_threshold` and the predicted variances
-  must use the corresponding squared intensity units (unitless thresholds are
-  automatically promoted).
+See also
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
+[`QuadVarParams`](@ref JuChrom.QuadVarParams),
+[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
+[`varpredbias`](@ref JuChrom.varpredbias(::Number, ::QuadVarParams)),
+[`vif`](@ref JuChrom.vif).
 
 # Example
 ```jldoctest

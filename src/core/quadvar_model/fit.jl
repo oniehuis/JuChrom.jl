@@ -1328,26 +1328,21 @@ end
 """
     vif(ρ::Real, n::Integer; ρmax=0.8, nonnegative=true, nmin=1)
 
-Compute the variance inflation factor (VIF) associated with correlation ρ
-and sample size n. The factor is defined as
+Return the variance inflation factor (VIF) associated with correlation ρ and sample
+size n. The factor is defined as
 
     VIF = 1 + 2 * ρ * (n_eff - 1) / n_eff
 
-where n_eff = max(n, nmin) ensures a minimum effective sample size.
+where n_eff = max(n, nmin) ensures a minimum effective sample size. Non-finite ρ
+values are treated as 0, and correlations are sanitized (clipped and capped) before
+use. The result is always ≥ 1 (variance cannot be deflated). The keyword arguments are
+`ρmax` (maximum absolute correlation after capping), `nonnegative` (clip negative
+correlations to 0 when true; otherwise cap symmetrically), and `nmin` (minimum sample
+size for n_eff). Returns a floating-point variance inflation factor of the same type
+as ρ.
 
-# Keyword arguments
-- `ρmax` (default 0.8): maximum absolute correlation allowed after capping
-- `nonnegative` (default true): if true, negative correlations are clipped to 0; 
-  if false, correlations are symmetrically capped in [-ρmax, ρmax]
-- `nmin` (default 1): minimum sample size used in n_eff
-
-# Behavior
-- Non-finite ρ values (NaN or Inf) are treated as 0
-- Correlations are sanitized (clipped and capped) before use
-- The result is always ≥ 1 (variance cannot be deflated)
-
-# Returns
-A floating-point variance inflation factor of the same type as ρ.
+See also
+[`binretentions`](@ref)
 """
 vif(ρ::Real, n::Integer; kwargs...) = vif(float(ρ), n; kwargs...)
 

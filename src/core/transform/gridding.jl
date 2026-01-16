@@ -1,67 +1,36 @@
 # ── densestgrid ───────────────────────────────────────────────────────────────────────────
 
 """
-    densestgrid(datavectors; minwidth=nothing, maxwidth=nothing,
-                tolerance=1e-8,
-                coarse_inflation=1.001,
-                primary_refine_iters=35,
-                secondary_refine_iters=20,
-                max_anchors_basic=256,
-                max_anchors_enriched=1024)
+    densestgrid(
+        datavectors::AbstractVector{<:AbstractVector{<:Real}}; 
+        minwidth::Union{Nothing,Real}=nothing, 
+        maxwidth::Union{Nothing,Real}=nothing,
+        tolerance::Real=1e-8,
+        coarse_inflation::Real=1.001,
+        primary_refine_iters::Int=35,
+        secondary_refine_iters::Int=20,
+        max_anchors_basic::Int=256,
+        max_anchors_enriched::Int=1024
+    )
 
-Determine a near‑minimal bin width `w` and an associated regular grid `edges`
-such that **every** bin in the interval `[global_min, global_max]` contains at
-least one observation from **each** input dataset in `datavectors`.
+Return `(edges, w)` where `edges` is a regular grid and `w` is the near‑minimal bin width 
+that ensures every bin in `[global_min, global_max]` contains at least one observation from 
+each input dataset in `datavectors`. The grid uses left‑closed, right‑open bins 
+`[eᵢ, eᵢ₊₁)`, with the final bin including the right edge within `tolerance`.
 
-Three‑stage procedure:
+The method begins from a rigorous lower bound on `w` and expands the candidate width by
+`coarse_inflation` until a basic anchor phase yields full occupancy, then performs two 
+rounds of binary refinement (`primary_refine_iters` with a basic anchor set and 
+`secondary_refine_iters` with an enriched set) to tighten the admissible interval for `w`. 
+The basic anchor set uses residue 0 together with residues `(global_min - x) % w` from 
+early points of each dataset, capped at `max_anchors_basic` with de‑duplication at 
+floating‑point resolution (unit in the last place); the enriched set adds residues from
+terminal points and midpoints of large internal gaps up to `max_anchors_enriched`.
 
-1. **Coarse inflation:** Starting from a rigorous lower bound `lb`, multiply
-   the candidate width by `coarse_inflation` until a basic anchor (phase) yields
-   full occupancy.
-2. **Primary refinement:** Perform binary search between the last failing and
-   first successful widths for `primary_refine_iters` iterations using the basic
-   (limited) anchor set, narrowing the admissible interval for `w`.
-3. **Secondary refinement:** Apply an additional binary search of
-   `secondary_refine_iters` iterations with an enriched anchor set to further
-   reduce the upper bound on `w`.
-
-Anchor sets (cardinality is explicitly capped to bound runtime):
-
-- **Basic set:** Residue 0 together with residues `(global_min - x) % w` drawn
-  from early points of each dataset, up to `max_anchors_basic`, with ULP‑based
-  de‑duplication.
-- **Enriched set:** The basic set plus residues from terminal points and
-  midpoints of the largest internal gaps (per dataset), up to
-  `max_anchors_enriched`.
-
-Returns: `(edges, w)`.
-
-Arguments:
-- `datavectors`: Vector of non‑empty real-valued vectors (datasets).
-- `minwidth`: Optional lower bound. If `nothing`, the minimal strictly positive
-  internal gap over all datasets.
-- `maxwidth`: Optional upper bound. If `nothing`, the length of the common
-  overlap `global_max - global_min`.
-- `tolerance`: Numerical tolerance used only when deciding inclusion of the
-  right boundary in the final bin.
-- `coarse_inflation`: Multiplicative growth factor (>1) in the coarse search.
-- `primary_refine_iters`: Number of binary refinement iterations with the basic
-  anchor set.
-- `secondary_refine_iters`: Number of binary refinement iterations with the
-  enriched anchor set.
-- `max_anchors_basic`: Maximum number of basic anchor candidates per width.
-- `max_anchors_enriched`: Maximum number of enriched anchor candidates per width.
-
-Throws:
-- `ArgumentError` if there is no non‑empty overlap, if any input dataset is empty,
-  or if no width satisfying the occupancy criterion is found within `maxwidth`.
-
-Notes:
-- Bins are left‑closed, right‑open, except the final bin which includes the
-  right edge (within `tolerance`).
-- For a width closer to the theoretical minimum, decrease `coarse_inflation`
-  and/or increase the refinement iteration counts and anchor caps. This will
-  increase computational cost in exchange for potentially smaller `w`.
+The function throws `ArgumentError` if any dataset is empty, the overlap is empty, or no 
+admissible width is found within `maxwidth`. For a width closer to the theoretical minimum, 
+decrease `coarse_inflation` and/or increase the refinement iteration counts and anchor caps, 
+at the cost of additional runtime.
 """
 function densestgrid(
     datavectors::AbstractVector{<:AbstractVector{<:Real}};
@@ -301,15 +270,17 @@ end
 
 
 """
-    densestgrid(datavectors::AbstractVector{<:AbstractVector{<:Unitful.AbstractQuantity}};
-                minwidth=nothing,
-                maxwidth=nothing,
-                tolerance=nothing,
-                coarse_inflation=1.001,
-                primary_refine_iters=35,
-                secondary_refine_iters=20,
-                max_anchors_basic=256,
-                max_anchors_enriched=1024)
+    densestgrid(
+        datavectors::AbstractVector{<:AbstractVector{<:Unitful.AbstractQuantity}};
+        minwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
+        maxwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
+        tolerance::Union{Nothing,Unitful.AbstractQuantity}=nothing,
+        coarse_inflation::Real=1.001,
+        primary_refine_iters::Int=35,
+        secondary_refine_iters::Int=20,
+        max_anchors_basic::Int=256,
+        max_anchors_enriched::Int=1024
+    )
 
 Unit‑aware wrapper of the numeric `densestgrid`.
 
@@ -401,34 +372,13 @@ end
                 max_anchors_basic=256,
                 max_anchors_enriched=1024)
 
-Convenience wrapper for datasets aggregated in a dictionary keyed by dataset identifier. Extracts
-the retention vectors from every `MassScanMatrix` value, then delegates to the vector-based
-`densestgrid` to compute a near-minimal bin width `w` and the accompanying grid `edges`
-covering the shared overlap. All search-related keywords (`coarse_inflation`, refinement
-counts, anchor caps) behave identically to the vector method
-`densestgrid(::AbstractVector{<:AbstractMassScanMatrix})`.
+Dictionary wrapper for [`densestgrid`](@ref JuChrom.densestgrid(::AbstractVector{<:AbstractMassScanMatrix})).
+The keys are ignored;
+the values are treated as the dataset list, and all keyword arguments and behavior
+match the vector method.
 
-Unit handling mirrors the vector API:
-* When retentions are unitful quantities, `minwidth`, `maxwidth`, and
-  `tolerance` must be `nothing` or dimensionally compatible quantities, and the
-  default tolerance (when `nothing`) is `1e-8 * unit`.
-* When retentions are unitless reals, the keywords must be `nothing` or plain
-  reals, and the default tolerance becomes `1e-8`.
-
-Arguments:
-- `msmatrices::AbstractDict{<:Any,<:AbstractMassScanMatrix}`: Non-empty mapping
-  whose values each provide at least one retention time within the common
-  overlap region.
-- `minwidth::Union{Nothing,Real,Unitful.AbstractQuantity}`: Optional lower bound
-  on `w`; defaults to the smallest strictly positive gap implied by the datasets.
-- `maxwidth::Union{Nothing,Real,Unitful.AbstractQuantity}`: Optional upper bound
-  for `w`; defaults to the length of the shared overlap.
-- `tolerance::Union{Nothing,Real,Unitful.AbstractQuantity}`: Inclusion tolerance
-  for the final bin’s right edge.
-
-Returns `(edges, w)` (unit-attached whenever the inputs are unitful). Throws
-`ArgumentError` if the dictionary is empty, any matrix lacks data, units are
-inconsistent, or no admissible width can be found up to `maxwidth`.
+Use this when your matrices are already keyed by sample or run identifiers. The
+returned `(edges, w)` and error conditions are identical to the vector-based API.
 """
 function densestgrid(
     msmatrices::AbstractDict{<:Any, <:AbstractMassScanMatrix};
@@ -524,54 +474,23 @@ end
                 max_anchors_basic=256,
                 max_anchors_enriched=1024)
 
-Extracts the retention vectors from all matrices, then determines a near-minimal bin width 
-`w` and matching regular grid `edges` so that every bin inside the shared overlap 
-`[global_min, global_max]` contains at least one observation from each dataset.
+Determine a near-minimal bin width `w` and matching retention grid `edges` so that
+every bin in the shared overlap contains at least one observation from each matrix.
 
-In simple terms, the algorithm trims every dataset to the common overlap, then keeps
-trying slightly wider bins—beginning at the smallest possible positive gap—until
-it finds a width that works for *some* grid alignment (anchor phase). The coarse
-growth is governed by `coarse_inflation`, so shrinking that ratio forces a finer
-sweep at the expense of runtime. Once a working width is found, two rounds of
-binary search progressively tighten the interval: the primary search runs for
-`primary_refine_iters` iterations while limiting the anchor phases to at most
-`max_anchors_basic`, and the secondary search repeats for `secondary_refine_iters`
-iterations using the enriched anchor pool capped by `max_anchors_enriched`.
-
-Three-stage search (delegating to the numeric core):
-
-1. **Coarse inflation:** Inflate a rigorous lower-bound width by
-   `coarse_inflation` until some anchor phase yields full occupancy.
-2. **Primary refinement:** Binary search between the last failing and first
-   successful widths for `primary_refine_iters` iterations with a capped basic
-   anchor set (`max_anchors_basic`).
-3. **Secondary refinement:** Repeat with an enriched anchor set
-   (`max_anchors_enriched`) for `secondary_refine_iters` iterations to tighten
-   the bound.
-
-Unit handling:
-* All retentions must be either plain reals or `Unitful.AbstractQuantity` values sharing
-  the same physical dimension.
-* If retentions are unitful, `minwidth`, `maxwidth`, and `tolerance` must be
-  `nothing` or compatibly dimensioned quantities; default `tolerance` is
-  `1e-8 * unit`.
-* If retentions are unitless, the keywords must be `nothing` or plain reals and
-  `tolerance` defaults to `1e-8`.
-
-Arguments:
-- `msmatrices`: Non-empty vector of `MassScanMatrix`, each with at least one
-  retention value inside the shared overlap region.
-- `minwidth::Union{Nothing,Real,Unitful.AbstractQuantity}`: Optional lower bound;
-  defaults to the minimum strictly positive internal gap implied by the datasets.
-- `maxwidth::Union{Nothing,Real,Unitful.AbstractQuantity}`: Optional upper bound;
-  defaults to the length of the common overlap.
-- `tolerance::Union{Nothing,Real,Unitful.AbstractQuantity}`: Inclusion tolerance
-  for the last bin’s right edge.
-
-Returns `(edges, w)` (unit-attached when retentions are unitful), where `w` is
-the final bin width guaranteeing at least one observation from every dataset per
-bin. Throws `ArgumentError` if inputs are empty, units are inconsistent, the
-overlap is empty, or no admissible width is found up to `maxwidth`.
+The method extracts retention vectors from each matrix, trims them to their common
+overlap, and searches for the smallest bin width that admits a fully occupied grid.
+The search uses a coarse inflation step followed by two rounds of binary refinement
+with a capped set of anchor phases (`max_anchors_basic` and `max_anchors_enriched`).
+The inputs are a non-empty vector of `MassScanMatrix` values and optional bounds
+(`minwidth`, `maxwidth`) plus a right-edge inclusion `tolerance`. Retentions must be
+either unitless or `Unitful.AbstractQuantity` values sharing the same physical
+dimension. If retentions are unitful, `minwidth`, `maxwidth`, and `tolerance` must be
+`nothing` or dimensionally compatible quantities and the default `tolerance` is
+`1e-8 * unit`; if retentions are unitless, these keywords must be `nothing` or plain
+reals and the default `tolerance` is `1e-8`. The function returns `(edges, w)` (with
+units attached when appropriate) and throws `ArgumentError` if inputs are empty, units
+are inconsistent, the overlap is empty, or no admissible width is found up to
+`maxwidth`. See also [`densestgrid`](@ref JuChrom.densestgrid(::AbstractDict{<:Any,<:AbstractMassScanMatrix})).
 """
 function densestgrid(
     msmatrices::AbstractVector{<:AbstractMassScanMatrix};

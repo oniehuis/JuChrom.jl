@@ -1,27 +1,25 @@
 # ── indextrim ─────────────────────────────────────────────────────────────────────────────
 
 """
-    indextrim(series::AbstractScanSeries; start=firstindex(scans(series)), 
-              stop=lastindex(scans(series))) -> AbstractScanSeries
+    indextrim(
+        series::AbstractScanSeries;
+        start=firstindex(scans(series)), 
+        stop=lastindex(scans(series))
+    ) -> typeof(series)
 
-Return a new `AbstractScanSeries` containing only the scans whose indices are within the 
-inclusive range `[start, stop]`.
-
-# Arguments
-- `series::AbstractScanSeries`: The scan series to trim.
-- `start::Integer`: Starting index of the scan range to retain. Defaults to the first index.
-- `stop::Integer`: Ending index of the scan range to retain. Defaults to the last index.
-
-# Returns
-A new copy of `series` with only the scans in the specified index range.
-
-# Throws
-- `BoundsError` if `start` or `stop` is outside the bounds of `scans(series)`.
-- `ArgumentError` if `start > stop`.
-- `ArgumentError` if the resulting scan list is empty.
-
-See also [`AbstractScanSeries`](@ref), [`indextrim!`](@ref), [`retentiontrim`](@ref),
-[`retentiontrim!`](@ref), [`scans`](@ref), [`scancount`](@ref).
+Return a new scan series of the same concrete type as `series` containing only the
+scans whose indices are within the inclusive range `[start, stop]`. The function
+returns a copy of `series` with only the requested scan slice. It throws `BoundsError`
+if the indices are out of bounds, and `ArgumentError` if `start > stop` or the
+resulting scan list is empty. 
+    
+See also
+[`AbstractScanSeries`](@ref JuChrom.AbstractScanSeries), 
+[`indextrim!`](@ref), 
+[`retentiontrim`](@ref),
+[`retentiontrim!`](@ref), 
+[`scancount`](@ref)
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -73,30 +71,25 @@ end
 # ── indextrim! ────────────────────────────────────────────────────────────────────────────
 
 """
-    indextrim!(series::AbstractScanSeries; start=firstindex(scans(series)), 
-               stop=lastindex(scans(series))) -> AbstractScanSeries
+    indextrim!(
+        series::AbstractScanSeries;
+        start=firstindex(scans(series)), 
+        stop=lastindex(scans(series))
+    ) -> typeof(series)
 
 Mutate `series` by retaining only scans whose indices fall within the inclusive range
-`[start, stop]`.
+`[start, stop]`. The underlying scan vector is trimmed in place, so the original
+series is modified and no new series is allocated. It throws `BoundsError` if the
+indices are out of bounds, and `ArgumentError` if `start > stop` or the resulting scan
+list is empty. 
 
-This operation trims the underlying scan vector in-place. It is non-allocating and 
-modifies the original data structure.
-
-# Arguments
-- `series::AbstractScanSeries`: The scan series to modify.
-- `start::Integer`: Starting index of the scan range to retain. Defaults to the first index.
-- `stop::Integer`: Ending index of the scan range to retain. Defaults to the last index.
-
-# Returns
-- The mutated `series` with only scans from index `start` to `stop` remaining.
-
-# Throws
-- `BoundsError` if `start` or `stop` is outside the bounds of `scans(series)`.
-- `ArgumentError` if `start > stop`.
-- `ArgumentError` if the resulting scan list is empty.
-
-See also [`AbstractScanSeries`](@ref), [`indextrim`](@ref), [`retentiontrim`](@ref),
-[`retentiontrim!`](@ref), [`scans`](@ref), [`scancount`](@ref).
+See also 
+[`AbstractScanSeries`](@ref), 
+[`indextrim`](@ref),
+[`retentiontrim`](@ref), 
+[`retentiontrim!`](@ref), 
+[`scancount`](@ref)
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -143,24 +136,17 @@ end
 # ── levelscans ────────────────────────────────────────────────────────────────────────────
 
 """
-    levelscans(series::AbstractMassScanSeries, target_level::Integer=1) 
-        -> AbstractMassScanSeries
+    levelscans(series::AbstractMassScanSeries, target_level::Integer=1) -> typeof(series)
 
-Return a new `AbstractMassScanSeries` containing only scans with the specified 
-`target_level`.
-
-# Arguments
-- `series::AbstractMassScanSeries`: A series of mass spectrometry scans.
-- `target_level::Integer=1`: The MS level to filter for (e.g. 1 for MS1, 2 for MS2).
-
-# Returns
-A new mass scan series containing only the scans at the specified level. All metadata is 
-preserved.
-
-# Throws
-- `ArgumentError` if no scans exist at the specified `target_level`.
-
-See also [`AbstractMassScanSeries`](@ref), [`scans`](@ref), [`scan`](@ref), [`level`](@ref).
+Return a new `AbstractMassScanSeries` containing only scans with the specified m/z 
+`target_level` (e.g., MS¹ only). The returned series preserves metadata and leaves the 
+original unchanged. It throws `ArgumentError` if no scans exist at the requested level. 
+    
+See also
+[`AbstractMassScanSeries`](@ref),
+[`levels`](@ref levels(::AbstractMassScanSeries)),
+[`scancount`](@ref), 
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -195,31 +181,25 @@ end
 # ── retentiontrim ─────────────────────────────────────────────────────────────────────────
 
 """
-    retentiontrim(series::AbstractScanSeries; start=first(retentions(series)), 
-                  stop=last(retentions(series))) -> AbstractScanSeries
+    retentiontrim(
+        series::AbstractScanSeries; 
+        start=first(retentions(series)), 
+        stop=last(retentions(series))
+    ) -> typeof(series)
 
-Return a new `AbstractScanSeries` containing only those scans whose retention values fall 
-within the inclusive range `[start, stop]`.
+Return a new scan series of the same concrete type as `series` containing only those
+scans whose retention values fall within the inclusive range `[start, stop]`. The
+method supports series with unitful or unitless retention values and defaults to the
+range covered by the series. It throws `ArgumentError` if `start > stop` or no scans
+remain after trimming. 
 
-This method supports series with unitful or unitless retention values. It automatically 
-uses the correct default range based on the retention values present in the series.
-
-# Arguments
-- `series::AbstractScanSeries`: The scan series to trim.
-- `start`: The lower bound of the retention range. Defaults to the first retention value in 
-  `series`.
-- `stop`: The upper bound of the retention range. Defaults to the last retention value in 
-  `series`.
-
-# Returns
-A new `AbstractScanSeries` with scans filtered by the specified retention range.
-
-# Throws
-- `ArgumentError` if `start > stop`.
-- `ArgumentError` if no scans remain after trimming.
-
-See also [`AbstractScanSeries`](@ref), [`retentiontrim!`](@ref), [`indextrim`](@ref), 
-[`indextrim!`](@ref), [`scans`](@ref), [`scancount`](@ref).
+See also
+[`AbstractScanSeries`](@ref), 
+[`indextrim`](@ref),
+[`indextrim!`](@ref), 
+[`retentiontrim!`](@ref), 
+[`scancount`](@ref),
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
@@ -281,30 +261,24 @@ end
 # ── retentiontrim! ────────────────────────────────────────────────────────────────────────
 
 """
-    retentiontrim!(series::AbstractScanSeries; start=first(retentions(series)), 
-                   stop=last(retentions(series))) -> AbstractScanSeries
+    retentiontrim!(
+        series::AbstractScanSeries; 
+        start=first(retentions(series)), 
+        stop=last(retentions(series))
+    ) -> typeof(series)
 
-Mutate the `series` in-place by removing scans whose retention values fall outside the 
-inclusive range `[start, stop]`.
+Mutate the `series` in place by removing scans whose retention values fall outside the
+inclusive range `[start, stop]`. The method supports series with unitful or unitless
+retention values and trims the underlying scan vector. It throws `ArgumentError` if
+`start > stop` or no scans remain after filtering. 
 
-This method supports series with either unitful or unitless retention values.
-
-# Arguments
-- `series::AbstractScanSeries`: The scan series to modify.
-- `start`: Lower bound for retention filtering. Defaults to the first retention in the 
-  series.
-- `stop`: Upper bound for retention filtering. Defaults to the last retention in the 
-  series.
-
-# Returns
-- The same `series` object, with its scans filtered in-place.
-
-# Throws
-- `ArgumentError` if `start > stop`.
-- `ArgumentError` if no scans remain after filtering.
-
-See also [`AbstractScanSeries`](@ref), [`retentiontrim`](@ref), [`indextrim`](@ref), 
-[`indextrim!`](@ref), [`scans`](@ref), [`scancount`](@ref).
+See also 
+[`AbstractScanSeries`](@ref),
+[`indextrim`](@ref), 
+[`indextrim!`](@ref), 
+[`retentiontrim`](@ref), 
+[`scancount`](@ref),
+[`scans`](@ref).
 
 # Examples
 ```jldoctest
