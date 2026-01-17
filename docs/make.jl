@@ -59,6 +59,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                         "m/z binning" => "man/mz_binning.md",
                         "Retention binning and gridding" => "man/binning_gridding.md",
                     ],
+                    "Deconvolution" => "man/deconvolution.md",
                     "Format conversion" => "man/convert.md",
                     "Retention mapping" => Any[
                         "Overview" => "man/mapping_overview.md",

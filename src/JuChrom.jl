@@ -14,8 +14,9 @@ import HiGHS
 using JuMP: Model, MOI, optimize!, set_silent, termination_status, value, @constraint,
     @objective, @variable
 using LinearAlgebra: Diagonal, I, cholesky, dot, mul!, norm, Symmetric
+using OSQP: OSQP
 using Roots: Bisection, find_zero
-using SparseArrays: SparseMatrixCSC, sparse, spdiagm
+using SparseArrays: SparseMatrixCSC, sparse, spdiagm, spzeros
 using Statistics: cor, mean, median, quantile, std, var
 import Base: show, summary
 using Printf
@@ -52,6 +53,7 @@ include("core/transform/whitening.jl")
 include("core/utils/collections.jl")
 include("core/utils/math.jl")
 include("core/utils/units.jl")
+include("core/deconvolution/bspline_unimodal_deconvolution.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
@@ -84,8 +86,10 @@ export densestgrid
 export derivinvmap
 export derivmap
 export extras
+export findclosest
 export fitmap
 export fitquadvarmodel
+export fit_with_t0_search
 export gapalign
 export indextrim
 export indextrim!

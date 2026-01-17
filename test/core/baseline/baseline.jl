@@ -191,6 +191,11 @@ end
     rel_rms = sqrt(mean(((b̂ .- btrue) ./ max.(btrue, eps(Float64))).^2))
     @test rel_rms ≤ 0.20
 
+    # Scale-invariance of λ across uniform retention scaling
+    x_scaled = x .* 60.0
+    b̂_scaled = airpls(x_scaled, y; λ=1e6, threshold_factor=1.96, max_iter=200, no_improvement_limit=10)
+    @test sqrt(mean((b̂_scaled .- b̂).^2)) ≤ 5e-3
+
     # Validation errors
     @test_throws ArgumentError airpls(x[1:10], y)                         # length mismatch
     @test_throws ArgumentError airpls(x[1:2], y[1:2])                     # n < 3
@@ -200,6 +205,7 @@ end
     @test_throws ArgumentError airpls(x, y; zero_weight=0.0)              # > 0
     @test_throws ArgumentError airpls(x, y; variances=fill(-1.0, n))      # variances ≥ 0
     @test_throws ArgumentError airpls(x, y; variances=ones(n-1))          # length match
+    @test_throws ArgumentError airpls(fill(1.0, n), y)                    # zero retention span
 
     # With measurement variances supplied (heteroscedastic), should still behave
     vars = @. 1e-4 + 1e-4 * (1 + sin(0.5 * x))^2

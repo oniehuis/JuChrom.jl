@@ -58,6 +58,38 @@ end
 # ── typify ────────────────────────────────────────────────────────────────────────────────
 
 """
+    findclosest(A::AbstractVector{<:Number}, x::Number) -> Int
+
+Return the index of the number closest to `x` in a vector `A` of numbers sorted in ascending 
+order. If case of a tie, the index of the larger number is returned.
+
+# Examples
+```jldoctest
+julia> JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], 0)
+3
+
+julia> JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], 1.5)
+5
+
+julia> JuChrom.findclosest([-2, -1, 0, 1, 2, 3, 4, 5], -1.5)
+2
+```
+"""
+function findclosest(A::AbstractVector{<:Number}, x::Number)
+    length(A) ≤ 1 && return firstindex(A)
+    i = searchsortedfirst(A, x)
+    if i == firstindex(A)
+        return i
+    elseif i > lastindex(A)
+        return lastindex(A)
+    else
+        (x - A[i-1]) < (A[i] - x) ? (return i - 1) : (return i)
+    end
+end
+
+# ── typify ────────────────────────────────────────────────────────────────────────────────
+
+"""
     typify(collection) -> new_collection
 
 Promotes and converts the elements of a dictionary or vector to a common type.

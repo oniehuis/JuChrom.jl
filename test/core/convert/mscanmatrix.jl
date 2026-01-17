@@ -110,22 +110,4 @@ Base.float(x::DummyVal) = x.val
     @test intensities(msm_int) == [7 0; 3 9]
 end
 
-@testset "norm_matrix branches" begin
-    emptyM = zeros(Int, 0, 0)
-    A_empty, u_empty = JuChrom.norm_matrix(emptyM, u"pA")
-    @test size(A_empty) == (0, 0)
-    @test eltype(A_empty) == Int
-    @test u_empty == u"pA"
-
-    unitM = [1.0 2.0; 3.0 4.0]u"pA"
-    A_unit, u_unit = JuChrom.norm_matrix(unitM, nothing)
-    @test A_unit == [1.0 2.0; 3.0 4.0]
-    @test u_unit == u"pA"
-
-    dummyM = [DummyVal(1.0) DummyVal(2.0); DummyVal(3.0) DummyVal(4.0)]
-    A_dummy, u_dummy = JuChrom.norm_matrix(dummyM, u"ms")
-    @test A_dummy == [1.0 2.0; 3.0 4.0]
-    @test u_dummy == u"ms"
-end
-
 end # module ConvertTests

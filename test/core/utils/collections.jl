@@ -70,4 +70,23 @@ end
     end
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+# findclosest
+# ─────────────────────────────────────────────────────────────────────────────
+@testset "findclosest" begin
+    A = [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0]
+    @test JuChrom.findclosest(A, 0.0) == 3
+    @test JuChrom.findclosest(A, 1.4) == 4
+    @test JuChrom.findclosest(A, 1.5) == 5  # tie -> larger
+    @test JuChrom.findclosest(A, -1.5) == 2 # tie -> larger
+    @test JuChrom.findclosest(A, -10.0) == 1
+    @test JuChrom.findclosest(A, 10.0) == 6
+
+    # Single element vector
+    @test JuChrom.findclosest([42.0], 0.0) == 1
+
+    # Works with integer inputs
+    @test JuChrom.findclosest([1, 3, 5, 7], 6) == 4  # tie -> larger
+end
+
 end  # module TestCollections

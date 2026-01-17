@@ -98,7 +98,7 @@ nothing # hide
 baseline = airpls(rawretentions(xic, unit=u"minute"),
                   rawintensities(xic), 
                   variances=rawintensities(xic),
-                  λ=0.01)  # λ controls baseline smoothness (higher = smoother)
+                  λ=1e6)  # λ controls baseline smoothness (higher = smoother)
 
 # Plot the m/z 109 chromatogram with its baseline and save to SVG.
 fig₃ = Figure(; size=(1000, 350))

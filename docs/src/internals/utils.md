@@ -3,6 +3,7 @@
 ```@docs
 JuChrom.consistentunits
 JuChrom.copy_with
+JuChrom.findclosest
 JuChrom.inverse
 JuChrom.inverse_minmax_scale
 JuChrom.isunitful

@@ -116,7 +116,8 @@ function mscanmatrix(series::MassScanSeries, format::DenseMatrix;
     n_scans = scancount(filtered_series)
     n_scans > 0 || throw(ArgumentError("No scans found at target level $target_level"))
 
-    uniquemzs = uniquemzvalues(filtered_series, target_level)
+    # Use raw values so units remain in metadata (no Unitful values in the grid).
+    uniquemzs = sort(unique(vcat(rawmzvalues.(scans(filtered_series))...)))
     n_ions = length(uniquemzs)
 
     mz_to_index = Dict{eltype(uniquemzs), Int}(ion => i for (i, ion) in enumerate(uniquemzs))
@@ -125,11 +126,13 @@ function mscanmatrix(series::MassScanSeries, format::DenseMatrix;
     intensity_matrix = create_matrix(format, filtered_series, mz_to_index, n_scans, n_ions, 
                                      threshold)
 
-    # Normalize axes/matrix and propagate units (fallback when arrays are unitless)
-    rt_vals, rt_unit = norm_axis(rawretentions(filtered_series), 
-                                  retentionunit(filtered_series))
-    mz_vals, mz_unit = norm_axis(uniquemzs, mzunit(filtered_series))
-    I_vals, iu_unit = norm_matrix(intensity_matrix, intensityunit(filtered_series))
+    # Preserve original eltypes; units are stored separately in metadata.
+    rt_vals = copy(rawretentions(filtered_series))
+    rt_unit = retentionunit(filtered_series)
+    mz_vals = copy(uniquemzs)
+    mz_unit = mzunit(filtered_series)
+    I_vals = intensity_matrix
+    iu_unit = intensityunit(filtered_series)
 
     MassScanMatrix(rt_vals, rt_unit, mz_vals, mz_unit, I_vals, iu_unit;
                    level=target_level,
@@ -149,7 +152,8 @@ function mscanmatrix(series::MassScanSeries, format::SparseMatrix;
     n_scans = scancount(filtered_series)
     n_scans > 0 || throw(ArgumentError("No scans found at target level $target_level"))
 
-    uniquemzs = uniquemzvalues(filtered_series, target_level)
+    # Use raw values so units remain in metadata (no Unitful values in the grid).
+    uniquemzs = sort(unique(vcat(rawmzvalues.(scans(filtered_series))...)))
     n_ions = length(uniquemzs)
 
     mz_to_index = Dict{eltype(uniquemzs), Int}(ion => i for (i, ion) in enumerate(uniquemzs))
@@ -158,11 +162,13 @@ function mscanmatrix(series::MassScanSeries, format::SparseMatrix;
     intensity_matrix = create_matrix(format, filtered_series, mz_to_index, n_scans, n_ions, 
                                      threshold)
 
-    # Normalize axes/matrix and propagate units (fallback when arrays are unitless)
-    rt_vals, rt_unit = norm_axis(rawretentions(filtered_series), 
-                                  retentionunit(filtered_series))
-    mz_vals, mz_unit = norm_axis(uniquemzs, mzunit(filtered_series))
-    I_vals, iu_unit = norm_matrix(intensity_matrix, intensityunit(filtered_series))
+    # Preserve original eltypes; units are stored separately in metadata.
+    rt_vals = copy(rawretentions(filtered_series))
+    rt_unit = retentionunit(filtered_series)
+    mz_vals = copy(uniquemzs)
+    mz_unit = mzunit(filtered_series)
+    I_vals = intensity_matrix
+    iu_unit = intensityunit(filtered_series)
 
     MassScanMatrix(rt_vals, rt_unit, mz_vals, mz_unit, I_vals,  iu_unit;
                    level=target_level,
@@ -191,8 +197,8 @@ function create_matrix(::DenseMatrix, filtered_series, mz_to_index, n_scans, n_i
     # Fill matrix
     Threads.@threads for i in 1:n_scans
         scan = @inbounds filtered_series[i]
-        mz_vals = mzvalues(scan)
-        intensity_vals = intensities(scan)
+        mz_vals = rawmzvalues(scan)
+        intensity_vals = rawintensities(scan)
         
         @inbounds @simd for idx in eachindex(mz_vals, intensity_vals)
             mz = mz_vals[idx]
@@ -226,8 +232,8 @@ function create_matrix(::SparseMatrix, filtered_series, mz_to_index, n_scans, n_
     # Sequential collection (avoid threading due to race conditions)
     @inbounds for i in 1:n_scans
         scan = filtered_series[i]
-        mz_vals = mzvalues(scan)
-        intensity_vals = intensities(scan)
+        mz_vals = rawmzvalues(scan)
+        intensity_vals = rawintensities(scan)
         
         @simd for idx in eachindex(mz_vals, intensity_vals)
             mz = mz_vals[idx]
@@ -257,47 +263,4 @@ function estimate_nonzeros(filtered_series, threshold)
     
     # Extrapolate to full dataset
     div(total_nonzeros * n_scans, sample_size)
-end
-
-# Normalize an axis vector to plain numbers + capture unit.
-# Falls back to `fallback_unit` when the vector itself is unitless.
-@inline function norm_axis(v::AbstractVector, fallback_unit::Union{Nothing, Unitful.Units})
-    isempty(v) && return Float64[], fallback_unit
-    x1 = first(v)
-    if x1 isa Unitful.AbstractQuantity
-        u = Unitful.unit(x1)
-        return [float(ustrip(uconvert(u, x))) for x in v], u
-    else
-        return collect(float.(v)), fallback_unit
-    end
-end
-
-# Normalize an intensity matrix + capture unit.
-# If matrix elements are Quantities, strip to Float64 and capture their unit.
-# If matrix is unitless, preserve eltype (e.g., Int, Float64) and use fallback_unit.
-function norm_matrix(M::AbstractMatrix, fallback_unit::Union{Nothing, Unitful.Units})
-    if isempty(M)
-        return similar(M, eltype(M), size(M)), fallback_unit
-    end
-    x1 = M[begin]
-    if x1 isa Unitful.AbstractQuantity
-        u = Unitful.unit(x1)
-        A = similar(M, Float64)
-        @inbounds for j in axes(M,2), i in axes(M,1)
-            A[i,j] = float(ustrip(uconvert(u, M[i,j])))
-        end
-        return A, u
-    else
-        # unitless: keep original eltype (don’t force Float64)
-        if eltype(M) <: Number
-            return copy(M), fallback_unit
-        else
-            # extremely rare: non-Number eltype; just convert to Float64
-            A = similar(M, Float64)
-            @inbounds for j in axes(M,2), i in axes(M,1)
-                A[i,j] = float(M[i,j])
-            end
-            return A, fallback_unit
-        end
-    end
 end
