@@ -240,7 +240,7 @@ function unimodalfit(
 
     # A_prior and lambda_peaks must be provided together.
     if isnothing(A_prior) ≠ isnothing(lambda_peaks)
-        error("Provide both A_prior and lambda_peaks, or neither.")
+        throw(ArgumentError("Provide both A_prior and lambda_peaks, or neither."))
     end
     # Validate prior weights if provided.
     if  !isnothing(lambda_peaks)

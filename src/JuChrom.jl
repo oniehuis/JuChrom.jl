@@ -53,7 +53,7 @@ include("core/transform/whitening.jl")
 include("core/utils/collections.jl")
 include("core/utils/math.jl")
 include("core/utils/units.jl")
-include("core/deconvolution/bspline_unimodal_deconvolution.jl")
+include("core/deconvolution/unimodalfit.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries

@@ -78,6 +78,9 @@ end
 @safetestset "core/quadvar_model/quadvar_model.jl" begin
     include("./core/quadvar_model/quadvar_model.jl")
 end
+@safetestset "core/deconvolution/unimodalfit.jl" begin
+    include("./core/deconvolution/unimodalfit.jl")
+end
 
 # IO
 @safetestset "IO/InputOutput" begin
