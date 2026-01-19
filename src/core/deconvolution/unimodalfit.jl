@@ -8,22 +8,22 @@
         w=nothing
     ) -> Vector{Float64}
 
-Return the optimal nonnegative coefficient vector `a` (length Kpeaks) from solving 
-a nonnegative least squares problem (NNLS) using OSQP, a quadratic programming solver:
+Return the optimal nonnegative coefficient vector `a` (length `Kpeaks`) from solving 
+a small nonnegative least squares problem (NNLS) using OSQP, a quadratic programming solver:
 
     minimize_a  ||F*a - y||^2  +  sum_k λ[k]*(a[k] - μ[k])^2
     subject to  a >= 0.
 
 The optional quadratic prior is controlled by `μ` and `λ`. When provided, it softly
 pulls the solution toward `μ` with per-component strength `λ`. Set `λ[k]=0` to
-disable the prior for component k.
+disable the prior for component `k`.
 
 Optional heteroscedastic weights `w` apply per observation. They are implemented
 by row-scaling `F` and `y` by `sqrt.(w)`, which converts the weighted problem to
 an equivalent unweighted least squares system.
 
-`F` is the (n_scans × Kpeaks) design matrix where column k is component k evaluated
-at the scan times, and `y` is the length-n_scans observed intensities for one channel.
+`F` is the (`n_scans` × `Kpeaks`) design matrix where column `k` is component `k` evaluated
+at the retentions, and `y` is the length-`n_scans` observed intensities for one channel.
 `ridge` adds a small diagonal regularization for numerical stability.
 
 See also
@@ -178,42 +178,42 @@ end
         nnls_ridge::Real=1e-12
     )
 
-Fit k peaks chromatographic peaks (components) to GC/MS intensity data where each
-m/z channel can be measured at a slightly shifted time within each scan. The model
-for channel i and scan j is
+Fit `k` peaks chromatographic peaks (components) to GC/MS intensity data where each
+m/z channel can be measured at a slightly shifted retention within each scan. The model
+for channel `i` and scan `j` is
 
     Y[i,j] ≈ sum_{k=1..Kpeaks} A[i,k] * f_k(t_actual[i,j]) + noise,
 
-where A[i,k] ≥ 0 is the contribution of peak k in channel i and f_k(t) ≥ 0 is the
-shared peak shape of component k over continuous time. Each f_k is parameterized
-as a cubic B-spline f_k(t) = B(t) * c_k.
+where `A[i,k] ≥ 0` is the contribution of peak `k` in channel `i` and `f_k(t) ≥ 0` is the
+shared peak shape of component `k` over continuous retention. Each `f_k` is parameterized
+as a cubic B-spline `f_k(t) = B(t) * c_k`.
 
-Unimodality is enforced using t0_times as the apex switch time. The constraints
-require f'_k(t) ≥ 0 for t ≤ t0_times[k], f'_k(t) ≤ 0 for t ≥ t0_times[k], and
-f_k(t) ≥ 0 on a dense time grid.
+Unimodality is enforced using `t0_times` as the apex switch time. The constraints
+require `f'_k(t) ≥ 0` for `t ≤ t0_times[k]`, `f'_k(t) ≤ 0` for `t ≥ t0_times[k]`, and
+`f_k(t) ≥ 0` on a dense time grid.
 
-The optimization alternates between updating A and updating the spline coefficients
-C. Given shapes f_k, each channel's weights A[i,:] are updated by solving a 
-nonnegative least squares problem (optionally with a soft prior). Given A, the
+The optimization alternates between updating `A` and updating the spline coefficients
+`C`. Given shapes `f_k`, each channel's weights `A[i,:]` are updated by solving a 
+nonnegative least squares problem (optionally with a soft prior). Given `A`, the
 spline coefficients are updated by solving a constrained quadratic program that
-enforces positivity and unimodality. Each component is normalized so max(f_k)=1
-and the scale is absorbed into A[:,k]. This alternation repeats for iters steps.
+enforces positivity and unimodality. Each component is normalized so `max(f_k)=1`
+and the scale is absorbed into `A[:,k]`. This alternation repeats for `iters` steps.
 
-Heteroscedasticity is optional. If σ is provided with the same size as Y, it is
-used only in the A-update via weights w = 1 ./ σ.^2. The shape update remains
+Heteroscedasticity is optional. If `σ` is provided with the same size as `Y`, it is
+used only in the `A`-update via weights `w = 1 ./ σ.^2`. The shape update remains
 unweighted to avoid bias in the peak height when the noise model is approximate.
-If σ is nothing, all observations are equally weighted.
+If `σ` is `nothing`, all observations are equally weighted.
 
-Y is the (n_mz × n_scans) intensity matrix, t_actual is the matching matrix of
-acquisition times, and t0_times gives the approximate apex time for each peak.
-K sets the number of spline knots, tgrid_n sets the grid used for constraints,
-iters controls the number of alternating updates, ridge stabilizes the spline QP,
-and nnls_ridge stabilizes the per-channel A updates. A_init, lock_Azeros, A_prior,
-and lambda_peaks control initialization and optional spectral priors.
+`Y` is the (`n_mz` × `n_scans`) intensity matrix, `t_actual` is the matching matrix of
+acquisition retentions, and `t0_times` gives the approximate apex retention for each peak.
+`K` sets the number of spline knots, `tgrid_n` sets the grid used for constraints,
+`iters` controls the number of alternating updates, `ridge` stabilizes the spline QP,
+and `nnls_ridge` stabilizes the per-channel `A` updates. `A_init`, `lock_Azeros`, `A_prior`,
+and `lambda_peaks` control initialization and optional spectral priors.
 
-Returns A_hat (estimated spectra), basis (B-spline basis), C_hat (spline
-coefficients), (tgrid, Fhat_grid) for plotting shapes, and Yfit (reconstructed
-signal at observed times).
+Returns `A_hat` (estimated spectra), `basis` (B-spline basis), `C_hat` (spline
+coefficients), `(tgrid, Fhat_grid)` for plotting shapes, and `Yfit` (reconstructed
+signal at observed retentions).
 
 See also [`unimodalfit_t0`](@ref).
 """
@@ -560,7 +560,7 @@ end
 """
     unimodalfit_t0(Y, t_actual; t0_guess, kwargs...)
 
-Wrapper around `unimodalfit` that searches apex times `t0` using coordinate-wise grid 
+Wrapper around `unimodalfit` that searches apex retentions `t0` using coordinate-wise grid 
 search to minimize the total sum of squared errors (SSE). All keyword arguments accepted by 
 `unimodalfit` are forwarded through `kwargs` and apply in the same way as in a direct call, 
 including `σ`, `A_init`, `lock_Azeros`, `A_prior`, `lambda_peaks`, `K`, `tgrid_n`, `iters`, 
@@ -609,7 +609,7 @@ function unimodalfit_t0(
         T2<:Real,
         T3<:Integer,
         T4<:Real,
-        T5<:Union{Nothing, <:Real},
+        T5<:Union{Nothing, Real},
         T6<:Union{Nothing, Any},
         T7<:Real,
         T8<:Real,
