@@ -178,17 +178,17 @@ end
         nnls_ridge::Real=1e-12
     )
 
-Fit `k` peaks chromatographic peaks (components) to GC/MS intensity data where each
+Fit `k` chromatographic peaks (components) to GC/MS intensity data where each
 m/z channel can be measured at a slightly shifted retention within each scan. The model
 for channel `i` and scan `j` is
 
-    Y[i,j] ≈ sum_{k=1..Kpeaks} A[i,k] * f_k(t_actual[i,j]) + noise,
+    Y[i,j] ≈ sum_{k=1..Kpeaks} A[i,k] * f_k(t_actual[i,j]) + noise
 
 where `A[i,k] ≥ 0` is the contribution of peak `k` in channel `i` and `f_k(t) ≥ 0` is the
 shared peak shape of component `k` over continuous retention. Each `f_k` is parameterized
 as a cubic B-spline `f_k(t) = B(t) * c_k`.
 
-Unimodality is enforced using `t0_times` as the apex switch time. The constraints
+Unimodality is enforced using `t0_times` as the apex switch retention. The constraints
 require `f'_k(t) ≥ 0` for `t ≤ t0_times[k]`, `f'_k(t) ≤ 0` for `t ≥ t0_times[k]`, and
 `f_k(t) ≥ 0` on a dense time grid.
 
@@ -199,10 +199,10 @@ spline coefficients are updated by solving a constrained quadratic program that
 enforces positivity and unimodality. Each component is normalized so `max(f_k)=1`
 and the scale is absorbed into `A[:,k]`. This alternation repeats for `iters` steps.
 
-Heteroscedasticity is optional. If `σ` is provided with the same size as `Y`, it is
-used only in the `A`-update via weights `w = 1 ./ σ.^2`. The shape update remains
-unweighted to avoid bias in the peak height when the noise model is approximate.
-If `σ` is `nothing`, all observations are equally weighted.
+Heteroscedasticity is optional. If `σ` is provided with the same size as `Y`, it is used in 
+the `A`-update via weights `w = 1 ./ σ.^2`. The shape update remains unweighted to avoid 
+bias in the peak height when the noise model is approximate. If `σ` is `nothing`, all 
+observations are equally weighted.
 
 `Y` is the (`n_mz` × `n_scans`) intensity matrix, `t_actual` is the matching matrix of
 acquisition retentions, and `t0_times` gives the approximate apex retention for each peak.
@@ -567,22 +567,22 @@ including `σ`, `A_init`, `lock_Azeros`, `A_prior`, `lambda_peaks`, `K`, `tgrid_
 `ridge`, and `nnls_ridge`.
 
 The search parameters are specific to this wrapper. `t0_guess` provides the initial apex 
-times. `half_width` and `ngrid` define the one-dimensional grid around each t0. `min_sep` 
-and `max_sep` optionally constrain adjacent t0 values. `strategy` selects the search plan: 
+retentions. `half_width` and `ngrid` define the one-dimensional grid around each `t0`. `min_sep` 
+and `max_sep` optionally constrain adjacent `t0` values. `strategy` selects the search plan: 
 `:single` runs one grid search at the given half-width and grid size, while `:iterative` 
 runs a coarse-to-fine sequence and optionally accepts explicit `stages`. When provided, 
 `stages` should be an iterable of stage objects (e.g. a vector/tuple of `NamedTuple`s) 
 with `half_width` and/or `ngrid` fields; missing fields fall back to the top-level 
 defaults. `adaptive_window`, `shrink`, and `min_half_width` control automatic narrowing 
 of the search window between stages. `coord_sweeps` sets the number of coordinate passes 
-per stage. `enforce_sorted` keeps t0 ordered. `max_iter` and `tol_sse` control termination, 
+per stage. `enforce_sorted` keeps `t0` ordered. `max_iter` and `tol_sse` control termination, 
 and `verbose` controls logging.
 
 If `σ` is provided through `kwargs`, it is forwarded to `unimodalfit` and applied only in 
-the per-channel A update. The peak-shape update remains unweighted.
+the per-channel `A` update. The peak-shape update remains unweighted.
 
-Returns the best t0 vector, the best SSE, and the same outputs as `unimodalfit` for that 
-t0: `A_hat`, `basis`, `C_hat`, `(tgrid, Fhat_grid)`, and `Y_fit`.
+Returns the best `t0` vector, the best SSE, and the same outputs as `unimodalfit` for that 
+`t0`: `A_hat`, `basis`, `C_hat`, `(tgrid, Fhat_grid)`, and `Y_fit`.
 
 See also [`unimodalfit`](@ref).
 """
