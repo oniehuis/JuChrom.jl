@@ -28,7 +28,7 @@ at the retentions, and `y` is the length-`n_scans` observed intensities for one 
 
 See also
 [`unimodalfit`](@ref),
-[`unimodalfit_t0`](@ref).
+[`unimodalfit_apexsearch`](@ref).
 """
 function nnlspenalized(
     F::AbstractMatrix{<:Real},
@@ -163,34 +163,34 @@ end
 
 """
     unimodalfit(
-        Y::AbstractMatrix{<:Real},
-        t_actual::AbstractMatrix{<:Real},
-        t0_times::AbstractVector{<:Real};
+        I::AbstractMatrix{<:Real},
+        R::AbstractMatrix{<:Real},
+        peakretentions::AbstractVector{<:Real};
         σ::Union{Nothing, AbstractMatrix{<:Real}}=nothing,
-        A_init::Union{Nothing, AbstractMatrix{<:Real}}=nothing,
-        lock_Azeros::Union{Nothing, BitMatrix}=nothing,
-        A_prior::Union{Nothing, AbstractMatrix{<:Real}}=nothing,
-        lambda_peaks::Union{Nothing, AbstractVector{<:Real}}=nothing,
-        K::Integer=30,
-        tgrid_n::Integer=500,
+        spectra_init::Union{Nothing, AbstractMatrix{<:Real}}=nothing,
+        spectra_zero_mask::Union{Nothing, BitMatrix}=nothing,
+        spectra_prior::Union{Nothing, AbstractMatrix{<:Real}}=nothing,
+        spectra_prior_weights::Union{Nothing, AbstractVector{<:Real}}=nothing,
+        knots_n::Integer=30,
+        rgrid_n::Integer=500,
         iters::Integer=30,
-        ridge::Real=1e-8,
-        nnls_ridge::Real=1e-12
+        shape_ridge::Real=1e-8,
+        spectra_ridge::Real=1e-12
     )
 
-Fit `k` chromatographic peaks (components) to GC/MS intensity data where each
+Fit `Kpeaks` chromatographic peaks (components) to GC/MS intensity data `I` where each
 m/z channel can be measured at a slightly shifted retention within each scan. The model
 for channel `i` and scan `j` is
 
-    Y[i,j] ≈ sum_{k=1..Kpeaks} A[i,k] * f_k(t_actual[i,j]) + noise
+    I[i,j] ≈ sum_{k=1..Kpeaks} A[i,k] * f_k(R[i,j]) + noise
 
-where `A[i,k] ≥ 0` is the contribution of peak `k` in channel `i` and `f_k(t) ≥ 0` is the
-shared peak shape of component `k` over continuous retention. Each `f_k` is parameterized
-as a cubic B-spline `f_k(t) = B(t) * c_k`.
+where `A[i,k] ≥ 0` is the contribution of peak `k` in channel `i` and `f_k(r) ≥ 0` is the
+shared peak shape of component `k` over continuous retention `r`. Each `f_k` is
+parameterized as a cubic B-spline `f_k(r) = B(r) * c_k`.
 
-Unimodality is enforced using `t0_times` as the apex switch retention. The constraints
-require `f'_k(t) ≥ 0` for `t ≤ t0_times[k]`, `f'_k(t) ≤ 0` for `t ≥ t0_times[k]`, and
-`f_k(t) ≥ 0` on a dense time grid.
+Unimodality is enforced using `peakretentions` as the apex switch retention. The 
+constraints require `f'_k(r) ≥ 0` for `r ≤ peakretentions[k]`, `f'_k(r) ≤ 0` for 
+`r ≥ peakretentions[k]`, and `f_k(r) ≥ 0` on a dense retention grid.
 
 The optimization alternates between updating `A` and updating the spline coefficients
 `C`. Given shapes `f_k`, each channel's weights `A[i,:]` are updated by solving a 
@@ -199,38 +199,38 @@ spline coefficients are updated by solving a constrained quadratic program that
 enforces positivity and unimodality. Each component is normalized so `max(f_k)=1`
 and the scale is absorbed into `A[:,k]`. This alternation repeats for `iters` steps.
 
-Heteroscedasticity is optional. If `σ` is provided with the same size as `Y`, it is used in 
+Heteroscedasticity is optional. If `σ` is provided with the same size as `I`, it is used in 
 the `A`-update via weights `w = 1 ./ σ.^2`. The shape update remains unweighted to avoid 
 bias in the peak height when the noise model is approximate. If `σ` is `nothing`, all 
 observations are equally weighted.
 
-`Y` is the (`n_mz` × `n_scans`) intensity matrix, `t_actual` is the matching matrix of
-acquisition retentions, and `t0_times` gives the approximate apex retention for each peak.
-`K` sets the number of spline knots, `tgrid_n` sets the grid used for constraints,
-`iters` controls the number of alternating updates, `ridge` stabilizes the spline QP,
-and `nnls_ridge` stabilizes the per-channel `A` updates. `A_init`, `lock_Azeros`, `A_prior`,
-and `lambda_peaks` control initialization and optional spectral priors.
+`I` is the (`n_mz` × `n_scans`) intensity matrix, `R` is the matching matrix of acquisition 
+retentions, and `peakretentions` gives the approximate apex retention for each peak. `knots_n`
+sets the number of spline knots, `rgrid_n` sets the grid used for constraints, `iters` 
+controls the number of alternating updates, `shape_ridge` stabilizes the spline QP, and 
+`spectra_ridge` stabilizes the per-channel `A` updates. `spectra_init`, `spectra_zero_mask`, `spectra_prior`,
+and `spectra_prior_weights` control initialization and optional spectral priors.
 
 Returns `A_hat` (estimated spectra), `basis` (B-spline basis), `C_hat` (spline
-coefficients), `(tgrid, Fhat_grid)` for plotting shapes, and `Yfit` (reconstructed
+coefficients), `(rgrid, Fhat_grid)` for plotting shapes, and `Ifit` (reconstructed
 signal at observed retentions).
 
-See also [`unimodalfit_t0`](@ref).
+See also [`unimodalfit_apexsearch`](@ref).
 """
 function unimodalfit(
-    Y::AbstractMatrix{<:Real},
-    t_actual::AbstractMatrix{<:Real},
-    t0_times::AbstractVector{<:Real};
+    I::AbstractMatrix{<:Real},
+    R::AbstractMatrix{<:Real},
+    peakretentions::AbstractVector{<:Real};
     σ::T1=nothing,
-    A_init::T2=nothing,
-    lock_Azeros::T3=nothing,
-    A_prior::T4=nothing,
-    lambda_peaks::T5=nothing,
-    K::T6=30,
-    tgrid_n::T7=500,
+    spectra_init::T2=nothing,
+    spectra_zero_mask::T3=nothing,
+    spectra_prior::T4=nothing,
+    spectra_prior_weights::T5=nothing,
+    knots_n::T6=30,
+    rgrid_n::T7=500,
     iters::T8=30,
-    ridge::T9=1e-8,
-    nnls_ridge::T10=1e-12
+    shape_ridge::T9=1e-8,
+    spectra_ridge::T10=1e-12
     ) where {
         T1<:Union{Nothing, AbstractMatrix{<:Real}},
         T2<:Union{Nothing, AbstractMatrix{<:Real}},
@@ -244,15 +244,15 @@ function unimodalfit(
         T10<:Real
 }
     # Determine the matrix dimensions of the input signal.
-    n_mz, n_scans = size(Y)
-    # Ensure t_actual aligns with Y for all observations.
-    if size(t_actual) ≠ (n_mz, n_scans)
-        throw(DimensionMismatch("t_actual must have size ($(n_mz), $(n_scans))."))
+    n_mz, n_scans = size(I)
+    # Ensure R aligns with I for all observations.
+    if size(R) ≠ (n_mz, n_scans)
+        throw(DimensionMismatch("R must have size ($(n_mz), $(n_scans))."))
     end
 
     # Validate sigma if provided.
     if !isnothing(σ)
-        # Sigma must match Y in size.
+        # Sigma must match I in size.
         if size(σ) ≠ (n_mz, n_scans)
             throw(DimensionMismatch("σ must have size ($(n_mz), $(n_scans))."))
         end
@@ -267,69 +267,69 @@ function unimodalfit(
     end
 
     # Number of peaks to fit.
-    Kpeaks = length(t0_times)
+    Kpeaks = length(peakretentions)
     # Require at least one peak.
     if Kpeaks < 1
-        throw(ArgumentError("t0_times must contain at least one peak time."))
+        throw(ArgumentError("peakretentions must contain at least one peak retention."))
     end
 
     # Validate optional A initialization.
-    if  !isnothing(A_init)
-        if size(A_init) ≠ (n_mz, Kpeaks)
-            throw(DimensionMismatch("A_init must have size ($(n_mz), $(Kpeaks))."))
+    if  !isnothing(spectra_init)
+        if size(spectra_init) ≠ (n_mz, Kpeaks)
+            throw(DimensionMismatch("spectra_init must have size ($(n_mz), $(Kpeaks))."))
         end
     end
     # Validate optional A zero-mask.
-    if !isnothing(lock_Azeros)
-        if size(lock_Azeros) ≠ (n_mz, Kpeaks)
-            throw(DimensionMismatch("lock_Azeros must have size ($(n_mz), $(Kpeaks))."))
+    if !isnothing(spectra_zero_mask)
+        if size(spectra_zero_mask) ≠ (n_mz, Kpeaks)
+            throw(DimensionMismatch("spectra_zero_mask must have size ($(n_mz), $(Kpeaks))."))
         end
     end
     # Validate optional A prior.
-    if !isnothing(A_prior)
-        if size(A_prior) ≠(n_mz, Kpeaks)
-            throw(DimensionMismatch("A_prior must have size ($(n_mz), $(Kpeaks))."))
+    if !isnothing(spectra_prior)
+        if size(spectra_prior) ≠(n_mz, Kpeaks)
+            throw(DimensionMismatch("spectra_prior must have size ($(n_mz), $(Kpeaks))."))
         end
     end
 
-    # A_prior and lambda_peaks must be provided together.
-    if isnothing(A_prior) ≠ isnothing(lambda_peaks)
-        throw(ArgumentError("Provide both A_prior and lambda_peaks, or neither."))
+    # spectra_prior and spectra_prior_weights must be provided together.
+    if isnothing(spectra_prior) ≠ isnothing(spectra_prior_weights)
+        throw(ArgumentError("Provide both spectra_prior and spectra_prior_weights, or neither."))
     end
     # Validate prior weights if provided.
-    if  !isnothing(lambda_peaks)
-        if length(lambda_peaks) ≠ Kpeaks
-            throw(DimensionMismatch("lambda_peaks must have length Kpeaks=$(Kpeaks)."))
+    if  !isnothing(spectra_prior_weights)
+        if length(spectra_prior_weights) ≠ Kpeaks
+            throw(DimensionMismatch("spectra_prior_weights must have length Kpeaks=$(Kpeaks)."))
         end
-        if any(lambda_peaks .< 0.0)
-            throw(ArgumentError("lambda_peaks must be nonnegative."))
+        if any(spectra_prior_weights .< 0.0)
+            throw(ArgumentError("spectra_prior_weights must be nonnegative."))
         end
     end
 
-    # Flatten times in the same order as vec(Y) (column-major).
-    tvec = vec(t_actual)
-    # Compute time bounds for spline construction.
+    # Flatten retentions in the same order as vec(I) (column-major).
+    tvec = vec(R)
+    # Compute retention bounds for spline construction.
     tmin, tmax = minimum(tvec), maximum(tvec)
     # Total number of observations across channels and scans.
     Nobs = length(tvec)
 
     # Spline basis
-    # Choose knot locations across the observed time range.
-    knots = range(tmin, tmax; length=K)
+    # Choose knot locations across the observed retention range.
+    knots = range(tmin, tmax; length=knots_n)
     # Construct a cubic B-spline basis.
     basis = BSplineBasis(BSplineOrder(4), knots)  # cubic
-    # Collocation matrix at observation times.
+    # Collocation matrix at observation retentions.
     Bobs = collocation_matrix(basis, tvec, Derivative(0), Matrix{Float64})  # (Nobs x p)
     # Number of spline coefficients per component.
     p = size(Bobs, 2)
 
     # Constraint grid
     # Define a dense grid for enforcing constraints.
-    tgrid = range(tmin, tmax; length=tgrid_n)
+    rgrid = range(tmin, tmax; length=rgrid_n)
     # Evaluate basis values on the grid.
-    Bgrid  = collocation_matrix(basis, tgrid, Derivative(0), Matrix{Float64})
+    Bgrid  = collocation_matrix(basis, rgrid, Derivative(0), Matrix{Float64})
     # Evaluate basis derivatives on the grid.
-    Bprime = collocation_matrix(basis, tgrid, Derivative(1), Matrix{Float64})
+    Bprime = collocation_matrix(basis, rgrid, Derivative(1), Matrix{Float64})
 
     # Build block-diagonal constraints for all peaks
     # Allocate constraint matrices per peak.
@@ -341,12 +341,12 @@ function unimodalfit(
 
     # Build constraint blocks for each peak.
     for k in 1:Kpeaks
-        # Apex time for this peak.
-        t0 = t0_times[k]
+        # Apex retention for this peak.
+        t0 = peakretentions[k]
         # Left side of the apex for non-decreasing constraint.
-        left  = tgrid .≤ t0
+        left  = rgrid .≤ t0
         # Right side of the apex for non-increasing constraint.
-        right = tgrid .≥ t0
+        right = rgrid .≥ t0
 
         # Assemble positivity and derivative constraints for this peak.
         Acon_k = vcat(
@@ -397,14 +397,14 @@ function unimodalfit(
 
     # Initialize A
     # Initialize A from user input or a small positive default.
-    A_hat = if isnothing(A_init)
+    A_hat = if isnothing(spectra_init)
         fill(1e-3, n_mz, Kpeaks)
     else
-        max.(A_init, 0.0)
+        max.(spectra_init, 0.0)
     end
     # Enforce any fixed zeros in A.
-    if !isnothing(lock_Azeros)
-        A_hat[lock_Azeros] .= 0.0
+    if !isnothing(spectra_zero_mask)
+        A_hat[spectra_zero_mask] .= 0.0
     end
 
     # Initialize C (p x Kpeaks)
@@ -413,11 +413,11 @@ function unimodalfit(
     # Allocate spline coefficients.
     C = zeros(p, Kpeaks)
     # Cache grid as a concrete vector.
-    tg = collect(tgrid)
+    tg = collect(rgrid)
     # Seed each component with a unimodal bump around its apex.
     for k in 1:Kpeaks
-        # Build a Gaussian bump centered at t0_times[k].
-        bump = exp.(-0.5 .* ((tg .- t0_times[k]) ./ σ0).^2)
+        # Build a Gaussian bump centered at peakretentions[k].
+        bump = exp.(-0.5 .* ((tg .- peakretentions[k]) ./ σ0).^2)
         # Normalize the bump to unit height.
         bump ./= maximum(bump) > 0 ? maximum(bump) : 1.0
         # Fit the bump with the spline basis.
@@ -431,13 +431,13 @@ function unimodalfit(
         end
     end
 
-    # Vectorize Y for the global QP.
-    yvec = vec(Y)
+    # Vectorize I for the global QP.
+    yvec = vec(I)
 
     # Alternate between A and C updates.
     for _ in 1:iters
         # Evaluate shapes at observations
-        # Compute all component values at observation times.
+        # Compute all component values at observation retentions.
         Fobs_vec = Bobs * C  # (Nobs x Kpeaks)
 
         # Update A via per-channel OSQP NNLS (+ optional soft prior)
@@ -453,7 +453,7 @@ function unimodalfit(
             end
 
             # Observations for this channel.
-            yi = vec(Y[i, :])
+            yi = vec(I[i, :])
 
             # Optional per-channel weights derived from sigma.
             wi = if isnothing(σ)
@@ -463,12 +463,12 @@ function unimodalfit(
             end
 
             # Solve for A with or without a soft prior.
-            if isnothing(A_prior)
-                A_hat[i, :] .= nnlspenalized(Fi, yi; ridge=nnls_ridge, w=wi)
+            if isnothing(spectra_prior)
+                A_hat[i, :] .= nnlspenalized(Fi, yi; ridge=spectra_ridge, w=wi)
             else
-                μ_i = vec(A_prior[i, :])
-                λ_i = vec(lambda_peaks)
-                A_hat[i, :] .= nnlspenalized(Fi, yi; ridge=nnls_ridge, μ=μ_i, λ=λ_i, w=wi)
+                μ_i = vec(spectra_prior[i, :])
+                λ_i = vec(spectra_prior_weights)
+                A_hat[i, :] .= nnlspenalized(Fi, yi; ridge=spectra_ridge, μ=μ_i, λ=λ_i, w=wi)
             end
 
             # Ensure numerical validity of the solution.
@@ -479,8 +479,8 @@ function unimodalfit(
         end
 
         # Re-apply any hard-zero constraints on A.
-        if !isnothing(lock_Azeros)
-            A_hat[lock_Azeros] .= 0.0
+        if !isnothing(spectra_zero_mask)
+            A_hat[spectra_zero_mask] .= 0.0
         end
 
         # Update C via one big QP in x = vec(C)
@@ -499,7 +499,7 @@ function unimodalfit(
         # Build the quadratic objective for the global shape update.
         P = BW_all' * BW_all
         # Add ridge for numerical stability.
-        P .+= ridge .* I(size(P, 1))
+        P .+= shape_ridge .* JuChrom.I(size(P, 1))
         # Linear term for the QP.
         q = -(BW_all' * yvec)
 
@@ -538,58 +538,58 @@ function unimodalfit(
 
     # Final outputs
     # Evaluate fitted shapes on the constraint grid.
-    Fhat_grid = Bgrid * C  # (tgrid_n x Kpeaks)
+    Fhat_grid = Bgrid * C  # (rgrid_n x Kpeaks)
 
-    # Evaluate fitted shapes at observation times.
+    # Evaluate fitted shapes at observation retentions.
     Fobs_vec = Bobs * C
     # Accumulate the fitted signal in vectorized form.
-    Yfit_vec = zeros(Nobs)
+    Ifit_vec = zeros(Nobs)
     for k in 1:Kpeaks
         # Repeat A for this component across scans.
         wA = repeat(view(A_hat, :, k), n_scans)
         # Add this component's contribution to the fit.
-        Yfit_vec .+= wA .* view(Fobs_vec, :, k)
+        Ifit_vec .+= wA .* view(Fobs_vec, :, k)
     end
     # Reshape the vectorized fit back to n_mz × n_scans.
-    Yfit = reshape(Yfit_vec, n_mz, n_scans)
+    Ifit = reshape(Ifit_vec, n_mz, n_scans)
 
     # Return spectra, basis, coefficients, shapes, and fitted signal.
-    A_hat, basis, C, (tgrid, Fhat_grid), Yfit
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit
 end
 
 """
-    unimodalfit_t0(Y, t_actual; t0_guess, kwargs...)
+    unimodalfit_apexsearch(I, R; peakretentions_guess, kwargs...)
 
-Wrapper around `unimodalfit` that searches apex retentions `t0` using coordinate-wise grid 
-search to minimize the total sum of squared errors (SSE). All keyword arguments accepted by 
-`unimodalfit` are forwarded through `kwargs` and apply in the same way as in a direct call, 
-including `σ`, `A_init`, `lock_Azeros`, `A_prior`, `lambda_peaks`, `K`, `tgrid_n`, `iters`, 
-`ridge`, and `nnls_ridge`.
+Wrapper around `unimodalfit` that searches apex retentions using coordinate-wise grid
+search to minimize the total sum of squared errors (SSE). All keyword arguments accepted by
+`unimodalfit` are forwarded through `kwargs` and apply in the same way as in a direct call,
+including `σ`, `spectra_init`, `spectra_zero_mask`, `spectra_prior`, `spectra_prior_weights`,
+`knots_n`, `rgrid_n`, `iters`, `shape_ridge`, and `spectra_ridge`.
 
-The search parameters are specific to this wrapper. `t0_guess` provides the initial apex 
-retentions. `half_width` and `ngrid` define the one-dimensional grid around each `t0`. `min_sep` 
-and `max_sep` optionally constrain adjacent `t0` values. `strategy` selects the search plan: 
-`:single` runs one grid search at the given half-width and grid size, while `:iterative` 
-runs a coarse-to-fine sequence and optionally accepts explicit `stages`. When provided, 
-`stages` should be an iterable of stage objects (e.g. a vector/tuple of `NamedTuple`s) 
-with `half_width` and/or `ngrid` fields; missing fields fall back to the top-level 
-defaults. `adaptive_window`, `shrink`, and `min_half_width` control automatic narrowing 
-of the search window between stages. `coord_sweeps` sets the number of coordinate passes 
-per stage. `enforce_sorted` keeps `t0` ordered. `max_iter` and `tol_sse` control termination, 
-and `verbose` controls logging.
+The search parameters are specific to this wrapper. `peakretentions_guess` provides the
+initial apex retentions. `half_width` and `ngrid` define the one-dimensional grid around
+each apex. `min_sep` and `max_sep` optionally constrain adjacent apex retentions. `strategy`
+selects the search plan: `:single` runs one grid search at the given half-width and grid
+size, while `:iterative` runs a coarse-to-fine sequence and optionally accepts explicit
+`stages`. When provided, `stages` should be an iterable of stage objects (e.g. a
+vector/tuple of `NamedTuple`s) with `half_width` and/or `ngrid` fields; missing fields fall
+back to the top-level defaults. `adaptive_window`, `shrink`, and `min_half_width` control
+automatic narrowing of the search window between stages. `coord_sweeps` sets the number of
+coordinate passes per stage. `enforce_sorted` keeps apex retentions ordered. `max_iter` and
+`tol_sse` control termination, and `verbose` controls logging.
 
-If `σ` is provided through `kwargs`, it is forwarded to `unimodalfit` and applied only in 
+If `σ` is provided through `kwargs`, it is forwarded to `unimodalfit` and applied only in
 the per-channel `A` update. The peak-shape update remains unweighted.
 
-Returns the best `t0` vector, the best SSE, and the same outputs as `unimodalfit` for that 
-`t0`: `A_hat`, `basis`, `C_hat`, `(tgrid, Fhat_grid)`, and `Y_fit`.
+Returns the best apex retention vector, the best SSE, and the same outputs as `unimodalfit`
+for that retention vector: `A_hat`, `basis`, `C_hat`, `(rgrid, Fhat_grid)`, and `Ifit`.
 
 See also [`unimodalfit`](@ref).
 """
-function unimodalfit_t0(
-    Y::AbstractMatrix{<:Real}, 
-    t_actual::AbstractMatrix{<:Real};
-    t0_guess::Vector{Float64},
+function unimodalfit_apexsearch(
+    I::AbstractMatrix{<:Real}, 
+    R::AbstractMatrix{<:Real};
+    peakretentions_guess::Vector{Float64},
     half_width::T2=1.5,
     ngrid::T3=21,
     min_sep::T4=0.2,
@@ -619,11 +619,10 @@ function unimodalfit_t0(
     }
 
     # Count the number of peaks implied by the initial guesses.
-    # Count the number of peaks implied by the initial guesses.
-    Kpeaks = length(t0_guess)
+    Kpeaks = length(peakretentions_guess)
     # Require at least one peak.
     if Kpeaks < 1
-        throw(ArgumentError("t0_guess must contain at least one peak time."))
+        throw(ArgumentError("peakretentions_guess must contain at least one peak retention."))
     end
     # Require a positive search half-width.
     if half_width ≤ 0
@@ -675,17 +674,17 @@ function unimodalfit_t0(
 
     # Initialize and optionally sort t0.
     # Convert the initial guesses to Float64.
-    t0 = Float64.(t0_guess)
+    t0 = Float64.(peakretentions_guess)
     # Enforce sorted order if requested.
     if enforce_sorted
-        # Sort the apex times in-place.
+        # Sort the apex retentions in-place.
         sort!(t0)
     end
 
     function feasible(t0s::Vector{Float64})
         # Check min/max separation constraints.
         if enforce_sorted
-            # Scan adjacent apex times for violations.
+            # Scan adjacent apex retentions for violations.
             for k in 1:(Kpeaks-1)
                 # Compute separation between neighbors.
                 dt = t0s[k + 1] - t0s[k]
@@ -705,22 +704,19 @@ function unimodalfit_t0(
 
     function eval_fit(t0s::Vector{Float64})
         # Fit shapes and spectra at the proposed t0.
-        A_hat, basis_hat, C_hat, (tgrid, Fhat_grid), Y_fit =
-            unimodalfit(Y, t_actual, t0s; kwargs...)
+        A_hat, basis_hat, C_hat, (rgrid, Fhat_grid), I_fit =
+            unimodalfit(I, R, t0s; kwargs...)
         # Compute the total sum of squared errors.
-        sse = sum((Y .- Y_fit).^2)
+        sse = sum((I .- I_fit).^2)
         # Return the SSE and the fitted outputs.
-        sse, (A_hat, basis_hat, C_hat, (tgrid, Fhat_grid), Y_fit)
+        sse, (A_hat, basis_hat, C_hat, (rgrid, Fhat_grid), I_fit)
     end
 
-    # Ensure the initial guess is feasible.
-    # Ensure the initial guess is feasible.
     # Ensure the initial guess is feasible.
     if !feasible(t0)
-        throw(ArgumentError("t0_guess violates min_sep/max_sep constraints."))
+        throw(ArgumentError("peakretentions_guess violates min_sep/max_sep constraints."))
     end
 
-    # Evaluate the initial solution.
     # Evaluate the initial solution.
     best_sse, best_pack = eval_fit(copy(t0))
     # Keep the best t0 vector.
@@ -728,8 +724,8 @@ function unimodalfit_t0(
 
     # Report the initial state if requested.
     if verbose
-        # Print initial t0 and SSE.
-        println("Initial t0 = ", best_t0, "  SSE = ", best_sse)
+        # Print initial apex retentions and SSE.
+        println("Initial peakretentions = ", best_t0, "  SSE = ", best_sse)
     end
 
     # Track adaptive window between stages.
@@ -759,7 +755,7 @@ function unimodalfit_t0(
             println("\nStage $si  (half_width=$(round(hw, digits=4)), ngrid=$ng)")
         end
 
-        # Coordinate descent sweeps over apex times.
+        # Coordinate descent sweeps over apex retentions.
         for sweep in 1:coord_sweeps
             # Increment total sweep counter.
             iter += 1
@@ -841,8 +837,8 @@ function unimodalfit_t0(
 
             # Report progress for this sweep if requested.
             if verbose
-                # Print current t0, SSE, and relative change.
-                println("  sweep $sweep → t0=$(best_t0)  SSE=$(best_sse)  ", 
+                # Print current apex retentions, SSE, and relative change.
+                println("  sweep $sweep → peakretentions=$(best_t0)  SSE=$(best_sse)  ",
                     "Δrel=$(round(rel_improve, sigdigits=3))")
             end
 

@@ -2,5 +2,5 @@
 
 ```@docs
 JuChrom.unimodalfit
-JuChrom.unimodalfit_t0
+JuChrom.unimodalfit_apexsearch
 ```

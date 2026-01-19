@@ -144,7 +144,7 @@ export retentionunit_A
 export retentionunit_B
 export typify
 export unimodalfit
-export unimodalfit_t0
+export unimodalfit_apexsearch
 export uniquemzvalues
 export user
 export varpred

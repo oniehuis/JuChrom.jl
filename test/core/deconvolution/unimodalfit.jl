@@ -48,245 +48,245 @@ end
 @testset "unimodalfit basic outputs" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_times = [1.5, 3.0]
+    peakretentions = [1.5, 3.0]
 
-    A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit(
-        Y,
-        t_actual,
-        t0_times;
-        K=6,
-        tgrid_n=20,
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit(
+        I,
+        R,
+        peakretentions;
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
-        ridge=1e-6,
-        nnls_ridge=1e-8
+        shape_ridge=1e-6,
+        spectra_ridge=1e-8
     )
 
-    @test size(A_hat) == (n_mz, length(t0_times))
-    @test size(C, 2) == length(t0_times)
-    @test length(tgrid) == 20
-    @test size(Fhat_grid) == (20, length(t0_times))
-    @test size(Yfit) == size(Y)
+    @test size(A_hat) == (n_mz, length(peakretentions))
+    @test size(C, 2) == length(peakretentions)
+    @test length(rgrid) == 20
+    @test size(Fhat_grid) == (20, length(peakretentions))
+    @test size(Ifit) == size(I)
     @test all(isfinite.(A_hat))
-    @test all(isfinite.(Yfit))
+    @test all(isfinite.(Ifit))
 end
 
 @testset "unimodalfit sigma and masks" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_times = [1.5, 3.0]
+    peakretentions = [1.5, 3.0]
     σ = fill(1.0, n_mz, n_scans)
-    A_init = fill(0.1, n_mz, length(t0_times))
-    lock_Azeros = falses(n_mz, length(t0_times))
-    lock_Azeros[1, 2] = true
+    spectra_init = fill(0.1, n_mz, length(peakretentions))
+    spectra_zero_mask = falses(n_mz, length(peakretentions))
+    spectra_zero_mask[1, 2] = true
 
-    A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit(
-        Y,
-        t_actual,
-        t0_times;
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit(
+        I,
+        R,
+        peakretentions;
         σ=σ,
-        A_init=A_init,
-        lock_Azeros=lock_Azeros,
-        K=6,
-        tgrid_n=20,
+        spectra_init=spectra_init,
+        spectra_zero_mask=spectra_zero_mask,
+        knots_n=6,
+        rgrid_n=20,
         iters=1
     )
 
     @test A_hat[1, 2] == 0.0
     @test all(A_hat .>= 0.0)
-    @test all(isfinite.(Yfit))
+    @test all(isfinite.(Ifit))
 end
 
 @testset "unimodalfit priors" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_times = [1.5, 3.0]
-    A_prior = fill(0.2, n_mz, length(t0_times))
-    lambda_peaks = [0.1, 0.2]
+    peakretentions = [1.5, 3.0]
+    spectra_prior = fill(0.2, n_mz, length(peakretentions))
+    spectra_prior_weights = [0.1, 0.2]
 
-    A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit(
-        Y,
-        t_actual,
-        t0_times;
-        A_prior=A_prior,
-        lambda_peaks=lambda_peaks,
-        K=6,
-        tgrid_n=20,
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit(
+        I,
+        R,
+        peakretentions;
+        spectra_prior=spectra_prior,
+        spectra_prior_weights=spectra_prior_weights,
+        knots_n=6,
+        rgrid_n=20,
         iters=1
     )
 
     @test all(A_hat .>= 0.0)
     @test all(isfinite.(A_hat))
-    @test all(isfinite.(Yfit))
+    @test all(isfinite.(Ifit))
 end
 
 @testset "unimodalfit input validation" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_times = [1.5, 3.0]
+    peakretentions = [1.5, 3.0]
 
     σ_size_bad = ones(n_mz, n_scans + 1)
-    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; σ=σ_size_bad)
+    @test_throws DimensionMismatch unimodalfit(I, R, peakretentions; σ=σ_size_bad)
 
     σ_nan = copy(ones(n_mz, n_scans))
     σ_nan[1, 1] = NaN
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; σ=σ_nan)
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; σ=σ_nan)
 
-    @test_throws ArgumentError unimodalfit(Y, t_actual, Float64[])
+    @test_throws ArgumentError unimodalfit(I, R, Float64[])
 
     t_bad = zeros(n_mz, n_scans + 1)
-    @test_throws DimensionMismatch unimodalfit(Y, t_bad, t0_times)
+    @test_throws DimensionMismatch unimodalfit(I, t_bad, peakretentions)
 
     σ_bad = [1.0 1.0 1.0 1.0 0.0;
              1.0 1.0 1.0 1.0 1.0]
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; σ=σ_bad)
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; σ=σ_bad)
 
-    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; A_init=ones(n_mz + 1, length(t0_times)))
-    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; lock_Azeros=falses(n_mz, length(t0_times) + 1))
-    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz + 1, length(t0_times)))
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; lambda_peaks=[0.1])
-    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)), lambda_peaks=[0.1])
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)), lambda_peaks=[0.1, -0.2])
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)))
+    @test_throws DimensionMismatch unimodalfit(I, R, peakretentions; spectra_init=ones(n_mz + 1, length(peakretentions)))
+    @test_throws DimensionMismatch unimodalfit(I, R, peakretentions; spectra_zero_mask=falses(n_mz, length(peakretentions) + 1))
+    @test_throws DimensionMismatch unimodalfit(I, R, peakretentions; spectra_prior=ones(n_mz + 1, length(peakretentions)))
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; spectra_prior_weights=[0.1])
+    @test_throws DimensionMismatch unimodalfit(I, R, peakretentions; spectra_prior=ones(n_mz, length(peakretentions)), spectra_prior_weights=[0.1])
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; spectra_prior=ones(n_mz, length(peakretentions)), spectra_prior_weights=[0.1, -0.2])
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; spectra_prior=ones(n_mz, length(peakretentions)))
 end
 
 
-# ── unimodalfit_t0 ───────────────────────────────────────────────────────────
+# ── unimodalfit_apexsearch ───────────────────────────────────────────────────────────
 
-@testset "unimodalfit_t0 basic outputs" begin
+@testset "unimodalfit_apexsearch basic outputs" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_guess = [1.4, 3.1]
+    peakretentions_guess = [1.4, 3.1]
 
-    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
-        Y,
-        t_actual;
-        t0_guess=t0_guess,
+    t0_best, sse, A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit_apexsearch(
+        I,
+        R;
+        peakretentions_guess=peakretentions_guess,
         strategy=:single,
         half_width=0.5,
         ngrid=5,
         coord_sweeps=1,
         max_iter=5,
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
-        ridge=1e-6,
-        nnls_ridge=1e-8,
+        shape_ridge=1e-6,
+        spectra_ridge=1e-8,
         verbose=false
     )
 
-    @test length(t0_best) == length(t0_guess)
+    @test length(t0_best) == length(peakretentions_guess)
     @test isfinite(sse)
-    @test size(A_hat) == (n_mz, length(t0_guess))
-    @test size(C, 2) == length(t0_guess)
-    @test length(tgrid) == 20
-    @test size(Fhat_grid) == (20, length(t0_guess))
-    @test size(Yfit) == size(Y)
+    @test size(A_hat) == (n_mz, length(peakretentions_guess))
+    @test size(C, 2) == length(peakretentions_guess)
+    @test length(rgrid) == 20
+    @test size(Fhat_grid) == (20, length(peakretentions_guess))
+    @test size(Ifit) == size(I)
 end
 
-@testset "unimodalfit_t0 iterative stages" begin
+@testset "unimodalfit_apexsearch iterative stages" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_guess = [1.4, 3.1]
+    peakretentions_guess = [1.4, 3.1]
     stages = [(half_width=0.6, ngrid=5), (half_width=0.3, ngrid=7)]
 
-    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
-        Y,
-        t_actual;
-        t0_guess=t0_guess,
+    t0_best, sse, A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit_apexsearch(
+        I,
+        R;
+        peakretentions_guess=peakretentions_guess,
         strategy=:iterative,
         stages=stages,
         coord_sweeps=1,
         max_iter=5,
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
         verbose=false
     )
 
-    @test length(t0_best) == length(t0_guess)
+    @test length(t0_best) == length(peakretentions_guess)
     @test isfinite(sse)
-    @test size(Yfit) == size(Y)
+    @test size(Ifit) == size(I)
 end
 
-@testset "unimodalfit_t0 input validation" begin
+@testset "unimodalfit_apexsearch input validation" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
 
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=Float64[])
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], half_width=0.0)
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], ngrid=2)
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], coord_sweeps=0)
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], max_iter=0)
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], tol_sse=0.0)
-    @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0, 1.05], min_sep=0.2)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=Float64[])
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0], half_width=0.0)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0], ngrid=2)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0], coord_sweeps=0)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0], max_iter=0)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0], tol_sse=0.0)
+    @test_throws ArgumentError unimodalfit_apexsearch(I, R; peakretentions_guess=[1.0, 1.05], min_sep=0.2)
 end
 
-@testset "unimodalfit_t0 branch coverage" begin
+@testset "unimodalfit_apexsearch branch coverage" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_guess = [1.2, 3.2]
+    peakretentions_guess = [1.2, 3.2]
 
-    @test_throws ArgumentError unimodalfit_t0(
-        Y,
-        t_actual;
-        t0_guess=[1.0, 3.0],
+    @test_throws ArgumentError unimodalfit_apexsearch(
+        I,
+        R;
+        peakretentions_guess=[1.0, 3.0],
         max_sep=1.0,
         verbose=false
     )
 
-    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
-        Y,
-        t_actual;
-        t0_guess=t0_guess,
+    t0_best, sse, A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit_apexsearch(
+        I,
+        R;
+        peakretentions_guess=peakretentions_guess,
         strategy=:iterative,
         stages=nothing,
         adaptive_window=true,
         coord_sweeps=1,
         max_iter=5,
         tol_sse=NaN,
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
         verbose=false
     )
-    @test length(t0_best) == length(t0_guess)
+    @test length(t0_best) == length(peakretentions_guess)
     @test isfinite(sse)
 
-    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
-        Y,
-        t_actual;
-        t0_guess=[1.0, 1.8],
+    t0_best, sse, A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit_apexsearch(
+        I,
+        R;
+        peakretentions_guess=[1.0, 1.8],
         min_sep=0.6,
         half_width=0.5,
         ngrid=5,
         coord_sweeps=1,
         max_iter=5,
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
         verbose=false
     )
@@ -294,18 +294,18 @@ end
 
     path, io = mktemp()
     redirect_stdout(io) do
-        unimodalfit_t0(
-            Y,
-            t_actual;
-            t0_guess=t0_guess,
+        unimodalfit_apexsearch(
+            I,
+            R;
+            peakretentions_guess=peakretentions_guess,
             strategy=:single,
             half_width=0.5,
             ngrid=5,
             coord_sweeps=1,
             max_iter=5,
             tol_sse=1e6,
-            K=6,
-            tgrid_n=20,
+            knots_n=6,
+            rgrid_n=20,
             iters=1,
             verbose=true
         )
@@ -313,24 +313,24 @@ end
     close(io)
     printed = read(path, String)
     rm(path)
-    @test occursin("Initial t0", printed)
+    @test occursin("Initial peakretentions", printed)
     @test occursin("Stage 1", printed)
     @test occursin("sweep 1", printed)
     @test occursin("Stopping: SSE improvement < tol_sse", printed)
 
     path, io = mktemp()
     redirect_stdout(io) do
-        unimodalfit_t0(
-            Y,
-            t_actual;
-            t0_guess=t0_guess,
+        unimodalfit_apexsearch(
+            I,
+            R;
+            peakretentions_guess=peakretentions_guess,
             strategy=:single,
             half_width=0.5,
             ngrid=5,
             coord_sweeps=2,
             max_iter=1,
-            K=6,
-            tgrid_n=20,
+            knots_n=6,
+            rgrid_n=20,
             iters=1,
             verbose=true
         )
@@ -340,19 +340,19 @@ end
     rm(path)
     @test occursin("Stopping: reached max_iter", printed)
 
-    Y_zero = zeros(n_mz, n_scans)
-    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
-        Y_zero,
-        t_actual;
-        t0_guess=[2.0],
+    I_zero = zeros(n_mz, n_scans)
+    t0_best, sse, A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit_apexsearch(
+        I_zero,
+        R;
+        peakretentions_guess=[2.0],
         strategy=:single,
         half_width=0.1,
         ngrid=3,
         coord_sweeps=1,
         max_iter=5,
         tol_sse=NaN,
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1,
         verbose=false
     )
@@ -362,10 +362,10 @@ end
 @testset "unimodalfit internal sigma handling" begin
     n_mz = 2
     n_scans = 5
-    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
-    Y = [1.0 2.0 3.0 2.0 1.0;
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
          0.5 1.0 1.5 1.0 0.5]
-    t0_times = [1.5, 3.0]
+    peakretentions = [1.5, 3.0]
 
     wfun = JuChrom.sigma2weights
     @test_throws ArgumentError wfun([1.0, NaN])
@@ -373,15 +373,15 @@ end
     @test wfun([1e308, 1e308]) === nothing
     @test wfun([1.0, 2.0]; w_cap=NaN) === nothing
 
-    Y_nan = copy(Y)
-    Y_nan[1, 1] = NaN
+    I_nan = copy(I)
+    I_nan[1, 1] = NaN
     @test_throws ArgumentError unimodalfit(
-        Y_nan,
-        t_actual,
-        t0_times;
+        I_nan,
+        R,
+        peakretentions;
         σ=fill(1.0, n_mz, n_scans),
-        K=6,
-        tgrid_n=20,
+        knots_n=6,
+        rgrid_n=20,
         iters=1
     )
 end
