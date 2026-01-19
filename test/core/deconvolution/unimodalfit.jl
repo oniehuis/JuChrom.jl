@@ -136,6 +136,15 @@ end
          0.5 1.0 1.5 1.0 0.5]
     t0_times = [1.5, 3.0]
 
+    σ_size_bad = ones(n_mz, n_scans + 1)
+    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; σ=σ_size_bad)
+
+    σ_nan = copy(ones(n_mz, n_scans))
+    σ_nan[1, 1] = NaN
+    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; σ=σ_nan)
+
+    @test_throws ArgumentError unimodalfit(Y, t_actual, Float64[])
+
     t_bad = zeros(n_mz, n_scans + 1)
     @test_throws DimensionMismatch unimodalfit(Y, t_bad, t0_times)
 
@@ -147,7 +156,8 @@ end
     @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; lock_Azeros=falses(n_mz, length(t0_times) + 1))
     @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz + 1, length(t0_times)))
     @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; lambda_peaks=[0.1])
-    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; lambda_peaks=[0.1, -0.2])
+    @test_throws DimensionMismatch unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)), lambda_peaks=[0.1])
+    @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)), lambda_peaks=[0.1, -0.2])
     @test_throws ArgumentError unimodalfit(Y, t_actual, t0_times; A_prior=ones(n_mz, length(t0_times)))
 end
 
@@ -230,6 +240,150 @@ end
     @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], max_iter=0)
     @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0], tol_sse=0.0)
     @test_throws ArgumentError unimodalfit_t0(Y, t_actual; t0_guess=[1.0, 1.05], min_sep=0.2)
+end
+
+@testset "unimodalfit_t0 branch coverage" begin
+    n_mz = 2
+    n_scans = 5
+    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    Y = [1.0 2.0 3.0 2.0 1.0;
+         0.5 1.0 1.5 1.0 0.5]
+    t0_guess = [1.2, 3.2]
+
+    @test_throws ArgumentError unimodalfit_t0(
+        Y,
+        t_actual;
+        t0_guess=[1.0, 3.0],
+        max_sep=1.0,
+        verbose=false
+    )
+
+    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
+        Y,
+        t_actual;
+        t0_guess=t0_guess,
+        strategy=:iterative,
+        stages=nothing,
+        adaptive_window=true,
+        coord_sweeps=1,
+        max_iter=5,
+        tol_sse=NaN,
+        K=6,
+        tgrid_n=20,
+        iters=1,
+        verbose=false
+    )
+    @test length(t0_best) == length(t0_guess)
+    @test isfinite(sse)
+
+    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
+        Y,
+        t_actual;
+        t0_guess=[1.0, 1.8],
+        min_sep=0.6,
+        half_width=0.5,
+        ngrid=5,
+        coord_sweeps=1,
+        max_iter=5,
+        K=6,
+        tgrid_n=20,
+        iters=1,
+        verbose=false
+    )
+    @test length(t0_best) == 2
+
+    path, io = mktemp()
+    redirect_stdout(io) do
+        unimodalfit_t0(
+            Y,
+            t_actual;
+            t0_guess=t0_guess,
+            strategy=:single,
+            half_width=0.5,
+            ngrid=5,
+            coord_sweeps=1,
+            max_iter=5,
+            tol_sse=1e6,
+            K=6,
+            tgrid_n=20,
+            iters=1,
+            verbose=true
+        )
+    end
+    close(io)
+    printed = read(path, String)
+    rm(path)
+    @test occursin("Initial t0", printed)
+    @test occursin("Stage 1", printed)
+    @test occursin("sweep 1", printed)
+    @test occursin("Stopping: SSE improvement < tol_sse", printed)
+
+    path, io = mktemp()
+    redirect_stdout(io) do
+        unimodalfit_t0(
+            Y,
+            t_actual;
+            t0_guess=t0_guess,
+            strategy=:single,
+            half_width=0.5,
+            ngrid=5,
+            coord_sweeps=2,
+            max_iter=1,
+            K=6,
+            tgrid_n=20,
+            iters=1,
+            verbose=true
+        )
+    end
+    close(io)
+    printed = read(path, String)
+    rm(path)
+    @test occursin("Stopping: reached max_iter", printed)
+
+    Y_zero = zeros(n_mz, n_scans)
+    t0_best, sse, A_hat, basis, C, (tgrid, Fhat_grid), Yfit = unimodalfit_t0(
+        Y_zero,
+        t_actual;
+        t0_guess=[2.0],
+        strategy=:single,
+        half_width=0.1,
+        ngrid=3,
+        coord_sweeps=1,
+        max_iter=5,
+        tol_sse=NaN,
+        K=6,
+        tgrid_n=20,
+        iters=1,
+        verbose=false
+    )
+    @test length(t0_best) == 1
+end
+
+@testset "unimodalfit internal sigma handling" begin
+    n_mz = 2
+    n_scans = 5
+    t_actual = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    Y = [1.0 2.0 3.0 2.0 1.0;
+         0.5 1.0 1.5 1.0 0.5]
+    t0_times = [1.5, 3.0]
+
+    wfun = JuChrom.sigma2weights
+    @test_throws ArgumentError wfun([1.0, NaN])
+    @test_throws ArgumentError wfun([1.0, 0.0])
+    @test wfun([1e308, 1e308]) === nothing
+    @test wfun([1.0, 2.0]; w_cap=NaN) === nothing
+
+    Y_nan = copy(Y)
+    Y_nan[1, 1] = NaN
+    @test_throws ArgumentError unimodalfit(
+        Y_nan,
+        t_actual,
+        t0_times;
+        σ=fill(1.0, n_mz, n_scans),
+        K=6,
+        tgrid_n=20,
+        iters=1
+    )
 end
 
 end  # module TestDeconvolution

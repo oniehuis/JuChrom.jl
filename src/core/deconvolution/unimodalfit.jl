@@ -107,6 +107,60 @@ function nnlspenalized(
     res.x
 end
 
+function sigma2weights(
+    σ::AbstractVector{<:Real};
+    σ_floor_rel::T1=1e-3,
+    σ_floor_abs::T2=1e-12,
+    w_cap::T3=1e6
+    ) where {
+        T1<:Real,
+        T2<:Real,
+        T3<:Real
+    }
+
+    # Validate σ vector is finite.
+    if any(.!isfinite.(σ))
+        throw(ArgumentError("σ must contain only finite values."))
+    end
+    # Validate σ vector is positive.
+    if any(σ .≤ 0.0)
+        throw(ArgumentError("σ must be strictly positive."))
+    end
+
+    # Largest σ value for relative flooring.
+    smax = maximum(σ)
+    # Compute effective floor for σ values.
+    σ_floor = max(σ_floor_abs, σ_floor_rel * smax)
+    # Apply the floor to σ values.
+    σ_eff = max.(σ, σ_floor)
+
+    # Convert sigma to weights (inverse variance).
+    w = 1.0 ./ (σ_eff .^ 2)
+
+    # Normalize typical magnitude to ~1 (does not change minimizer).
+    wm = median(w)
+    if !isfinite(wm) || wm ≤ 0.0
+        # Fallback to mean if median is not usable.
+        wm = mean(w)
+    end
+    if !isfinite(wm) || wm ≤ 0.0
+        # Abort if no valid scale can be determined.
+        return nothing
+    end
+    # Scale weights by their typical magnitude.
+    w ./= wm
+
+    # Cap extreme weights for numerical stability.
+    w = min.(w, w_cap)
+    if !all(isfinite.(w))
+        # Abort if weights are still non-finite after capping.
+        return nothing
+    end
+    
+    # Return the stabilized weights.
+    w
+end
+
 """
     unimodalfit(
         Y::AbstractMatrix{<:Real},
@@ -250,56 +304,6 @@ function unimodalfit(
         if any(lambda_peaks .< 0.0)
             throw(ArgumentError("lambda_peaks must be nonnegative."))
         end
-    end
-
-    # Stable weights from σ (used ONLY in A-update).
-    function weights_from_sigma(
-        sig::AbstractVector{Float64};
-        sigma_floor_rel::Float64=1e-3,
-        sigma_floor_abs::Float64=1e-12,
-        w_cap::Float64=1e6
-    )
-        # Validate sigma vector is finite.
-        if any(.!isfinite.(sig))
-            throw(ArgumentError("sigma must contain only finite values."))
-        end
-        # Validate sigma vector is positive.
-        if any(sig .<= 0.0)
-            throw(ArgumentError("sigma must be strictly positive."))
-        end
-
-        # Largest sigma value for relative flooring.
-        smax = maximum(sig)
-        # Compute effective floor for sigma values.
-        σ_floor = max(sigma_floor_abs, sigma_floor_rel * smax)
-        # Apply the floor to sigma values.
-        sig_eff = max.(sig, σ_floor)
-
-        # Convert sigma to weights (inverse variance).
-        w = 1.0 ./ (sig_eff .^ 2)
-
-        # Normalize typical magnitude to ~1 (does not change minimizer).
-        wm = median(w)
-        if !isfinite(wm) || wm ≤ 0.0
-            # Fallback to mean if median is not usable.
-            wm = mean(w)
-        end
-        if !isfinite(wm) || wm ≤ 0.0
-            # Abort if no valid scale can be determined.
-            return nothing
-        end
-        # Scale weights by their typical magnitude.
-        w ./= wm
-
-        # Cap extreme weights for numerical stability.
-        w = min.(w, w_cap)
-        if !all(isfinite.(w))
-            # Abort if weights are still non-finite after capping.
-            return nothing
-        end
-        
-        # Return the stabilized weights.
-        w
     end
 
     # Flatten times in the same order as vec(Y) (column-major).
@@ -455,7 +459,7 @@ function unimodalfit(
             wi = if isnothing(σ)
                 nothing
             else
-                weights_from_sigma(vec(σ[i, :]))
+                sigma2weights(vec(σ[i, :]))
             end
 
             # Solve for A with or without a soft prior.
