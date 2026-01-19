@@ -2,7 +2,7 @@
 
 """
     airpls(retentions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}; 
-           λ::Real=1e6, max_iter::Integer=10^4, ...) -> Vector{Float64}
+           λ::Real=1e5, max_iter::Integer=10^4, ...) -> Vector{Float64}
 
 Estimate a smooth baseline from spectroscopic/chromatographic data using Adaptive
 Iteratively Reweighted Penalized Least Squares (airPLS).
@@ -16,14 +16,14 @@ peak slope, improving baseline estimation for broad or overlapping peaks.
 - `retentions::AbstractVector{<:Real}`: Independent variable (e.g., retention times, 
   retention indices)
 - `intensities::AbstractVector{<:Real}`: Signal data containing baseline + peaks
-- `λ::Real=1e6`: Smoothing parameter (higher -> smoother baseline). Internally,
+- `λ::Real=1e5`: Smoothing parameter (higher -> smoother baseline). Internally,
   retentions are normalized by their median step so `λ` is comparable across
   unit scales (seconds vs minutes).
 - `variances::AbstractVector{<:Real}=nothing`: Optional measurement uncertainties for each 
   intensity value
 - `improvement_threshold::Real=1e-6`: Minimum improvement to continue optimization
 - `max_iter::Integer=10^4`: Maximum iterations
-- `no_improvement_limit::Integer=10`: Stop after this many non-improving iterations
+- `no_improvement_limit::Integer=20`: Stop after this many non-improving iterations
 - `threshold_factor::Real=1.645`: Peak detection sensitivity (higher = less sensitive),
   in units of one-sided Gaussian σ. A factor of 1.282 is ≈ 90 % coverage; 1.645 is ≈ 95 %.
 - `zero_threshold::Real=1e-8`: Threshold for zero-valued points
@@ -58,9 +58,9 @@ function airpls(
     intensities::AbstractVector{<:Real};
     variances::T1=nothing,
     improvement_threshold::T2=1e-6,
-    λ::T3=1e6,
+    λ::T3=1e5,
     max_iter::T4=10^4,
-    no_improvement_limit::T5=10,
+    no_improvement_limit::T5=20,
     threshold_factor::T6=1.645,
     zero_threshold::T7=1e-8,
     zero_weight::T8=0.01
@@ -176,9 +176,9 @@ corrected_msm = airpls(msm; λ=1e6, threshold_factor=2.0)
 function airpls(
     msm::MassScanMatrix;
     improvement_threshold::T1=1e-6,
-    λ::T2=1e6,
+    λ::T2=1e5,
     max_iter::T3=10^4,
-    no_improvement_limit::T4=10,
+    no_improvement_limit::T4=20,
     threshold_factor::T5=1.645,
     zero_threshold::T6=1e-8,
     zero_weight::T7=0.01
@@ -257,9 +257,9 @@ function airpls(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real};
     improvement_threshold::T1=1e-6,
-    λ::T2=1e6,
+    λ::T2=1e5,
     max_iter::T3=10^4,
-    no_improvement_limit::T4=10,
+    no_improvement_limit::T4=20,
     threshold_factor::T5=1.645,
     zero_threshold::T6=1e-8,
     zero_weight::T7=0.01

@@ -89,7 +89,6 @@ export extras
 export findclosest
 export fitmap
 export fitquadvarmodel
-export fit_with_t0_search
 export gapalign
 export indextrim
 export indextrim!
@@ -144,6 +143,8 @@ export retentionunit
 export retentionunit_A
 export retentionunit_B
 export typify
+export unimodalfit
+export unimodalfit_t0
 export uniquemzvalues
 export user
 export varpred

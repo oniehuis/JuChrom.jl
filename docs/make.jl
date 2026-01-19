@@ -71,6 +71,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                 ]
 			    ],
             "Internals" => Any[
+                "internals/deconvolution.md",
                 "internals/transform.md",
                 "internals/utils.md"
 		        ],
