@@ -440,10 +440,16 @@ end
 # ── binmzvalues ───────────────────────────────────────────────────────────────────────────
 
 """
-    binmzvalues(series::MassScanSeries, mzbin_fn::Function=integer) -> MassScanSeries
+    binmzvalues(
+        series::MassScanSeries,
+        mzbin_fn::Function=integer;
+        validmzvalues::Union{Nothing, AbstractVector}=nothing
+    ) -> MassScanSeries
 
 Return a new `MassScanSeries` with per-scan m/z values grouped by `mzbin_fn` and
 intensities summed within each bin. All other fields are copied from the input series.
+If `validmzvalues` is provided, only binned m/z values present in `validmzvalues` are 
+retained; values that bin outside the accepted set are discarded.
 
 The output series uses concrete element types inferred from `mzbin_fn`.
 
@@ -477,13 +483,19 @@ julia> intensities(binned, 1)
  30
 ```
 """
-function binmzvalues(series::MassScanSeries, mzbin_fn::F=integer) where {F<:Function}
+function binmzvalues(
+        series::MassScanSeries,
+        mzbin_fn::F=integer;
+        validmzvalues::Union{Nothing, AbstractVector}=nothing
+    ) where {F<:Function}
+
     @assert scancount(series) > 0 "Cannot bin m/z values in an empty series."
 
     # Use the first scan as a reference for type inference
     reference_scan = first(scans(series))
     reference_mz = first(rawmzvalues(reference_scan))
     binned_mz_type = typeof(mzbin_fn(reference_mz))
+    accepted_mzs = validmzvalues === nothing ? nothing : Set(validmzvalues)
 
     # Infer types from the reference scan
     intensity_type        = eltype(rawintensities(reference_scan))
@@ -514,12 +526,18 @@ function binmzvalues(series::MassScanSeries, mzbin_fn::F=integer) where {F<:Func
 
         binned_mzs = mzbin_fn.(raw_mzs)
         unique_mzs = sort(unique(binned_mzs))
+        if !isnothing(accepted_mzs)
+            unique_mzs = [mz for mz in unique_mzs if mz ∈ accepted_mzs]
+        end
 
         bin_index_map = Dict(bin => idx for (idx, bin) in enumerate(unique_mzs))
         binned_ints = zeros(eltype(raw_ints), length(unique_mzs))
 
-        @inbounds @simd for j in eachindex(raw_mzs)
+        @inbounds for j in eachindex(raw_mzs)
             bin = binned_mzs[j]
+            if !isnothing(accepted_mzs) && !(bin ∈ accepted_mzs)
+                continue
+            end
             binned_ints[bin_index_map[bin]] += raw_ints[j]
         end
 

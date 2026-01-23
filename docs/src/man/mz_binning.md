@@ -47,7 +47,10 @@ in each scan of a `MassScanSeries` and sums intensities within each bin to produ
 implements the $[n-0.3, n+0.7)$ integer binning convention described above. However, users 
 can apply [`integer`](@ref) with a different offset or supply custom binning functions to 
 target a different bin width or precision (for example, rounding to a fixed decimal grid). 
-Once the m/z values of a [`MassScanSeries`](@ref JuChrom.MassScanSeries) are on a consistent 
+To enforce a fixed nominal-mass range across runs, you can pass `validmzvalues` to restrict 
+the accepted bins; any binned values outside the provided vector are discarded. This is 
+useful when occasional out-of-range measurements would otherwise introduce extra bins. Once 
+the m/z values of a [`MassScanSeries`](@ref JuChrom.MassScanSeries) are on a consistent 
 grid, you can convert the container to a [`MassScanMatrix`](@ref JuChrom.MassScanMatrix)
 with [`mscanmatrix`](@ref). This makes the fixed m/z grid explicit and enables efficient
 matrix-based workflows (dense or sparse storage, linear algebra, and downstream binning or
@@ -77,6 +80,11 @@ uniquemzvalues(mss_mz_binned)
 
 # Optional conversion to MassScanMatrix for efficient matrix-based workflows
 msm = mscanmatrix(mss_mz_binned)
+```
+
+```@example 1
+# Keep only nominal masses 29–500
+mss_mz_binned_fixed = binmzvalues(mss; validmzvalues=29:1:500)
 ```
 
 ## m/z binning tools

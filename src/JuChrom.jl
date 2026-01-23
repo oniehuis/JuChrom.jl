@@ -13,10 +13,10 @@ using BSplineKit: AbstractBSplineBasis, BSplineBasis, BSplineOrder, Derivative, 
 import HiGHS
 using JuMP: Model, MOI, optimize!, set_silent, termination_status, value, @constraint,
     @objective, @variable
-using LinearAlgebra: Diagonal, I, cholesky, dot, mul!, norm, Symmetric
+using LinearAlgebra: Diagonal, I, cholesky, dot, mul!, norm, Symmetric, diagind
 using OSQP: OSQP
 using Roots: Bisection, find_zero
-using SparseArrays: SparseMatrixCSC, sparse, spdiagm, spzeros
+using SparseArrays: SparseMatrixCSC, sparse, spdiagm, spzeros, nnz
 using Statistics: cor, mean, median, quantile, std, var
 import Base: show, summary
 using Printf

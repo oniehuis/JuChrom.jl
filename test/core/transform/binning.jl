@@ -233,6 +233,15 @@ end
         @test JuChrom.mzvalues(b2) == [102.0]
         @test JuChrom.intensities(b2) ≈ [50.0]
     end
+
+    @testset "validmzvalues filtering" begin
+        s = _make_ms([28.1, 29.1, 30.2], [1.0, 2.0, 3.0])
+        mss = _make_mss([s])
+        b = binmzvalues(mss; validmzvalues=29:1:30)
+        sb = scan(b, 1)
+        @test JuChrom.mzvalues(sb) == [29.0, 30.0]
+        @test JuChrom.intensities(sb) ≈ [2.0, 3.0]
+    end
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
