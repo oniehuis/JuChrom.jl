@@ -161,6 +161,93 @@ end
     @test_throws ArgumentError unimodalfit(I, R, peakretentions; spectra_prior=ones(n_mz, length(peakretentions)))
 end
 
+@testset "unimodalfit coupling validation" begin
+    n_mz = 2
+    n_scans = 5
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
+         0.5 1.0 1.5 1.0 0.5]
+    peakretentions = [1.5, 3.0]
+
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; shape_couple=-0.1)
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; shape_couple_mode=:bad)
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; shape_couple_graph=:bad)
+    @test_throws ArgumentError unimodalfit(
+        I,
+        R,
+        peakretentions;
+        shape_couple=0.1,
+        shape_couple_graph=:window,
+        shape_couple_window=0.0
+    )
+    @test_throws ArgumentError unimodalfit(
+        I,
+        R,
+        peakretentions;
+        shape_couple=0.1,
+        shape_couple_tau_halfwidth=0.0
+    )
+    @test_throws ArgumentError unimodalfit(
+        I,
+        R,
+        peakretentions;
+        shape_couple=0.1,
+        shape_couple_tau_n=2
+    )
+    @test_throws ArgumentError unimodalfit(I, R, peakretentions; apex_localize=-0.1)
+    @test_throws ArgumentError unimodalfit(
+        I,
+        R,
+        peakretentions;
+        apex_localize=0.1,
+        apex_localize_scale=0.0
+    )
+end
+
+@testset "unimodalfit coupling branches" begin
+    n_mz = 2
+    n_scans = 5
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0;
+         0.5 1.0 1.5 1.0 0.5]
+    peakretentions = [1.5, 3.0]
+
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit(
+        I,
+        R,
+        peakretentions;
+        knots_n=6,
+        rgrid_n=20,
+        iters=1,
+        shape_couple=0.1,
+        shape_couple_mode=:d1,
+        shape_couple_graph=:neighbors,
+        shape_couple_tau_halfwidth=0.5,
+        shape_couple_tau_n=5,
+        apex_localize=0.2,
+        apex_localize_scale=1.0
+    )
+    @test all(isfinite.(A_hat))
+    @test all(isfinite.(Ifit))
+
+    A_hat2, basis2, C2, (rgrid2, Fhat_grid2), Ifit2 = unimodalfit(
+        I,
+        R,
+        peakretentions;
+        knots_n=6,
+        rgrid_n=20,
+        iters=1,
+        shape_couple=0.1,
+        shape_couple_mode=:d2,
+        shape_couple_graph=:window,
+        shape_couple_window=2.0,
+        shape_couple_tau_halfwidth=0.5,
+        shape_couple_tau_n=5
+    )
+    @test all(isfinite.(A_hat2))
+    @test all(isfinite.(Ifit2))
+end
+
 
 # ── unimodalfit_apexsearch ───────────────────────────────────────────────────────────
 
