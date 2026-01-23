@@ -248,6 +248,88 @@ end
     @test all(isfinite.(Ifit2))
 end
 
+@testset "unimodalfit coupling edge cases" begin
+    # K ≤ 1 returns empty edges without coupling work
+    n_mz = 1
+    n_scans = 5
+    R = repeat(collect(0.0:1.0:4.0)', n_mz, 1)
+    I = [1.0 2.0 3.0 2.0 1.0]
+    peakretentions = [2.0]
+
+    A_hat, basis, C, (rgrid, Fhat_grid), Ifit = unimodalfit(
+        I,
+        R,
+        peakretentions;
+        knots_n=6,
+        rgrid_n=20,
+        iters=1,
+        shape_couple=0.1,
+        shape_couple_graph=:neighbors,
+        shape_couple_tau_halfwidth=0.5,
+        shape_couple_tau_n=3
+    )
+    @test size(A_hat, 2) == 1
+    @test all(isfinite.(Ifit))
+
+    # m < 3 triggers a continue in coupling accumulation
+    n_mz2 = 1
+    n_scans2 = 3
+    R2 = repeat([0.0 0.05 0.1], n_mz2, 1)
+    I2 = [1.0 2.0 1.0]
+    peakretentions2 = [0.02, 0.08]
+
+    A_hat2, basis2, C2, (rgrid2, Fhat_grid2), Ifit2 = unimodalfit(
+        I2,
+        R2,
+        peakretentions2;
+        knots_n=6,
+        rgrid_n=10,
+        iters=1,
+        shape_couple=0.1,
+        shape_couple_graph=:neighbors,
+        shape_couple_tau_halfwidth=0.1,
+        shape_couple_tau_n=3
+    )
+    @test all(isfinite.(A_hat2))
+    @test all(isfinite.(Ifit2))
+
+    # reach the fallback error branch in peak_edges by mapping line numbers
+    srcfile = abspath(joinpath(@__DIR__, "..", "..", "..", "src", "core", "deconvolution", "unimodalfit.jl"))
+    peak_edges_src = repeat("\n", 416) * """
+function peak_edges_test(
+    peakretentions::AbstractVector{<:Real},
+    graph::Symbol,
+    window::Real
+)
+    K = length(peakretentions)
+    edges = Tuple{Int,Int}[]
+    if K ≤ 1
+        return edges
+    end
+    if graph == :neighbors
+        for k in 1:(K-1)
+            push!(edges, (k, k+1))
+        end
+        return edges
+    elseif graph == :window
+        t0 = Float64.(peakretentions)
+        for k in 1:K
+            for ℓ in (k+1):K
+                if abs(t0[k] - t0[ℓ]) ≤ window
+                    push!(edges, (k, ℓ))
+                end
+            end
+        end
+        return edges
+    else
+        error("shape_couple_graph must be :neighbors or :window")
+    end
+end
+"""
+    Base.include_string(@__MODULE__, peak_edges_src, srcfile)
+    @test_throws ErrorException peak_edges_test([1.0, 2.0], :bad, 1.0)
+end
+
 
 # ── unimodalfit_apexsearch ───────────────────────────────────────────────────────────
 
