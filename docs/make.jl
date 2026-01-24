@@ -65,6 +65,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                         "Overview" => "man/mapping_overview.md",
                         "Mapping tools" => "man/mapping_tools.md",
                     ],
+                    "Scan timing" => "man/scan_timing.md",
                     "Transformation" => "man/transformation.md",
                     "Trimming and Filtering" => "man/transform.md",
                     "Variance modeling" => "man/quadvar_model.md",

@@ -44,6 +44,7 @@ include("core/convert/mscanmatrix.jl")
 include("core/convert/mzchrom.jl")
 include("core/quadvar_model/containers.jl")
 include("core/quadvar_model/fit.jl")
+include("core/scan_timing/mz_retention.jl")
 include("core/transform/binning.jl")
 include("core/transform/clr.jl")
 include("core/transform/gridding.jl")
@@ -110,6 +111,7 @@ export mapmax
 export mscanmatrix
 export mzchrom
 export mzcount
+export mzretention
 export mzunit
 export mzvalues
 export residautocorr

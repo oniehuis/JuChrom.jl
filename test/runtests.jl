@@ -57,6 +57,9 @@ end
 @safetestset "core/retention_mapping/retention_mapping.jl" begin
     include("./core/retention_mapping/retention_mapping.jl")
 end
+@safetestset "core/scan_timing/mz_retention.jl" begin
+    include("./core/scan_timing/mz_retention.jl")
+end
 @safetestset "core/transform/binning.jl" begin
     include("./core/transform/binning.jl")
 end
