@@ -54,7 +54,6 @@ using JuChrom
 
 # Load CairoMakie for plotting
 using CairoMakie
-CairoMakie.activate!()
 
 # Known mapping points: retention times (minutes) and Kováts indices.
 # JuChrom reexports Unitful, so unit literals work without `using Unitful`.
@@ -141,12 +140,16 @@ rts = invmap.(mapper, ris)  # dot form broadcasts over the vector
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
 `ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area, you divide the
-intensity by this slope at the same time point.
+intensity by this slope at the same time point. However, even when intensities are
+reported as unitless, they usually represent counts accumulated over a finite scan
+interval, so the implied unit is typically 1/time. Here we assume the given intensities
+are counts acquired over a 0.5‑second scan interval, and therefore divide by 0.5 seconds.
 
 ```@example 1
 scantimes = [1802.5, 1803.0, 1803.5]u"s"
-intensities = [1000, 4000, 3500]
-
+intensities = [1000, 4000, 3500] / 0.5u"s"
+```
+```@example 1
 dridt = derivmap.(mapper, scantimes)
 ```
 
