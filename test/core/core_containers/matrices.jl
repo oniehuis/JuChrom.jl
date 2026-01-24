@@ -195,6 +195,13 @@ end
     @test_throws ArgumentError MassScanMatrix([1.0, 2.0], [100.0, 200.0], [1.0 2.0; 3.0 4.0]; level=0) # level
 end
 
+@testset "MassScanMatrix – broadcastable" begin
+    msm = MassScanMatrix([1.0, 2.0], [100.0, 200.0], [1.0 2.0; 3.0 4.0])
+    b = Base.broadcastable(msm)
+    @test b isa Base.RefValue
+    @test b[] === msm
+end
+
 @testset "MassScanMatrix – subtraction" begin
     ret = mkret(2)
     mzs = mkmzs(2)
