@@ -287,6 +287,47 @@ true
 """
 mzcount(msm::AbstractMassScanMatrix) = length(msm.mzvalues)
 
+# ── mzindex ───────────────────────────────────────────────────────────────────────────────
+
+"""
+    mzindex(msm::AbstractMassScanMatrix, mzvalue::Union{Real, Unitful.AbstractQuantity}) -> Int
+
+Return the index of the m/z value in the mass scan matrix.
+
+This function searches the `mzvalues` vector stored in the mass scan matrix and returns the
+1-based index of the requested `mzvalue`. The return value is `nothing` if the value is not
+present. For unitless m/z vectors, `mzvalue` must be a `Real`. For unitful m/z vectors,
+`mzvalue` must be a `Unitful.AbstractQuantity` with compatible units.
+
+`msm` is a mass scan matrix object such as `MassScanMatrix`. The index corresponds to the
+column position in the intensity matrix.
+
+See also
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`mzunit`](@ref JuChrom.mzunit(::AbstractMassScanMatrix)), 
+[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})).
+
+# Examples
+```jldoctest
+julia> msm = MassScanMatrix([1.0]u"s", [100.0, 200.0], [1.0 2.0]);
+
+julia> mzindex(msm, 100.0) == 1
+true
+
+julia> mzindex.(msm, [100.0, 200.0]) == [1, 2]
+true
+```
+"""
+mzindex(msm::AbstractMassScanMatrix{<:Any, Nothing}, mzvalue::Real) = 
+    findfirst(==(mzvalue), mzvalues(msm))    
+
+mzindex(msm::AbstractMassScanMatrix{<:Any, <:Unitful.Units}, mzvalue::Unitful.AbstractQuantity) = 
+    findfirst(==(mzvalue), mzvalues(msm)) 
+
 # ── mzunit ────────────────────────────────────────────────────────────────────────────────
 
 """

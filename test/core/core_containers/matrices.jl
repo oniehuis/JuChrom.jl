@@ -244,4 +244,30 @@ end
     @test_throws DimensionMismatch msm1 - msm_extra_mismatch
 end
 
+@testset "MassScanMatrix show methods" begin
+    msm_plain = MassScanMatrix([1.0, 2.0], [100.0, 200.0], [1.0 2.0; 3.0 4.0])
+    out_plain = sprint(show, msm_plain)
+    @test occursin("MassScanMatrix with 2 scans", out_plain)
+    @test occursin("├─ Retention:", out_plain)
+    @test occursin("Range: 1.0 to 2.0 (unitless)", out_plain)
+    @test occursin("├─ M/Z values:", out_plain)
+    @test occursin("Total data points: 2", out_plain)
+    @test occursin("└─ Intensity:", out_plain)
+    @test occursin("MS Level: 1", out_plain)
+    @test !occursin("Scan type", out_plain)
+
+    msm_meta = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0]u"Th",
+                              [1.0 2.0; 3.0 4.0]u"pA";
+                              instrument=(vendor="A",))
+    out_meta = sprint(io -> show(io, MIME"text/plain"(), msm_meta))
+    @test occursin("MassScanMatrix with 2 scans", out_meta)
+    @test occursin("Range: 1.0 to 2.0 (s)", out_meta)
+    @test occursin("Range: 100.0 to 200.0 (Th)", out_meta)
+    @test occursin("Range: 1.0 to 4.0 (pA)", out_meta)
+    @test occursin("├─ Intensity:", out_meta)
+    @test occursin("Instrument", out_meta)
+    @test occursin("vendor = A", out_meta)
+    @test !occursin("Scan type", out_meta)
+end
+
 end # module

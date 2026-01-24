@@ -288,6 +288,7 @@ end
     mss_out = sprint(show, mss)
     @test occursin("MassScanSeries", mss_out)
     @test occursin("├─ Scan type:\n", mss_out)
+    @test occursin("Unique values:", mss_out)
 
     mscans_same = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]; level=1),
                    mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=1)]

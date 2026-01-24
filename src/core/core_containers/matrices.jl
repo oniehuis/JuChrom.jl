@@ -163,6 +163,8 @@ struct MassScanMatrix{
     end
 end
 
+Base.broadcastable(msm::MassScanMatrix) = Base.RefValue(msm)
+
 """
     MassScanMatrix(
         retention_unitfree::AbstractVector{<:Real},
@@ -411,4 +413,61 @@ function Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
       sample      = deepcopy(sample(msm₁)),
       extras      = deepcopy(extras(msm₁))
     )
+end
+
+# ── Display ───────────────────────────────────────────────────────────────────────────────
+
+function Base.show(io::IO, msm::MassScanMatrix)
+    n_scans = length(msm.retentions)
+
+    retentions_unitfree = rawretentions(msm)
+    retention_unit = retentionunit(msm)
+    retention_range = (minimum(retentions_unitfree), maximum(retentions_unitfree))
+
+    mz_unitfree = rawmzvalues(msm)
+    mz_unit = mzunit(msm)
+    mz_range = (minimum(mz_unitfree), maximum(mz_unitfree))
+
+    intensities_unitfree = rawintensities(msm)
+    intensity_unit = intensityunit(msm)
+    intensity_range = (minimum(intensities_unitfree), maximum(intensities_unitfree))
+
+    ret_unit_str = retention_unit === nothing ? "unitless" : string(retention_unit)
+    mz_unit_str = mz_unit === nothing ? "unitless" : string(mz_unit)
+    int_unit_str = intensity_unit === nothing ? "unitless" : string(intensity_unit)
+
+    metadata_sections = [
+        ("Instrument", msm.instrument),
+        ("Acquisition", msm.acquisition),
+        ("User", msm.user),
+        ("Sample", msm.sample)
+    ]
+
+    non_empty_sections = filter(section -> !isempty(section[2]), metadata_sections)
+    has_metadata = !isempty(non_empty_sections) || !isempty(msm.extras)
+
+    scan_word = n_scans == 1 ? "scan" : "scans"
+    println(io, "MassScanMatrix with $n_scans $scan_word")
+
+    println(io, "├─ Retention:")
+    println(io, "│  ├─ Range: $(retention_range[1]) to $(retention_range[2]) ($ret_unit_str)")
+    println(io, "│  └─ Type: $(eltype(retentions_unitfree))")
+
+    println(io, "├─ M/Z values:")
+    println(io, "│  ├─ Range: $(mz_range[1]) to $(mz_range[2]) ($mz_unit_str)")
+    println(io, "│  ├─ Total data points: $(length(mz_unitfree))")
+    println(io, "│  └─ Type: $(eltype(mz_unitfree))")
+
+    intensity_prefix = has_metadata ? "├─" : "└─"
+    println(io, "$intensity_prefix Intensity:")
+    intensity_sub_prefix = has_metadata ? "│" : " "
+    println(io, "$intensity_sub_prefix  ├─ Range: $(intensity_range[1]) to $(intensity_range[2]) ($int_unit_str)")
+    println(io, "$intensity_sub_prefix  ├─ Type: $(eltype(intensities_unitfree))")
+    println(io, "$intensity_sub_prefix  └─ MS Level: $(level(msm))")
+
+    ScanSeriesDisplay.print_annotations(io, metadata_sections, msm.extras)
+end
+
+function Base.show(io::IO, ::MIME"text/plain", msm::MassScanMatrix)
+    show(io, msm)
 end

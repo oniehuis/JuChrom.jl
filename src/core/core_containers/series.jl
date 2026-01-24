@@ -745,6 +745,7 @@ function Base.show(io::IO, mss::MassScanSeries)
     all_mz = vcat([rawmzvalues(scan) for scan in mss.scans]...)
     mz_unit = mzunit(first(mss.scans))
     mz_range = (minimum(all_mz), maximum(all_mz))
+    unique_mz = uniquemzvalues(mss)
     
     # Extract intensity information
     all_intensities = vcat([rawintensities(scan) for scan in mss.scans]...)
@@ -792,7 +793,7 @@ function Base.show(io::IO, mss::MassScanSeries)
     # Print m/z information
     println(io, "├─ M/Z values:")
     println(io, "│  ├─ Range: $(mz_range[1]) to $(mz_range[2]) ($mz_unit_str)")
-    println(io, "│  ├─ Total data points: $(length(all_mz))")
+    println(io, "│  ├─ Unique values: $(length(unique_mz))")
     println(io, "│  └─ Type: $(eltype(all_mz))")
     
     # Print intensity information (adjust connector based on whether metadata follows)

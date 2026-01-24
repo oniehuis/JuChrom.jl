@@ -111,6 +111,7 @@ export mapmax
 export mscanmatrix
 export mzchrom
 export mzcount
+export mzindex
 export mzretention
 export mzunit
 export mzvalues

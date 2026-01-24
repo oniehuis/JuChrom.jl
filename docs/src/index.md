@@ -44,9 +44,8 @@ julia> using JuChrom
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
-# Load CairoMakie for plotting and Makie for color palettes
-using CairoMakie; import Makie
-CairoMakie.activate!()
+# Load CairoMakie for plotting
+using CairoMakie
 
 # Load an example Agilent ChemStation GC-MS run
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
@@ -61,8 +60,7 @@ ax₁ = Axis(fig₁[1,1], title="Total Ion Chromatogram",
                       ylabel="Intensity [no unit]",
                       xlabel="Retention [minute]")
 lines!(ax₁, rawretentions(tic, unit=u"minute"), 
-            rawintensities(tic),
-            color=Makie.wong_colors()[1])  # Color-blind–friendly palette
+            rawintensities(tic))
 save("tic.svg", fig₁)
 nothing # hide
 ```
@@ -85,8 +83,7 @@ ax₂= Axis(fig₂[1,1], title="m/z 109",
                      ylabel="Intensity [no unit]",
                      xlabel="Retention [minute]")
 lines!(ax₂, rawretentions(xic, unit=u"minute"),
-            rawintensities(xic),
-            color=color=Makie.wong_colors()[1])  # Color-blind–friendly palette
+            rawintensities(xic))
 save("xic.svg", fig₂)
 nothing # hide
 ```
@@ -106,11 +103,9 @@ ax₃ = Axis(fig₃[1,1], title="m/z 109",
                       ylabel="Intensity [no unit]",
                       xlabel="Retention [minute]")
 lines!(ax₃, rawretentions(xic, unit=u"minute"),
-            rawintensities(xic),
-            color=color=Makie.wong_colors()[1])  # Color-blind–friendly palette
+            rawintensities(xic)) 
 lines!(ax₃, rawretentions(xic, unit=u"minute"),
-            baseline,
-            color=color=Makie.wong_colors()[2])  # Color-blind–friendly palette
+            baseline)
 save("xic-baseline.svg", fig₃)
 nothing # hide
 ```

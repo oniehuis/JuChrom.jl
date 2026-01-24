@@ -246,6 +246,7 @@ Convenience:
 
 - [`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})),
   [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScanMatrix)),
+  [`mzindex`](@ref JuChrom.mzindex(::AbstractMassScanMatrix{<:Any, Nothing}, ::Real)),
   [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})),
   [`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})),
   [`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix))

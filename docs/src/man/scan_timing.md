@@ -61,7 +61,7 @@ ax₁ = Axis(fig₁[1,1], title="Selected ion chromatograms using scan-level ret
                       xlabel="Retention [minute]")
 
 for mz in [57, 239, 408]
-    i = findfirst(==(mz), mzvalues(msm))        # m/z index in the binned list
+    i = mzindex(msm, mz)                        # m/z index in the binned list
     ints = vec(rawintensities(msm)[:, i])       # intensity trace for that m/z
     lines!(ax₁,
            rawretentions(msm, unit=u"minute"),
@@ -92,7 +92,7 @@ ax₂ = Axis(fig₂[1,1], title="Selected ion chromatograms using shifted retent
 rawrts = rawretentions(msm, unit=u"minute")
 rawscanduration = mean(diff(rawrts))
 for mz in [57, 239, 408]
-    i = findfirst(==(mz), mzvalues(msm))
+    i = mzindex(msm, mz)
     rts_corrected = mzretention.(rawrts;
                                  mzindex=i,
                                  mzcount=mzcount(msm),
