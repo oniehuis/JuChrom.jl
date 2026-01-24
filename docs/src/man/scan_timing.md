@@ -22,7 +22,23 @@ introduces avoidable systematic error. This is particularly relevant when scan d
 are non-negligible relative to chromatographic peak widths or when dwell times are
 heterogeneous.
 
-To obtain an ion-specific retention coordinate, it is therefore necessary to combine:
+Within a single run, ion‑trace alignment is governed by three factors: (i) the within‑scan
+timing of each ion set by the dwell schedule and acquisition order, (ii) which point the
+instrument reports for each scan (start/middle/end), and (iii) which point within each
+dwell interval you treat as the ion’s timestamp (start/middle/end). The within‑scan timing
+is the primary source of systematic offsets between ions; the scan‑level and dwell‑level
+reference choices control how those offsets are anchored on the reported scan time. When 
+comparing runs acquired on the same instrument with the same method, the absolute scan‑time 
+reference usually cancels out because it is consistent across runs. It becomes critical 
+primarily when comparing data from different instruments or acquisition schemes with 
+different timing conventions, where absolute scan times are not directly comparable anyway.
+
+Practically, this means you mainly need to know whether dwell allocation is homogeneous or
+heterogeneous (and the dwell times if heterogeneous), and the acquisition direction
+(ascending or descending m/z). The example below shows how the acquisition direction can be
+inferred empirically. With these considerations in mind, the mapping from scan‑level time
+to an ion‑specific time reduces to combining a small set of explicit inputs:
+
 - the reference point associated with the scan-level retention value,
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
@@ -76,11 +92,18 @@ nothing
 ![](xic.svg)
 
 From the three traces, the peaks at higher m/z appear shifted to slightly later retention
-times, consistent with a **descending** m/z acquisition order. While Agilent GC–MS
+times, consistent with a **descending** m/z acquisition order when the scan time is
+referenced to the scan **start**. In a descending scan, higher m/z ions sample a moving
+peak earlier within each scan than lower m/z ions for the same scan‑level time. Points on
+the left slope are therefore sampled earlier by higher m/z, whereas on the right slope the
+opposite holds. The net effect is a modest right‑shift of high‑m/z peaks relative to
+low‑m/z peaks. If the reported scan time corresponds to the scan **end**, the observed
+shift would instead imply an **ascending** acquisition order. While Agilent GC–MS
 instruments are known to acquire in descending order, plotting prominent ions with widely
 separated m/z values allows the acquisition order to be inferred empirically when it is not
-known *a priori*. We next use this information to correct for the intra-scan time shift and
-align the chromatographic traces.
+known *a priori*, once a scan‑time reference (start/middle/end, typically start) is decided
+on (and can be chosen arbitrarily for inference). We next use this information to correct
+for the intra‑scan time shift and align the chromatographic traces.
 
 ```@example 1
 # Plot the chromatograms of m/z 57, 239, and 408 using shifted retentions
@@ -113,12 +136,12 @@ save("xic_shifted.svg", fig₂)
 nothing
 ```
 
+![](xic_shifted.svg)
+
 As we can see, the three traces are now much better aligned and jointly provide a much
 better estimate of the peak shape than any individual trace alone. Properly aligned ion
-traces are therefore a prerequisite for accurate peak‑shape reconstruction and
+traces are therefore a prerequisite for accurate peak‑shape reconstruction in context of
 [Deconvolution](deconvolution.md).
-
-![](xic_shifted.svg)
 
 ## Scan timing function
 
