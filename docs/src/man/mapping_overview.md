@@ -144,17 +144,17 @@ intensity by this slope at the same time point. However, even when intensities a
 reported as unitless, they usually represent counts accumulated over a finite scan
 interval, so the implied unit is typically 1/time. Here we assume the given intensities
 are counts acquired over a 0.5‑second scan interval, and therefore divide by 0.5 seconds.
+Because the intensities and `d(ri)/dt` must use the same time unit for the division to
+cancel cleanly, we convert the Jacobian to the unit `s^-1`. This is done by specifying the
+input‑domain unit as `u"s"`.
 
 ```@example 1
 scantimes = [1802.5, 1803.0, 1803.5]u"s"
 intensities = [1000, 4000, 3500] / 0.5u"s"
 ```
 ```@example 1
-dridt = derivmap.(mapper, scantimes)
+dridt = derivmap.(mapper, scantimes, rA_unit=u"s")
 ```
-
-Note that you can supply mapping inputs in any compatible time unit; values are converted
-automatically.
 
 The derivative tells you how much the Kováts retention index changes per unit time. To
 transform the intensities associated with each scan time, divide by the Jacobian (i.e.,
