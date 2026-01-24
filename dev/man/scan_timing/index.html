@@ -23,7 +23,7 @@ ax₁ = Axis(fig₁[1,1], title=&quot;Selected ion chromatograms using scan-leve
                       xlabel=&quot;Retention [minute]&quot;)
 
 for mz in [57, 239, 408]
-    i = findfirst(==(mz), mzvalues(msm))        # m/z index in the binned list
+    i = mzindex(msm, mz)                        # m/z index in the binned list
     ints = vec(rawintensities(msm)[:, i])       # intensity trace for that m/z
     lines!(ax₁,
            rawretentions(msm, unit=u&quot;minute&quot;),
@@ -41,7 +41,7 @@ ax₂ = Axis(fig₂[1,1], title=&quot;Selected ion chromatograms using shifted r
 rawrts = rawretentions(msm, unit=u&quot;minute&quot;)
 rawscanduration = mean(diff(rawrts))
 for mz in [57, 239, 408]
-    i = findfirst(==(mz), mzvalues(msm))
+    i = mzindex(msm, mz)
     rts_corrected = mzretention.(rawrts;
                                  mzindex=i,
                                  mzcount=mzcount(msm),
@@ -116,4 +116,4 @@ julia&gt; r₃ = mzretention.([100.0, 110.0]u&quot;s&quot;;  # dot form broadcas
                          dwell_ref=:middle);
 
 julia&gt; r₃ ≈ [100.004, 110.004]u&quot;s&quot;
-true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/542f76c31000e9028fda354888d76b5d18dd1f5f/src/core/scan_timing/mz_retention.jl#L1-L110">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mapping_tools/">« Mapping tools</a><a class="docs-footer-nextpage" href="../transformation/">Transformation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 24 January 2026 18:34">Saturday 24 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/1f82b7b95e2d6860410192c20e2d3a2dfb18b145/src/core/scan_timing/mz_retention.jl#L1-L110">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mapping_tools/">« Mapping tools</a><a class="docs-footer-nextpage" href="../transformation/">Transformation »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 24 January 2026 19:25">Saturday 24 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

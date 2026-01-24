@@ -35,7 +35,33 @@ mss_mz_binned = binmzvalues(mss)  # Returns new MassScanSeries object
 uniquemzvalues(mss_mz_binned)
 
 # Optional conversion to MassScanMatrix for efficient matrix-based workflows
-msm = mscanmatrix(mss_mz_binned)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MassScanMatrix{Vector{Float32}, Unitful.FreeUnits{(ms,), 𝐓, nothing}, Vector{Int64}, Nothing, Matrix{Int32}, Nothing, Int64, @NamedTuple{type::String, inlet::String, method::String}, @NamedTuple{datetime::String, sequence::Int64, vial::Int64, replicate::Int64}, @NamedTuple{operator::String}, @NamedTuple{sample::String, description::String}, Dict{String, Any}}(Float32[191941.0, 192652.0, 193362.0, 194072.0, 194782.0, 195492.0, 196202.0, 196912.0, 197622.0, 198332.0  …  1.892656f6, 1.893366f6, 1.894076f6, 1.894787f6, 1.895497f6, 1.896207f6, 1.896917f6, 1.897627f6, 1.898337f6, 1.899047f6], ms, [29, 30, 31, 32, 33, 34, 35, 36, 37, 38  …  554, 555, 556, 557, 558, 559, 560, 561, 562, 563], nothing, Int32[33848 916 … 1 8; 33600 819 … 5 0; … ; 558 26 … 1 0; 575 43 … 10 0], nothing, 1, (type = &quot;MSD 5977B&quot;, inlet = &quot;unknown&quot;, method = &quot;VM_STD_Auto_SPME.M&quot;), (datetime = &quot;19 Jun 24  05:06 pm&quot;, sequence = 0, vial = 23, replicate = 0), (operator = &quot;unknown&quot;,), (sample = &quot;C7-C40_vial4_dil4_June19_2024&quot;, description = &quot;Alkanstandard vial 4 4x verdünnt&quot;), Dict{String, Any}())</code></pre><pre><code class="language-julia hljs"># Keep only nominal masses 29–500
+msm = mscanmatrix(mss_mz_binned)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MassScanMatrix with 2405 scans
+├─ Retention:
+│  ├─ Range: 191941.0 to 1.899047e6 (ms)
+│  └─ Type: Float32
+├─ M/Z values:
+│  ├─ Range: 29 to 563 (unitless)
+│  ├─ Total data points: 535
+│  └─ Type: Int64
+├─ Intensity:
+│  ├─ Range: 0 to 1186816 (unitless)
+│  ├─ Type: Int32
+│  └─ MS Level: 1
+└─ Annotations:
+   ├─ Instrument:
+   │  ├─ type = MSD 5977B
+   │  ├─ inlet = unknown
+   │  └─ method = VM_STD_Auto_SPME.M
+   ├─ Acquisition:
+   │  ├─ datetime = 19 Jun 24  05:06 pm
+   │  ├─ sequence = 0
+   │  ├─ vial = 23
+   │  └─ replicate = 0
+   ├─ User: operator = unknown
+   └─ Sample:
+     ├─ sample = C7-C40_vial4_dil4_June19_2024
+     └─ description = Alkanstandard vial 4 4x verdünnt
+</code></pre><pre><code class="language-julia hljs"># Keep only nominal masses 29–500
 mss_mz_binned_fixed = binmzvalues(mss; validmzvalues=29:1:500)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">MassScanSeries with 2405 scans
 ├─ Scan type:
 │  └─ MassScan{Float32, Unitful.FreeUnits{(ms,), 𝐓, nothing}, Vector{Int64}, Nothing, Vector{Int32}, Nothing, Int64, @NamedTuple{}}
@@ -44,7 +70,7 @@ mss_mz_binned_fixed = binmzvalues(mss; validmzvalues=29:1:500)</code></pre><pre 
 │  └─ Type: Float32
 ├─ M/Z values:
 │  ├─ Range: 29 to 500 (unitless)
-│  ├─ Total data points: 1095600
+│  ├─ Unique values: 472
 │  └─ Type: Int64
 ├─ Intensity:
 │  ├─ Range: 0 to 1186816 (unitless)
@@ -82,7 +108,7 @@ julia&gt; mzvalues(binned, 1)
 julia&gt; intensities(binned, 1)
 2-element Vector{Int64}:
  30
- 30</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/542f76c31000e9028fda354888d76b5d18dd1f5f/src/core/transform/binning.jl#L442-L485">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.integer"><a class="docstring-binding" href="#JuChrom.integer"><code>JuChrom.integer</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">integer(value::Real; offset::Real=0.3) -&gt; Int</code></pre><p>Assigns a real number <code>value</code> to an integer bin such that the integer bin <code>n</code> includes the interval [n - offset, n + (1 - offset)).</p><p>See also <a href="#JuChrom.binmzvalues-Tuple{MassScanSeries, Function}"><code>binmzvalues</code></a>.</p><pre><code class="language-julia hljs">julia&gt; integer(3.2)
+ 30</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/1f82b7b95e2d6860410192c20e2d3a2dfb18b145/src/core/transform/binning.jl#L442-L485">source</a></section></details></article><article><details class="docstring" open="true"><summary id="JuChrom.integer"><a class="docstring-binding" href="#JuChrom.integer"><code>JuChrom.integer</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">integer(value::Real; offset::Real=0.3) -&gt; Int</code></pre><p>Assigns a real number <code>value</code> to an integer bin such that the integer bin <code>n</code> includes the interval [n - offset, n + (1 - offset)).</p><p>See also <a href="#JuChrom.binmzvalues-Tuple{MassScanSeries, Function}"><code>binmzvalues</code></a>.</p><pre><code class="language-julia hljs">julia&gt; integer(3.2)
 3
 
 julia&gt; integer(3.69)
@@ -95,4 +121,4 @@ julia&gt; integer(3.7, 0.999)
 4
 
 julia&gt; integer(3.7, 1)
-ERROR: ArgumentError: `offset` must be in the range [0, 1).</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/542f76c31000e9028fda354888d76b5d18dd1f5f/src/core/transform/binning.jl#L582-L606">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../baseline/">« Baseline</a><a class="docs-footer-nextpage" href="../binning_gridding/">Retention binning and gridding »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 24 January 2026 18:34">Saturday 24 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ERROR: ArgumentError: `offset` must be in the range [0, 1).</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/oniehuis/JuChrom.jl/blob/1f82b7b95e2d6860410192c20e2d3a2dfb18b145/src/core/transform/binning.jl#L582-L606">source</a></section></details></article></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../baseline/">« Baseline</a><a class="docs-footer-nextpage" href="../binning_gridding/">Retention binning and gridding »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.16.1 on <span class="colophon-date" title="Saturday 24 January 2026 19:25">Saturday 24 January 2026</span>. Using Julia version 1.12.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
