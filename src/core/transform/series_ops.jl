@@ -1,3 +1,13 @@
+# implement the following to cause an ArgumentError
+# julia> retentiontrim!(mss, start=20.25, stop=20.4)
+# ERROR: MethodError: no method matching var"#retentiontrim!#370"(::Float64, ::Float64, ::typeof(retentiontrim!), ::MassScanSeries{…})
+# The function `#retentiontrim!#370` exists, but no method is defined for this combination of argument types.
+
+# Closest candidates are:
+#   var"#retentiontrim!#370"(::T1, ::T2, ::typeof(retentiontrim!), ::AbstractScanSeries{<:AbstractScan, <:Unitful.Units}) where {T1<:Unitful.AbstractQuantity, T2<:Unitful.AbstractQuantity}
+#    @ JuChrom ~/Programming/MyJuliaPackages/JuChrom/src/core/transform/series_ops.jl:316
+
+
 # ── indextrim ─────────────────────────────────────────────────────────────────────────────
 
 """
