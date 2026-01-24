@@ -11,10 +11,10 @@ depends on how the scan interval is referenced and how sampling is scheduled wit
 Instrument software and data formats typically associate a single retention value with each
 scan. However, that value may represent the start, midpoint, or end of the scan interval,
 depending on vendor conventions, acquisition mode, and export settings. Within a scan, ions
-are acquired in a defined order (e.g., ascending or descending m/z), and each ion is assigned
-a dwell interval whose duration may be constant across ions or vary with instrument settings.
-As a result, different ions are sampled at systematically different retention coordinates
-within the same scan.
+are acquired in a defined order (e.g., ascending or descending m/z), and each ion is 
+assigned a dwell time interval whose duration may be constant across ions or vary with 
+instrument settings. As a result, different ions are sampled at systematically different 
+retention coordinates within the same scan.
 
 For many downstream analyses—such as accurate peak-shape reconstruction and deconvolution—
 treating all ions in a scan as if they were measured at the same retention coordinate
@@ -26,7 +26,7 @@ To obtain an ion-specific retention coordinate, it is therefore necessary to com
 - the reference point associated with the scan-level retention value,
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
-- the desired reference point within each ion’s dwell interval.
+- the desired reference point within each ion’s dwell time interval.
 
 The JuChrom function [`mzretention`](@ref) formalizes this mapping. Given a scan-level
 retention coordinate and a description of the within-scan sampling scheme, it computes the
@@ -75,11 +75,11 @@ save("xic.svg", fig₁)
 ![](xic.svg)
 
 From the three traces, the peaks at higher m/z appear shifted to slightly later retention
-times, consistent with a descending m/z acquisition order. While Agilent GC–MS instruments
-are known to acquire in descending order, plotting prominent ions with widely separated m/z
-values allows the acquisition order to be inferred empirically when it is not known a 
-priori. We next use this information to correct for the intra-scan time shift and align the
-chromatographic traces.
+times, consistent with a **descending** m/z acquisition order. While Agilent GC–MS 
+instruments are known to acquire in descending order, plotting prominent ions with widely 
+separated m/z values allows the acquisition order to be inferred empirically when it is not 
+known *a priori*. We next use this information to correct for the intra-scan time shift and 
+align the chromatographic traces.
 
 ```@example 1
 # Plot the chromatograms of m/z 57, 239, and 408 using shifted retentions
