@@ -39,10 +39,11 @@ heterogeneous (and the dwell times if heterogeneous), and the acquisition direct
 inferred empirically. With these considerations in mind, the mapping from scan‑level time
 to an ion‑specific time reduces to combining a small set of explicit inputs:
 
-- the reference point associated with the scan-level retention value,
+-  the reference point associated with the scan‑level retention value (often set to :start 
+in practice when the true reference is unknown),
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
-- the desired reference point within each ion’s dwell interval.
+- the desired reference point within each ion’s dwell interval (typically :middle).
 
 The JuChrom function [`mzretention`](@ref) formalizes this mapping. Given a scan-level
 retention coordinate and a description of the within-scan sampling scheme, it computes the
@@ -92,18 +93,15 @@ nothing
 ![](xic.svg)
 
 From the three traces, the peaks at higher m/z appear shifted to slightly later retention
-times, consistent with a **descending** m/z acquisition order when the scan time is
-referenced to the scan **start**. In a descending scan, higher m/z ions sample a moving
-peak earlier within each scan than lower m/z ions for the same scan‑level time. Points on
-the left slope are therefore sampled earlier by higher m/z, whereas on the right slope the
-opposite holds. The net effect is a modest right‑shift of high‑m/z peaks relative to
-low‑m/z peaks. If the reported scan time corresponds to the scan **end**, the observed
-shift would instead imply an **ascending** acquisition order. While Agilent GC–MS
-instruments are known to acquire in descending order, plotting prominent ions with widely
-separated m/z values allows the acquisition order to be inferred empirically when it is not
-known *a priori*, once a scan‑time reference (start/middle/end, typically start) is decided
-on (and can be chosen arbitrarily for inference). We next use this information to correct
-for the intra‑scan time shift and align the chromatographic traces.
+times, consistent with a **descending** m/z acquisition order. In a descending scan, higher 
+m/z ions sample a moving peak earlier within each scan than lower m/z ions for the same 
+scan‑level time. Points on the left slope are therefore sampled earlier by higher m/z, 
+whereas on the right slope the opposite holds. The net effect is a modest right‑shift of 
+high‑m/z peaks relative to low‑m/z peaks. While Agilent GC–MS instruments are known to 
+acquire in descending order, plotting prominent ions with widely separated m/z values allows 
+the acquisition order to be inferred empirically when it is not known *a priori*. We next 
+use this information to correct for the intra‑scan time shift and align the chromatographic 
+traces.
 
 ```@example 1
 # Plot the chromatograms of m/z 57, 239, and 408 using shifted retentions
@@ -122,7 +120,7 @@ for mz in [57, 239, 408]
                                  dwell=:homogeneous,
                                  order=:descending,
                                  scan_interval=rawscanduration,
-                                 retention_ref=:start,
+                                 retention_ref=:end,
                                  dwell_ref=:middle)
 
     ints = vec(rawintensities(msm)[:, i])

@@ -8,15 +8,17 @@ common grid. This makes retention behavior reproducible across batches, instrume
 methods while preserving ordering and monotonicity.
 
 A continuous, differentiable mapping does more than align coordinates: it enables 
-intensity-aware transforms via the [`Jacobian`](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant) 
-(in 1-D this is just the derivative). When you warp the axis, the mapping derivative 
-provides a principled way to rescale intensities so areas and peak shapes remain physically 
-meaningful. This yields consistent peak integrals across transformed domains, supports 
-smooth interpolation, and avoids artifacts from piecewise or discontinuous mappings.
+intensity-aware transforms via the 
+[`Jacobian`](https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant). When you warp 
+the axis, the mapping derivative provides a principled way to rescale intensities so areas 
+and peak shapes remain physically meaningful. This yields consistent peak integrals across 
+transformed domains, supports smooth interpolation, and avoids artifacts from piecewise or 
+discontinuous mappings.
 
 Mapping points are typically collected from standards with known reference positions. In 
 gas chromatography, a common example is an n-alkane ladder, which yields paired arrays of 
-retention times and [Kováts retention indices](https://en.wikipedia.org/wiki/Kovats_retention_index) 
+retention times and 
+[Kováts retention indices](https://en.wikipedia.org/wiki/Kovats_retention_index) 
 (Kováts 1958). Another approach uses a curated set of internal standards (e.g., a few stable 
 compounds spiked into every run), producing matched retention pairs that anchor the mapping 
 across batches (Skoog et al. 2007).
