@@ -9,24 +9,26 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 
 - Attach a unit to a numeric value with the `u""` string macro:
 ```@example 1
-using JuChrom  # JuChrom reexports Unitflul
-1.0u"s"        # (seconds)
-```@example 1
-12.5u"minute"
+using JuChrom  # JuChrom automatically imports and reexports Unitful
+
+rt = 1.0u"s"        # (seconds)
 ```
 ```@example 1
-100.0u"Th"     # (Thomson)
+rt = 12.5u"minute"
 ```
 ```@example 1
-5.3u"pA"       # (picoampere)
+mz = 100.0u"Th"     # (Thomson)
+```
+```@example 1
+signal = 5.3u"pA"   # (picoampere)
 ```
 - Attach units to arrays in the same way:
 ```@example 1
-ret = [1.0, 2.0, 3.0]u"s"
+rts = [1.0, 2.0, 3.0]u"s"
 ```
 - Convert between compatible units with `uconvert`:
 ```@example 1
-uconvert(u"minute", 120.0u"s")` → `2.0u"minute"
+rt = uconvert(u"minute", 120.0u"s")` → `2.0u"minute"
 ```
 - Convert units for every element of a vector with broadcasting:
   - `uconvert.(u"minute", [30.0, 60.0, 90.0]u"s")` → `[0.5, 1.0, 1.5]u"minute"`
