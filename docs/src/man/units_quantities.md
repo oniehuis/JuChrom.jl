@@ -9,15 +9,15 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 
 - Attach a unit to a numeric value with the `u""` string macro:
 ```@example 1
-`1.0u"s"`  # (seconds)
+1.0u"s"        # (seconds)
 ```@example 2
-`12.5u"minute"`
+12.5u"minute"
 ```
 ```@example 3
-`100.0u"Th"`  # (Thomson)
+100.0u"Th"     # (Thomson)
 ```
 ```@example 4
-`5.3u"pA"`  # (picoampere)
+5.3u"pA"       # (picoampere)
 ```
 ```
 - Attach units to arrays in the same way:
