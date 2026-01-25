@@ -8,7 +8,18 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 ## Quick primer
 
 - Attach a unit to a numeric value with the `u""` string macro:
-  - `1.0u"s"` (seconds), `12.5u"minute"`, `100.0u"Th"` (Thomson), `5.3u"pA"` (picoampere)
+```@example 1
+`1.0u"s"`  # (seconds)
+```@example 2
+`12.5u"minute"`
+```
+```@example 3
+`100.0u"Th"`  # (Thomson)
+```
+```@example 4
+`5.3u"pA"`  # (picoampere)
+```
+```
 - Attach units to arrays in the same way:
   - `ret = [1.0, 2.0, 3.0]u"s"`
 - Convert between compatible units with `uconvert`:
