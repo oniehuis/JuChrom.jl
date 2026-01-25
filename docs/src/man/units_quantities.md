@@ -69,14 +69,14 @@ Below are the units you will see most often in this package:
 
 ### Metric prefixes
 
-Unitful follows standard SI prefixes. The most common are:
+Unitful follows the International System of Units (SI) prefixes. The most common are:
 
 - milli (`m`): `1e-3` (e.g., `u"ms"`, `u"mA"`)
 - micro (`μ`): `1e-6` (e.g., `u"μs"`, `u"μA"`)
 - nano (`n`): `1e-9` (e.g., `u"ns"`, `u"nA"`)
 - pico (`p`): `1e-12` (e.g., `u"ps"`, `u"pA"`)
 
-## The Thomson (`u"Th"`) in JuChrom
+## The Thomson unit (`u"Th"`) in JuChrom
 
 Mass‑to‑charge (m/z) is conventionally treated as unitless in many GC–MS workflows.
 However, some instruments and data formats label m/z using the **Thomson** (symbol `Th`).
@@ -86,11 +86,10 @@ In JuChrom, `u"Th"` is supported as a convenience unit for m/z values:
 mzs = [57.0, 73.0, 91.0]u"Th"
 ```
 
-The Thomson is not an officially recognized derived unit in the International System of
-Units (SI). It is used informally in mass spectrometry as shorthand for “m/z in daltons per
-elementary charge (Da/e).” Use of `u"Th"` is optional; you can treat m/z as unitless if you
-prefer. Use of `u"Th"` in JuChrom example code is primarily to illustrate support for
-unitful m/z values.
+The Thomson is not an officially recognized SI derived unit. It is used informally in mass 
+spectrometry as shorthand for “m/z in daltons per elementary charge (Da/e).” Use of `u"Th"` 
+is optional; you can treat m/z as unitless if you prefer. Use of `u"Th"` in JuChrom example 
+code is primarily to illustrate support for unitful m/z values.
 
 ## Further reading
 

@@ -117,13 +117,13 @@ for mz in [57, 239, 408]
     i = mzindex(msm, mz)
     rts_corrected =
         mzretention.(rawrts;
+                     retentionref=:start,
+                     scaninterval=rawscanduration,
                      mzindex=i,
                      mzcount=mzcount(msm),
-                     dwell=:homogeneous,
                      order=:descending,
-                     scan_interval=rawscanduration,
-                     retention_ref=:end,
-                     dwell_ref=:middle)
+                     dwellref=:middle,
+                     dwell=:homogeneous)
 
     ints = vec(rawintensities(msm)[:, i])
     lines!(ax₂,
