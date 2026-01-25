@@ -54,9 +54,9 @@ The scan start is computed from the scan-level reference as `scan_start=retentio
 `retention_ref==:middle`, and `scan_start=retention - scan_span` for `retention_ref==:end`.
 
 The returned value is
-\\[
+```math
 scan\\_start + \\sum_{j<k} \\delta_j + \\phi(\\delta_k)
-\\]
+```
 where `k` is the acquisition-order index, `δ_j` are dwell widths in acquisition order, 
 and `φ` is the offset chosen by `dwell_ref` (`0`, `δ/2`, or `δ`).
 
