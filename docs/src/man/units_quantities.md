@@ -28,16 +28,24 @@ rts = [1.0, 2.0, 3.0]u"s"
 ```
 - Convert between compatible units with `uconvert`:
 ```@example 1
-rt = uconvert(u"minute", 120.0u"s")` → `2.0u"minute"
+rt = uconvert(u"minute", 120.0u"s")
 ```
 - Convert units for every element of a vector with broadcasting:
-  - `uconvert.(u"minute", [30.0, 60.0, 90.0]u"s")` → `[0.5, 1.0, 1.5]u"minute"`
+```@example 1
+rts = uconvert.(u"minute", [30.0, 60.0, 90.0]u"s")
+```
 - Remove units when you need raw numbers:
-  - `ustrip(12.5u"s")` → `12.5`
+```@example 1
+rawrt = ustrip(12.5u"s")
+```
 - Remove units from every element of a vector with broadcasting:
-  - `ustrip.([30.0, 60.0, 90.0]u"s")` → `[30.0, 60.0, 90.0]`
+```@example 1
+rawrts = ustrip.([30.0, 60.0, 90.0]u"s")
+```
 - Unitful checks dimensional consistency for you:
-  - `1.0u"s" + 500u"ms"` is valid
+```@example 1
+rt = 1.0u"s" + 500u"ms"  #  is valid
+```
   - `1.0u"s" + 1.0u"Th"` raises an error
 
 JuChrom accepts either unitless or unitful inputs for retentions, intensities, and m/z
@@ -79,4 +87,4 @@ unitful m/z values.
 ## Further reading
 
 For a full introduction to units and quantities in Julia, see the
-[Unitful.jl documentation](https://painterqubits.github.io/Unitful.jl/stable/).
+[Unitful.jl](https://github.com/JuliaPhysics/Unitful.jl) documentation.
