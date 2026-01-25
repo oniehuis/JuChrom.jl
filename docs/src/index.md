@@ -23,7 +23,8 @@ julia> using JuChrom
 
 - Data structures for chromatographic and mass-spectral scans (retention, intensity,
   and m/z values), scan series, and matrices, including metadata. Retention times,
-  intensities, and m/z values can carry `Unitful` units.
+  intensities, and m/z values can carry 
+  [Unitful.jl](https://github.com/JuliaPhysics/Unitful.jl) units.
 - Loaders for proprietary vendor formats, including Agilent MassHunter GC-MS,
   Agilent ChemStation MS, Agilent FID, and Shimadzu GC-MS data.
 - Conversions between representations, including extracted-ion and total ion
