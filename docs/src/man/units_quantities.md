@@ -1,7 +1,7 @@
 # Units and Quantities
 
-JuChrom supports optional units via 
-[Unitful.jl](https://github.com/JuliaPhysics/Unitful.jl). You can work with unitless values 
+JuChrom supports optional units via
+[Unitful.jl](https://github.com/JuliaPhysics/Unitful.jl). You can work with unitless values
 or Unitful quantities interchangeably, as long as each operation uses compatible units. This
 page gives a short, package‑focused primer on the syntax you need for JuChrom.
 
@@ -32,7 +32,8 @@ If you pass unitless data, the corresponding unit is stored as `nothing`.
 Below are the units you will see most often in this package:
 
 - Time: `u"s"` (second), `u"ms"` (millisecond), `u"minute"`
-- Current (intensity units for some detectors, e.g., FID): `u"A"` (ampere), `u"pA"`
+- Current (intensity units for some detectors, e.g., FID): `u"A"` (ampere), `u"mA"`,
+  `u"μA"`, `u"nA"`, `u"pA"`
 - Mass‑to‑charge: `u"Th"` (Thomson; optional), or unitless m/z
 
 ### Metric prefixes
@@ -52,11 +53,11 @@ In JuChrom, `u"Th"` is supported as a convenience unit for m/z values:
 
 - `mz = [57.0, 73.0, 91.0]u"Th"`
 
-The Thomson is **not an SI unit** and is not an officially recognized derived unit in the
-International System of Units. It is used informally in mass spectrometry as shorthand for
-“m/z in daltons per elementary charge (Da/e).” Use of `u"Th"` is optional; you can 
-treat m/z as unitless if you prefer. Use of `u"Th"` JuChrom example code is primarily to 
-illustrate support for unitful m/z values.
+The Thomson is not an officially recognized derived unit in the International System of
+Units (SI). It is used informally in mass spectrometry as shorthand for “m/z in daltons per
+elementary charge (Da/e).” Use of `u"Th"` is optional; you can treat m/z as unitless if you
+prefer. Use of `u"Th"` in JuChrom example code is primarily to illustrate support for
+unitful m/z values.
 
 ## Further reading
 
