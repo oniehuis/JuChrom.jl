@@ -9,7 +9,7 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 
 - Attach a unit to a numeric value with the `u""` string macro:
 ```@example 1
-using JuChrom  # JuChrom automatically imports and reexports Unitful
+using JuChrom  # reexports Unitful
 
 rt = 1.0u"s"  # (seconds)
 ```
@@ -48,7 +48,7 @@ rt = 1.0u"s" + 500u"ms"  # is valid
 ```
 ```@example 1
 try
-    rt = 1.0u"s" + 1.0u"Th"  # raises an error
+    rtmz = 1.0u"s" + 1.0u"Th"  # raises an error
 catch err
     println(err)
 end
