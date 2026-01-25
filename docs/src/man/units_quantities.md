@@ -47,7 +47,11 @@ rawrts = ustrip.([30.0, 60.0, 90.0]u"s")
 rt = 1.0u"s" + 500u"ms"  # is valid
 ```
 ```@example 1
-rt = 1.0u"s" + 1.0u"Th"  # raises an error
+try
+    rt = 1.0u"s" + 1.0u"Th"  # raises an error
+catch err
+    println(err)
+end
 ```
 
 JuChrom accepts either unitless or unitful inputs for retentions, intensities, and m/z

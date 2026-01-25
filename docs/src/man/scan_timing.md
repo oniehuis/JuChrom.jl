@@ -39,7 +39,8 @@ heterogeneous (and the dwell times if heterogeneous), and the acquisition direct
 inferred empirically. With these considerations in mind, the mapping from scan‑level time
 to an ion‑specific time reduces to combining a small set of explicit inputs:
 
--  the reference point associated with the scan‑level retention value (often set to :start in practice when the true reference is unknown),
+- the reference point associated with the scan‑level retention value (often set to :start 
+  in practice when the true reference is unknown),
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
 - the desired reference point within each ion’s dwell interval (typically :middle).
@@ -137,10 +138,10 @@ nothing
 
 ![](xic_shifted.svg)
 
-As we can see, the three traces are now much better aligned and jointly provide a much
-better estimate of the peak shape than any individual trace alone. Properly aligned ion
-traces are therefore a prerequisite for accurate peak‑shape reconstruction in context of
-[Deconvolution](deconvolution.md).
+As you can see, the three traces are now much better aligned and together provide a far more 
+reliable estimate of the peak shape than any single trace alone. Properly aligned ion traces 
+are therefore a prerequisite for accurate peak‑shape reconstruction in the context of
+[Deconvolution](deconvolution.md), including accurate peak‑mode inference.
 
 ## Scan timing function
 
