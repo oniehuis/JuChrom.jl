@@ -11,16 +11,16 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 ```@example 1
 using JuChrom  # JuChrom automatically imports and reexports Unitful
 
-rt = 1.0u"s"        # (seconds)
+rt = 1.0u"s"  # (seconds)
 ```
 ```@example 1
 rt = 12.5u"minute"
 ```
 ```@example 1
-mz = 100.0u"Th"     # (Thomson)
+mz = 100.0u"Th"  # (Thomson)
 ```
 ```@example 1
-signal = 5.3u"pA"   # (picoampere)
+signal = 5.3u"pA"  # (picoampere)
 ```
 - Attach units to arrays in the same way:
 ```@example 1
@@ -44,9 +44,11 @@ rawrts = ustrip.([30.0, 60.0, 90.0]u"s")
 ```
 - Unitful checks dimensional consistency for you:
 ```@example 1
-rt = 1.0u"s" + 500u"ms"  #  is valid
+rt = 1.0u"s" + 500u"ms"  # is valid
 ```
-  - `1.0u"s" + 1.0u"Th"` raises an error
+```@example 1
+rt = 1.0u"s" + 1.0u"Th"  # raises an error
+```
 
 JuChrom accepts either unitless or unitful inputs for retentions, intensities, and m/z
 values. If you pass unitful data, JuChrom preserves and propagates units where appropriate.
@@ -76,7 +78,9 @@ Mass‑to‑charge (m/z) is conventionally treated as unitless in many GC–MS w
 However, some instruments and data formats label m/z using the **Thomson** (symbol `Th`).
 In JuChrom, `u"Th"` is supported as a convenience unit for m/z values:
 
-- `mz = [57.0, 73.0, 91.0]u"Th"`
+```@example 1
+mzs = [57.0, 73.0, 91.0]u"Th"
+```
 
 The Thomson is not an officially recognized derived unit in the International System of
 Units (SI). It is used informally in mass spectrometry as shorthand for “m/z in daltons per
