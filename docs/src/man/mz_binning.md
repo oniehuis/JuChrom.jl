@@ -84,7 +84,7 @@ msm = mscanmatrix(mss_mz_binned)
 
 ```@example 1
 # Keep only nominal masses 29–500
-mss_mz_binned_fixed = binmzvalues(mss; validmzvalues=29:1:500)
+mss_mz_binned_fixed = binmzvalues(mss; validmzvalues=29:500)
 ```
 
 ## m/z binning tools

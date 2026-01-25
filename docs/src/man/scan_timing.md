@@ -39,8 +39,7 @@ heterogeneous (and the dwell times if heterogeneous), and the acquisition direct
 inferred empirically. With these considerations in mind, the mapping from scan‑level time
 to an ion‑specific time reduces to combining a small set of explicit inputs:
 
--  the reference point associated with the scan‑level retention value (often set to :start 
-in practice when the true reference is unknown),
+-  the reference point associated with the scan‑level retention value (often set to :start in practice when the true reference is unknown),
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
 - the desired reference point within each ion’s dwell interval (typically :middle).
@@ -73,9 +72,10 @@ msm = mscanmatrix(binmzvalues(mss, validmzvalues=29:562))
 
 # Plot the chromatograms of m/z 57, 239, and 408 using scan-level retentions
 fig₁ = Figure(; size=(1000, 350))
-ax₁ = Axis(fig₁[1,1], title="Selected ion chromatograms using scan-level retentions",
-                      ylabel="Intensity [no unit]",
-                      xlabel="Retention [minute]")
+ax₁ = Axis(fig₁[1,1],
+           title="Selected ion chromatograms using scan-level retentions",
+           ylabel="Intensity [no unit]",
+           xlabel="Retention [minute]")
 
 for mz in [57, 239, 408]
     i = mzindex(msm, mz)                        # m/z index in the binned list
@@ -114,14 +114,15 @@ rawrts = rawretentions(msm, unit=u"minute")
 rawscanduration = mean(diff(rawrts))
 for mz in [57, 239, 408]
     i = mzindex(msm, mz)
-    rts_corrected = mzretention.(rawrts;
-                                 mzindex=i,
-                                 mzcount=mzcount(msm),
-                                 dwell=:homogeneous,
-                                 order=:descending,
-                                 scan_interval=rawscanduration,
-                                 retention_ref=:end,
-                                 dwell_ref=:middle)
+    rts_corrected =
+        mzretention.(rawrts;
+                     mzindex=i,
+                     mzcount=mzcount(msm),
+                     dwell=:homogeneous,
+                     order=:descending,
+                     scan_interval=rawscanduration,
+                     retention_ref=:end,
+                     dwell_ref=:middle)
 
     ints = vec(rawintensities(msm)[:, i])
     lines!(ax₂,

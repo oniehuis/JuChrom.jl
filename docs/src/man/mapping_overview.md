@@ -142,7 +142,7 @@ To transform intensities with the Jacobian, use the derivative of the mapping. I
 `ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area, you divide the
 intensity by this slope at the same time point. However, even when intensities are
 reported as unitless, they usually represent counts accumulated over a finite scan
-interval, so the implied unit is typically 1/time. Here we assume the given intensities
+interval, so the implied unit is typically `time^-1`. Here we assume the given intensities
 are counts acquired over a 0.5‑second scan interval, and therefore divide by 0.5 seconds.
 Because the intensities and `d(ri)/dt` must use the same time unit for the division to
 cancel cleanly, we convert the Jacobian to the unit `s^-1`. This is done by specifying the
@@ -152,6 +152,7 @@ input‑domain unit as `u"s"`.
 scantimes = [1802.5, 1803.0, 1803.5]u"s"
 intensities = [1000, 4000, 3500] / 0.5u"s"
 ```
+
 ```@example 1
 dridt = derivmap.(mapper, scantimes, rA_unit=u"s")
 ```
