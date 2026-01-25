@@ -20,9 +20,13 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 5.3u"pA"       # (picoampere)
 ```
 - Attach units to arrays in the same way:
-  - `ret = [1.0, 2.0, 3.0]u"s"`
+```@example 5
+ret = [1.0, 2.0, 3.0]u"s"
+```
 - Convert between compatible units with `uconvert`:
-  - `uconvert(u"minute", 120.0u"s")` → `2.0u"minute"`
+```@example 6
+uconvert(u"minute", 120.0u"s")` → `2.0u"minute"
+```
 - Convert units for every element of a vector with broadcasting:
   - `uconvert.(u"minute", [30.0, 60.0, 90.0]u"s")` → `[0.5, 1.0, 1.5]u"minute"`
 - Remove units when you need raw numbers:
