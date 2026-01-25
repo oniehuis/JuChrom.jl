@@ -19,7 +19,6 @@ page gives a short, package‑focused primer on the syntax you need for JuChrom.
 ```@example 4
 5.3u"pA"       # (picoampere)
 ```
-```
 - Attach units to arrays in the same way:
   - `ret = [1.0, 2.0, 3.0]u"s"`
 - Convert between compatible units with `uconvert`:
