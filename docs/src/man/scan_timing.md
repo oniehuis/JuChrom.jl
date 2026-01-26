@@ -84,7 +84,7 @@ for mz in [57, 239, 408]
     lines!(ax₁,
            rawretentions(msm, unit=u"minute"),
            ints / sum(ints),                    # normalize to a comparable scale
-           label = "m/z = $(mz)")
+           label="m/z = $(mz)")
 end
 axislegend(ax₁; position=:rt)
 save("xic.svg", fig₁)
@@ -129,7 +129,7 @@ for mz in [57, 239, 408]
     lines!(ax₂,
            rts_corrected,
            ints / sum(ints),
-           label = "m/z = $(mz)")
+           label="m/z = $(mz)")
 end
 axislegend(ax₂; position=:rt)
 save("xic_shifted.svg", fig₂)

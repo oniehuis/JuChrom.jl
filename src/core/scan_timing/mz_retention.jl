@@ -35,7 +35,7 @@ The target ion is specified either by index (`mzindex`) or by value (`mzvalue` t
 `mzvalues`), in which case the index is found via `findfirst(==(mzvalue), mzvalues)`. The 
 resolved index refers to the order in which `mzvalues` or `dwellretentions` are provided; 
 when the instrument acquires in descending m/z order but the vectors are stored in ascending 
-order, set `order = :descending` to obtain the correct within-scan position.
+order, set `order=:descending` to obtain the correct within-scan position.
 
 Keyword arguments are interpreted as follows. `mzindex` is a 1-based index of the target m/z 
 in the provided list and is inferred from `mzvalue` and `mzvalues` when omitted. `mzcount` 
