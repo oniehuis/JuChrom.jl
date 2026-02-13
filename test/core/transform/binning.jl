@@ -178,6 +178,28 @@ end
         zero_threshold=1e-6u"s")
 end
 
+@testset "binretentions(msm::MassScanMatrix, bin_edges, variances, rho_lag1)" begin
+    rets = [0.0, 0.5, 1.0] .* u"s"
+    mzs = [100.0, 101.0]
+    ints = [2 4; 6 8; 10 12] .* u"pA"
+    msm = MassScanMatrix(rets, mzs, ints)
+    edges = [0.0, 1.0, 2.0] .* u"s"
+    vars = fill(0.2, size(ints))
+    rho = fill(0.0, length(mzs))
+
+    msm_binned, vars_b = binretentions(msm, edges, vars, rho)
+    @test intensityunit(msm_binned) == u"pA"
+    @test JuChrom.rawintensities(msm_binned) ≈ [4 6; 10 12]
+    @test Unitful.unit(vars_b[1, 1]) == u"pA"^2
+    @test vars_b[1, 1] ≈ 0.1u"pA"^2
+    @test vars_b[2, 2] ≈ 0.2u"pA"^2
+
+    msm_unitless = MassScanMatrix([0.0, 0.5], [100.0], reshape([1.0, 2.0], 2, 1))
+    vars_unitful = fill(0.2u"pA"^2, 2, 1)
+    @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], vars_unitful, 0.0)
+    @test_throws ArgumentError binretentions(msm, edges, vars[1:2, :], rho)
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # binmzvalues
 # ─────────────────────────────────────────────────────────────────────────────

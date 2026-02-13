@@ -437,6 +437,225 @@ function binretentions(
     msm_out, vars
 end
 
+# ─────────────────────────────────────────────────────────────────────────────
+
+"""
+    binretentions(
+        msm::MassScanMatrix, 
+        bin_edges::AbstractVector{<:Number}, 
+        variances::AbstractMatrix{<:Number}, 
+        rho_lag1::Union{AbstractVector{<:Real}, Real};          
+        jacobian_scale=nothing::Union{Nothing, AbstractVector{<:Real}, Function}, 
+        zero_threshold::Number=1e-8, 
+        rho_max::Real=0.8
+    ) -> (msm_binned::MassScanMatrix, var_matrix::Matrix)
+
+Return a binned `MassScanMatrix` and per-bin variances by applying
+[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}))
+to each m/z trace in `msm`, using the provided per-scan variance matrix.
+
+The `variances` matrix must have the same shape as `rawintensities(msm)` and, when
+intensities are unitful, carries squared intensity units (unitless inputs are
+promoted accordingly). Scalar `rho_lag1` inputs are broadcast across m/z columns,
+`jacobian_scale` applies an optional `(f'(t))⁻²` factor per scan, and
+`zero_threshold` is promoted to squared intensity units when needed.
+
+See also
+[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
+[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
+[`vif`](@ref JuChrom.vif).
+"""
+function binretentions(
+    msm::MassScanMatrix,
+    bin_edges::AbstractVector{<:Number},
+    variances::AbstractMatrix{<:Number},
+    rho_lag1::Union{AbstractVector{<:Real}, Real};
+    jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
+    zero_threshold::Number=1e-8,
+    rho_max::Real=0.8)
+
+    # Extract shared views to avoid recomputing getters in loops.
+    rets = retentions(msm)  # RT values (unitful or unitless)
+    ints = rawintensities(msm)
+    n_scans, n_mz = size(ints)
+
+    size(variances) == (n_scans, n_mz) || throw(ArgumentError(
+        "variances size $(size(variances)) ≠ ($(n_scans), $(n_mz))"))
+
+    intensity_unit = intensityunit(msm)
+    has_intensity_unit = intensity_unit !== nothing
+    intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
+    variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
+    variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
+
+    function attach_variance_units(val)
+        if has_intensity_unit
+            if isunitful(val)
+                Unitful.dimension(val) == variance_dimension || throw(
+                    Unitful.DimensionError(val, variance_quantity))
+                val
+            else
+                val * variance_quantity
+            end
+        else
+            isunitful(val) && throw(ArgumentError(
+                "msm intensities are unitless but variances have units"))
+            val
+        end
+    end
+
+    attach_intensity_units(vec) = has_intensity_unit ? (vec .* intensity_quantity) : vec
+    strip_intensity_units(vec) = has_intensity_unit ?
+        Unitful.ustrip.(Base.RefValue(intensity_unit), vec) : vec
+
+    zero_threshold_eff = zero_threshold
+    if has_intensity_unit
+        if isunitful(zero_threshold)
+            Unitful.dimension(zero_threshold) == variance_dimension || throw(
+                Unitful.DimensionError(zero_threshold, variance_quantity))
+        else
+            zero_threshold_eff = zero_threshold * variance_quantity
+        end
+    else
+        isunitful(zero_threshold) && throw(ArgumentError(
+            "zero_threshold has units but msm intensities are unitless"))
+    end
+
+    # Broadcast scalar lag-1 correlations across columns if needed.
+    rhos = rho_lag1 isa AbstractVector ? rho_lag1 : fill(rho_lag1, n_mz)
+    length(rhos) == n_mz || throw(ArgumentError(
+        "rho_lag1 length $(length(rhos)) ≠ n_mz $n_mz"))
+
+    # Build the Jacobian scaling factor J^{-2} once (vector or callable input).
+    Jinv² = nothing
+    if jacobian_scale === nothing
+        Jinv² = nothing
+    elseif jacobian_scale isa AbstractVector
+        length(jacobian_scale) == n_scans || throw(ArgumentError(
+            "jacobian_scale vector must match number of scans"))
+        Tj = typeof(inv(jacobian_scale[1])^2)
+        Jinv² = Vector{Tj}(undef, n_scans)
+        @inbounds for k in 1:n_scans
+            J = jacobian_scale[k]
+            abs(J) > 0 || throw(ArgumentError("jacobian_scale contains zero at scan $k"))
+            Jinv²[k] = inv(J)^2
+        end
+    else
+        J₁ = jacobian_scale(rets[1])
+        abs(J₁) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan 1"))
+        Tj = typeof(inv(J₁)^2)
+        Jinv² = Vector{Tj}(undef, n_scans)
+        Jinv²[1] = inv(J₁)^2
+        @inbounds for k in 2:n_scans
+            J = jacobian_scale(rets[k])
+            abs(J) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan $k"))
+            Jinv²[k] = inv(J)^2
+        end
+    end
+
+    function prepare_variance_column(col_view)
+        first_val = col_view[1]
+        col = if has_intensity_unit
+            if isunitful(first_val)
+                Unitful.dimension(first_val) == variance_dimension || throw(
+                    Unitful.DimensionError(first_val, variance_quantity))
+                col_view
+            else
+                col_view .* variance_quantity
+            end
+        else
+            isunitful(first_val) && throw(ArgumentError(
+                "msm intensities are unitless but variances have units"))
+            col_view
+        end
+
+        if Jinv² === nothing
+            return col
+        end
+
+        T = typeof(col[1] * Jinv²[1])
+        out = Vector{T}(undef, n_scans)
+        @inbounds for k in 1:n_scans
+            out[k] = col[k] * Jinv²[k]
+        end
+        out
+    end
+
+    # First column: bin with provided variances.
+    first_ints_view = @view ints[:, 1]
+    first_vars_view = @view variances[:, 1]
+    first_vars = prepare_variance_column(first_vars_view)
+    first_ints_for_scalar = attach_intensity_units(first_ints_view)
+    bin_centers, first_bin_ints, first_bin_vars = binretentions(
+        rets, first_ints_for_scalar, bin_edges, first_vars;
+        zero_threshold=zero_threshold_eff, rho_lag1=rhos[1], rho_max=rho_max)
+
+    n_bins = length(bin_centers)
+    raw_first_bin_ints = strip_intensity_units(first_bin_ints)
+    im = Matrix{eltype(raw_first_bin_ints)}(undef, n_bins, n_mz)
+    vars = similar(first_bin_vars, n_bins, n_mz)
+    @inbounds begin
+        im[:, 1] .= raw_first_bin_ints  # seed matrices with first m/z results
+        vars[:, 1] .= first_bin_vars
+    end
+
+    # Remaining m/z columns
+    @inbounds for col in 2:n_mz
+        mzints = @view ints[:, col]
+        mzvars = prepare_variance_column(@view variances[:, col])
+        mzints_for_scalar = attach_intensity_units(mzints)
+        _, bin_ints, bin_vars = binretentions(
+            rets, mzints_for_scalar, bin_edges, mzvars;
+            zero_threshold=zero_threshold_eff, rho_lag1=rhos[col], rho_max=rho_max)
+
+        raw_bin_ints = strip_intensity_units(bin_ints)
+        im[:, col]   .= raw_bin_ints
+        vars[:, col] .= bin_vars
+    end
+
+    # Convert bin centers back to raw numeric retentions + unit metadata.
+    raw_retentions, retentionunit = (isunitful(first(bin_centers)) ? 
+        (Unitful.ustrip.(bin_centers), Unitful.unit(first(bin_centers))) : (bin_centers, 
+        nothing))
+
+    # Build the output matrix, cloning metadata to avoid side effects.
+    msm_out = MassScanMatrix(
+        raw_retentions,
+        retentionunit,
+        deepcopy(rawmzvalues(msm)),
+        mzunit(msm),
+        im,
+        intensityunit(msm),
+        level=deepcopy(level(msm)),
+        instrument=deepcopy(instrument(msm)),
+        acquisition=deepcopy(acquisition(msm)),
+        user=deepcopy(user(msm)),
+        sample=deepcopy(sample(msm)),
+        extras=deepcopy(extras(msm))
+    )
+
+    msm_out, vars
+end
+
+function binretentions(
+    msm::MassScanMatrix,
+    bin_edges::AbstractVector{<:Number},
+    variances::AbstractMatrix{<:Number};
+    rho_lag1::Union{AbstractVector{<:Real}, Real}=0.0,
+    jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
+    zero_threshold::Number=1e-8,
+    rho_max::Real=0.8)
+
+    binretentions(
+        msm,
+        bin_edges,
+        variances,
+        rho_lag1;
+        jacobian_scale=jacobian_scale,
+        zero_threshold=zero_threshold,
+        rho_max=rho_max)
+end
+
 # ── binmzvalues ───────────────────────────────────────────────────────────────────────────
 
 """
