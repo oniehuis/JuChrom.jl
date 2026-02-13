@@ -206,6 +206,10 @@ end
 
     vars_unitful_ok = fill(0.2u"pA"^2, size(ints))
     msm_binned_base, vars_base = binretentions(msm, edges, vars_unitful_ok, rho)
+    msm_binned_zth, vars_zth = binretentions(msm, edges, vars_unitful_ok, rho;
+        zero_threshold=1e-6u"pA"^2)
+    @test JuChrom.rawintensities(msm_binned_zth) ≈ JuChrom.rawintensities(msm_binned_base)
+    @test vars_zth ≈ vars_base
     msm_binned_vec, vars_vec = binretentions(msm, edges, vars_unitful_ok, rho;
         jacobian_scale=fill(2.0, length(rets)))
     @test JuChrom.rawintensities(msm_binned_vec) ≈ JuChrom.rawintensities(msm_binned_base)
