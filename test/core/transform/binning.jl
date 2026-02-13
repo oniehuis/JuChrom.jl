@@ -176,6 +176,11 @@ end
 
     @test_throws Unitful.DimensionError binretentions(msm, edges, params, rho;
         zero_threshold=1e-6u"s")
+
+    msm_binned_ok, vars_ok = binretentions(msm, edges, params, rho;
+        zero_threshold=1e-6u"pA"^2)
+    @test intensityunit(msm_binned_ok) == u"pA"
+    @test all(Unitful.unit.(vars_ok[:, 1]) .== u"pA"^2)
 end
 
 @testset "binretentions(msm::MassScanMatrix, bin_edges, variances, rho_lag1)" begin
@@ -198,6 +203,21 @@ end
     vars_unitful = fill(0.2u"pA"^2, 2, 1)
     @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], vars_unitful, 0.0)
     @test_throws ArgumentError binretentions(msm, edges, vars[1:2, :], rho)
+
+    vars_unitful_ok = fill(0.2u"pA"^2, size(ints))
+    msm_binned_base, vars_base = binretentions(msm, edges, vars_unitful_ok, rho)
+    msm_binned_vec, vars_vec = binretentions(msm, edges, vars_unitful_ok, rho;
+        jacobian_scale=fill(2.0, length(rets)))
+    @test JuChrom.rawintensities(msm_binned_vec) ≈ JuChrom.rawintensities(msm_binned_base)
+    @test vars_vec ≈ vars_base ./ 4
+
+    msm_binned_fun, vars_fun = binretentions(msm, edges, vars_unitful_ok, rho;
+        jacobian_scale=_ -> 2.0)
+    @test vars_fun ≈ vars_base ./ 4
+
+    msm_binned_kw, vars_kw = binretentions(msm, edges, vars_unitful_ok;
+        rho_lag1=rho, jacobian_scale=fill(2.0, length(rets)))
+    @test vars_kw ≈ vars_base ./ 4
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
