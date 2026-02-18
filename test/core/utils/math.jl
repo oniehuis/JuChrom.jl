@@ -41,6 +41,15 @@ const ATOL = 1e-8  # Tolerance for floating point comparisons
 
     # Works with integers too
     @test isapprox(cosdis([1,2,3], [1,2,3], false), 0.0; atol=ATOL)
+
+    # Weighted variant dispatches on weight vector
+    x = [1.0, 2.0]; y = [3.0, 4.0]; w = [1.0, 0.0]
+    @test isapprox(cosdis(x, y, w, false), 0.0; atol=ATOL)
+    @test isapprox(cosdis(x, y, ones(2), false), cosdis(x, y, false); atol=ATOL)
+
+    # Length checks
+    @test_throws DimensionMismatch cosdis([1.0, 2.0], [1.0], false)
+    @test_throws DimensionMismatch cosdis([1.0, 2.0], [1.0, 2.0], [1.0], false)
 end
 
 # ── cossim ───────────────────────────────────────────────────────────────────
@@ -75,6 +84,15 @@ end
 
     # Works with integers too
     @test isapprox(cossim([1,2,3], [1,2,3], false), 1.0; atol=ATOL)
+
+    # Weighted variant dispatches on weight vector
+    x = [1.0, 2.0]; y = [3.0, 4.0]; w = [1.0, 0.0]
+    @test isapprox(cossim(x, y, w, false), 1.0; atol=ATOL)
+    @test isapprox(cossim(x, y, ones(2), false), cossim(x, y, false); atol=ATOL)
+
+    # Length checks
+    @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0], false)
+    @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0, 2.0], [1.0], false)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

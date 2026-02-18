@@ -44,6 +44,25 @@ function cosdis(
     positive_only ? clamp(dist, 0.0, 1.0) : clamp(dist, 0.0, 2.0)
 end
 
+"""
+    cosdis(x::AbstractVector{<:Real}, y::AbstractVector{<:Real},
+           weights::AbstractVector{<:Real}, positive_only::Bool=true) -> Float64
+
+Compute the weighted cosine distance between two real-valued vectors `x` and `y`.
+Weights are applied element-wise to both vectors before computing distance.
+"""
+function cosdis(
+    x::AbstractVector{<:Real},
+    y::AbstractVector{<:Real},
+    weights::AbstractVector{<:Real},
+    positive_only::Bool=true)::Float64
+    
+    sim = cossim(x, y, weights, positive_only)
+    dist = 1.0 - sim
+
+    positive_only ? clamp(dist, 0.0, 1.0) : clamp(dist, 0.0, 2.0)
+end
+
 # ── cossim ────────────────────────────────────────────────────────────────────────────────
 
 """
@@ -84,6 +103,10 @@ function cossim(
     y::AbstractVector{<:Real},
     positive_only::Bool=true)::Float64
 
+    if length(x) ≠ length(y)
+        throw(DimensionMismatch("x and y must have the same length"))
+    end
+
     norm_x = norm(x, 2)
     norm_y = norm(y, 2)
 
@@ -95,6 +118,30 @@ function cossim(
     cos_sim = dot(x, y) / (norm_x * norm_y)
 
     positive_only ? clamp(cos_sim, 0.0, 1.0) : clamp(cos_sim, -1.0, 1.0)
+end
+
+"""
+    cossim(x::AbstractVector{<:Real}, y::AbstractVector{<:Real},
+           w::AbstractVector{<:Real}, positive_only::Bool=true) -> Float64
+
+Compute the weighted cosine similarity between two real-valued vectors `x` and `y`.
+Weights are applied element-wise to both vectors before computing similarity.
+"""
+function cossim(
+    x::AbstractVector{<:Real},
+    y::AbstractVector{<:Real},
+    weights::AbstractVector{<:Real},
+    positive_only::Bool=true)::Float64
+
+    if length(x) ≠ length(y)
+        throw(DimensionMismatch("x and y must have the same length"))
+    end
+
+    if length(weights) ≠ length(x)
+        throw(DimensionMismatch("weights must have the same length as x and y"))
+    end
+
+    cossim(weights .* x, weights .* y, positive_only)
 end
 
 # ── inverse_minmax_scale ──────────────────────────────────────────────────────────────────
