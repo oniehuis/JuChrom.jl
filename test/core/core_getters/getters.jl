@@ -57,6 +57,12 @@ const METADATA_DICT = Dict("extra data 1" => "1", "extra data 2" => 2)
 const CHROMSCANS = [CHROMSCAN, CHROMSCAN2]
 const MASSSCANS = [MASSSCAN, MASSSCAN2]
 
+# MassSpectrum helpers
+const MS_MZ = [100.0, 150.0]
+const MS_INTS = [10.0, 20.0]
+const MASS_SPECTRUM = MassSpectrum(MS_MZ, MS_INTS; attrs=(source="test",))
+const MASS_SPECTRUM_UNITFUL = MassSpectrum(MS_MZ .* u"Th", MS_INTS .* u"pA")
+
 # UPDATED: use concrete series constructors
 const CSS = ChromScanSeries(
     CHROMSCANS;
@@ -128,6 +134,15 @@ end
     @test attrs(MASSSCAN) == METADATA_TUPLE
 
     # Error on invalid `attrs` type for getter
+@test_throws MethodError attrs("invalid type")
+@test_throws MethodError attrs([1, 2, 3])
+@test_throws MethodError attrs(1.0)
+@test_throws MethodError attrs(nothing)
+end
+
+@testset "attrs(ms::AbstractMassSpectrum)" begin
+    @test attrs(MASS_SPECTRUM) == (source="test",)
+
     @test_throws MethodError attrs("invalid type")
     @test_throws MethodError attrs([1, 2, 3])
     @test_throws MethodError attrs(1.0)
@@ -197,6 +212,19 @@ end
     @test intensities(MASSSCAN) == INTS
 
     # Error on invalid `intensities` type for getter
+@test_throws MethodError intensities("invalid type")
+@test_throws MethodError intensities([1, 2, 3])
+@test_throws MethodError intensities(1.0)
+@test_throws MethodError intensities(nothing)
+end
+
+@testset "intensities(ms::AbstractMassSpectrum)" begin
+    @test intensities(MASS_SPECTRUM) == MS_INTS
+    @test_throws ArgumentError intensities(MASS_SPECTRUM; unit=u"pA")
+
+    @test intensities(MASS_SPECTRUM_UNITFUL) == MS_INTS .* u"pA"
+    @test intensities(MASS_SPECTRUM_UNITFUL; unit=u"nA") == (MS_INTS .* 1e-3)u"nA"
+
     @test_throws MethodError intensities("invalid type")
     @test_throws MethodError intensities([1, 2, 3])
     @test_throws MethodError intensities(1.0)
@@ -318,6 +346,15 @@ end
     @test mzcount(MASSSCAN) == length(MZS)
 
     # Error on invalid `mzcount` type for getter
+@test_throws MethodError mzcount("invalid type")
+@test_throws MethodError mzcount([1, 2, 3])
+@test_throws MethodError mzcount(1.0)
+@test_throws MethodError mzcount(nothing)
+end
+
+@testset "mzcount(ms::AbstractMassSpectrum)" begin
+    @test mzcount(MASS_SPECTRUM) == length(MS_MZ)
+
     @test_throws MethodError mzcount("invalid type")
     @test_throws MethodError mzcount([1, 2, 3])
     @test_throws MethodError mzcount(1.0)
@@ -335,10 +372,43 @@ end
     @test mzvalues(MASSSCAN) == MZS
 
     # Error on invalid `mzvalues` type for getter
+@test_throws MethodError mzvalues("invalid type")
+@test_throws MethodError mzvalues([1, 2, 3])
+@test_throws MethodError mzvalues(1.0)
+@test_throws MethodError mzvalues(nothing)
+end
+
+@testset "mzvalues(ms::AbstractMassSpectrum)" begin
+    @test mzvalues(MASS_SPECTRUM) == MS_MZ
+    @test_throws ArgumentError mzvalues(MASS_SPECTRUM; unit=u"Th")
+
+    @test mzvalues(MASS_SPECTRUM_UNITFUL) == MS_MZ .* u"Th"
+    @test mzvalues(MASS_SPECTRUM_UNITFUL; unit=u"kTh") == (MS_MZ .* 1e-3)u"kTh"
+
     @test_throws MethodError mzvalues("invalid type")
     @test_throws MethodError mzvalues([1, 2, 3])
     @test_throws MethodError mzvalues(1.0)
     @test_throws MethodError mzvalues(nothing)
+end
+
+@testset "mzunit(ms::AbstractMassSpectrum)" begin
+    @test mzunit(MASS_SPECTRUM) === nothing
+    @test mzunit(MASS_SPECTRUM_UNITFUL) == u"Th"
+
+    @test_throws MethodError mzunit("invalid type")
+    @test_throws MethodError mzunit([1, 2, 3])
+    @test_throws MethodError mzunit(1.0)
+    @test_throws MethodError mzunit(nothing)
+end
+
+@testset "intensityunit(ms::AbstractMassSpectrum)" begin
+    @test intensityunit(MASS_SPECTRUM) === nothing
+    @test intensityunit(MASS_SPECTRUM_UNITFUL) == u"pA"
+
+    @test_throws MethodError intensityunit("invalid type")
+    @test_throws MethodError intensityunit([1, 2, 3])
+    @test_throws MethodError intensityunit(1.0)
+    @test_throws MethodError intensityunit(nothing)
 end
 
 # ── rawmzvalues ──────────────────────────────────────────────────────────────

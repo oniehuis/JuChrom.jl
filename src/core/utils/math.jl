@@ -36,7 +36,7 @@ true
 function cosdis(
     x::AbstractVector{<:Real},
     y::AbstractVector{<:Real}, 
-    positive_only::Bool = true)::Float64
+    positive_only::Bool=true)::Float64
 
     sim = cossim(x, y, positive_only)
     dist = 1.0 - sim
@@ -87,14 +87,17 @@ Cosine similarity is defined as:
 
 # Examples
 ```jldoctest
-julia> x = [1.0, 2.0, 3.0];
-
-julia> y = [4.0, 5.0, 6.0];
+julia> x = [1.0, 2.0, 3.0]; y = [4.0, 5.0, 6.0];
 
 julia> isapprox(cossim(x, y), 0.9746318461970762; atol=1e-12)
 true
 
-julia> isapprox(cossim(x, y, false), 0.9746318461970762; atol=1e-12)
+julia> x = [1.0, 1.0, 1.0]; y = [-1.0, -1.0, 0.0];
+
+julia> isapprox(cossim(x, y), 0.0; atol=1e-12)
+true
+
+julia> isapprox(cossim(x, y, false), -0.8164965809277259; atol=1e-12)
 true
 ```
 """
@@ -125,7 +128,40 @@ end
            w::AbstractVector{<:Real}, positive_only::Bool=true) -> Float64
 
 Compute the weighted cosine similarity between two real-valued vectors `x` and `y`.
-Weights are applied element-wise to both vectors before computing similarity.
+
+Weights are applied element-wise to both vectors before computing similarity. The 
+similarity is defined as:
+
+    dot(w .* x, w .* y) / (‖w .* x‖ * ‖w .* y‖)
+
+# Arguments
+- `x`, `y`: Vectors of real numbers.
+- `w`: Weights applied element-wise to `x` and `y`.
+- `positive_only`: If `true` (default), clamps similarity to the range [0, 1], assuming 
+  non-negative input vectors (e.g., intensity spectra). If `false`, similarity may range 
+  in [-1, 1].
+
+# Returns
+- A `Float64` value representing the weighted cosine similarity between `x` and `y`.
+- Returns `NaN` if either weighted vector is a zero vector (norm is zero).
+
+# Examples
+```jldoctest
+julia> x = [1.0, 2.0, 3.0]; y = [4.0, 5.0, 6.0];
+
+julia> w = [1.0, 0.5, 2.0];
+
+julia> isapprox(cossim(x, y), 0.9746318461970762; atol=1e-12)
+true
+
+julia> x = [1.0, 1.0, 1.0]; y = [-1.0, -1.0, 0.0];
+
+julia> isapprox(cossim(x, y, w), 0.0; atol=1e-12)
+true
+
+julia> isapprox(cossim(x, y, w, false), -0.4879500364742666; atol=1e-12)
+true
+```
 """
 function cossim(
     x::AbstractVector{<:Real},
@@ -141,7 +177,32 @@ function cossim(
         throw(DimensionMismatch("weights must have the same length as x and y"))
     end
 
-    cossim(weights .* x, weights .* y, positive_only)
+    if any(isnan, weights)
+        throw(ArgumentError("weights vector contains NaN values"))
+    end
+
+    if any(!isfinite, weights)
+        throw(ArgumentError("weights vector contains Inf values"))
+    end
+
+    wx = weights .* x
+    wy = weights .* y
+
+    if any(!isfinite, weights)
+        println("Warning: NaN detected in norm_x vector")
+    end
+    if any(!isfinite, weights)
+        println("Warning: NaN detected in norm_y vector")
+    end
+
+    # Avoid division by zero when weights zero-out the vectors
+    norm_x = max(norm(wx, 2), eps(Float64))
+    norm_y = max(norm(wy, 2), eps(Float64))
+
+
+    cos_sim = dot(wx, wy) / (norm_x * norm_y)
+
+    positive_only ? clamp(cos_sim, 0.0, 1.0) : clamp(cos_sim, -1.0, 1.0)
 end
 
 # ── inverse_minmax_scale ──────────────────────────────────────────────────────────────────
@@ -229,6 +290,9 @@ function localmaxima(values::AbstractVector{<:Real})
     end
     indices
 end
+
+localmaxima(values::AbstractVector{<:Unitful.AbstractQuantity}) = 
+    localmaxima(Unitful.ustrip.(values))
 
 # ── maxdecimals ───────────────────────────────────────────────────────────────────────────
 

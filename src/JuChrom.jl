@@ -55,12 +55,14 @@ include("core/utils/collections.jl")
 include("core/utils/math.jl")
 include("core/utils/units.jl")
 include("core/deconvolution/unimodalfit.jl")
+include("core/massspectrum/massspectrum.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
 export AbstractMassScan
 export AbstractMassScanSeries
 export AbstractMassScanMatrix
+export AbstractMassSpectrum
 export AbstractScan
 export AbstractScanSeries
 export ChromScan
@@ -68,6 +70,7 @@ export ChromScanSeries
 export MassScan
 export MassScanMatrix
 export MassScanSeries
+export MassSpectrum
 export OptimizationError
 export QuadVarParams
 export QuadVarFit

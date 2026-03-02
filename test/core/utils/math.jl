@@ -89,6 +89,7 @@ end
     x = [1.0, 2.0]; y = [3.0, 4.0]; w = [1.0, 0.0]
     @test isapprox(cossim(x, y, w, false), 1.0; atol=ATOL)
     @test isapprox(cossim(x, y, ones(2), false), cossim(x, y, false); atol=ATOL)
+    @test cossim(x, y, zeros(2), false) == 0.0
 
     # Length checks
     @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0], false)

@@ -21,6 +21,7 @@ using JuChrom: tune_lambda_for_monotonic_spline
 
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
+const TEST_LAMBDA = 1.0
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Unit tests
@@ -58,6 +59,7 @@ const MOIU = MOI.Utilities
             rB_pred_min, rB_pred_max,
             rB_pred_norm_min, rB_pred_norm_max,
             knots, coefs, spline,
+            TEST_LAMBDA,
             Dict{String, Any}()
         )
     end
@@ -125,6 +127,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -198,6 +201,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -264,6 +268,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline, 
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -354,6 +359,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dA = derivinvmap(rmA_unit, 20.0; rA_unit=u"s", rB_unit=nothing)
@@ -369,6 +375,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dB = derivinvmap(rmB_unit, 20.0u"Th"; rA_unit=nothing, rB_unit=u"Th")
@@ -407,6 +414,7 @@ end
             rB_pred_min, rB_pred_max,
             rB_pred_norm_min, rB_pred_norm_max,
             knots, coefs, spline,
+            TEST_LAMBDA,
             Dict{String, Any}()
         )
     end
@@ -460,6 +468,7 @@ end
         rmU.rB_pred_min, rmU.rB_pred_max,
         rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
         rmU.knots, rmU.coefs, rmU.spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dA = derivmap(rmA_unit, 0.5u"minute"; rA_unit=u"s", rB_unit=nothing)
@@ -475,6 +484,7 @@ end
         rmU.rB_pred_min, rmU.rB_pred_max,
         rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
         rmU.knots, rmU.coefs, rmU.spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dB = derivmap(rmB_unit, 0.5; rA_unit=nothing, rB_unit=u"Th")
@@ -510,6 +520,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         copy(meta),
     )
 
@@ -545,7 +556,7 @@ end
     @test yA isa AbstractQuantity
     @test Unitful.unit(yA) == u"minute"
     @test isfinite(ustrip(yA))
-    @test yA ≈ 5.312425320906996u"minute" atol=1e-10u"minute"  # regression target from docs
+    @test yA ≈ 5.265825286030818u"minute" atol=1e-10u"minute"  # regression target from docs
 
     # Unit conversion
     yA_s = invmap(rm, xB; unit=u"s")
@@ -558,7 +569,7 @@ end
     ysA = invmap.(rm, xsB)
     @test all(yi -> yi isa AbstractQuantity && Unitful.unit(yi) == u"minute", ysA)
     @test isfinite(sum(ustrip, ysA))
-    @test ysA ≈ [3.2283166885897936, 8.08686182716771]u"minute" atol=1e-10u"minute"
+    @test ysA ≈ [3.2261000929188315, 8.238213271274404]u"minute" atol=1e-10u"minute"
 
     # Extrapolation below/above domain with warn=true (just exercise the branch)
     with_logger(SimpleLogger(devnull, Logging.Warn)) do
@@ -616,6 +627,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -633,6 +645,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -668,6 +681,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -685,6 +699,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -720,6 +735,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -730,6 +746,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -773,6 +790,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}(),
     )
 
@@ -783,6 +801,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -823,6 +842,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}(),
     )
 
@@ -847,7 +867,7 @@ end
         rA, nothing, rA_min, rA_max, rA_norm_min, rA_norm_max,
         rB, nothing, rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String, Any}()
+        knots, coefs, spline, TEST_LAMBDA, Dict{String, Any}()
     )
     @test_throws ArgumentError rawapplymap(rm0, 0.4u"minute")
 end
@@ -880,6 +900,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -912,6 +933,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dA_min = rawderivinvmap(rmA_unit, 20.0; rA_unit=u"minute", rB_unit=nothing)
@@ -927,6 +949,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dB_th = rawderivinvmap(rmB_unit, 20.0u"Th"; rA_unit=nothing, rB_unit=u"Th")
@@ -938,7 +961,7 @@ end
         rA, nothing, rA_min, rA_max, rA_norm_min, rA_norm_max,
         rB, nothing, rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String, Any}()
+        knots, coefs, spline, TEST_LAMBDA, Dict{String, Any}()
     )
     @test_throws ArgumentError rawderivinvmap(rm0, 20.0u"Th")
     d0 = rawderivinvmap(rm0, 20.0)
@@ -979,6 +1002,7 @@ end
             rB_pred_min, rB_pred_max,
             rB_pred_norm_min, rB_pred_norm_max,
             knots, coefs, spline,
+            TEST_LAMBDA,
             Dict{String, Any}()
         )
     end
@@ -1013,6 +1037,7 @@ end
         rmU.rB_pred_min, rmU.rB_pred_max,
         rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
         rmU.knots, rmU.coefs, rmU.spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dA_min = rawderivmap(rmA_unit, 0.5u"minute"; rA_unit=u"minute", rB_unit=nothing)
@@ -1028,6 +1053,7 @@ end
         rmU.rB_pred_min, rmU.rB_pred_max,
         rmU.rB_pred_norm_min, rmU.rB_pred_norm_max,
         rmU.knots, rmU.coefs, rmU.spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
     dB_th = rawderivmap(rmB_unit, 0.5; rA_unit=nothing, rB_unit=u"Th")
@@ -1061,6 +1087,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1085,7 +1112,7 @@ end
         rA, nothing, rA_min, rA_max, rA_norm_min, rA_norm_max,
         rB, nothing, rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String, Any}()
+        knots, coefs, spline, TEST_LAMBDA, Dict{String, Any}()
     )
     @test_throws ArgumentError rawinvmap(rm0, 18.0u"Th")
 end
@@ -1117,6 +1144,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -1134,6 +1162,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -1169,6 +1198,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -1186,6 +1216,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String,Any}(),
     )
 
@@ -1293,6 +1324,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1311,6 +1343,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1348,6 +1381,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1366,6 +1400,7 @@ end
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1400,7 +1435,7 @@ end
         rB, nothing,
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String,Any}(),
+        knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
 
     # Unitful mapper → returns the A-unit
@@ -1413,7 +1448,7 @@ end
         rB, nothing,
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String,Any}(),
+        knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
     @test retentionunit_A(rmA0) === nothing
 end
@@ -1442,7 +1477,7 @@ end
         rB, u"Th",
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String,Any}(),
+        knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
 
     # Unitful mapper → returns the B-unit
@@ -1455,7 +1490,7 @@ end
         rB, nothing,
         rB_min, rB_max, rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
-        knots, coefs, spline, Dict{String,Any}(),
+        knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
     @test retentionunit_B(rmB0) === nothing
 end
@@ -1487,6 +1522,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}()
     )
 
@@ -1522,6 +1558,7 @@ end
             rB_min, rB_max, rB_pred_min, rB_pred_max,
             rB_pred_norm_min, rB_pred_norm_max,
             knots, coefs, spline,
+            TEST_LAMBDA,
             Dict{String, Any}("tag" => "rm$(rB_shift)")
         )
     end
@@ -1548,6 +1585,7 @@ end
             rB_min, rB_max, rB_pred_min, rB_pred_max,
             rB_pred_norm_min, rB_pred_norm_max,
             knots, coefs, spline,
+            TEST_LAMBDA,
             Dict{String, Any}("tag" => "rm$(rB_shift)")
         )
     end
@@ -1656,8 +1694,7 @@ end
     rA = [1.0, 2.0, 3.0]
     rB = [10.0, 20.0, 30.0]
     err = try
-        fitmap(rA, rB; optimizer_factory=failing_optimizer, max_lambda_iters=1,
-               monotonicity_grid_size=5)
+        fitmap(rA, rB; optimizer_factory=failing_optimizer, max_lambda_iters=1)
         nothing
     catch e
         e
@@ -1692,6 +1729,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}("source" => "unit test", "note" => "demo"),
     )
 
@@ -1729,6 +1767,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}(),
     )
     su = sprint(io -> show(io, rm_u))
@@ -1744,6 +1783,7 @@ end
         rB_pred_min, rB_pred_max,
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline,
+        TEST_LAMBDA,
         Dict{String, Any}(
             "nested" => Dict("a" => 1, "b" => 2),
             "long" => repeat("x", 80),

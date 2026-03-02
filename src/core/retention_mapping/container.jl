@@ -39,13 +39,14 @@ See also
 abstract type AbstractRetentionMapper{A, B} end
 
 """
-    RetentionMapper{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17} <: AbstractRetentionMapper{T2, T8}
+    RetentionMapper{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18} <: AbstractRetentionMapper{T2, T8}
 
 Concrete container for a fitted monotone mapping between two retention domains.
 
 `T2` and `T8` encode the input and output unit types (each a `Unitful.Units` subtype
 or `Nothing`). The remaining type parameters capture the stored numeric arrays,
-normalization bounds, and spline coefficients used by the mapping functions.
+normalization bounds, spline coefficients, and the smoothing parameter used by
+the mapping functions.
 
 Fields include 
 `rA::AbstractVector{<:Real}` – the raw numeric calibration data values from the input domain,
@@ -66,7 +67,8 @@ Fields include
   where `rB_pred_norm = (rB_pred - rB_min) / (rB_max - rB_min)`,
 `knots::AbstractVector{<:Real}` – the B-spline knot sequence,
 `coefs::AbstractVector{<:Real}` – the spline coefficients,
-`spline::Spline` – the fitted spline object, and
+`spline::Spline` – the fitted spline object,
+`lambda::Union{Nothing, Real}` – the smoothing parameter used in fitting (or `nothing` if unknown), and
 `extras::Dict{String, Any}` – a metadata dictionary associated with the retention mapper.
 
 See also
@@ -114,6 +116,7 @@ struct RetentionMapper{
     T15<:AbstractVector{<:Real},
     T16<:AbstractVector{<:Real},
     T17<:Spline,
+    T18<:Union{Nothing, Real},
     } <: AbstractRetentionMapper{T2, T8}
 
     rA::T1
@@ -133,6 +136,7 @@ struct RetentionMapper{
     knots::T15
     coefs::T16
     spline::T17
+    lambda::T18
     extras::Dict{String, Any}
 end
 

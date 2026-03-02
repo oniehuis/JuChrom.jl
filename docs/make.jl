@@ -44,6 +44,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/scans.md",
                     "man/scanseries.md",
                     "man/scanmatrices.md",
+                    "man/massspectra.md",
                 ],
                 "Units and Quantities" => "man/units_quantities.md",
                 "Loaders" => Any[

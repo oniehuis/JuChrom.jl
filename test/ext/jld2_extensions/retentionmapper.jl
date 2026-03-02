@@ -38,6 +38,7 @@ end
     @test retentions_B(rmapper2) ≈ retentions_B(rmapper)
     @test rawmapmin(rmapper2) ≈ rawmapmin(rmapper)
     @test rawmapmax(rmapper2) ≈ rawmapmax(rmapper)
+    @test rmapper2.lambda ≈ rmapper.lambda
 end
 
 @testset "RetentionMapper JLD2 roundtrip (unitful)" begin
@@ -51,6 +52,7 @@ end
     @test retentions_B(rmapper2) ≈ retentions_B(rmapper)
     @test rawmapmin(rmapper2; unit=u"s") ≈ rawmapmin(rmapper; unit=u"s")
     @test rawmapmax(rmapper2; unit=u"s") ≈ rawmapmax(rmapper; unit=u"s")
+    @test rmapper2.lambda ≈ rmapper.lambda
 end
 
 end  # module TestRetentionMapper

@@ -86,14 +86,14 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th";
        mapper = fitmap(retention_times, retention_indices);
 
-julia> applymap(mapper, 5.0u"minute") ≈ 338.71144090340465u"Th"
+julia> applymap(mapper, 5.0u"minute") ≈ 339.9115893714841u"Th"
 true
 
-julia> applymap(mapper, 0.5u"minute", warn=true) ≈ 44.68816899287087u"Th"
+julia> applymap(mapper, 0.5u"minute", warn=true) ≈ 44.73840296648206u"Th"
 [ Info: rA=0.5 is below the spline domain boundary (rA_min=1.2): extrapolating left.
 true
 ```
@@ -511,7 +511,7 @@ julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
        mapper = fitmap(retention_times, retention_indices);
 
-julia> derivinvmap(mapper, 350.0u"Th") ≈ 0.02857099580171666u"minute/Th"
+julia> derivinvmap(mapper, 350.0u"Th") ≈ 0.02719301379592236u"minute/Th"
 true
 
 julia> derivinvmap(mapper, 350.0)
@@ -519,14 +519,14 @@ ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. E
 
 julia> test_indices = [250.0, 600.0]u"Th";
 
-julia> derivinvmap.(mapper, test_indices) ≈ [0.015606366497378708, 0.03240806524912834]u"minute/Th"
+julia> derivinvmap.(mapper, test_indices) ≈ [0.015573534538196116, 0.058629056866568434]u"minute/Th"
 true
 
-julia> derivinvmap(mapper, 350.0u"Th", rA_unit=u"s", rB_unit=u"kTh") ≈ 1714.2597481029995u"s/kTh"
+julia> derivinvmap(mapper, 350.0u"Th", rA_unit=u"s", rB_unit=u"kTh") ≈ 1631.5808277553417u"s/kTh"
 true
 
-julia> derivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012655503630152843u"minute/Th"
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+julia> derivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012667035645800725u"minute/Th"
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=99.999951): extrapolating left.
 true
 ```
 """
@@ -677,22 +677,22 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> derivmap(mapper, 5.0u"minute") ≈ 37.42885149584893u"minute^-1"
+julia> derivmap(mapper, 5.0u"minute") ≈ 39.19249391781732u"minute^-1"
 true
 
 julia> test_times = [3.0, 11.0]u"minute";
 
-julia> derivmap.(mapper, test_times) ≈ [67.10235298491122, 34.639458067769134]u"minute^-1"
+julia> derivmap.(mapper, test_times) ≈ [67.31636796962056, 30.886877183843247]u"minute^-1"
 true
 
-julia> derivmap(mapper, 5.0u"minute", rA_unit=u"s") ≈ 0.6238141915974822u"s^-1"
+julia> derivmap(mapper, 5.0u"minute", rA_unit=u"s") ≈ 0.6532082319636221u"s^-1"
 true
 
-julia> derivmap(mapper, 0.8u"minute", warn=true) ≈ 79.01700550402535u"minute^-1"
+julia> derivmap(mapper, 0.8u"minute", warn=true) ≈ 78.94506875659673u"minute^-1"
 [ Info: rA=0.8 is below the spline domain boundary (rA_min=1.2): extrapolating left.
 true
 ```
@@ -766,9 +766,9 @@ function _compute_inverse_mapping(
     # Normalize retention index to [0,1] based on min and max RI of data
     rB_norm = minmax_scale(rB, rm.rB_min, rm.rB_max)
 
-    # Handle extrapolation if input is below spline domain
-    if rB_norm ≤ rm.rB_pred_norm_min
-        if warn && rB_norm ≤ rm.rB_pred_norm_min - domain_boundary_threshold
+    # Extrapolate only when clearly outside the spline domain (beyond threshold)
+    if rB_norm < rm.rB_pred_norm_min - domain_boundary_threshold
+        if warn
             rB_min_str = Printf.@sprintf("%.6f", rm.rB_pred_min)
             @info ("rB=$rB is below the inverse spline domain boundary " *
                    "(rB_min=$rB_min_str): extrapolating left.")
@@ -778,10 +778,8 @@ function _compute_inverse_mapping(
         slope = spline′(rm.rA_norm_min)
         ΔrB_norm = rB_norm - rm.rB_pred_norm_min
         rA_norm = rm.rA_norm_min + ΔrB_norm / slope
-    
-    # Handle extrapolation if input is above spline domain
-    elseif rB_norm ≥ rm.rB_pred_norm_max
-        if warn && rB_norm ≥ rm.rB_pred_norm_max + domain_boundary_threshold
+    elseif rB_norm > rm.rB_pred_norm_max + domain_boundary_threshold
+        if warn
             rB_max_str = Printf.@sprintf("%.6f", rm.rB_pred_max)
             @info ("rB=$rB is above the inverse spline domain boundary " *
                    "(rB_max=$rB_max_str): extrapolating right.")
@@ -792,9 +790,16 @@ function _compute_inverse_mapping(
         ΔrB_norm = rB_norm - rm.rB_pred_norm_max
         rA_norm = rm.rA_norm_max + ΔrB_norm / slope
     else
-        # If within domain, use root finding (bisection) to invert spline
-        g(x) = rm.spline(x) - rB_norm
-        rA_norm = find_zero(g, (rm.rA_norm_min, rm.rA_norm_max), Bisection(), tol=tol)
+        # Inside or very close to the boundary: clamp to boundary if needed,
+        # otherwise use root finding (bisection) to invert the spline.
+        if rB_norm ≤ rm.rB_pred_norm_min
+            rA_norm = rm.rA_norm_min
+        elseif rB_norm ≥ rm.rB_pred_norm_max
+            rA_norm = rm.rA_norm_max
+        else
+            g(x) = rm.spline(x) - rB_norm
+            rA_norm = find_zero(g, (rm.rA_norm_min, rm.rA_norm_max), Bisection(), tol=tol)
+        end
     end
 
     # Return raw result
@@ -849,11 +854,11 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th";
        mapper = fitmap(retention_times, retention_indices);
 
-julia> invmap(mapper, 350.0u"Th") ≈ 5.312425320906996u"minute"
+julia> invmap(mapper, 350.0u"Th") ≈ 5.265825286030818u"minute"
 true
 
 julia> invmap(mapper, 350.0)
@@ -862,14 +867,14 @@ ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. E
 
 julia> test_indices = [250.0u"Th", 450.0u"Th"];
 
-julia> invmap.(mapper, test_indices) ≈ [3.2283166885897936, 8.08686182716771]u"minute"
+julia> invmap.(mapper, test_indices) ≈ [3.2261000929188315, 8.238213271274404]u"minute"
 true
 
-julia> invmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.99982102982375u"s"
+julia> invmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.9999550244771u"s"
 true
 
-julia> invmap(mapper, 50.0u"Th", warn=true) ≈ 0.5672238965934812u"minute"
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+julia> invmap(mapper, 50.0u"Th", warn=true) ≈ 0.5666488371774112u"minute"
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=99.999951): extrapolating left.
 true
 ```
 """
@@ -944,24 +949,24 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> invmapmin(mapper) ≈ 100.00001207241763
+julia> invmapmin(mapper) ≈ 99.99999999204995
 true
 
 julia> invmapmin(mapper) ≈ applymap(mapper, mapmin(mapper))
 true
 
-julia> (invmapmin(mapper), invmapmax(mapper)) .≈ (100.00001207241763, 499.9999793028839)
+julia> (invmapmin(mapper), invmapmax(mapper)) .≈ (99.99999999204995, 499.9999001708112)
 (true, true)
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
-julia> invmapmin(mapper_unitless) ≈ 100.00001207241763
+julia> invmapmin(mapper_unitless) ≈ 99.99999999204995
 true
 
 julia> invmapmin(mapper_unitless, unit=u"s")
@@ -1015,11 +1020,11 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> invmapmax(mapper) ≈ 499.9999793028839
+julia> invmapmax(mapper) ≈ 499.9999001708112
 true
 
 julia> invmapmax(mapper) ≈ applymap(mapper, mapmax(mapper))
@@ -1028,11 +1033,11 @@ true
 julia> invmap(mapper, invmapmax(mapper)) ≈ mapmax(mapper)
 true
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
-julia> invmapmax(mapper_unitless) ≈ 499.9999793028839
+julia> invmapmax(mapper_unitless) ≈ 499.9999001708112
 true
 
 julia> invmapmax(mapper_unitless, unit=u"s")
@@ -1086,8 +1091,8 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
 julia> mapmax(mapper) ≈ 9.3u"minute"
@@ -1099,9 +1104,9 @@ true
 julia> (mapmin(mapper), mapmax(mapper)) .≈ (1.2u"minute", 9.3u"minute")
 (true, true)
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
 julia> mapmax(mapper_unitless) ≈ 9.3
 true
@@ -1157,8 +1162,8 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
 julia> mapmin(mapper) ≈ 1.2u"minute"
@@ -1167,9 +1172,9 @@ true
 julia> mapmin(mapper, unit=u"s") ≈ 72.0u"s"
 true
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
 julia> mapmin(mapper_unitless) ≈ 1.2
 true
@@ -1240,19 +1245,19 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th";
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawapplymap(mapper, 5.0u"minute") ≈ 338.71144090340465
+julia> rawapplymap(mapper, 5.0u"minute") ≈ 339.9115893714841
 true
 
 julia> test_times = [3.0, 11.0]u"minute";
 
-julia> rawapplymap.(mapper, test_times) ≈ [235.0195638002354, 564.0302630521933]
+julia> rawapplymap.(mapper, test_times) ≈ [235.12385438578818, 575.2694888354852]
 true
 
-julia> rawapplymap(mapper, 0.5u"minute", warn=true) ≈ 44.68816899287087
+julia> rawapplymap(mapper, 0.5u"minute", warn=true) ≈ 44.73840296648206
 [ Info: rA=0.5 is below the spline domain boundary (rA_min=1.2): extrapolating left.
 true
 ```
@@ -1342,11 +1347,11 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th";
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawderivinvmap(mapper, 350.0u"Th") ≈ 0.02857099580171666
+julia> rawderivinvmap(mapper, 350.0u"Th") ≈ 0.02719301379592236
 true
 
 julia> rawderivinvmap(mapper, 350.0)
@@ -1355,21 +1360,21 @@ ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. E
 
 julia> test_indices = [250.0, 600.0]u"Th";
 
-julia> rawderivinvmap.(mapper, test_indices) ≈ [0.015606366497378708, 0.03240806524912834]
+julia> rawderivinvmap.(mapper, test_indices) ≈ [0.015573534538196116, 0.058629056866568434]
 true
 
-julia> rawderivinvmap(mapper, 350.0u"Th", rA_unit=u"s") ≈ 1.7142597481029995
+julia> rawderivinvmap(mapper, 350.0u"Th", rA_unit=u"s") ≈ 1.6315808277553416
 true
 
-julia> rawderivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012655503630152843
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+julia> rawderivinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.012667035645800725
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=99.999951): extrapolating left.
 true
 
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawderivinvmap(mapper, 350.0) ≈ 0.02857099580171666
+julia> rawderivinvmap(mapper, 350.0) ≈ 0.02719301379592236
 true
 
 julia> rawderivinvmap(mapper, 350.0u"Th")
@@ -1485,22 +1490,22 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawderivmap(mapper, 5.0u"minute") ≈ 37.42885149584893
+julia> rawderivmap(mapper, 5.0u"minute") ≈ 39.19249391781732
 true
 
 julia> test_times = [3.0, 11.0]u"minute";
 
-julia> rawderivmap.(mapper, test_times) ≈ [67.10235298491122, 34.639458067769134]
+julia> rawderivmap.(mapper, test_times) ≈ [67.31636796962056, 30.886877183843247]
 true
 
-julia> rawderivmap(mapper, 5.0u"minute", rA_unit=u"s") ≈ 0.6238141915974822
+julia> rawderivmap(mapper, 5.0u"minute", rA_unit=u"s") ≈ 0.6532082319636221
 true
 
-julia> rawderivmap(mapper, 0.8u"minute", warn=true) ≈ 79.01700550402535
+julia> rawderivmap(mapper, 0.8u"minute", warn=true) ≈ 78.94506875659673
 [ Info: rA=0.8 is below the spline domain boundary (rA_min=1.2): extrapolating left.
 true
 ```
@@ -1608,11 +1613,11 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th"
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]u"Th";
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawinvmap(mapper, 350.0u"Th") ≈ 5.312425320906996
+julia> rawinvmap(mapper, 350.0u"Th") ≈ 5.265825286030818
 true
 
 julia> rawinvmap(mapper, 350.0) ≈ 5.312425320906996
@@ -1621,21 +1626,21 @@ ERROR: ArgumentError: Input must have units when rm.rB_unit is a Unitful unit. E
 
 julia> test_indices = [250.0, 450.0]u"Th";
 
-julia> rawinvmap.(mapper, test_indices) ≈ [3.2283166885897936, 8.08686182716771]
+julia> rawinvmap.(mapper, test_indices) ≈ [3.2261000929188315, 8.238213271274404]
 true
 
-julia> rawinvmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.99982102982375
+julia> rawinvmap(mapper, 400.0u"Th", unit=u"s") ≈ 407.9999550244771
 true
 
-julia> rawinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.5672238965934812
-[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=100.000073): extrapolating left.
+julia> rawinvmap(mapper, 50.0u"Th", warn=true) ≈ 0.5666488371774112
+[ Info: rB=50.0 is below the inverse spline domain boundary (rB_min=99.999951): extrapolating left.
 true
 
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0, 600.0, 700.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawinvmap(mapper, 350.0) ≈ 5.312425320906996
+julia> rawinvmap(mapper, 350.0) ≈ 5.265825286030818
 true
 
 julia> rawinvmap(mapper, 350.0u"Th") ≈ 5.312425320906996
@@ -1710,18 +1715,18 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawinvmapmax(mapper) ≈ 499.9999793028839
+julia> rawinvmapmax(mapper) ≈ 499.9999001708112
 true
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
-julia> rawinvmapmax(mapper_unitless) ≈ 499.9999793028839
+julia> rawinvmapmax(mapper_unitless) ≈ 499.9999001708112
 true
 
 julia> rawinvmapmax(mapper_unitless, unit=u"s")
@@ -1775,21 +1780,21 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
-julia> rawinvmapmin(mapper) ≈ 100.00001207241763
+julia> rawinvmapmin(mapper) ≈ 99.99999999204995
 true
 
-julia> (rawinvmapmin(mapper), rawinvmapmax(mapper)) .≈ (100.00001207241763, 499.9999793028839)
+julia> (rawinvmapmin(mapper), rawinvmapmax(mapper)) .≈ (99.99999999204995, 499.9999001708112)
 (true, true)
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3]
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(retentions, retention_indices);
 
-julia> rawinvmapmin(mapper_unitless) ≈ 100.00001207241763
+julia> rawinvmapmin(mapper_unitless) ≈ 99.99999999204995
 true
 
 julia> rawinvmapmin(mapper_unitless, unit=u"s")
@@ -1843,8 +1848,8 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
 julia> rawmapmax(mapper) ≈ 9.3
@@ -1856,9 +1861,9 @@ true
 julia> (rawmapmin(mapper), rawmapmax(mapper)) .≈ (1.2, 9.3)
 (true, true)
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
+       mapper_unitless = fitmap(retentions, retention_indices);
 
 julia> rawmapmax(mapper_unitless) ≈ 9.3
 true
@@ -1914,8 +1919,8 @@ See also
 
 # Examples
 ```jldoctest
-julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
-       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute";
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0];
        mapper = fitmap(retention_times, retention_indices);
 
 julia> rawmapmin(mapper) ≈ 1.2
@@ -1924,9 +1929,9 @@ true
 julia> rawmapmin(mapper, unit=u"s") ≈ 72.0
 true
 
-julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
-       outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
-       mapper_unitless = fitmap(inputs, outputs);
+julia> retentions = [1.2, 2.5, 4.1, 6.8, 9.3];
+       retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+       mapper_unitless = fitmap(retentions, retention_indices);
 
 julia> rawmapmin(mapper_unitless) ≈ 1.2
 true
