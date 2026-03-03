@@ -97,13 +97,13 @@ selected.
 mapper.lambda
 ```
 
-We see that it was optimized value is essentially identical to its default minimum. Let us 
-increase `λ_min` from its default (`1e-12`) to `1e-7` and examine the effect on the 
+We see that it was optimized value is close to its default minimum. Let us 
+increase `λ_min` from its default (`1e-12`) to `1e-8` and examine the effect on the 
 derivative plots.
 
 ```@example 1
-# Fit mapping function with λ_min set to 1e-7
-mapper_λ_min_set = fitmap(retention_times, kovats_indices, λ_min=1e-7)
+# Fit mapping function with λ_min set to 1e-8
+mapper_λ_min_set = fitmap(retention_times, kovats_indices, λ_min=1e-8)
 fig = plot(mapper_λ_min_set; reverse=true, size=(900, 600))
 save("retention_mapper_λ_min_set.svg", fig)
 nothing # hide
@@ -111,21 +111,21 @@ nothing # hide
 
 ![](retention_mapper_λ_min_set.svg)
 
-In the derivative plots the mapping is noticeably smoother, but it no longer passes exactly 
-through the anchor points, as shown by the residuals. Whether the suppressed wiggles reflect 
-real structure that should be modeled or are noise that should be smoothed away is a 
-judgment call for the analyst.
+In the derivative plots the mapping is noticeably smoother, but it now deviates more from 
+the anchor points, as shown by the residuals. Whether the suppressed wiggles reflect real 
+structure that should be modeled or are noise that should be smoothed away is a judgment 
+call for the analyst.
 
-Let's continue with the mapper inferred using the default `λ_min` and use it to compute
-retention indices for a few retention times, including extrapolation beyond the domain.
+Let’s continue with the mapper inferred using `λ_min=1e-8` and use it to compute retention 
+indices for a few retention times, including extrapolation beyond the domain.
 
 ```@example 1
-ri = applymap(mapper, 41.5u"minute")  # single value
+ri = applymap(mapper_λ_min_set, 41.5u"minute")  # single value
 ```
 
 ```@example 1
 rts = [10, 29.3, 35.0]u"minute"
-ri = applymap.(mapper, rts)  # dot form broadcasts over the vector
+ri = applymap.(mapper_λ_min_set, rts)  # dot form broadcasts over the vector
 ```
 
 !!! warning "Domain limits and extrapolation"
@@ -146,7 +146,7 @@ To invert the mapping (e.g., from Kováts to retention time), use
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
-rts = invmap.(mapper, ris)  # dot form broadcasts over the vector
+rts = invmap.(mapper_λ_min_set, ris)  # dot form broadcasts over the vector
 ```
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
@@ -165,7 +165,7 @@ intensities = [1000, 4000, 3500] / 0.5u"s"
 ```
 
 ```@example 1
-dridt = derivmap.(mapper, scantimes, rA_unit=u"s")
+dridt = derivmap.(mapper_λ_min_set, scantimes, rA_unit=u"s")
 ```
 
 The derivative tells you how much the Kováts retention index changes per unit time. To
