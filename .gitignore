@@ -2,10 +2,12 @@
 *.jl.cov
 *.jl.mem
 .DS_Store
+/Manifest.toml
 /docs/Manifest.toml
 /docs/build
 /experimental
 /scratch
 /tmp
 /utilities
+/test/Manifest.toml
 /testcode

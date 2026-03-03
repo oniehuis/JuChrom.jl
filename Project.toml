@@ -1,6 +1,6 @@
 name = "JuChrom"
 uuid = "202feb93-6b30-4454-a2e9-99db6534a6fb"
-version = "1.0.0-DEV"
+version = "0.0.1"
 authors = ["Oliver Niehuis <oliver.niehuis@biologie.uni-freiburg.de> and contributors"]
 
 [deps]
@@ -37,11 +37,23 @@ MakieExtension = "Makie"
 PyCallExtension = "PyCall"
 
 [compat]
-CairoMakie = "0.15.8"
-HiGHS = "1.21.1"
-OSQP = "0.8.1"
-PyCall = "1.96.4"
+BSplineKit = "0.19"
+CairoMakie = "0.15"
+DataStructures = "0.19"
+Distributions = "0.25"
+FileIO = "1.18"
+HiGHS = "1.21"
+JLD2 = "0.6"
 julia = "1.12"
+JuMP = "1.29"
+Makie = "0.24"
+OSQP = "0.8"
+PyCall = "1.96.4"
+Reexport = "1.2"
+Roots = "2.2"
+SafeTestsets = "0.1"
+StringEncodings = "0.3"
+Unitful = "1.28"
 
 [preferences]
 precompile = true

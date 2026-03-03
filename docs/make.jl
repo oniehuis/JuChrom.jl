@@ -84,5 +84,11 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
 end
 
 deploydocs(
-	repo = "github.com/oniehuis/JuChrom.jl"
+	repo = "github.com/oniehuis/JuChrom.jl",
+	devbranch = "main",
+	versions = [
+		"stable" => "v^",
+		"v#.#.#",
+		"dev" => "dev",
+	],
 )
