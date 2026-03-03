@@ -154,6 +154,12 @@ end
     @test JuChrom.localmaxima([-3.0, 1.1, -2.1, 0.0, -1.9]) == [2, 4]
 end
 
+@testset "localmaxima(values::AbstractVector{<:Unitful.AbstractQuantity})" begin
+    @test JuChrom.localmaxima([1, 3, 2] .* u"s") == [2]
+    @test JuChrom.localmaxima([1, 2, 3, 2, 1] .* u"m") == [3]
+    @test JuChrom.localmaxima(typeof(1.0u"m")[]) == Int[]
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # minmax_scale / inverse_minmax_scale
 # ─────────────────────────────────────────────────────────────────────────────
