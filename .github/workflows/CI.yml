@@ -36,6 +36,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Set up Python
+        id: setup-python
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
@@ -71,7 +72,7 @@ jobs:
 
       - name: Run unit tests and collect coverage
         env:
-          PYTHON: ${{ env.pythonLocation }}/bin/python
+          PYTHON: ${{ steps.setup-python.outputs.python-path }}
         run: >
           DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
           julia --color=yes --project=test -e 'using Pkg; Pkg.test("JuChrom", coverage=true)'
