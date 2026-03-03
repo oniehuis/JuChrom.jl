@@ -188,10 +188,10 @@ function cossim(
     wx = weights .* x
     wy = weights .* y
 
-    if any(!isfinite, weights)
+    if any(!isfinite, wx)
         println("Warning: NaN detected in norm_x vector")
     end
-    if any(!isfinite, weights)
+    if any(!isfinite, wy)
         println("Warning: NaN detected in norm_y vector")
     end
 

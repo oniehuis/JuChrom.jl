@@ -94,6 +94,28 @@ end
     # Length checks
     @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0], false)
     @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0, 2.0], [1.0], false)
+
+    # Length mismatch between x and y (weighted)
+    @test_throws DimensionMismatch cossim([1.0, 2.0], [1.0], [1.0, 1.0], false)
+
+    # Invalid weights
+    @test_throws ArgumentError cossim([1.0, 2.0], [1.0, 2.0], [1.0, NaN], false)
+    @test_throws ArgumentError cossim([1.0, 2.0], [1.0, 2.0], [1.0, Inf], false)
+
+    # Warning paths for non-finite weighted vectors
+    pipe = Pipe()
+    redirect_stdout(pipe) do
+        cossim([1.0, NaN], [1.0, 2.0], [1.0, 1.0], false)
+    end
+    close(pipe.in)
+    @test occursin("Warning: NaN detected in norm_x vector", String(read(pipe)))
+
+    pipe = Pipe()
+    redirect_stdout(pipe) do
+        cossim([1.0, 2.0], [1.0, NaN], [1.0, 1.0], false)
+    end
+    close(pipe.in)
+    @test occursin("Warning: NaN detected in norm_y vector", String(read(pipe)))
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
