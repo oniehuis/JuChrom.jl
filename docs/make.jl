@@ -86,6 +86,7 @@ end
 deploydocs(
 	repo = "github.com/oniehuis/JuChrom.jl",
 	devbranch = "main",
+    push_preview = false,
 	versions = [
 		"stable" => "v^",
 		"v#.#.#",
