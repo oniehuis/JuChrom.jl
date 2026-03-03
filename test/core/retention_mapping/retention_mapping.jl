@@ -591,6 +591,12 @@ end
     bB2 = applymap(rm, 7.5u"minute")
     @test invmap(rm, bB2; unit=u"s") ≈ (7.5 * 60)u"s" atol=1e-6u"s"
 
+    # Clamp exactly at spline boundary
+    yA_min = invmap(rm, rm.rB_pred_min * rm.rB_unit)
+    @test yA_min ≈ rm.rA_min * rm.rA_unit atol=1e-12u"minute"
+    yA_max = invmap(rm, rm.rB_pred_max * rm.rB_unit)
+    @test yA_max ≈ rm.rA_max * rm.rA_unit atol=1e-12u"minute"
+
     # Unitless mapper rejects unitful input and returns raw value otherwise
     rA0 = ustrip.(rA)
     rB0 = ustrip.(rB)
@@ -1654,6 +1660,109 @@ end
             1e-12,
             1,
             10,
+        )
+    end
+
+    function fit_spline_with_penalty_threshold(λ::Real)
+        if λ < 1.0
+            coefs = reverse(collect(0.0:(length(B2)-1)))
+        else
+            coefs = collect(0.0:(length(B2)-1))
+        end
+        return coefs, JuChrom.MOI.OPTIMAL
+    end
+
+    best_λ, coefs_threshold, status_threshold = @test_logs (:warn, r"Reached maximum iterations") begin
+        tune_lambda_for_monotonic_spline(
+            fit_spline_with_penalty_threshold,
+            B2,
+            rA_norm_min,
+            rA_norm_max,
+            1e-6,
+            1e-3,
+            1e-6,
+            6,
+            10,
+        )
+    end
+    @test best_λ >= 1.0
+    @test status_threshold == JuChrom.MOI.OPTIMAL
+    @test length(coefs_threshold) == length(B2)
+
+    function fit_spline_with_penalty_error(::Real)
+        throw(ArgumentError("unexpected failure"))
+    end
+
+    @test_throws ArgumentError tune_lambda_for_monotonic_spline(
+        fit_spline_with_penalty_error,
+        B,
+        rA_norm_min,
+        rA_norm_max,
+        1e-3,
+        1e-1,
+        1e-6,
+        5,
+        10,
+    )
+
+    function fit_spline_with_penalty_opt_error(λ::Real)
+        throw(JuChrom.OptimizationError(λ, :INFEASIBLE))
+    end
+
+    @test_throws JuChrom.OptimizationError tune_lambda_for_monotonic_spline(
+        fit_spline_with_penalty_opt_error,
+        B,
+        rA_norm_min,
+        rA_norm_max,
+        1e-3,
+        1e-1,
+        1e-6,
+        5,
+        10,
+    )
+
+    function fit_spline_with_penalty_max_only(λ::Real)
+        if λ == 1.0
+            coefs = collect(0.0:(length(B2)-1))
+        else
+            coefs = zeros(length(B2))  # flat spline → not strictly monotonic
+        end
+        return coefs, JuChrom.MOI.OPTIMAL
+    end
+
+    @test_logs (:warn, r"Reached maximum iterations") begin
+        @test_throws ArgumentError tune_lambda_for_monotonic_spline(
+            fit_spline_with_penalty_max_only,
+            B2,
+            rA_norm_min,
+            rA_norm_max,
+            1e-6,
+            1.0,
+            1e-6,
+            0,
+            2,
+        )
+    end
+
+    function fit_spline_with_penalty_opt_error_tail(λ::Real)
+        if λ == 1.0
+            coefs = collect(0.0:(length(B2)-1))
+            return coefs, JuChrom.MOI.OPTIMAL
+        end
+        throw(JuChrom.OptimizationError(λ, :INFEASIBLE))
+    end
+
+    @test_logs (:warn, r"Reached maximum iterations") begin
+        @test_throws JuChrom.OptimizationError tune_lambda_for_monotonic_spline(
+            fit_spline_with_penalty_opt_error_tail,
+            B2,
+            rA_norm_min,
+            rA_norm_max,
+            1e-6,
+            1.0,
+            1e-6,
+            4,
+            2,
         )
     end
 end

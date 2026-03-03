@@ -73,4 +73,16 @@ end
     @test ymin ≤ 0
 end
 
+@testset "massspectrum y-limits fallback for nonpositive max intensity" begin
+    mz = [10.0, 20.0]
+    intensities = [0.0, 0.0]
+    plt = massspectrum(mz, intensities)
+    ax = only([c for c in plt.figure.content if c isa Makie.Axis])
+    limits = ax.finallimits[]
+    ymin = limits.origin[2]
+    ymax = limits.origin[2] + limits.widths[2]
+    @test isapprox(ymin, 0.0; atol=1e-6)
+    @test isapprox(ymax, 1.0; atol=1e-6)
+end
+
 end  # module
