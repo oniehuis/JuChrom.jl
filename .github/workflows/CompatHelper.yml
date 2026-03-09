@@ -50,4 +50,4 @@ jobs:
           # COMPATHELPER_PRIV: ${{ secrets.COMPATHELPER_PRIV }}
         run: |
           import CompatHelper
-          CompatHelper.main(; subdirs = [".", "docs", "test"])
+          CompatHelper.main(; subdirs = ["", "docs", "test"])

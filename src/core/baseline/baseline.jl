@@ -44,7 +44,7 @@ Returns estimated baseline vector with same length as input intensities.
 # Example
 ```julia
 # Basic usage
-baseline = airpls(wavelengths, spectrum; λ=1e6)
+baseline = airpls(wavelengths, spectrum; λ=1e5)
 
 # With measurement uncertainties
 baseline = airpls(times, signal; variances=errors.^2, λ=1e5)
@@ -170,7 +170,7 @@ documentation.
 
 # Example
 ```julia
-corrected_msm = airpls(msm; λ=1e6, threshold_factor=2.0)
+corrected_msm = airpls(msm; λ=1e5, threshold_factor=2.0)
 ```
 """
 function airpls(
@@ -250,7 +250,7 @@ documentation.
 
 # Example
 ```julia
-corrected_msm = airpls(msm, vars; λ=1e6, threshold_factor=2.0)
+corrected_msm = airpls(msm, vars; λ=1e5, threshold_factor=2.0)
 ```
 """
 function airpls(

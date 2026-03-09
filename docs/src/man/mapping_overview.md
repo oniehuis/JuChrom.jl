@@ -85,21 +85,19 @@ nothing # hide
 ![](retention_mapper.svg)
 
 The black and red numbers at some anchor points show how much the fitted mapping departs 
-from those anchors to enforce a strictly invertible function. The inferred mapping is fully 
-satisfactory, but you may want to tune the smoothing strength if the anchor points are 
-noisy or not fully trustworthy. In the derivative plots, for example, we see noticeable 
-oscillation on the left side. Increasing `λ_min` reduces overfitting (less wiggle, more 
-stability), while increasing `λ_max` can help recover monotonicity when a fit would 
-otherwise fail. The mapper object stores the value of the λ tuning parameter that was 
-selected.
+from those anchors. The inferred mapping is fully satisfactory, but you may want to tune 
+the smoothing strength if the anchor points are noisy or not fully trustworthy. In the 
+derivative plots, for example, we see noticeable oscillation on the left side. Increasing 
+`λ_min` reduces overfitting (less wiggle, more stability), while increasing `λ_max` can 
+help recover monotonicity when a fit would otherwise fail. The mapper object stores the 
+value of the λ tuning parameter that was selected.
 
 ```@example 1
 mapper.lambda
 ```
 
-We see that it was optimized value is close to its default minimum. Let us 
-increase `λ_min` from its default (`1e-12`) to `1e-8` and examine the effect on the 
-derivative plots.
+We see that the optimized value is close to its default minimum. Let us increase `λ_min` 
+from its default (`1e-12`) to `1e-8` and examine the effect on the derivative plots.
 
 ```@example 1
 # Fit mapping function with λ_min set to 1e-8
