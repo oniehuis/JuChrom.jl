@@ -33,7 +33,7 @@ jobs:
         run: python -m pip install --upgrade pip olefile
 
       - name: Cache Julia packages
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
       
       # - name: Install Linux packages for GLMakie
       #   run: |

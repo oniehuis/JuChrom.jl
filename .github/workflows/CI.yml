@@ -45,7 +45,7 @@ jobs:
         run: python -m pip install --upgrade pip olefile
       
       - name: Cache Julia packages
-        uses: julia-actions/cache@v2
+        uses: julia-actions/cache@v3
 
       - uses: julia-actions/julia-buildpkg@v1
 
