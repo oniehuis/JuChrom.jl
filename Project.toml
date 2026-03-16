@@ -44,7 +44,6 @@ Distributions = "0.25"
 FileIO = "1.18"
 HiGHS = "1.21"
 JLD2 = "0.6"
-julia = "1.12"
 JuMP = "1.29"
 Makie = "0.24"
 OSQP = "0.8"
@@ -52,8 +51,10 @@ PyCall = "1.96.4"
 Reexport = "1.2"
 Roots = "2.2"
 SafeTestsets = "0.1"
+Statistics = "1"
 StringEncodings = "0.3"
 Unitful = "1.28"
+julia = "1.12"
 
 [preferences]
 precompile = true
