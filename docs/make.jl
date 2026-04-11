@@ -1,7 +1,10 @@
-using Pkg
-if Base.active_project() != joinpath(@__DIR__, "Project.toml")
+if Base.active_project() ≠ joinpath(@__DIR__, "Project.toml")
     Pkg.activate(@__DIR__)
 end
+
+empty!(LOAD_PATH)
+append!(LOAD_PATH, ["@", "@stdlib"])
+
 if get(ENV, "CI", "false") == "true"
     Pkg.instantiate()
 end
@@ -34,6 +37,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
 	    sitename = "JuChrom.jl",
         format = Documenter.HTML(),
         modules = isdefined(JuChrom, :ShimadzuMSLoader) ? [JuChrom, JuChrom.ShimadzuMSLoader] : [JuChrom],
+        checkdocs = :exports,
 	    authors = "Oliver Niehuis",
         root = @__DIR__,
         pages = [
