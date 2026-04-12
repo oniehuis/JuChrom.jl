@@ -1,3 +1,5 @@
+using Pkg
+
 if Base.active_project() ≠ joinpath(@__DIR__, "Project.toml")
     Pkg.activate(@__DIR__)
 end
