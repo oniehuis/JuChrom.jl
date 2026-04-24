@@ -286,10 +286,11 @@ function airpls(
     for i in axes(ints, 2)
         # Run airPLS in RI space with corrected intensities and weights
         mzints = @view ints[:, i]
+        mzvars = @view variances[:, i]
         baselines[:, i] = airpls(
                         rawretentions(msm), 
                         mzints; 
-                        variances=mzints,
+                        variances=mzvars,
                         improvement_threshold=improvement_threshold,
                         λ=λ,
                         max_iter=max_iter,

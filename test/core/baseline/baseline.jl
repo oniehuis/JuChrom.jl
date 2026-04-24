@@ -271,10 +271,23 @@ end
     end
     ints .+= 0.01 .* randn(n_scans, n_mzs)
     ints .= max.(ints, 0.0)
-    vars = fill(0.05, n_scans, n_mzs)
+    vars = zeros(n_scans, n_mzs)
+    for j in 1:n_mzs
+        @. vars[:, j] = 1e-4 + 0.03 * j * (1 + sin((j + 1) * ret))^2
+    end
 
     msm = MassScanMatrix(ret, mzs, ints; instrument=(id=2,), extras=Dict("source" => "sim"))
     bmsm = airpls(msm, vars; λ=8e4, max_iter=150, no_improvement_limit=12)
+    expected = similar(ints, Float64)
+    old_style = similar(ints, Float64)
+    for j in 1:n_mzs
+        mzints = @view ints[:, j]
+        mzvars = @view vars[:, j]
+        expected[:, j] .= airpls(
+            ret, mzints; variances=mzvars, λ=8e4, max_iter=150, no_improvement_limit=12)
+        old_style[:, j] .= airpls(
+            ret, mzints; variances=mzints, λ=8e4, max_iter=150, no_improvement_limit=12)
+    end
 
     @test bmsm isa MassScanMatrix
     @test JuChrom.rawretentions(bmsm) == ret
@@ -282,6 +295,8 @@ end
     @test size(JuChrom.rawintensities(bmsm)) == size(ints)
     @test all(isfinite, JuChrom.rawintensities(bmsm))
     @test all(JuChrom.rawintensities(bmsm) .≥ 0)
+    @test JuChrom.rawintensities(bmsm) ≈ expected
+    @test !isapprox(JuChrom.rawintensities(bmsm), old_style)
     @test bmsm.instrument == msm.instrument
     @test bmsm.extras == msm.extras
 
