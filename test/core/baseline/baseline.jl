@@ -10,8 +10,8 @@ using Random
 using SparseArrays
 using Statistics
 using JuChrom
-using JuChrom: airpls, FitTracker, calculate_fit, update!, stop_optimization,
-               baseline, compute_weights, expand_low_weights!,
+using JuChrom: baseline, FitTracker, calculate_fit, update!, stop_optimization,
+               bestbaseline, compute_weights, expand_low_weights!,
                build_second_derivative_matrix
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ using JuChrom: airpls, FitTracker, calculate_fit, update!, stop_optimization,
     @test isapprox(Dn * (0.2 .* xn .+ 1.0), zeros(n); atol=1e-11, rtol=0)
 end
 
-# ── FitTracker / calculate_fit / update! / stop_optimization / baseline ──────
+# ── FitTracker / calculate_fit / update! / stop_optimization / bestbaseline ──
 
 @testset "FitTracker + helpers" begin
     n = 10
@@ -66,8 +66,8 @@ end
     @test tracker.best_fit === Inf
     @test tracker.iteration_of_best == 0
     @test tracker.no_improvement_count == 0
-    @test length(baseline(tracker)) == n
-    @test all(iszero, baseline(tracker))
+    @test length(bestbaseline(tracker)) == n
+    @test all(iszero, bestbaseline(tracker))
 
     # calculate_fit matches weighted RSS + smoothness quadratic form
     w = ones(n)
@@ -86,7 +86,7 @@ end
     @test update!(tracker, f1, b1, 1) === true
     @test tracker.best_fit == f1
     @test tracker.iteration_of_best == 1
-    @test baseline(tracker) == b1
+    @test bestbaseline(tracker) == b1
 
     # Smaller improvement than threshold → no improvement; count increases
     @test update!(tracker, f1 - 5e-7, b1, 2) === false
@@ -98,7 +98,7 @@ end
     @test update!(tracker, f2, b2, 3) === true
     @test tracker.no_improvement_count == 0
     @test tracker.iteration_of_best == 3
-    @test baseline(tracker) == b2
+    @test bestbaseline(tracker) == b2
 
     # Stop after hitting no-improvement limit
     for k in 1:3
@@ -134,6 +134,11 @@ end
     @test all(0 .< w2 .≤ 1)
     @test w2[30] ≤ w[30] + 1e-12  # still among the smallest
 
+    # Supplied standard deviations are treated as an absolute residual scale:
+    # global inflation therefore relaxes peak rejection.
+    w2_inflated = compute_weights(res, 10 .* σ, 1.5, zero_mask, 1e-12)
+    @test w2_inflated[30] > w2[30]
+
     # Case 3: not enough negative residuals → returns ones (early guard)
     res_pos = abs.(randn(n)) .+ 0.1
     wpos = compute_weights(res_pos, nothing, 2.0, zero_mask, 1e-12)
@@ -157,9 +162,9 @@ end
     @test length(block) ≥ 5
 end
 
-# ── airpls(retentions, intensities; ...) ─────────────────────────────────────
+# ── baseline(retentions, intensities; ...) ───────────────────────────────────
 
-@testset "airpls(::AbstractVector, ::AbstractVector; ...)" begin
+@testset "baseline(::AbstractVector, ::AbstractVector; ...)" begin
     # Synthetic baseline + positive peaks
     Random.seed!(7)
     n = 400
@@ -179,8 +184,8 @@ end
     y .+= 0.01 .* randn(n)
     y .= max.(y, 0.0)
 
-    # Run airPLS with reasonably strong smoothing and default asymmetry
-    b̂ = airpls(x, y; λ=1e6, threshold_factor=1.96, max_iter=200, no_improvement_limit=10)
+    # Run baseline estimation with reasonably strong smoothing and default asymmetry
+    b̂ = baseline(x, y; λ=1e6, threshold_factor=1.96, max_iter=200, no_improvement_limit=10)
 
     # Basic contract
     @test length(b̂) == n
@@ -193,53 +198,53 @@ end
 
     # Scale-invariance of λ across uniform retention scaling
     x_scaled = x .* 60.0
-    b̂_scaled = airpls(x_scaled, y; λ=1e6, threshold_factor=1.96, max_iter=200, no_improvement_limit=10)
+    b̂_scaled = baseline(x_scaled, y; λ=1e6, threshold_factor=1.96, max_iter=200, no_improvement_limit=10)
     @test sqrt(mean((b̂_scaled .- b̂).^2)) ≤ 5e-3
 
     # Validation errors
-    @test_throws ArgumentError airpls(x[1:10], y)                         # length mismatch
-    @test_throws ArgumentError airpls(x[1:2], y[1:2])                     # n < 3
-    @test_throws ArgumentError airpls(x, y; λ=0.0)                        # λ must be > 0
-    @test_throws ArgumentError airpls(x, y; threshold_factor=0.0)         # > 0
-    @test_throws ArgumentError airpls(x, y; zero_threshold=-1e-9)         # ≥ 0
-    @test_throws ArgumentError airpls(x, y; zero_weight=0.0)              # > 0
-    @test_throws ArgumentError airpls(x, y; variances=fill(-1.0, n))      # variances ≥ 0
-    @test_throws ArgumentError airpls(x, y; variances=ones(n-1))          # length match
-    @test_throws ArgumentError airpls(fill(1.0, n), y)                    # zero retention span
+    @test_throws ArgumentError baseline(x[1:10], y)                         # length mismatch
+    @test_throws ArgumentError baseline(x[1:2], y[1:2])                     # n < 3
+    @test_throws ArgumentError baseline(x, y; λ=0.0)                        # λ must be > 0
+    @test_throws ArgumentError baseline(x, y; threshold_factor=0.0)         # > 0
+    @test_throws ArgumentError baseline(x, y; zero_threshold=-1e-9)         # ≥ 0
+    @test_throws ArgumentError baseline(x, y; zero_weight=0.0)              # > 0
+    @test_throws ArgumentError baseline(x, y; variances=fill(-1.0, n))      # variances ≥ 0
+    @test_throws ArgumentError baseline(x, y; variances=ones(n-1))          # length match
+    @test_throws ArgumentError baseline(fill(1.0, n), y)                    # zero retention span
 
     # With measurement variances supplied (heteroscedastic), should still behave
     vars = @. 1e-4 + 1e-4 * (1 + sin(0.5 * x))^2
-    b̂v = airpls(x, y; variances=vars, λ=5e5, max_iter=200)
+    b̂v = baseline(x, y; variances=vars, λ=5e5, max_iter=200)
     @test length(b̂v) == n && all(isfinite, b̂v)
 
     # Force non-convergence warning path
-    @test_logs (:warn, r"airPLS did not converge") begin
-        airpls(x, y; λ=1e6, max_iter=1, no_improvement_limit=5)
+    @test_logs (:warn, r"Baseline estimation did not converge") begin
+        baseline(x, y; λ=1e6, max_iter=1, no_improvement_limit=5)
     end
 end
 
-# ── airpls(::MassScanMatrix; ...) ────────────────────────────────────────────
+# ── baseline(::MassScanMatrix; ...) ──────────────────────────────────────────
 
-@testset "airpls(::MassScanMatrix; ...)" begin
+@testset "baseline(::MassScanMatrix; ...)" begin
     Random.seed!(42)
     n_scans = 80
     n_mzs = 4
     ret = collect(range(0.0, 4.0; length=n_scans))
     mzs = [100.0, 150.0, 200.0, 250.0]
 
-    baseline = @. 0.3 + 0.01 * ret^2
+    true_baseline = @. 0.3 + 0.01 * ret^2
     ints = zeros(n_scans, n_mzs)
     for j in 1:n_mzs
         center = 0.6 + 0.8 * j
         width = 0.12 + 0.02 * j
         amp = 0.8 + 0.3 * j
-        @. ints[:, j] = baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
+        @. ints[:, j] = true_baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
     end
     ints .+= 0.01 .* randn(n_scans, n_mzs)
     ints .= max.(ints, 0.0)
 
     msm = MassScanMatrix(ret, mzs, ints; instrument=(id=1,), extras=Dict("k" => 1))
-    bmsm = airpls(msm; λ=1e5, max_iter=200, no_improvement_limit=15)
+    bmsm = baseline(msm; λ=1e5, max_iter=200, no_improvement_limit=15)
 
     @test bmsm isa MassScanMatrix
     @test JuChrom.rawretentions(bmsm) == ret
@@ -253,21 +258,21 @@ end
     @test JuChrom.rawmzvalues(bmsm) !== JuChrom.rawmzvalues(msm)
 end
 
-# ── airpls(::MassScanMatrix, ::AbstractMatrix; ...) ──────────────────────────
+# ── baseline(::MassScanMatrix, ::AbstractMatrix; ...) ────────────────────────
 
-@testset "airpls(::MassScanMatrix, ::AbstractMatrix; ...)" begin
+@testset "baseline(::MassScanMatrix, ::AbstractMatrix; ...)" begin
     Random.seed!(24)
     n_scans = 60
     n_mzs = 3
     ret = collect(range(0.0, 3.0; length=n_scans))
     mzs = [110.0, 160.0, 210.0]
-    baseline = @. 0.4 + 0.02 * ret
+    true_baseline = @. 0.4 + 0.02 * ret
     ints = zeros(n_scans, n_mzs)
     for j in 1:n_mzs
         center = 0.5 + 0.9 * j
         width = 0.1 + 0.015 * j
         amp = 0.6 + 0.2 * j
-        @. ints[:, j] = baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
+        @. ints[:, j] = true_baseline + amp * exp(-((ret - center)^2) / (2 * width^2))
     end
     ints .+= 0.01 .* randn(n_scans, n_mzs)
     ints .= max.(ints, 0.0)
@@ -277,15 +282,15 @@ end
     end
 
     msm = MassScanMatrix(ret, mzs, ints; instrument=(id=2,), extras=Dict("source" => "sim"))
-    bmsm = airpls(msm, vars; λ=8e4, max_iter=150, no_improvement_limit=12)
+    bmsm = baseline(msm, vars; λ=8e4, max_iter=150, no_improvement_limit=12)
     expected = similar(ints, Float64)
     old_style = similar(ints, Float64)
     for j in 1:n_mzs
         mzints = @view ints[:, j]
         mzvars = @view vars[:, j]
-        expected[:, j] .= airpls(
+        expected[:, j] .= baseline(
             ret, mzints; variances=mzvars, λ=8e4, max_iter=150, no_improvement_limit=12)
-        old_style[:, j] .= airpls(
+        old_style[:, j] .= baseline(
             ret, mzints; variances=mzints, λ=8e4, max_iter=150, no_improvement_limit=12)
     end
 
@@ -300,7 +305,7 @@ end
     @test bmsm.instrument == msm.instrument
     @test bmsm.extras == msm.extras
 
-    @test_throws ArgumentError airpls(msm, vars[1:end-1, :])
+    @test_throws ArgumentError baseline(msm, vars[1:end-1, :])
 end
 
 end # module

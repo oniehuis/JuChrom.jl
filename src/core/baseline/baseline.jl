@@ -1,11 +1,11 @@
-# ── airpls ────────────────────────────────────────────────────────────────────────────────
+# ── baseline ──────────────────────────────────────────────────────────────────────────────
 
 """
-    airpls(retentions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}; 
-           λ::Real=1e5, max_iter::Integer=10^4, ...) -> Vector{Float64}
+    baseline(retentions::AbstractVector{<:Real}, intensities::AbstractVector{<:Real}; 
+             λ::Real=1e5, max_iter::Integer=10^4, ...) -> Vector{Float64}
 
-Estimate a smooth baseline from spectroscopic/chromatographic data using Adaptive
-Iteratively Reweighted Penalized Least Squares (airPLS).
+Estimate a smooth baseline from spectroscopic/chromatographic data using a modified
+adaptive reweighted penalized least-squares baseline estimator.
 
 Uses asymmetric weighting to suppress peaks while preserving baseline trend.
 Enhanced with weight propagation across peak shoulders - when peak regions are
@@ -19,13 +19,17 @@ peak slope, improving baseline estimation for broad or overlapping peaks.
 - `λ::Real=1e5`: Smoothing parameter (higher -> smoother baseline). Internally,
   retentions are normalized by their median step so `λ` is comparable across
   unit scales (seconds vs minutes).
-- `variances::AbstractVector{<:Real}=nothing`: Optional measurement uncertainties for each 
-  intensity value
+- `variances::AbstractVector{<:Real}=nothing`: Optional measurement variances for each
+  intensity value. When supplied, residuals are divided by `sqrt(variance)` before peak
+  weights are updated; the penalized least-squares solve itself still uses the adaptive
+  peak weights.
 - `improvement_threshold::Real=1e-6`: Minimum improvement to continue optimization
 - `max_iter::Integer=10^4`: Maximum iterations
 - `no_improvement_limit::Integer=20`: Stop after this many non-improving iterations
 - `threshold_factor::Real=1.645`: Peak detection sensitivity (higher = less sensitive),
   in units of one-sided Gaussian σ. A factor of 1.282 is ≈ 90 % coverage; 1.645 is ≈ 95 %.
+  With supplied variances this is applied directly to standardized residuals, so increasing
+  `threshold_factor` or inflating `variances` makes peak rejection less aggressive.
 - `zero_threshold::Real=1e-8`: Threshold for zero-valued points
 - `zero_weight::Real=0.01`: Weight factor for zero-threshold points
 
@@ -44,16 +48,16 @@ Returns estimated baseline vector with same length as input intensities.
 # Example
 ```julia
 # Basic usage
-baseline = airpls(wavelengths, spectrum; λ=1e5)
+estimated_baseline = baseline(wavelengths, spectrum; λ=1e5)
 
 # With measurement uncertainties
-baseline = airpls(times, signal; variances=errors.^2, λ=1e5)
+estimated_baseline = baseline(times, signal; variances=errors.^2, λ=1e5)
 
 # Sensitive peak detection
-baseline = airpls(x, y; threshold_factor=2.0, no_improvement_limit=15)
+estimated_baseline = baseline(x, y; threshold_factor=2.0, no_improvement_limit=15)
 ```
 """
-function airpls(
+function baseline(
     retentions::AbstractVector{<:Real},
     intensities::AbstractVector{<:Real};
     variances::T1=nothing,
@@ -141,22 +145,23 @@ function airpls(
     end
     
     if !converged
-        @warn "airPLS did not converge in $max_iter iterations. " *
+        @warn "Baseline estimation did not converge in $max_iter iterations. " *
               "Returning best solution found at iteration $(fit_tracker.iteration_of_best)."
     end
     
     # Return the best baseline found during optimization
-    baseline(fit_tracker)
+    bestbaseline(fit_tracker)
 end
 
 """
-    airpls(msm::MassScanMatrix; ...) -> MassScanMatrix
+    baseline(msm::MassScanMatrix; ...) -> MassScanMatrix
 
-Estimate baseline from mass scan matrix data using airPLS algorithm. The method assumes
-the retrieved intensity counts represent raw Poisson shot-noise data with identical
-variance. Do not apply this method to data whose counts have been transformed (e.g., by
-applying a retention mapper). Use instead the method `airpls(msm::MassScanMatrix,
-variances::AbstractMatrix{<:Real}; ...)`.
+Estimate baselines from mass scan matrix data using the modified adaptive baseline
+estimator. The method uses the retrieved intensity counts as a Poisson-like variance proxy
+(`Var ≈ intensity`) when updating adaptive peak weights. Do not apply this convenience
+method to data whose counts have been transformed (e.g., by applying a retention mapper).
+Use instead the method `baseline(msm::MassScanMatrix, variances::AbstractMatrix{<:Real};
+...)`.
 
 Convenience method that extracts retention times and intensities of each mz channel from
 the MassScanMatrix, applies baseline correction, and returns the identified baselines as a
@@ -165,15 +170,15 @@ MassScanMatrix object.
 # Arguments
 - `msm::MassScanMatrix`: Mass scan matrix object with retention and intensity values
 
-See airpls(retentions, intensities; ...) for algorithm details and full parameter
+See baseline(retentions, intensities; ...) for algorithm details and full parameter
 documentation.
 
 # Example
 ```julia
-corrected_msm = airpls(msm; λ=1e5, threshold_factor=2.0)
+baseline_msm = baseline(msm; λ=1e5, threshold_factor=2.0)
 ```
 """
-function airpls(
+function baseline(
     msm::MassScanMatrix;
     improvement_threshold::T1=1e-6,
     λ::T2=1e5,
@@ -195,11 +200,11 @@ function airpls(
     # Initialize baseline for each scan
     baselines = zeros(Float64, scancount(msm), mzcount(msm))
     ints = rawintensities(msm)
-    # Apply airPLS to each ion in RI space
+    # Apply baseline estimation to each ion in RI space
     for i in axes(ints, 2)
-        # Run airPLS in RI space with corrected intensities and weights
+        # Run baseline estimation in RI space with corrected intensities and weights
         mzints = @view ints[:, i]
-        baselines[:, i] = airpls(
+        baselines[:, i] = baseline(
                         rawretentions(msm), 
                         mzints; 
                         variances=mzints,
@@ -230,10 +235,11 @@ function airpls(
 end
 
 """
-    airpls(msm::MassScanMatrix, variances::AbstractMatrix{<:Real}; ...) -> MassScanMatrix
+    baseline(msm::MassScanMatrix, variances::AbstractMatrix{<:Real}; ...) -> MassScanMatrix
 
-Estimate baseline from mass scan matrix data using airPLS algorithm. The method weights the 
-PLS regression by the inverse of the variances.
+Estimate baselines from mass scan matrix data using the modified adaptive baseline
+estimator. The method uses the provided variances to standardize residuals for adaptive
+peak weighting.
 
 Convenience method that extracts retention times and intensities of each mz channel from
 the MassScanMatrix, applies baseline correction, and returns the identified baselines as a
@@ -245,15 +251,15 @@ MassScanMatrix object.
 - `variances::AbstractMatrix{<:Real}`: Variance matrix with dimensions (n_scans, n_mzs)
   containing the variances for each intensity value
 
-See airpls(retentions, intensities; ...) for algorithm details and full parameter
+See baseline(retentions, intensities; ...) for algorithm details and full parameter
 documentation.
 
 # Example
 ```julia
-corrected_msm = airpls(msm, vars; λ=1e5, threshold_factor=2.0)
+baseline_msm = baseline(msm, vars; λ=1e5, threshold_factor=2.0)
 ```
 """
-function airpls(
+function baseline(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real};
     improvement_threshold::T1=1e-6,
@@ -282,12 +288,12 @@ function airpls(
     # Initialize baseline for each scan
     baselines = zeros(Float64, scancount(msm), mzcount(msm))
     ints = rawintensities(msm)
-    # Apply airPLS to each ion in RI space
+    # Apply baseline estimation to each ion in RI space
     for i in axes(ints, 2)
-        # Run airPLS in RI space with corrected intensities and weights
+        # Run baseline estimation in RI space with corrected intensities and weights
         mzints = @view ints[:, i]
         mzvars = @view variances[:, i]
-        baselines[:, i] = airpls(
+        baselines[:, i] = baseline(
                         rawretentions(msm), 
                         mzints; 
                         variances=mzvars,
@@ -384,7 +390,7 @@ end
 stop_optimization(tracker::FitTracker) = 
     tracker.no_improvement_count ≥ tracker.no_improvement_limit
 
-baseline(tracker::FitTracker) = tracker.best_baseline
+bestbaseline(tracker::FitTracker) = tracker.best_baseline
 
 function compute_weights(residuals, std_devs, threshold_factor, zero_mask, zero_threshold)
 
@@ -392,19 +398,26 @@ function compute_weights(residuals, std_devs, threshold_factor, zero_mask, zero_
     
     normalized_residuals = isnothing(std_devs) ? residuals : residuals ./ std_devs
     
-    # Use only negative residuals to estimate noise (standard airPLS approach)
+    # Use only negative residuals to estimate noise.
     # Exclude zero points from noise estimation
     valid_for_noise = (.!zero_mask) .& (normalized_residuals .< 0)
     neg_residuals = normalized_residuals[valid_for_noise]
     
-    # Protection for extreme cases
-    length(neg_residuals) < 3 && return ones(n)
+    if isnothing(std_devs)
+        # Protection for extreme cases
+        length(neg_residuals) < 3 && return ones(n)
+        
+        # Robust noise estimation from one-sided distribution.
+        m = median(neg_residuals)  # Typical noise magnitude
+        σ = max(abs(m) * 1.4826, zero_threshold)  # Convert to Gaussian std dev scale
+    else
+        # Supplied variances define the residual scale. The normalized residuals are
+        # treated as z-scores so variance inflation and threshold_factor remain
+        # directly interpretable tuning knobs.
+        σ = 1.0
+    end
     
-    # Robust noise estimation from one-sided distribution
-    m = median(neg_residuals)  # Typical noise magnitude 
-    σ = max(abs(m) * 1.4826, zero_threshold)  # Convert to Gaussian std dev scale
-    
-    # Apply airPLS asymmetric weighting logic
+    # Apply asymmetric weighting logic.
     weights = zeros(Float64, n)
 
     threshold = threshold_factor * σ

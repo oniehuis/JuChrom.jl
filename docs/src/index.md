@@ -92,11 +92,11 @@ nothing # hide
 ![](xic.svg)
 
 ```@example 1
-# Estimate the baseline with airPLS, assuming Poisson count variance (Var ≈ intensity)
-baseline = airpls(rawretentions(xic, unit=u"minute"),
-                  rawintensities(xic), 
-                  variances=rawintensities(xic),
-                  λ=1e6)  # λ controls baseline smoothness (higher = smoother)
+# Estimate the baseline, assuming Poisson count variance (Var ≈ intensity)
+estimated_baseline = baseline(rawretentions(xic, unit=u"minute"),
+                              rawintensities(xic), 
+                              variances=rawintensities(xic),
+                              λ=1e6)  # λ controls baseline smoothness (higher = smoother)
 
 # Plot the m/z 109 chromatogram with its baseline and save to SVG.
 fig₃ = Figure(; size=(1000, 350))
@@ -106,7 +106,7 @@ ax₃ = Axis(fig₃[1,1], title="m/z 109",
 lines!(ax₃, rawretentions(xic, unit=u"minute"),
             rawintensities(xic)) 
 lines!(ax₃, rawretentions(xic, unit=u"minute"),
-            baseline)
+            estimated_baseline)
 save("xic-baseline.svg", fig₃)
 nothing # hide
 ```
