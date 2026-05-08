@@ -39,8 +39,8 @@ end
 @safetestset "core/core_getters/getters.jl" begin
     include("./core/core_getters/getters.jl")
 end
-@safetestset "core/baseline/baseline.jl" begin
-    include("./core/baseline/baseline.jl")
+@safetestset "core/baseline/arpls.jl" begin
+    include("./core/baseline/arpls.jl")
 end
 @safetestset "core/convert/mscanmatrix.jl" begin
     include("./core/convert/mscanmatrix.jl")

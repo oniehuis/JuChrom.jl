@@ -39,7 +39,7 @@ include("core/retention_mapping/error.jl")
 include("core/retention_mapping/fit.jl")
 include("core/retention_mapping/map.jl")
 include("core/alignment/alignment.jl")
-include("core/baseline/baseline.jl")
+include("core/baseline/arpls.jl")
 include("core/convert/mscanmatrix.jl")
 include("core/convert/mzchrom.jl")
 include("core/quadvar_model/containers.jl")
@@ -78,7 +78,7 @@ export RetentionMapper
 
 export attrs
 export acquisition
-export baseline
+export arpls
 export applymap
 export binmzvalues
 export binretentions

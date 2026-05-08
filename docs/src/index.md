@@ -92,11 +92,8 @@ nothing # hide
 ![](xic.svg)
 
 ```@example 1
-# Estimate the baseline, assuming Poisson count variance (Var ≈ intensity)
-estimated_baseline = baseline(rawretentions(xic, unit=u"minute"),
-                              rawintensities(xic), 
-                              variances=rawintensities(xic),
-                              λ=1e6)  # λ controls baseline smoothness (higher = smoother)
+# Estimate the baseline
+estimated_baseline = arpls(rawintensities(xic))
 
 # Plot the m/z 109 chromatogram with its baseline and save to SVG.
 fig₃ = Figure(; size=(1000, 350))

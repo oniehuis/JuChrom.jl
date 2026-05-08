@@ -1,5 +1,5 @@
 # Baseline
 
 ```@docs
-baseline
+arpls
 ```
