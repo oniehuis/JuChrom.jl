@@ -175,14 +175,28 @@ function strip_units_checked(mat::AbstractArray, name::String)
     end
 end
 
+
+module JuChromUnits
+import Unitful
+using Unitful: @unit
+
+# ── Count ─────────────────────────────────────────────────────────────────────────────────
+
+@unit count "count" Count 1 false
+
 # ── Thomson ───────────────────────────────────────────────────────────────────────────────
 
-# # Julia ≥ 1.12 enforces stricter world-age semantics for globals created via Core.eval.
-# # Predefine Unitful's hidden base-factor dictionary so Unitful.register can see this
-# # binding without emitting warnings about accessing it before creation.
-# if !isdefined(@__MODULE__, Symbol("#Unitful_basefactors"))
-#     @eval const $(Symbol("#Unitful_basefactors")) =
-#         Dict{Symbol, Tuple{Float64, Rational{Int}}}()
-# end
-
 @unit Th "Th" Thomson (Unitful.u / Unitful.q) true  # u = unified atomic mass unit, q = e = elementary charge, Th = u / e
+
+end
+
+using .JuChromUnits: count, aTh, cTh, dTh, daTh, ETh, fTh, GTh, hTh, kTh, mTh, MTh,
+    nTh, pTh, PTh, TTh, Th, yTh, YTh, zTh, ZTh, μTh
+
+# Julia ≥ 1.12 enforces stricter world-age semantics for globals created via Core.eval.
+# Predefine Unitful's hidden base-factor dictionary so Unitful.register can see this
+# binding without emitting warnings about accessing it before creation.
+if !isdefined(@__MODULE__, Symbol("#Unitful_basefactors"))
+    @eval const $(Symbol("#Unitful_basefactors")) =
+        Dict{Symbol, Tuple{Float64, Rational{Int}}}()
+end

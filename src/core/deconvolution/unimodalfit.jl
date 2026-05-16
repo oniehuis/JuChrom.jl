@@ -464,7 +464,7 @@ function unimodalfit(
 
         for (k, ℓ) in edges
             mask = inrng[k] .& inrng[ℓ]
-            m = count(mask)
+            m = Base.count(mask)
             if m < 3
                 continue
             end

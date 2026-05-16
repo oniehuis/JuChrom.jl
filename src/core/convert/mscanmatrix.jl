@@ -258,7 +258,7 @@ function estimate_nonzeros(filtered_series, threshold)
     total_nonzeros = 0
     @inbounds for i in 1:sample_size
         scan = filtered_series[i]
-        total_nonzeros += count(x -> x > threshold, intensities(scan))
+        total_nonzeros += Base.count(x -> x > threshold, intensities(scan))
     end
     
     # Extrapolate to full dataset

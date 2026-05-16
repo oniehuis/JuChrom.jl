@@ -48,6 +48,7 @@ include("core/scan_timing/mz_retention.jl")
 include("core/transform/binning.jl")
 include("core/transform/clr.jl")
 include("core/transform/gridding.jl")
+include("core/transform/intensity_units.jl")
 include("core/transform/mscanmatrix_ops.jl")
 include("core/transform/series_ops.jl")
 include("core/transform/whitening.jl")
@@ -89,6 +90,7 @@ export DENSE
 export densestgrid
 export derivinvmap
 export derivmap
+export dwellnormalize
 export extras
 export findclosest
 export fitmap
@@ -157,6 +159,7 @@ export varpred
 export varpredbias
 export vif
 export whiten
+export withintensityunit
 
 include("IO/InputOutput.jl")
 using .InputOutput
@@ -178,6 +181,7 @@ function massspectrum! end
 # Unitful extension
 function __init__()
     Unitful.register(@__MODULE__)
+    Unitful.register(JuChromUnits)
 end
 
 end

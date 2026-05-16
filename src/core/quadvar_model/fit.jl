@@ -962,8 +962,8 @@ function pooledfitstats(Ms::Vector{<:AbstractMatrix{<:Real}},
                 nfin += n
                 sumsq += sum(abs2, zv)
                 az = abs.(zv)
-                n68 += count(<=(1.0), az)
-                n95 += count(<=(1.96), az)
+                n68 += Base.count(<=(1.0), az)
+                n95 += Base.count(<=(1.96), az)
             end
         end
 
@@ -1293,7 +1293,7 @@ function residautocorr(
 
         # Pair-level mask: both ends of a lagged pair must survive trimming
         pairkeep = keep[1:end-lag] .& keep[1+lag:end]
-        n = count(pairkeep)
+        n = Base.count(pairkeep)
         n < 4 && continue  # Fisher weight (n-3) would be ≤ 0
 
         # Construct lagged vectors with pair-level filtering

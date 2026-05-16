@@ -72,6 +72,9 @@ end
 @safetestset "core/transform/gridding.jl" begin
     include("./core/transform/gridding.jl")
 end
+@safetestset "core/transform/intensity_units.jl" begin
+    include("./core/transform/intensity_units.jl")
+end
 @safetestset "core/transform/mscanmatrix_ops.jl" begin
     include("./core/transform/mscanmatrix_ops.jl")
 end
