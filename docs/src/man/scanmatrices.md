@@ -32,3 +32,18 @@ JuChrom.MassScanMatrix(::AbstractVector{<:Real}, ::Union{Nothing, Unitful.Units}
 JuChrom.MassScanMatrix(::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}, ::AbstractVector{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}, ::AbstractMatrix{<:Union{Real, Unitful.AbstractQuantity{<:Real}}}; level::Integer=1, instrument::NamedTuple=NamedTuple(), acquisition::NamedTuple=NamedTuple(), user::NamedTuple=NamedTuple(), sample::NamedTuple=NamedTuple(), extras::AbstractDict=Dict{String, Any}())
 Base.:(-)(::MassScanMatrix, ::MassScanMatrix)
 ```
+
+## AbstractVarianceMassScanMatrix
+
+```@docs
+JuChrom.AbstractVarianceMassScanMatrix
+JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)
+JuChrom.variances(::AbstractVarianceMassScanMatrix)
+JuChrom.rawvariances(::AbstractVarianceMassScanMatrix)
+```
+
+## VarianceMassScanMatrix
+
+```@docs
+JuChrom.VarianceMassScanMatrix
+```

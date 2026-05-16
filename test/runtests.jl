@@ -33,6 +33,9 @@ end
 @safetestset "core/core_containers/matrices.jl" begin
     include("./core/core_containers/matrices.jl")
 end
+@safetestset "core/core_containers/variance_matrices.jl" begin
+    include("./core/core_containers/variance_matrices.jl")
+end
 @safetestset "core/containers/massspectra.jl" begin
     include("./core/containers/massspectra.jl")
 end

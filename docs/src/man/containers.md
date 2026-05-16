@@ -1,8 +1,10 @@
 # Design overview
 
-JuChrom provides three core container types for chromatographic and mass spectrometric
-data. Single scans capture one measurement, while scan series and mass-scan matrices
-provide two alternative multi-scan representations.
+JuChrom provides core container types for chromatographic and mass spectrometric data.
+Single scans capture one measurement, while scan series and mass-scan matrices provide
+two alternative multi-scan representations. Variance-aware mass-scan matrices extend
+the aligned matrix interface with per-cell uncertainty without changing the plain signal
+container.
 
 Raw getters (e.g., [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})),
 [`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})),
@@ -195,7 +197,9 @@ Convenience:
 
 Mass-scan matrices store aligned mass scans on a shared m/z grid.
 Use series when you need scan-level structure or heterogeneous m/z grids; use matrices
-for aligned m/z operations and linear algebra workflows.
+for aligned m/z operations and linear algebra workflows. Use a variance-aware matrix when
+each intensity value is accompanied by an uncertainty estimate that must be carried through
+processing.
 
 ### AbstractMassScanMatrix interface
 
@@ -223,7 +227,9 @@ expects:
 
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix) is a subtype of 
 [`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix) that implements this 
-interface.
+interface. It stores signal values only; preprocessing choices such as replacement
+thresholds, pseudocounts, or intensity epsilon values are analysis policy and should stay
+outside this core container.
 
 Fields and accessors:
 
@@ -258,6 +264,71 @@ to convert a [`MassScanSeries`](@ref JuChrom.MassScanSeries) to a
 ```julia
 msm = mscanmatrix(mss)
 ```
+
+### AbstractVarianceMassScanMatrix interface
+
+[`AbstractVarianceMassScanMatrix`](@ref JuChrom.AbstractVarianceMassScanMatrix) is the
+variance-aware branch of the aligned mass-scan matrix interface. It is a subtype of
+[`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), so generic code written
+against `AbstractMassScanMatrix` can still consume variance-aware matrices through
+[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})),
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), and
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})).
+Variance-aware code can dispatch on `AbstractVarianceMassScanMatrix` and additionally use
+[`variances`](@ref JuChrom.variances(::AbstractVarianceMassScanMatrix)),
+[`rawvariances`](@ref JuChrom.rawvariances(::AbstractVarianceMassScanMatrix)), and
+[`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)).
+
+The extra type parameter is the variance unit type:
+
+```julia
+AbstractVarianceMassScanMatrix{R, M, I, V} <: AbstractMassScanMatrix{R, M, I}
+```
+
+Here `R`, `M`, and `I` are the retention, m/z, and intensity unit types inherited from
+`AbstractMassScanMatrix`, while `V` is the variance unit type. The variance matrix storage
+type remains a concrete implementation detail.
+
+**AbstractVarianceMassScanMatrix** expects the ordinary `AbstractMassScanMatrix` interface
+plus:
+
+| Expected field | Type | Getter |
+| :--- | :--- | :--- |
+| `variances` | `AbstractMatrix{<:Real}` | [`rawvariances`](@ref JuChrom.rawvariances(::AbstractVarianceMassScanMatrix)) |
+| `varianceunit` | `Union{Unitful.Units, Nothing}` | [`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)) |
+
+### VarianceMassScanMatrix
+
+[`VarianceMassScanMatrix`](@ref JuChrom.VarianceMassScanMatrix) is the concrete
+variance-aware matrix container. It wraps an existing `AbstractMassScanMatrix` and stores a
+same-shaped variance matrix:
+
+```julia
+vmsm = VarianceMassScanMatrix(msm, variances)
+```
+
+This is composition rather than a duplicated `MassScanMatrix` layout. The wrapper delegates
+the standard matrix getters to its parent matrix and adds variance-specific getters. This
+keeps plain signal storage independent from uncertainty storage, while still allowing
+`VarianceMassScanMatrix` to behave naturally wherever an `AbstractMassScanMatrix` is
+expected.
+
+Fields and accessors:
+
+| Field | Type | Getter |
+| :--- | :--- | :--- |
+| `msm` | `AbstractMassScanMatrix` | `parent(vmsm)` |
+| `variances` | `AbstractMatrix{<:Real}` | [`rawvariances`](@ref JuChrom.rawvariances(::AbstractVarianceMassScanMatrix)) |
+| `varianceunit` | `Union{Unitful.Units, Nothing}` | [`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)) |
+
+Convenience:
+
+- [`variances`](@ref JuChrom.variances(::AbstractVarianceMassScanMatrix)) returns unitful
+  variances when a variance unit is stored.
+- [`rawvariances`](@ref JuChrom.rawvariances(::AbstractVarianceMassScanMatrix)) returns
+  numeric variance values, optionally converting units before stripping.
+- [`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)) returns the
+  stored variance unit or `nothing`.
 
 See the dedicated container pages for the full API reference:
 [`Scans`](scans.md), [`Scan Series`](scanseries.md), and [`Scan Matrices`](scanmatrices.md).

@@ -28,10 +28,12 @@ const calibration = artifact"calibration"
 const shimadzu = artifact"Shimadzu"
 
 include("core/core_containers/matrices.jl")
+include("core/core_containers/variance_matrices.jl")
 include("core/core_containers/scans.jl")
 include("core/core_containers/series.jl")
 include("core/core_getters/utils.jl")
 include("core/core_getters/matrices.jl")
+include("core/core_getters/variance_matrices.jl")
 include("core/core_getters/scans.jl")
 include("core/core_getters/series.jl")
 include("core/retention_mapping/container.jl")
@@ -66,6 +68,7 @@ export AbstractMassScanMatrix
 export AbstractMassSpectrum
 export AbstractScan
 export AbstractScanSeries
+export AbstractVarianceMassScanMatrix
 export ChromScan
 export ChromScanSeries
 export MassScan
@@ -76,6 +79,7 @@ export OptimizationError
 export QuadVarParams
 export QuadVarFit
 export RetentionMapper
+export VarianceMassScanMatrix
 
 export attrs
 export acquisition
@@ -157,9 +161,12 @@ export uniquemzvalues
 export user
 export varpred
 export varpredbias
+export varianceunit
+export variances
 export vif
 export whiten
 export withintensityunit
+export rawvariances
 
 include("IO/InputOutput.jl")
 using .InputOutput
