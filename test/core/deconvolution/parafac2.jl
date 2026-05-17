@@ -16,6 +16,7 @@ Base.getindex(matrix::Parafac2LossProbeMatrix, row::Int, col::Int) =
 Base.IndexStyle(::Type{<:Parafac2LossProbeMatrix}) = IndexCartesian()
 
 const PARAFAC2_LOSS_PROBE_CALLS = Ref(0)
+const PARAFAC2_LOSS_PROBE_VALUES = Ref(Float64[1.0, Inf])
 
 function JuChrom.parafac2loss(
     X::Vector{Parafac2LossProbeMatrix},
@@ -25,7 +26,8 @@ function JuChrom.parafac2loss(
     loadings::AbstractMatrix{Float64}
 )
     PARAFAC2_LOSS_PROBE_CALLS[] += 1
-    PARAFAC2_LOSS_PROBE_CALLS[] == 1 ? 1.0 : Inf
+    values = PARAFAC2_LOSS_PROBE_VALUES[]
+    values[min(PARAFAC2_LOSS_PROBE_CALLS[], length(values))]
 end
 
 @testset "parafac2 vector input validation" begin
@@ -623,6 +625,7 @@ end
     weights = ones(2, 1)
 
     PARAFAC2_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_LOSS_PROBE_VALUES[] = [1.0, Inf]
     fitstart = JuChrom.parafac2fitstart(X, loadings, core, weights, 1, 0.0, ())
 
     @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
@@ -632,6 +635,19 @@ end
     @test fitstart.loadings === loadings
     @test fitstart.core === core
     @test fitstart.weights === weights
+
+    PARAFAC2_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_LOSS_PROBE_VALUES[] = [1.0, 1.0 + eps(Float64)]
+    tolfit = JuChrom.parafac2fitstart(X, loadings, core, weights, 1, 0.0, ())
+
+    @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
+    @test tolfit.converged
+    @test tolfit.stopreason == :tol
+    @test tolfit.iterations == 0
+    @test tolfit.losses == [1.0]
+    @test tolfit.loadings === loadings
+    @test tolfit.core === core
+    @test tolfit.weights === weights
 end
 
 @testset "parafac2 display and broadcasting" begin
