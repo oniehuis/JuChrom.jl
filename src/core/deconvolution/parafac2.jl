@@ -1,0 +1,1350 @@
+"""
+    Parafac2Fit
+
+Container for PARAFAC2 decomposition results.
+
+The PARAFAC2 model represented by this type is
+
+    X[k] ≈ bases[k] * core * Diagonal(weights[k, :]) * loadings'
+
+where each `X[k]` is a sample matrix with retentions on the first axis, m/z channels on
+the second axis, and `ncomponents` latent components. The retention axis can contain
+Kovats indices or any other retention coordinate used upstream.
+
+# Fields
+- `ncomponents::Int`: number of PARAFAC2 components.
+- `retentioncounts::Vector{Int}`: number of retention positions in each sample matrix.
+- `mzcount::Int`: common number of m/z channels in all input sample matrices.
+- `retentions`: retention coordinates per sample, stored without units, or `nothing`.
+- `retentionunit`: retention coordinate unit, or `nothing` when unitless or absent.
+- `mzvalues`: m/z values, stored without units, or `nothing`.
+- `mzunit`: m/z unit, or `nothing` when unitless or absent.
+- `samplelabels`: sample labels, or `nothing`.
+- `loadings`: shared m/z-mode loadings, or `nothing` before fitting.
+- `core`: shared PARAFAC2 score core, or `nothing` before fitting.
+- `weights`: sample/component weights, or `nothing` before fitting.
+- `bases`: sample-specific orthonormal bases, or `nothing` before fitting.
+- `loss::Vector`: objective values recorded during fitting.
+- `converged::Bool`: whether fitting met its convergence criterion.
+- `stopreason::Symbol`: why fitting stopped (`:tol`, `:maxiters`,
+  `:objective_increase`, or `:nonfinite`).
+- `iterations::Int`: number of fitting iterations performed.
+- `nstarts::Int`: number of starts attempted during fitting.
+- `beststart::Int`: one-based index of the selected start.
+- `compression::Symbol`: cross-product compression method used during fitting.
+- `nonnegative::Tuple`: nonnegative constraints used during fitting.
+
+At the current implementation stage, [`parafac2`](@ref) fits the direct PARAFAC2
+alternating least-squares algorithm with optional nonnegative spectra and abundance
+constraints.
+
+See also [`parafac2`](@ref).
+"""
+struct Parafac2Fit{T<:Real}
+    ncomponents::Int
+    retentioncounts::Vector{Int}
+    mzcount::Int
+    retentions::Union{Nothing, Vector{Vector{Float64}}}
+    retentionunit::Union{Nothing, Unitful.Units}
+    mzvalues::Union{Nothing, Vector{Float64}}
+    mzunit::Union{Nothing, Unitful.Units}
+    samplelabels::Union{Nothing, Vector{String}}
+    loadings::Union{Nothing, Matrix{T}}
+    core::Union{Nothing, Matrix{T}}
+    weights::Union{Nothing, Matrix{T}}
+    bases::Union{Nothing, Vector{Matrix{T}}}
+    loss::Vector{T}
+    converged::Bool
+    stopreason::Symbol
+    iterations::Int
+    nstarts::Int
+    beststart::Int
+    compression::Symbol
+    nonnegative::Tuple{Vararg{Symbol}}
+end
+
+Base.Broadcast.broadcastable(fit::Parafac2Fit) = Base.RefValue(fit)
+
+function Base.summary(fit::Parafac2Fit)
+    "Parafac2Fit (samples=$(length(fit.retentioncounts)), mz=$(fit.mzcount), " *
+    "components=$(fit.ncomponents), iterations=$(fit.iterations), " *
+    "starts=$(fit.nstarts), beststart=$(fit.beststart), " *
+    "compression=$(fit.compression), nonnegative=$(fit.nonnegative), " *
+    "converged=$(fit.converged), stopreason=$(fit.stopreason))"
+end
+
+Base.show(io::IO, fit::Parafac2Fit) = print(io, summary(fit))
+
+function Base.show(io::IO, ::MIME"text/plain", fit::Parafac2Fit)
+    println(io, summary(fit))
+    println(io, "  retention counts : ", fit.retentioncounts)
+    println(io, "  retentions       : ", isnothing(fit.retentions) ? "not stored" : "stored")
+    println(io, "  m/z values       : ", isnothing(fit.mzvalues) ? "not stored" : "stored")
+    println(io, "  sample labels    : ", isnothing(fit.samplelabels) ? "not stored" : "stored")
+    println(io, "  starts           : ", fit.nstarts, " (best: ", fit.beststart, ")")
+    println(io, "  compression      : ", fit.compression)
+    println(io, "  nonnegative      : ", fit.nonnegative)
+    println(io, "  stop reason      : ", fit.stopreason)
+    println(io, "  factor state     : ", isnothing(fit.loadings) ? "unfitted" : "fitted")
+end
+
+function parafac2inputmatrices(
+    X::AbstractVector{<:AbstractMatrix{<:Real}},
+    ::Type{T}
+) where {T<:AbstractFloat}
+    [Matrix{T}(Xk) for Xk in X]
+end
+
+function parafac2compression(compression::Symbol)
+    compression in (:none, :cholesky) || throw(ArgumentError(
+        "compression must be :none or :cholesky."
+    ))
+    compression
+end
+
+function parafac2nonnegative(nonnegative)
+    requested = if nonnegative === true
+        (:spectra, :abundances)
+    elseif nonnegative === false || isnothing(nonnegative)
+        ()
+    elseif nonnegative isa Symbol
+        (nonnegative,)
+    elseif nonnegative isa Tuple || nonnegative isa AbstractVector
+        Tuple(nonnegative)
+    else
+        throw(ArgumentError(
+            "nonnegative must be a Bool, Symbol, tuple, or vector of symbols."
+        ))
+    end
+
+    canonical = Symbol[]
+    for item in requested
+        item isa Symbol || throw(ArgumentError("nonnegative entries must be symbols."))
+        constraint = if item == :weights
+            :abundances
+        else
+            item
+        end
+        constraint in (:spectra, :abundances) || throw(ArgumentError(
+            "nonnegative entries must be :spectra, :abundances, or :weights."
+        ))
+        constraint in canonical || push!(canonical, constraint)
+    end
+
+    ordered = Symbol[]
+    :spectra in canonical && push!(ordered, :spectra)
+    :abundances in canonical && push!(ordered, :abundances)
+    Tuple(ordered)
+end
+
+parafac2constrainspectra(nonnegative::Tuple{Vararg{Symbol}}) = :spectra in nonnegative
+parafac2constrainabundances(nonnegative::Tuple{Vararg{Symbol}}) = :abundances in nonnegative
+
+function parafac2compressionmatrices(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    compression::Symbol
+) where {T<:AbstractFloat}
+    method = parafac2compression(compression)
+    compressed = falses(length(X))
+    method == :none && return X, compressed
+
+    matrices = Vector{Matrix{T}}(undef, length(X))
+    for sampleindex in eachindex(X)
+        Xk = X[sampleindex]
+        if size(Xk, 1) > size(Xk, 2)
+            crossproduct = transpose(Xk) * Xk
+            factorization = cholesky(Symmetric(crossproduct); check=false)
+            Hk = Matrix{T}(factorization.U)
+            all(isfinite, Hk) || throw(ArgumentError(
+                "Cholesky compression produced non-finite values for X[$(sampleindex)]."
+            ))
+            matrices[sampleindex] = Hk
+            compressed[sampleindex] = true
+        else
+            matrices[sampleindex] = Xk
+        end
+    end
+
+    matrices, compressed
+end
+
+function parafac2initialloadings(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    ncomponents::Integer
+) where {T<:AbstractFloat}
+    mzcount = size(first(X), 2)
+    crossproduct = zeros(T, mzcount, mzcount)
+    for Xk in X
+        crossproduct .+= transpose(Xk) * Xk
+    end
+
+    decomposition = eigen(Symmetric(crossproduct))
+    order = sortperm(decomposition.values; rev=true)[1:ncomponents]
+    Matrix{T}(decomposition.vectors[:, order])
+end
+
+function parafac2basis(
+    X::AbstractMatrix{T},
+    coefficient::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    ncomponents = size(coefficient, 1)
+    decomposition = svd(coefficient * transpose(X); full=false)
+    Matrix{T}(
+        decomposition.V[:, 1:ncomponents] *
+        transpose(decomposition.U[:, 1:ncomponents])
+    )
+end
+
+function parafac2updatebases(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    bases = Vector{Matrix{T}}(undef, length(X))
+
+    for sampleindex in eachindex(X)
+        coefficient = core * Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+        bases[sampleindex] = parafac2basis(X[sampleindex], coefficient)
+    end
+
+    bases
+end
+
+function parafac2transformeddata(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    bases::AbstractVector{<:AbstractMatrix{T}}
+) where {T<:AbstractFloat}
+    [transpose(bases[sampleindex]) * X[sampleindex] for sampleindex in eachindex(X)]
+end
+
+function khatrirao(A::AbstractMatrix{T}, B::AbstractMatrix{T}) where {T<:AbstractFloat}
+    size(A, 2) == size(B, 2) || throw(DimensionMismatch(
+        "A and B must have the same number of columns."
+    ))
+
+    rows = size(A, 1) * size(B, 1)
+    cols = size(A, 2)
+    out = Matrix{T}(undef, rows, cols)
+
+    for (outcol, acol, bcol) in zip(axes(out, 2), axes(A, 2), axes(B, 2))
+        row = firstindex(out, 1)
+        for a in axes(A, 1), b in axes(B, 1)
+            out[row, outcol] = A[a, acol] * B[b, bcol]
+            row += 1
+        end
+    end
+
+    out
+end
+
+function nonnegativeleastsquares(
+    design::AbstractMatrix{T},
+    response::AbstractVector{T}
+) where {T<:AbstractFloat}
+    size(design, 1) == length(response) || throw(DimensionMismatch(
+        "design rows must match response length."
+    ))
+
+    ncoef = size(design, 2)
+    x = zeros(T, ncoef)
+    z = zeros(T, ncoef)
+    passive = falses(ncoef)
+    tolerance = sqrt(eps(T)) * max(norm(design), one(T)) * max(norm(response), one(T))
+    maxiters = max(30, 30 * ncoef * ncoef)
+    iteration = 0
+    gradient = transpose(design) * (response - design * x)
+
+    while iteration < maxiters
+        candidate = 0
+        candidategradient = T(tolerance)
+        for index in axes(passive, 1)
+            if !passive[index] && gradient[index] > candidategradient
+                candidate = index
+                candidategradient = gradient[index]
+            end
+        end
+        candidate == 0 && break
+
+        passive[candidate] = true
+        while true
+            active = findall(passive)
+            z .= zero(T)
+            if !isempty(active)
+                z[active] .= design[:, active] \ response
+            end
+
+            all(index -> z[index] > T(tolerance), active) && break
+
+            alpha = one(T)
+            for index in active
+                if z[index] <= T(tolerance)
+                    denominator = x[index] - z[index]
+                    if denominator > eps(T)
+                        alpha = min(alpha, x[index] / denominator)
+                    else
+                        alpha = zero(T)
+                    end
+                end
+            end
+
+            x .+= alpha .* (z .- x)
+            for index in active
+                if x[index] <= T(tolerance)
+                    passive[index] = false
+                    x[index] = zero(T)
+                end
+            end
+
+            iteration += 1
+            iteration >= maxiters && break
+        end
+
+        x .= max.(z, zero(T))
+        gradient = transpose(design) * (response - design * x)
+        iteration += 1
+    end
+
+    max.(x, zero(T))
+end
+
+function leastsquaressolution(
+    design::AbstractMatrix{T},
+    response::AbstractVector{T},
+    nonnegative::Bool
+) where {T<:AbstractFloat}
+    nonnegative ? nonnegativeleastsquares(design, response) : design \ response
+end
+
+function parafac2updatecore(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    loadings::AbstractMatrix{T},
+    weights::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    ncomponents = size(weights, 2)
+    mzcount = size(loadings, 1)
+    nsamples = length(transformed)
+    Ywide = Matrix{T}(undef, ncomponents, mzcount * nsamples)
+    Bwide = Matrix{T}(undef, ncomponents, mzcount * nsamples)
+
+    for sampleindex in 1:nsamples
+        cols = ((sampleindex - 1) * mzcount + 1):(sampleindex * mzcount)
+        Ywide[:, cols] .= transformed[sampleindex]
+        Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+    end
+
+    Matrix{T}(transpose(transpose(Bwide) \ transpose(Ywide)))
+end
+
+function parafac2updateloadings(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    ncomponents = size(weights, 2)
+    mzcount = size(first(transformed), 2)
+    nsamples = length(transformed)
+    Ywide = Matrix{T}(undef, mzcount, ncomponents * nsamples)
+    Bwide = Matrix{T}(undef, ncomponents, ncomponents * nsamples)
+
+    for sampleindex in 1:nsamples
+        cols = ((sampleindex - 1) * ncomponents + 1):(sampleindex * ncomponents)
+        Ywide[:, cols] .= transpose(transformed[sampleindex])
+        Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(core)
+    end
+
+    design = transpose(Bwide)
+    response = transpose(Ywide)
+
+    if parafac2constrainspectra(nonnegative)
+        loadings = Matrix{T}(undef, mzcount, ncomponents)
+        for mzindex in axes(loadings, 1)
+            loadings[mzindex, :] .= nonnegativeleastsquares(
+                design,
+                response[:, mzindex]
+            )
+        end
+        return loadings
+    end
+
+    Matrix{T}(transpose(design \ response))
+end
+
+function parafac2updateweights(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    core::AbstractMatrix{T},
+    loadings::AbstractMatrix{T},
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    nsamples = length(transformed)
+    ncomponents = size(core, 2)
+    weights = Matrix{T}(undef, nsamples, ncomponents)
+    design = khatrirao(loadings, core)
+
+    for sampleindex in 1:nsamples
+        if parafac2constrainabundances(nonnegative)
+            weights[sampleindex, :] .= nonnegativeleastsquares(
+                design,
+                vec(transformed[sampleindex])
+            )
+        else
+            weights[sampleindex, :] .= design \ vec(transformed[sampleindex])
+        end
+    end
+
+    weights
+end
+
+function parafac2normalize!(
+    core::AbstractMatrix{T},
+    loadings::AbstractMatrix{T},
+    weights::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    for component in axes(loadings, 2)
+        corenorm = norm(view(core, :, component))
+        if isfinite(corenorm) && corenorm > eps(T)
+            core[:, component] ./= corenorm
+            weights[:, component] .*= corenorm
+        end
+
+        loadingnorm = norm(view(loadings, :, component))
+        if isfinite(loadingnorm) && loadingnorm > eps(T)
+            loadings[:, component] ./= loadingnorm
+            weights[:, component] .*= loadingnorm
+        end
+    end
+
+    core, loadings, weights
+end
+
+function parafac2cpcycle(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    core::AbstractMatrix{T},
+    loadings::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    core_new = parafac2updatecore(transformed, loadings, weights)
+    loadings_new = parafac2updateloadings(transformed, core_new, weights, nonnegative)
+    weights_new = parafac2updateweights(transformed, core_new, loadings_new, nonnegative)
+    parafac2normalize!(core_new, loadings_new, weights_new)
+
+    core_new, loadings_new, weights_new
+end
+
+function parafac2loss(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    bases::AbstractVector{<:AbstractMatrix{T}},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    loadings::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    loss = zero(T)
+    for sampleindex in eachindex(X)
+        fitted = bases[sampleindex] *
+            core *
+            Diagonal(view(weights, sampleindex, :)) *
+            transpose(loadings)
+        loss += sum(abs2, X[sampleindex] .- fitted)
+    end
+
+    loss
+end
+
+function parafac2requirefitted(fit::Parafac2Fit)
+    if isnothing(fit.loadings) ||
+            isnothing(fit.core) ||
+            isnothing(fit.weights) ||
+            isnothing(fit.bases)
+        throw(ArgumentError("fit does not contain fitted PARAFAC2 factors."))
+    end
+    nothing
+end
+
+function parafac2checksampleindex(fit::Parafac2Fit, sampleindex::Integer)
+    1 <= sampleindex <= length(fit.retentioncounts) || throw(BoundsError(
+        fit.retentioncounts,
+        sampleindex
+    ))
+    Int(sampleindex)
+end
+
+"""
+    parafac2scores(fit::Parafac2Fit)
+    parafac2scores(fit::Parafac2Fit, sampleindex::Integer)
+
+Return sample-specific PARAFAC2 score matrices.
+
+For sample `k`, scores are computed as
+
+    fit.bases[k] * fit.core
+
+The one-argument method returns one score matrix per sample. The two-argument method
+returns only the requested sample's score matrix.
+
+See also [`parafac2reconstruct`](@ref).
+"""
+function parafac2scores(fit::Parafac2Fit)
+    parafac2requirefitted(fit)
+    [fit.bases[sampleindex] * fit.core for sampleindex in eachindex(fit.bases)]
+end
+
+function parafac2scores(fit::Parafac2Fit, sampleindex::Integer)
+    parafac2requirefitted(fit)
+    checkedindex = parafac2checksampleindex(fit, sampleindex)
+    fit.bases[checkedindex] * fit.core
+end
+
+"""
+    parafac2profileminima(fit::Parafac2Fit)
+
+Return the minimum fitted profile value for each sample/component as a
+`samples × components` matrix.
+
+Negative entries indicate that the corresponding fitted chromatographic profile contains
+negative values.
+
+See also [`parafac2scores`](@ref), [`parafac2profilediagnostics`](@ref).
+"""
+function parafac2profileminima(fit::Parafac2Fit)
+    profiles = parafac2scores(fit)
+    minima = Matrix{eltype(fit.core)}(undef, length(profiles), fit.ncomponents)
+
+    for sampleindex in eachindex(profiles)
+        for component in axes(profiles[sampleindex], 2)
+            minima[sampleindex, component] = minimum(view(profiles[sampleindex], :, component))
+        end
+    end
+
+    minima
+end
+
+"""
+    parafac2profilediagnostics(fit::Parafac2Fit)
+
+Return profile sign diagnostics as a named tuple.
+
+The returned fields are `minima`, `minimum`, `hasnegative`, and `negativecounts`.
+`minima` contains the minimum profile value for each sample/component, and
+`negativecounts` contains the number of negative profile entries for each
+sample/component.
+
+See also [`parafac2profileminima`](@ref), [`parafac2scores`](@ref).
+"""
+function parafac2profilediagnostics(fit::Parafac2Fit)
+    profiles = parafac2scores(fit)
+    minima = Matrix{eltype(fit.core)}(undef, length(profiles), fit.ncomponents)
+    negativecounts = Matrix{Int}(undef, length(profiles), fit.ncomponents)
+
+    for sampleindex in eachindex(profiles)
+        for component in axes(profiles[sampleindex], 2)
+            profile = view(profiles[sampleindex], :, component)
+            minima[sampleindex, component] = minimum(profile)
+            negativecounts[sampleindex, component] =
+                Base.count(<(zero(eltype(fit.core))), profile)
+        end
+    end
+
+    (
+        minima=minima,
+        minimum=minimum(minima),
+        hasnegative=any(<(zero(eltype(fit.core))), minima),
+        negativecounts=negativecounts,
+    )
+end
+
+"""
+    parafac2spectra(fit::Parafac2Fit; metadata=false, unit=nothing)
+
+Return component spectral loadings as an `m/z × components` matrix.
+
+By default this returns a copy of `fit.loadings`. If `metadata=true`, return a named
+tuple `(values=spectra, mzvalues=mzvalues)`, where `mzvalues` is `nothing` when no m/z
+axis metadata was stored. Pass `unit` with `metadata=true` to convert stored unitful m/z
+metadata.
+
+Fits use nonnegative spectral loadings by default. If the fit was created with
+`nonnegative=()` or without `:spectra`, these loadings can be signed.
+
+See also [`parafac2abundances`](@ref), [`parafac2apexes`](@ref).
+"""
+function parafac2spectra(
+    fit::Parafac2Fit;
+    metadata::Bool=false,
+    unit::Union{Nothing, Unitful.Units}=nothing
+)
+    parafac2requirefitted(fit)
+    metadata || isnothing(unit) || throw(ArgumentError(
+        "unit can only be used when metadata=true."
+    ))
+    spectra = copy(fit.loadings)
+    metadata || return spectra
+
+    (values=spectra, mzvalues=mzvalues(fit; unit=unit))
+end
+
+"""
+    parafac2abundances(fit::Parafac2Fit)
+
+Return sample/component weights as a `samples × components` matrix.
+
+Fits use nonnegative abundance weights by default. If the fit was created with
+`nonnegative=()` or without `:abundances`, these values can be signed and retain the
+scale convention of the selected solution.
+
+See also [`parafac2spectra`](@ref), [`parafac2apexes`](@ref).
+"""
+function parafac2abundances(fit::Parafac2Fit)
+    parafac2requirefitted(fit)
+    copy(fit.weights)
+end
+
+"""
+    parafac2apexes(fit::Parafac2Fit; unit=nothing)
+
+Return apex information for each sample/component retention profile.
+
+The return value is a named tuple `(indices=indices, retentions=retentions,
+values=values)`, where each matrix has dimensions `samples × components`. `indices`
+contains the retention index of the maximum value in `parafac2scores(fit, sample)[:, component]`.
+`values` contains the corresponding profile values. `retentions` is `nothing` when the
+fit has no stored retention metadata; otherwise it contains the apex retention coordinate,
+converted to `unit` when requested.
+
+The apex is the maximum fitted profile value, not the maximum absolute value. If the fit
+was created without nonnegative abundance weights, profile signs are model-dependent.
+
+See also [`parafac2scores`](@ref), [`parafac2spectra`](@ref).
+"""
+function parafac2apexes(
+    fit::Parafac2Fit;
+    unit::Union{Nothing, Unitful.Units}=nothing
+)
+    parafac2requirefitted(fit)
+    profiles = parafac2scores(fit)
+    nsamples = length(profiles)
+    ncomponents = fit.ncomponents
+    indices = Matrix{Int}(undef, nsamples, ncomponents)
+    values = Matrix{eltype(fit.core)}(undef, nsamples, ncomponents)
+    retentionvectors = retentions(fit; unit=unit)
+    apexretentions = if isnothing(retentionvectors)
+        nothing
+    else
+        Matrix{typeof(retentionvectors[1][1])}(undef, nsamples, ncomponents)
+    end
+
+    for sampleindex in eachindex(profiles)
+        profilematrix = profiles[sampleindex]
+        for component in axes(profilematrix, 2)
+            profile = view(profilematrix, :, component)
+            apexindex = argmax(profile)
+            indices[sampleindex, component] = apexindex
+            values[sampleindex, component] = profile[apexindex]
+            if !isnothing(apexretentions)
+                apexretentions[sampleindex, component] = retentionvectors[sampleindex][apexindex]
+            end
+        end
+    end
+
+    (indices=indices, retentions=apexretentions, values=values)
+end
+
+"""
+    parafac2reconstruct(fit::Parafac2Fit)
+    parafac2reconstruct(fit::Parafac2Fit, sampleindex::Integer)
+
+Reconstruct fitted sample matrix or matrices from a PARAFAC2 fit.
+
+For sample `k`, the reconstruction is
+
+    parafac2scores(fit, k) * Diagonal(fit.weights[k, :]) * fit.loadings'
+
+The one-argument method returns one reconstructed `retentions × m/z` matrix per sample.
+The two-argument method returns only the requested sample's reconstruction.
+"""
+function parafac2reconstruct(fit::Parafac2Fit, sampleindex::Integer)
+    parafac2requirefitted(fit)
+    checkedindex = parafac2checksampleindex(fit, sampleindex)
+    parafac2scores(fit, checkedindex) *
+        Diagonal(view(fit.weights, checkedindex, :)) *
+        transpose(fit.loadings)
+end
+
+function parafac2reconstruct(fit::Parafac2Fit)
+    parafac2requirefitted(fit)
+    [parafac2reconstruct(fit, sampleindex) for sampleindex in eachindex(fit.bases)]
+end
+
+function parafac2diagnosticmatrices(
+    fit::Parafac2Fit,
+    X::AbstractVector{<:AbstractMatrix{<:Real}}
+)
+    parafac2requirefitted(fit)
+    length(X) == length(fit.retentioncounts) || throw(DimensionMismatch(
+        "X must contain $(length(fit.retentioncounts)) sample matrices, got $(length(X))."
+    ))
+
+    T = float(promote_type(eltype(fit.loadings), map(eltype, X)...))
+    matrices = Vector{Matrix{T}}(undef, length(X))
+    for sampleindex in eachindex(X)
+        expectedsize = (fit.retentioncounts[sampleindex], fit.mzcount)
+        size(X[sampleindex]) == expectedsize || throw(DimensionMismatch(
+            "X[$(sampleindex)] must have size $(expectedsize), got $(size(X[sampleindex]))."
+        ))
+        all(isfinite, X[sampleindex]) || throw(ArgumentError(
+            "X[$(sampleindex)] must contain only finite values."
+        ))
+        matrices[sampleindex] = Matrix{T}(X[sampleindex])
+    end
+
+    matrices
+end
+
+function parafac2diagnosticmatrices(
+    fit::Parafac2Fit,
+    X::AbstractArray{<:Real, 3}
+)
+    samples = [view(X, k, :, :) for k in axes(X, 1)]
+    parafac2diagnosticmatrices(fit, samples)
+end
+
+"""
+    parafac2residuals(fit::Parafac2Fit, X)
+
+Return residual matrices `X[k] - parafac2reconstruct(fit, k)` for each sample.
+
+`X` can be either the original vector of `retentions × m/z` matrices or a
+`samples × retentions × m/z` tensor. The dimensions must match the fitted data layout.
+
+See also [`parafac2loss`](@ref), [`parafac2fitpercent`](@ref).
+"""
+function parafac2residuals(
+    fit::Parafac2Fit,
+    X::Union{AbstractVector{<:AbstractMatrix{<:Real}}, AbstractArray{<:Real, 3}}
+)
+    matrices = parafac2diagnosticmatrices(fit, X)
+    reconstructions = parafac2reconstruct(fit)
+    [matrices[sampleindex] .- reconstructions[sampleindex] for sampleindex in eachindex(matrices)]
+end
+
+"""
+    parafac2loss(fit::Parafac2Fit, X)
+
+Return the residual sum of squares for `fit` against data `X`.
+
+`X` can be either a vector of sample matrices or a `samples × retentions × m/z` tensor.
+
+See also [`parafac2residuals`](@ref), [`parafac2fitpercent`](@ref).
+"""
+function parafac2loss(
+    fit::Parafac2Fit,
+    X::Union{AbstractVector{<:AbstractMatrix{<:Real}}, AbstractArray{<:Real, 3}}
+)
+    residuals = parafac2residuals(fit, X)
+    sum(sum(abs2, residual) for residual in residuals)
+end
+
+"""
+    parafac2fitpercent(fit::Parafac2Fit, X)
+
+Return the fraction of total sum of squares explained by the PARAFAC2 fit.
+
+The returned value is
+
+    1 - parafac2loss(fit, X) / sum(abs2, X)
+
+If the total sum of squares is zero, the return value is `NaN`.
+
+See also [`parafac2loss`](@ref), [`parafac2reconstruct`](@ref).
+"""
+function parafac2fitpercent(
+    fit::Parafac2Fit,
+    X::Union{AbstractVector{<:AbstractMatrix{<:Real}}, AbstractArray{<:Real, 3}}
+)
+    matrices = parafac2diagnosticmatrices(fit, X)
+    totalsumsquares = sum(sum(abs2, matrix) for matrix in matrices)
+    totalsumsquares == 0 && return NaN
+    1 - parafac2loss(fit, matrices) / totalsumsquares
+end
+
+function parafac2rationalstart(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    ncomponents::Integer,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    loadings = parafac2initialloadings(X, ncomponents)
+    if parafac2constrainspectra(nonnegative)
+        loadings .= abs.(loadings)
+    end
+    core = Matrix{T}(I, ncomponents, ncomponents)
+    weights = ones(T, length(X), ncomponents)
+    parafac2normalize!(core, loadings, weights)
+
+    loadings, core, weights
+end
+
+function parafac2randomstart(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    ncomponents::Integer,
+    rng::Random.AbstractRNG,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    mzcount = size(first(X), 2)
+    decomposition = svd(Random.randn(rng, T, mzcount, ncomponents); full=false)
+    loadings = Matrix{T}(decomposition.U[:, 1:ncomponents])
+    if parafac2constrainspectra(nonnegative)
+        loadings .= abs.(loadings)
+    end
+    core = Random.randn(rng, T, ncomponents, ncomponents)
+    weights = Random.randn(rng, T, length(X), ncomponents)
+    if parafac2constrainabundances(nonnegative)
+        weights .= abs.(weights)
+    end
+    parafac2normalize!(core, loadings, weights)
+
+    loadings, core, weights
+end
+
+function parafac2fitstart(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    maxiters::Integer,
+    tol::Real,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    bases = parafac2updatebases(X, loadings, core, weights)
+    losses = T[parafac2loss(X, bases, core, weights, loadings)]
+    converged = false
+    stopreason = :maxiters
+    iterations = 0
+
+    for iteration in 1:maxiters
+        previousloss = last(losses)
+
+        previousloadings = loadings
+        previouscore = core
+        previousweights = weights
+        previousbases = bases
+
+        transformed = parafac2transformeddata(X, bases)
+        core, loadings, weights = parafac2cpcycle(
+            transformed,
+            core,
+            loadings,
+            weights,
+            nonnegative
+        )
+        bases = parafac2updatebases(X, loadings, core, weights)
+        currentloss = parafac2loss(X, bases, core, weights, loadings)
+
+        increasetolerance = sqrt(eps(T)) * max(one(T), previousloss)
+        if !isfinite(currentloss) || currentloss > previousloss + increasetolerance
+            loadings = previousloadings
+            core = previouscore
+            weights = previousweights
+            bases = previousbases
+            stopreason = isfinite(currentloss) ? :objective_increase : :nonfinite
+            break
+        elseif currentloss > previousloss
+            loadings = previousloadings
+            core = previouscore
+            weights = previousweights
+            bases = previousbases
+            converged = true
+            stopreason = :tol
+            break
+        end
+
+        push!(losses, currentloss)
+        iterations = iteration
+
+        improvement = previousloss - currentloss
+        threshold = T(tol) * max(previousloss, eps(T))
+        if improvement <= threshold
+            converged = true
+            stopreason = :tol
+            break
+        end
+    end
+
+    (
+        loadings=loadings,
+        core=core,
+        weights=weights,
+        bases=bases,
+        losses=losses,
+        converged=converged,
+        stopreason=stopreason,
+        iterations=iterations
+    )
+end
+
+function parafac2fit(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    ncomponents::Integer,
+    maxiters::Integer,
+    tol::Real,
+    nstarts::Integer,
+    rng::Random.AbstractRNG,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    nstarts >= 1 || throw(ArgumentError("nstarts must be at least 1."))
+
+    loadings, core, weights = parafac2rationalstart(X, ncomponents, nonnegative)
+    bestfit = parafac2fitstart(
+        X,
+        loadings,
+        core,
+        weights,
+        maxiters,
+        tol,
+        nonnegative
+    )
+    bestloss = last(bestfit.losses)
+    beststart = 1
+
+    for startindex in 2:nstarts
+        loadings, core, weights = parafac2randomstart(X, ncomponents, rng, nonnegative)
+        currentfit = parafac2fitstart(
+            X,
+            loadings,
+            core,
+            weights,
+            maxiters,
+            tol,
+            nonnegative
+        )
+        currentloss = last(currentfit.losses)
+        if currentloss < bestloss
+            bestfit = currentfit
+            bestloss = currentloss
+            beststart = startindex
+        end
+    end
+
+    (
+        bestfit.loadings,
+        bestfit.core,
+        bestfit.weights,
+        bestfit.bases,
+        bestfit.losses,
+        bestfit.converged,
+        bestfit.stopreason,
+        bestfit.iterations,
+        beststart
+    )
+end
+
+function parafac2coordinatevector(
+    values,
+    expectedlength::Integer,
+    name::AbstractString;
+    targetunit::Union{Nothing, Unitful.Units}=nothing,
+    requirepositive::Bool=false
+)
+    length(values) == expectedlength || throw(DimensionMismatch(
+        "$name must have length $(expectedlength), got $(length(values))."
+    ))
+
+    hasunits = any(isunitful, values)
+    rawvalues = Vector{Float64}(undef, length(values))
+    valueunit = targetunit
+
+    if hasunits
+        all(isunitful, values) || throw(ArgumentError(
+            "$name must not mix unitless and unitful values."
+        ))
+        if isnothing(valueunit)
+            valueunit = unit(first(values))
+        end
+        for (i, value) in enumerate(values)
+            try
+                rawvalues[i] = Float64(ustrip(valueunit, value))
+            catch err
+                err isa Unitful.DimensionError || rethrow()
+                throw(ArgumentError("$name contains values incompatible with $(valueunit)."))
+            end
+        end
+    else
+        isnothing(targetunit) || throw(ArgumentError(
+            "$name must have units compatible with $(targetunit)."
+        ))
+        all(value -> value isa Real, values) || throw(ArgumentError(
+            "$name must contain real values or Unitful quantities."
+        ))
+        rawvalues .= Float64.(values)
+    end
+
+    all(isfinite, rawvalues) || throw(ArgumentError("$name must contain only finite values."))
+    all(diff(rawvalues) .> 0) || throw(ArgumentError("$name must be strictly increasing."))
+    if requirepositive
+        all(rawvalues .> 0) || throw(ArgumentError("$name must be positive."))
+    end
+
+    rawvalues, valueunit
+end
+
+function parafac2retentionmetadata(retentions, retentioncounts::AbstractVector{<:Integer})
+    nsamples = length(retentioncounts)
+    isnothing(retentions) && return nothing, nothing
+
+    retentionvectors = Vector{Vector{Float64}}(undef, nsamples)
+    retentionunit = nothing
+
+    if retentions isa AbstractMatrix
+        size(retentions, 1) == nsamples || throw(DimensionMismatch(
+            "retentions must have one row per sample ($(nsamples)), got $(size(retentions, 1))."
+        ))
+        for sampleindex in 1:nsamples
+            values, sampleunit = parafac2coordinatevector(
+                view(retentions, sampleindex, :),
+                retentioncounts[sampleindex],
+                "retentions for sample $(sampleindex)";
+                targetunit=retentionunit
+            )
+            if sampleindex > 1 && isnothing(retentionunit) != isnothing(sampleunit)
+                throw(ArgumentError(
+                    "retentions must be consistently unitless or consistently unitful."
+                ))
+            end
+            retentionunit = sampleindex == 1 ? sampleunit : retentionunit
+            retentionvectors[sampleindex] = values
+        end
+        return retentionvectors, retentionunit
+    end
+
+    if retentions isa AbstractVector && all(value -> value isa AbstractVector, retentions)
+        length(retentions) == nsamples || throw(DimensionMismatch(
+            "retentions must contain one vector per sample ($(nsamples)), got $(length(retentions))."
+        ))
+        for sampleindex in 1:nsamples
+            values, sampleunit = parafac2coordinatevector(
+                retentions[sampleindex],
+                retentioncounts[sampleindex],
+                "retentions for sample $(sampleindex)";
+                targetunit=retentionunit
+            )
+            if sampleindex > 1 && isnothing(retentionunit) != isnothing(sampleunit)
+                throw(ArgumentError(
+                    "retentions must be consistently unitless or consistently unitful."
+                ))
+            end
+            retentionunit = sampleindex == 1 ? sampleunit : retentionunit
+            retentionvectors[sampleindex] = values
+        end
+        return retentionvectors, retentionunit
+    end
+
+    sharedvalues, retentionunit = parafac2coordinatevector(
+        retentions,
+        first(retentioncounts),
+        "retentions"
+    )
+    for sampleindex in 1:nsamples
+        length(sharedvalues) == retentioncounts[sampleindex] || throw(DimensionMismatch(
+            "shared retentions have length $(length(sharedvalues)), but sample " *
+            "$(sampleindex) has $(retentioncounts[sampleindex]) retention positions."
+        ))
+        retentionvectors[sampleindex] = copy(sharedvalues)
+    end
+
+    retentionvectors, retentionunit
+end
+
+function parafac2mzmetadata(mzvalues, mzcount::Integer)
+    isnothing(mzvalues) && return nothing, nothing
+    parafac2coordinatevector(mzvalues, mzcount, "m/z values"; requirepositive=true)
+end
+
+function parafac2samplelabelmetadata(samplelabels, nsamples::Integer)
+    isnothing(samplelabels) && return nothing
+    length(samplelabels) == nsamples || throw(DimensionMismatch(
+        "samplelabels must have length $(nsamples), got $(length(samplelabels))."
+    ))
+
+    labels = string.(collect(samplelabels))
+    all(!isempty, labels) || throw(ArgumentError("samplelabels must not contain empty labels."))
+    length(unique(labels)) == length(labels) || throw(ArgumentError(
+        "samplelabels must be unique."
+    ))
+
+    labels
+end
+
+function convertparafac2rawvalues(
+    ::Nothing,
+    ::Union{Nothing, Unitful.Units},
+    ::AbstractString,
+    ::Union{Nothing, Unitful.Units}
+)
+    nothing
+end
+
+function convertparafac2rawvalues(
+    values::Union{Nothing, Vector{Float64}},
+    valueunit::Union{Nothing, Unitful.Units},
+    name::AbstractString,
+    targetunit::Union{Nothing, Unitful.Units}
+)
+    isnothing(values) && return nothing
+    if isnothing(valueunit)
+        isnothing(targetunit) || throw(ArgumentError("Cannot convert unitless $name to a unit."))
+        return copy(values)
+    end
+
+    outputunit = isnothing(targetunit) ? valueunit : targetunit
+    Float64.(ustrip.(Base.RefValue(outputunit), values .* valueunit))
+end
+
+function convertparafac2rawvalues(
+    values::Union{Nothing, Vector{Vector{Float64}}},
+    valueunit::Union{Nothing, Unitful.Units},
+    name::AbstractString,
+    targetunit::Union{Nothing, Unitful.Units}
+)
+    isnothing(values) && return nothing
+    if isnothing(valueunit)
+        isnothing(targetunit) || throw(ArgumentError("Cannot convert unitless $name to a unit."))
+        return copy.(values)
+    end
+
+    outputunit = isnothing(targetunit) ? valueunit : targetunit
+    [Float64.(ustrip.(Base.RefValue(outputunit), value .* valueunit)) for value in values]
+end
+
+function convertparafac2values(
+    ::Nothing,
+    ::Union{Nothing, Unitful.Units},
+    ::AbstractString,
+    ::Union{Nothing, Unitful.Units}
+)
+    nothing
+end
+
+function convertparafac2values(
+    values::Union{Nothing, Vector{Float64}},
+    valueunit::Union{Nothing, Unitful.Units},
+    name::AbstractString,
+    targetunit::Union{Nothing, Unitful.Units}
+)
+    isnothing(values) && return nothing
+    if isnothing(valueunit)
+        isnothing(targetunit) || throw(ArgumentError("Cannot convert unitless $name to a unit."))
+        return copy(values)
+    end
+
+    outputunit = isnothing(targetunit) ? valueunit : targetunit
+    uconvert.(Base.RefValue(outputunit), values .* valueunit)
+end
+
+function convertparafac2values(
+    values::Union{Nothing, Vector{Vector{Float64}}},
+    valueunit::Union{Nothing, Unitful.Units},
+    name::AbstractString,
+    targetunit::Union{Nothing, Unitful.Units}
+)
+    isnothing(values) && return nothing
+    if isnothing(valueunit)
+        isnothing(targetunit) || throw(ArgumentError("Cannot convert unitless $name to a unit."))
+        return copy.(values)
+    end
+
+    outputunit = isnothing(targetunit) ? valueunit : targetunit
+    [uconvert.(Base.RefValue(outputunit), value .* valueunit) for value in values]
+end
+
+rawretentions(fit::Parafac2Fit; unit::Union{Nothing, Unitful.Units}=nothing) =
+    convertparafac2rawvalues(fit.retentions, fit.retentionunit, "retentions", unit)
+
+retentions(fit::Parafac2Fit; unit::Union{Nothing, Unitful.Units}=nothing) =
+    convertparafac2values(fit.retentions, fit.retentionunit, "retentions", unit)
+
+retentionunit(fit::Parafac2Fit) = fit.retentionunit
+
+rawmzvalues(fit::Parafac2Fit; unit::Union{Nothing, Unitful.Units}=nothing) =
+    convertparafac2rawvalues(fit.mzvalues, fit.mzunit, "m/z values", unit)
+
+mzvalues(fit::Parafac2Fit; unit::Union{Nothing, Unitful.Units}=nothing) =
+    convertparafac2values(fit.mzvalues, fit.mzunit, "m/z values", unit)
+
+mzunit(fit::Parafac2Fit) = fit.mzunit
+
+function parafac2dimensions(
+    X::AbstractVector{<:AbstractMatrix{<:Real}},
+    ncomponents::Integer
+)
+    isempty(X) && throw(ArgumentError("X must contain at least one sample matrix."))
+    ncomponents >= 1 || throw(ArgumentError("ncomponents must be at least 1."))
+
+    mzcount = size(first(X), 2)
+    retentioncounts = Vector{Int}(undef, length(X))
+    smallestmode = typemax(Int)
+
+    for (sampleindex, Xk) in enumerate(X)
+        nretentions, nmz = size(Xk)
+        retentioncounts[sampleindex] = nretentions
+
+        if nmz != mzcount
+            throw(DimensionMismatch(
+                "all sample matrices must have the same number of m/z channels " *
+                "(sample 1 has $(mzcount), sample $(sampleindex) has $(nmz))."
+            ))
+        end
+
+        all(isfinite, Xk) || throw(ArgumentError(
+            "X[$(sampleindex)] must contain only finite values."
+        ))
+
+        smallestmode = min(smallestmode, nretentions, nmz)
+    end
+
+    if ncomponents > smallestmode
+        throw(ArgumentError(
+            "ncomponents must be between 1 and min(size(X[k])...)=$(smallestmode)."
+        ))
+    end
+
+    retentioncounts, mzcount
+end
+
+"""
+    parafac2(X::AbstractVector{<:AbstractMatrix{<:Real}}, ncomponents::Integer;
+        retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
+        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
+        nonnegative=(:spectra, :abundances))
+    parafac2(X::AbstractArray{<:Real, 3}, ncomponents::Integer;
+        retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
+        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
+        nonnegative=(:spectra, :abundances))
+
+Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref).
+
+For the vector method, each `X[k]` is one `retentions × m/z` sample matrix. All matrices
+must have the same number of m/z channels, may have different numbers of retention
+positions, and must contain only finite real values. For the tensor method, `X` is
+interpreted as `samples × retentions × m/z` and each sample is converted internally to a
+`retentions × m/z` matrix view.
+
+Optional `retentions` can be a shared retention coordinate vector, a vector of retention
+coordinate vectors (one per sample), or a `samples × retentions` matrix. Optional
+`mzvalues` is a shared m/z coordinate vector. Retention and m/z coordinates may be
+unitless real values or `Unitful.AbstractQuantity` values; units are stripped and stored
+separately in the returned fit. Optional `samplelabels` must contain one unique label per
+sample.
+
+The direct fitting algorithm follows Kiers, Ten Berge, and Bro's alternating scheme:
+initialize `loadings` from PCA of `sum(X[k]' * X[k])`, initialize `core = I` and
+`weights .= 1`, update sample-specific `bases` by the SVD/Procrustes step, then apply one
+PARAFAC1/CP ALS cycle to the small tensor with frontal slices `bases[k]' * X[k]`.
+Start 1 is this deterministic rational initialization. Additional starts use random
+factors, and the returned fit stores the start with the smallest final objective value.
+
+If `compression=:cholesky`, each sample matrix with more retention rows than m/z columns
+is replaced during fitting by a smaller matrix `H[k]` satisfying `H[k]' * H[k] == X[k]' * X[k]`,
+following the paper's cross-product sufficiency step. Final sample-specific bases are then
+computed from the original matrices, so scores, reconstructions, residuals, and apexes keep
+the original retention dimensions. The default `compression=:none` uses the original
+matrices throughout fitting.
+
+By default, spectral loadings and sample/component abundance weights are constrained
+nonnegative. Pass `nonnegative=()` or `nonnegative=false` to run the paper's original
+unconstrained direct ALS update. `nonnegative` may also be `:spectra`, `:abundances`,
+`:weights`, or a tuple/vector containing those symbols.
+
+`ncomponents` must satisfy `1 <= ncomponents <= min(size(X[k])...)` across all sample
+matrices. `maxiters` controls the number of ALS cycles and may be zero to return the
+rational initialization for `nstarts=1`. `tol` is the relative objective-decrease
+threshold used for convergence. `nstarts` must be at least one; pass `rng` to make random
+starts reproducible. `compression` must be `:none` or `:cholesky`.
+"""
+function parafac2(
+    X::AbstractVector{<:AbstractMatrix{<:Real}},
+    ncomponents::Integer;
+    retentions=nothing,
+    mzvalues=nothing,
+    samplelabels=nothing,
+    maxiters::Integer=100,
+    tol::Real=1e-8,
+    nstarts::Integer=1,
+    rng::Random.AbstractRNG=Random.default_rng(),
+    compression::Symbol=:none,
+    nonnegative=(:spectra, :abundances)
+)
+    retentioncounts, mzcount = parafac2dimensions(X, ncomponents)
+    maxiters >= 0 || throw(ArgumentError("maxiters must be nonnegative."))
+    isfinite(tol) && tol >= 0 || throw(ArgumentError("tol must be finite and nonnegative."))
+    nstarts >= 1 || throw(ArgumentError("nstarts must be at least 1."))
+    compression = parafac2compression(compression)
+    nonnegative = parafac2nonnegative(nonnegative)
+    retentionmetadata, retentionunit = parafac2retentionmetadata(retentions, retentioncounts)
+    mzmetadata, mzunit = parafac2mzmetadata(mzvalues, mzcount)
+    labels = parafac2samplelabelmetadata(samplelabels, length(X))
+    T = float(promote_type(map(eltype, X)...))
+    Xoriginal = parafac2inputmatrices(X, T)
+    Xfit, compressed = parafac2compressionmatrices(Xoriginal, compression)
+    loadings, core, weights, bases, losses, converged, stopreason, iterations, beststart =
+        parafac2fit(Xfit, ncomponents, maxiters, tol, nstarts, rng, nonnegative)
+    if any(compressed)
+        bases = parafac2updatebases(
+            Xoriginal,
+            loadings,
+            core,
+            weights
+        )
+        losses = copy(losses)
+        losses[end] = parafac2loss(Xoriginal, bases, core, weights, loadings)
+    end
+
+    Parafac2Fit{T}(
+        Int(ncomponents),
+        retentioncounts,
+        mzcount,
+        retentionmetadata,
+        retentionunit,
+        mzmetadata,
+        mzunit,
+        labels,
+        loadings,
+        core,
+        weights,
+        bases,
+        losses,
+        converged,
+        stopreason,
+        iterations,
+        Int(nstarts),
+        beststart,
+        compression,
+        nonnegative
+    )
+end
+
+function parafac2(
+    X::AbstractArray{<:Real, 3},
+    ncomponents::Integer;
+    retentions=nothing,
+    mzvalues=nothing,
+    samplelabels=nothing,
+    maxiters::Integer=100,
+    tol::Real=1e-8,
+    nstarts::Integer=1,
+    rng::Random.AbstractRNG=Random.default_rng(),
+    compression::Symbol=:none,
+    nonnegative=(:spectra, :abundances)
+)
+    samples = [view(X, k, :, :) for k in axes(X, 1)]
+    parafac2(samples, ncomponents;
+        retentions=retentions,
+        mzvalues=mzvalues,
+        samplelabels=samplelabels,
+        maxiters=maxiters,
+        tol=tol,
+        nstarts=nstarts,
+        rng=rng,
+        compression=compression,
+        nonnegative=nonnegative
+    )
+end

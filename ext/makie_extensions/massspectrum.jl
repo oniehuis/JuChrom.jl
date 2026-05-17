@@ -15,6 +15,13 @@ end
 
 argument_names(::Type{<:MassSpectrum}) = (:mzvalues, :intensities)
 
+function Makie.convert_arguments(
+    ::Type{<:MassSpectrum},
+    spectrum::JuChrom.AbstractMassSpectrum
+)
+    (JuChrom.mzvalues(spectrum), JuChrom.intensities(spectrum))
+end
+
 function Makie.plot!(ms::MassSpectrum)
     ax = current_axis()
 

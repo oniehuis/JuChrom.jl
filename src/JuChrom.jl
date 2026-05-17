@@ -13,12 +13,14 @@ using BSplineKit: AbstractBSplineBasis, BSplineBasis, BSplineOrder, Derivative, 
 import HiGHS
 using JuMP: Model, MOI, optimize!, set_silent, termination_status, value, @constraint,
     @objective, @variable
-using LinearAlgebra: Diagonal, I, cholesky, dot, mul!, norm, Symmetric, diagind
+using LinearAlgebra: Diagonal, I, cholesky, dot, eigen, mul!, norm, svd, Symmetric,
+    diagind
 using OSQP: OSQP
 using Roots: Bisection, find_zero
 using SparseArrays: SparseMatrixCSC, sparse, spdiagm, spzeros, nnz
 using Statistics: cor, mean, median, quantile, std, var
 import Base: show, summary
+import Random
 using Printf
 using Base.Threads: @threads
 
@@ -58,6 +60,7 @@ include("core/utils/collections.jl")
 include("core/utils/math.jl")
 include("core/utils/units.jl")
 include("core/deconvolution/unimodalfit.jl")
+include("core/deconvolution/parafac2.jl")
 include("core/massspectrum/massspectrum.jl")
 
 export AbstractChromScan
@@ -76,6 +79,7 @@ export MassScanMatrix
 export MassScanSeries
 export MassSpectrum
 export OptimizationError
+export Parafac2Fit
 export QuadVarParams
 export QuadVarFit
 export RetentionMapper
@@ -167,6 +171,17 @@ export vif
 export whiten
 export withintensityunit
 export rawvariances
+export parafac2
+export parafac2abundances
+export parafac2apexes
+export parafac2fitpercent
+export parafac2loss
+export parafac2profilediagnostics
+export parafac2profileminima
+export parafac2reconstruct
+export parafac2residuals
+export parafac2scores
+export parafac2spectra
 
 include("IO/InputOutput.jl")
 using .InputOutput

@@ -39,6 +39,20 @@ end
     @test all(!isempty, string.(labels))
 end
 
+@testset "massspectrum Makie plot from MassSpectrum container" begin
+    mz = [100.0, 200.0, 300.0]
+    intensities = [10.0, 5.0, 8.0]
+    ms = MassSpectrum(mz, intensities; attrs=(source=:test,))
+
+    plt = massspectrum(ms)
+    @test plt isa Makie.FigureAxisPlot
+    @test plt.plot.mzvalues[] == mz
+    @test plt.plot.intensities[] == intensities
+
+    lineseg = plt.plot.linesegments[]
+    @test length(lineseg) == 2 * length(mz)
+end
+
 @testset "massspectrum Makie plot (unitful m/z)" begin
     mz = [100.0, 150.0]u"Th"
     intensities = [2.0, 3.0]

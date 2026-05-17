@@ -93,6 +93,9 @@ end
 @safetestset "core/deconvolution/unimodalfit.jl" begin
     include("./core/deconvolution/unimodalfit.jl")
 end
+@safetestset "core/deconvolution/parafac2.jl" begin
+    include("./core/deconvolution/parafac2.jl")
+end
 
 # IO
 @safetestset "IO/InputOutput" begin
