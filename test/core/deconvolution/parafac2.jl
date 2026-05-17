@@ -6,6 +6,28 @@ using LinearAlgebra
 using Random
 using Unitful
 
+struct Parafac2LossProbeMatrix <: AbstractMatrix{Float64}
+    data::Matrix{Float64}
+end
+
+Base.size(matrix::Parafac2LossProbeMatrix) = size(matrix.data)
+Base.getindex(matrix::Parafac2LossProbeMatrix, row::Int, col::Int) =
+    matrix.data[row, col]
+Base.IndexStyle(::Type{<:Parafac2LossProbeMatrix}) = IndexCartesian()
+
+const PARAFAC2_LOSS_PROBE_CALLS = Ref(0)
+
+function JuChrom.parafac2loss(
+    X::Vector{Parafac2LossProbeMatrix},
+    bases::AbstractVector{<:AbstractMatrix{Float64}},
+    core::AbstractMatrix{Float64},
+    weights::AbstractMatrix{Float64},
+    loadings::AbstractMatrix{Float64}
+)
+    PARAFAC2_LOSS_PROBE_CALLS[] += 1
+    PARAFAC2_LOSS_PROBE_CALLS[] == 1 ? 1.0 : Inf
+end
+
 @testset "parafac2 vector input validation" begin
     X = [
         reshape(collect(1.0:15.0), 5, 3),
@@ -237,6 +259,9 @@ end
     @test all(parafac2spectra(fit) .>= 0)
     @test all(parafac2abundances(fit) .>= 0)
 
+    fitbool = parafac2(X, 2; maxiters=0, nonnegative=true)
+    @test fitbool.nonnegative == (:spectra, :abundances)
+
     fitspectra = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:spectra)
     @test fitspectra.nonnegative == (:spectra,)
     @test all(parafac2spectra(fitspectra) .>= 0)
@@ -287,6 +312,46 @@ end
     @test tensorfit.retentioncounts == [8, 8]
     @test size(tensorfit.bases[1]) == (8, 2)
     @test size(tensorfit.bases[2]) == (8, 2)
+
+    Xwide = [
+        [1.0 0.2 0.4; 0.7 1.1 0.3],
+        [0.8 1.0 0.2; 1.3 0.4 0.5]
+    ]
+    fitwide = parafac2(Xwide, 2; maxiters=0, compression=:cholesky)
+    fitwidenone = parafac2(Xwide, 2; maxiters=0, compression=:none)
+    @test fitwide.compression == :cholesky
+    @test fitwide.retentioncounts == [2, 2]
+    @test size(fitwide.bases[1]) == (2, 2)
+    @test fitwide.loss ≈ fitwidenone.loss
+end
+
+@testset "parafac2 least-squares helpers" begin
+    design_prune = [-3.0 -3.0; -3.0 -2.0]
+    response_prune = [-3.0, -2.0]
+    @test JuChrom.nonnegativeleastsquares(design_prune, response_prune) ≈ [0.0, 1.0]
+
+    design_zero_alpha = [
+        -1.8024720054589953 -1.0100699865483473
+         0.9500573649054608 -0.9140623330009525
+        -0.4653449227441103 -1.0488926824878395
+        -2.089590332600559   0.057505351867115514
+        -0.948734830619434   0.058121993966906614
+    ]
+    response_zero_alpha = [
+        -1.256565821949869,
+         0.5431532750982856,
+        -1.6748079068851502,
+         1.1427848002128,
+         0.06600532091593743
+    ]
+    solution = JuChrom.nonnegativeleastsquares(design_zero_alpha, response_zero_alpha)
+    @test solution ≈ [9.880553004028577e-8, 0.8772628742396302] rtol=1e-10
+    @test all(value -> value >= 0, solution)
+
+    design = Matrix{Float64}(I, 2, 2)
+    response = [-1.0, 2.0]
+    @test JuChrom.leastsquaressolution(design, response, false) == response
+    @test JuChrom.leastsquaressolution(design, response, true) == [0.0, 2.0]
 end
 
 @testset "parafac2 multiple starts" begin
@@ -349,6 +414,32 @@ end
     @test parafac2reconstruct(fit, 2) == reconstructed[2]
     @test_throws BoundsError parafac2scores(fit, 0)
     @test_throws BoundsError parafac2reconstruct(fit, 3)
+
+    unfitted = Parafac2Fit{Float64}(
+        1,
+        [2],
+        2,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        Float64[],
+        false,
+        :maxiters,
+        0,
+        1,
+        1,
+        :none,
+        ()
+    )
+    @test_throws ArgumentError parafac2scores(unfitted)
+    @test_throws ArgumentError parafac2reconstruct(unfitted)
+    @test_throws ArgumentError parafac2spectra(unfitted)
 end
 
 @testset "parafac2 component summaries" begin
@@ -497,10 +588,18 @@ end
     @test_throws ArgumentError parafac2(X, 2; retentions=[[1.0, 2.0, 3.0, 4.0],
                                                           [1.0u"s", 2.0u"s", 3.0u"s", 4.0u"s", 5.0u"s"]])
 
+    Xsame = [ones(4, 3), ones(4, 3)]
+    mixed_retention_matrix = Any[
+        1.0       2.0       3.0       4.0
+        1.0u"s"   2.0u"s"   3.0u"s"   4.0u"s"
+    ]
+    @test_throws ArgumentError parafac2(Xsame, 2; retentions=mixed_retention_matrix)
+
     @test_throws DimensionMismatch parafac2(X, 2; mzvalues=[1.0, 2.0])
     @test_throws ArgumentError parafac2(X, 2; mzvalues=[1.0, 1.0, 2.0])
     @test_throws ArgumentError parafac2(X, 2; mzvalues=[0.0, 1.0, 2.0])
     @test_throws ArgumentError parafac2(X, 2; mzvalues=[1.0, NaN, 2.0])
+    @test_throws ArgumentError parafac2(X, 2; mzvalues=Any[1.0u"Th", 2.0u"s", 3.0u"Th"])
 
     @test_throws DimensionMismatch parafac2(X, 2; samplelabels=["a"])
     @test_throws ArgumentError parafac2(X, 2; samplelabels=["a", "a"])
@@ -512,6 +611,27 @@ end
                          maxiters=0)
     @test_throws ArgumentError rawretentions(fit; unit=u"s")
     @test_throws ArgumentError rawmzvalues(fit; unit=u"Th")
+end
+
+@testset "parafac2 ALS loss safeguard" begin
+    X = [
+        Parafac2LossProbeMatrix([1.0 0.2; 0.3 0.4]),
+        Parafac2LossProbeMatrix([0.5 0.6; 0.7 0.8; 0.9 1.0])
+    ]
+    loadings = reshape([1.0, 0.0], :, 1)
+    core = ones(1, 1)
+    weights = ones(2, 1)
+
+    PARAFAC2_LOSS_PROBE_CALLS[] = 0
+    fitstart = JuChrom.parafac2fitstart(X, loadings, core, weights, 1, 0.0, ())
+
+    @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
+    @test fitstart.stopreason == :nonfinite
+    @test fitstart.iterations == 0
+    @test fitstart.losses == [1.0]
+    @test fitstart.loadings === loadings
+    @test fitstart.core === core
+    @test fitstart.weights === weights
 end
 
 @testset "parafac2 display and broadcasting" begin
