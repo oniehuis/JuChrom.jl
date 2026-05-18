@@ -1220,7 +1220,8 @@ end
         tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
         nonnegative=(:spectra, :abundances))
 
-Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref).
+Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref). The implement 
+algorithm is described by Kiers et al. (1999).
 
 For the vector method, each `X[k]` is one `retentions × m/z` sample matrix. All matrices
 must have the same number of m/z channels, may have different numbers of retention
@@ -1259,6 +1260,10 @@ matrices. `maxiters` controls the number of ALS cycles and may be zero to return
 rational initialization for `nstarts=1`. `tol` is the relative objective-decrease
 threshold used for convergence. `nstarts` must be at least one; pass `rng` to make random
 starts reproducible. `compression` must be `:none` or `:cholesky`.
+
+Reference
+Kiers HA, ten Berge JMF, Bro R (1999): PARAFAC2—Part I. A direct fitting algorithm for the 
+PARAFAC2 model. — Journal of Chemometrics 13_: 275–294.
 """
 function parafac2(
     X::AbstractVector{<:AbstractMatrix{<:Real}},
