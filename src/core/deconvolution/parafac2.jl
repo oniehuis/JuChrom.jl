@@ -15,7 +15,8 @@ Kovats indices or any other retention coordinate used upstream.
 - `ncomponents::Int`: number of PARAFAC2 components.
 - `retentioncounts::Vector{Int}`: number of retention positions in each sample matrix.
 - `mzcount::Int`: common number of m/z channels in all input sample matrices.
-- `retentions`: retention coordinates per sample, stored without units, or `nothing`.
+- `retentions`: retention coordinates per sample, stored without units as one vector per
+  sample, or `nothing`.
 - `retentionunit`: retention coordinate unit, or `nothing` when unitless or absent.
 - `mzvalues`: m/z values, stored without units, or `nothing`.
 - `mzunit`: m/z unit, or `nothing` when unitless or absent.
@@ -1220,7 +1221,7 @@ end
         tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
         nonnegative=(:spectra, :abundances))
 
-Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref). The implement 
+Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref). The implemented
 algorithm is described by Kiers et al. (1999).
 
 For the vector method, each `X[k]` is one `retentions × m/z` sample matrix. All matrices
@@ -1230,8 +1231,21 @@ interpreted as `samples × retentions × m/z` and each sample is converted inter
 `retentions × m/z` matrix view.
 
 Optional `retentions` can be a shared retention coordinate vector, a vector of retention
-coordinate vectors (one per sample), or a `samples × retentions` matrix. Optional
-`mzvalues` is a shared m/z coordinate vector. Retention and m/z coordinates may be
+coordinate vectors (one per sample), or a `samples × retentions` matrix. A shared vector
+is only valid when all samples have the same number of retention positions; it is expanded
+internally to one copied retention vector per sample. A vector of vectors is the preferred
+form when samples have their own retention axes, for example when data have not been binned
+onto a common grid. A retention matrix provides one row per sample and is therefore only
+rectangular.
+
+The returned [`Parafac2Fit`](@ref) stores retention metadata per sample regardless of input
+form. Consequently, `rawretentions(fit)` and `retentions(fit)` return `nothing` or a vector
+whose `k`th entry is the retention axis for sample `k`. For a `samples × retentions × m/z`
+tensor, a single `retentions` vector should be understood as the common retention grid for
+the tensor. If retention axes differ between samples, prefer the vector-of-matrices method
+and pass `retentions` as a vector of vectors.
+
+Optional `mzvalues` is a shared m/z coordinate vector. Retention and m/z coordinates may be
 unitless real values or `Unitful.AbstractQuantity` values; units are stripped and stored
 separately in the returned fit. Optional `samplelabels` must contain one unique label per
 sample.
