@@ -46,8 +46,9 @@ include("core/alignment/alignment.jl")
 include("core/baseline/arpls.jl")
 include("core/convert/mscanmatrix.jl")
 include("core/convert/mzchrom.jl")
-include("core/quadvar_model/containers.jl")
-include("core/quadvar_model/fit.jl")
+include("core/variances/countvariances.jl")
+include("core/variances/quadvarmodel/containers.jl")
+include("core/variances/quadvarmodel/fit.jl")
 include("core/scan_timing/mz_retention.jl")
 include("core/transform/binning.jl")
 include("core/transform/clr.jl")
@@ -62,6 +63,7 @@ include("core/utils/units.jl")
 include("core/deconvolution/unimodalfit.jl")
 include("core/deconvolution/parafac2.jl")
 include("core/massspectrum/massspectrum.jl")
+include("core/ladder/alkaneseries.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
@@ -87,6 +89,7 @@ export VarianceMassScanMatrix
 
 export attrs
 export acquisition
+export AlkaneSeriesResult
 export arpls
 export applymap
 export binmzvalues
@@ -94,12 +97,14 @@ export binretentions
 export clr
 export cosdis
 export cossim
+export countvariances
 export DENSE
 export densestgrid
 export derivinvmap
 export derivmap
 export dwellnormalize
 export extras
+export findalkaneseries
 export findclosest
 export fitmap
 export fitquadvarmodel

@@ -87,6 +87,9 @@ end
 @safetestset "core/transform/whitening.jl" begin
     include("./core/transform/whitening.jl")
 end
+@safetestset "core/variances/countvariances.jl" begin
+    include("./core/variances/countvariances.jl")
+end
 @safetestset "core/quadvar_model/quadvar_model.jl" begin
     include("./core/quadvar_model/quadvar_model.jl")
 end

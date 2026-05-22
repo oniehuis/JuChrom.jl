@@ -68,15 +68,16 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                         "Retention binning and gridding" => "man/binning_gridding.md",
                     ],
                     "Deconvolution" => "man/deconvolution.md",
-                    "Format conversion" => "man/convert.md",
-                    "Retention mapping" => Any[
+                    "Format Conversion" => "man/convert.md",
+                    "Alkane Series Finding" => "man/alkaneseries.md",
+                    "Retention Mapping" => Any[
                         "Overview" => "man/mapping_overview.md",
-                        "Mapping tools" => "man/mapping_tools.md",
+                        "Mapping Tools" => "man/mapping_tools.md",
                     ],
-                    "Scan timing" => "man/scan_timing.md",
+                    "Scan Timing" => "man/scan_timing.md",
                     "Transformation" => "man/transformation.md",
                     "Trimming and Filtering" => "man/transform.md",
-                    "Variance modeling" => "man/quadvar_model.md",
+                    "Variance Estimation and Modeling" => "man/quadvar_model.md",
                 ]
 			    ],
             "Internals" => Any[
