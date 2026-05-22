@@ -66,6 +66,36 @@ end
         @test frommsm.intensityfloor == frommatrix.intensityfloor
     end
 
+    @testset "count noise helpers" begin
+        msm = MassScanMatrix(collect(1.0:size(rawcounts, 1)), [50.0, 60.0, 70.0], rawcounts)
+        stats = JuChrom.countnoisestats(
+            rawcounts;
+            windowsize=5,
+            mintransitioncount=1,
+            zerothresholdquantile=1.0,
+        )
+        msmstats = JuChrom.countnoisestats(
+            msm;
+            windowsize=5,
+            mintransitioncount=1,
+            zerothresholdquantile=1.0,
+        )
+
+        @test JuChrom.countnoisesigma(
+            rawcounts;
+            windowsize=5,
+            mintransitioncount=1,
+            zerothresholdquantile=1.0,
+        ) == stats.noisesigma
+        @test JuChrom.countnoisesigma(
+            msm;
+            windowsize=5,
+            mintransitioncount=1,
+            zerothresholdquantile=1.0,
+        ) == stats.noisesigma
+        @test msmstats == stats
+    end
+
     @testset "input validation" begin
         negativecounts = copy(rawcounts)
         negativecounts[1, 1] = -1.0
