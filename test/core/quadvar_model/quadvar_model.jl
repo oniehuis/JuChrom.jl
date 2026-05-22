@@ -1901,6 +1901,17 @@ end
     # Scalar basics
     y = 3.0
     @test isapprox(varpred(y, p1), p1.σ₀² + p1.ϕ * y + p1.κ * y^2; rtol=1e-12)
+    @test varpred(Int32(50_000), p1) ==
+        varpred(50_000.0, p1)
+    p_overflow = QuadVarParams(
+        2908.2699768628136,
+        16.704481754021554,
+        0.0005334461118635672,
+    )
+    overflow_counts = Int32[46648, 48632, 51456, 46488, 48808]
+    @test varpred(overflow_counts, p_overflow) ≈
+        varpred(Float64.(overflow_counts), p_overflow)
+    @test all(>(0), varpred(overflow_counts, p_overflow))
 
     # κ=0 reduces to σ₀² + ϕ y
     @test varpred(2.0, p2) == 0.0
@@ -1979,6 +1990,8 @@ end
     @test_throws Unitful.DimensionError varpred(y_unit, p_units; varfloor=1.0u"s")
     @test JuChrom.coerce_like_reference(1.0u"pA^2", 2.0u"pA^2", "varfloor") ==
         1.0u"pA^2"
+    @test varpredbias(Int32(50_000), p1) ==
+        varpredbias(50_000.0, p1)
 end
 
 # ── varpred ──────────────────────────────────────────────────────────────────
@@ -1988,6 +2001,8 @@ end
     @test varpred(0.0, 1.0, 0.2, 0.5) == 1.0
     y = 3.0
     @test isapprox(varpred(y, 1.0, 0.2, 0.5), 1.0 + 0.2 * y + 0.5 * y^2; rtol=1e-12)
+    @test varpred(Int32(50_000), 1.0, 0.2, 0.5) ==
+        varpred(50_000.0, 1.0, 0.2, 0.5)
 
     # With κ=0 the formula reduces to σ₀² + ϕ y
     @test varpred(2.0, 0.0, 0.0, 0.0) == 0.0

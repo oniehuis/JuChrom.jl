@@ -68,26 +68,26 @@ end
 
     @testset "count noise helpers" begin
         msm = MassScanMatrix(collect(1.0:size(rawcounts, 1)), [50.0, 60.0, 70.0], rawcounts)
-        stats = JuChrom.countnoisestats(
+        stats = JuChrom.count_noise_stats(
             rawcounts;
             windowsize=5,
             mintransitioncount=1,
             zerothresholdquantile=1.0,
         )
-        msmstats = JuChrom.countnoisestats(
+        msmstats = JuChrom.count_noise_stats(
             msm;
             windowsize=5,
             mintransitioncount=1,
             zerothresholdquantile=1.0,
         )
 
-        @test JuChrom.countnoisesigma(
+        @test JuChrom.count_noise_sigma(
             rawcounts;
             windowsize=5,
             mintransitioncount=1,
             zerothresholdquantile=1.0,
         ) == stats.noisesigma
-        @test JuChrom.countnoisesigma(
+        @test JuChrom.count_noise_sigma(
             msm;
             windowsize=5,
             mintransitioncount=1,

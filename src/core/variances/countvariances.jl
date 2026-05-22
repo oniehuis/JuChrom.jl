@@ -53,15 +53,15 @@ function countvariances(
     windowsize::Integer=13,
 )
 
-    validatecountmatrix(rawcounts)
-    stats = countnoisestats(
+    validate_count_matrix(rawcounts)
+    stats = count_noise_stats(
         rawcounts;
         positivecountquantile=positivecountquantile,
         zerothresholdquantile=zerothresholdquantile,
         mintransitioncount=mintransitioncount,
         windowsize=windowsize)
 
-    selectedfloor = if isnothing(intensityfloor)
+    selected_floor = if isnothing(intensityfloor)
         max(1.0, stats.zerowindowthreshold, stats.positivecountthreshold)
     else
         isfinite(intensityfloor) && intensityfloor > 0 || throw(ArgumentError(
@@ -70,26 +70,26 @@ function countvariances(
     end
 
     variances = [
-        stats.variancefactor * max(Float64(rawcounts[i, j]), selectedfloor)
+        stats.variancefactor * max(Float64(rawcounts[i, j]), selected_floor)
         for i in axes(rawcounts, 1), j in axes(rawcounts, 2)
     ]
 
-    merge((variances=variances,), stats, (intensityfloor=selectedfloor,))
+    merge((variances=variances,), stats, (intensityfloor=selected_floor,))
 end
 
 """
-    countnoisesigma(rawcounts; windowsize=13, mintransitioncount=7,
+    count_noise_sigma(rawcounts; windowsize=13, mintransitioncount=7,
         zerothresholdquantile=0.99)
 
 Estimate a single empirical noise scale from one raw ion-count matrix.
 """
-function countnoisesigma(
+function count_noise_sigma(
     rawcounts::AbstractMatrix{<:Real};
     windowsize::Integer=13,
     mintransitioncount::Integer=7,
     zerothresholdquantile::Real=0.99,
 )
-    stats = countnoisestats(
+    stats = count_noise_stats(
         rawcounts;
         windowsize=windowsize,
         mintransitioncount=mintransitioncount,
@@ -98,13 +98,13 @@ function countnoisesigma(
     stats.noisesigma
 end
 
-countnoisesigma(msm::AbstractMassScanMatrix; kwargs...) =
-    countnoisesigma(rawintensities(msm); kwargs...)
+count_noise_sigma(msm::AbstractMassScanMatrix; kwargs...) =
+    count_noise_sigma(rawintensities(msm); kwargs...)
 
-countnoisestats(msm::AbstractMassScanMatrix; kwargs...) =
-    countnoisestats(rawintensities(msm); kwargs...)
+count_noise_stats(msm::AbstractMassScanMatrix; kwargs...) =
+    count_noise_stats(rawintensities(msm); kwargs...)
 
-function countnoisestats(
+function count_noise_stats(
     rawcounts::AbstractMatrix{<:Real};
     windowsize::Integer=13,
     mintransitioncount::Integer=7,
@@ -112,7 +112,7 @@ function countnoisestats(
     positivecountquantile::Real=0.01,
 )
 
-    validatecountmatrix(rawcounts)
+    validate_count_matrix(rawcounts)
     windowsize > 1 || throw(ArgumentError("windowsize must be larger than 1"))
     0 ≤ mintransitioncount < windowsize || throw(ArgumentError(
         "mintransitioncount must be in 0:(windowsize - 1)"))
@@ -124,58 +124,58 @@ function countnoisestats(
             "positivecountquantile must be finite and in [0, 1]"))
 
     residuals = Float64[]
-    expectedvalues = Float64[]
-    zerowindowexpected = Float64[]
-    scanaxis = axes(rawcounts, 1)
-    mzaxis = axes(rawcounts, 2)
-    scanindices = collect(scanaxis)
-    nscans = length(scanaxis)
-    nscans ≥ windowsize || throw(ArgumentError(
+    expected_values = Float64[]
+    zero_window_expected = Float64[]
+    scan_axis = axes(rawcounts, 1)
+    mz_axis = axes(rawcounts, 2)
+    scan_indices = collect(scan_axis)
+    n_scans = length(scan_axis)
+    n_scans ≥ windowsize || throw(ArgumentError(
         "rawcounts must contain at least windowsize scans"))
 
-    for mzidx in mzaxis
-        for firstscan in 1:windowsize:(nscans - windowsize + 1)
-            lastscan = firstscan + windowsize - 1
-            windowscans = scanindices[firstscan:lastscan]
-            window = @view rawcounts[windowscans, mzidx]
+    for mz_idx in mz_axis
+        for first_scan in 1:windowsize:(n_scans - windowsize + 1)
+            last_scan = first_scan + windowsize - 1
+            window_scans = scan_indices[first_scan:last_scan]
+            window = @view rawcounts[window_scans, mz_idx]
             all(isfinite, window) || continue
 
             expected = Float64(median(window))
             if any(iszero, window)
-                isfinite(expected) && push!(zerowindowexpected, expected)
+                isfinite(expected) && push!(zero_window_expected, expected)
                 continue
             end
 
-            transitioncount = levelcrossings(window, expected)
-            transitioncount < mintransitioncount && continue
+            transition_count = level_crossings(window, expected)
+            transition_count < mintransitioncount && continue
 
             for intensity in window
                 push!(residuals, Float64(intensity) - expected)
-                push!(expectedvalues, expected)
+                push!(expected_values, expected)
             end
         end
     end
 
-    zerothreshold = zerowindowthreshold(zerowindowexpected, zerothresholdquantile)
-    normalizeddeviations = Float64[]
-    for (residual, expected) in zip(residuals, expectedvalues)
-        expected > zerothreshold || continue
+    zero_threshold = zero_window_threshold(zero_window_expected, zerothresholdquantile)
+    normalized_deviations = Float64[]
+    for (residual, expected) in zip(residuals, expected_values)
+        expected > zero_threshold || continue
         expected > 0 || continue
-        push!(normalizeddeviations, residual / sqrt(expected))
+        push!(normalized_deviations, residual / sqrt(expected))
     end
 
-    length(normalizeddeviations) > 1 || throw(ArgumentError(
+    length(normalized_deviations) > 1 || throw(ArgumentError(
         "found no suitable scan segments to estimate the empirical noise scale"))
-    noisesigma = 1.4826 * median(abs.(normalizeddeviations))
-    positivethreshold = positivecountthreshold(rawcounts, positivecountquantile)
+    noise_sigma = 1.4826 * median(abs.(normalized_deviations))
+    positive_threshold = positive_count_threshold(rawcounts, positivecountquantile)
 
     (
-        noisesigma=noisesigma,
-        variancefactor=abs2(noisesigma),
-        zerowindowthreshold=zerothreshold,
-        positivecountthreshold=positivethreshold,
-        normalizeddeviationcount=length(normalizeddeviations),
-        zerowindowcount=length(zerowindowexpected),
+        noisesigma=noise_sigma,
+        variancefactor=abs2(noise_sigma),
+        zerowindowthreshold=zero_threshold,
+        positivecountthreshold=positive_threshold,
+        normalizeddeviationcount=length(normalized_deviations),
+        zerowindowcount=length(zero_window_expected),
         windowsize=windowsize,
         mintransitioncount=mintransitioncount,
         zerothresholdquantile=zerothresholdquantile,
@@ -183,7 +183,7 @@ function countnoisestats(
     )
 end
 
-function validatecountmatrix(rawcounts::AbstractMatrix{<:Real})
+function validate_count_matrix(rawcounts::AbstractMatrix{<:Real})
     for value in rawcounts
         isfinite(value) || throw(ArgumentError(
             "countvariances expects finite raw ion counts"))
@@ -194,7 +194,7 @@ function validatecountmatrix(rawcounts::AbstractMatrix{<:Real})
     nothing
 end
 
-function levelcrossings(values::AbstractVector{<:Real}, level::Real)
+function level_crossings(values::AbstractVector{<:Real}, level::Real)
     state = 0
     count = 0
     for value in values
@@ -208,29 +208,29 @@ function levelcrossings(values::AbstractVector{<:Real}, level::Real)
     count
 end
 
-function zerowindowthreshold(
-    zerowindowexpected::AbstractVector{<:Real},
-    zerothresholdquantile::Real,
+function zero_window_threshold(
+    zero_window_expected::AbstractVector{<:Real},
+    zero_threshold_quantile::Real,
 )
-    isempty(zerowindowexpected) && return 0.0
-    sortedexpected = sort(Float64.(zerowindowexpected))
-    thresholdidx = clamp(
-        ceil(Int, length(sortedexpected) * Float64(zerothresholdquantile)),
+    isempty(zero_window_expected) && return 0.0
+    sorted_expected = sort(Float64.(zero_window_expected))
+    threshold_idx = clamp(
+        ceil(Int, length(sorted_expected) * Float64(zero_threshold_quantile)),
         1,
-        length(sortedexpected))
-    sortedexpected[thresholdidx]
+        length(sorted_expected))
+    sorted_expected[threshold_idx]
 end
 
-function positivecountthreshold(rawcounts::AbstractMatrix{<:Real}, q::Real)
+function positive_count_threshold(rawcounts::AbstractMatrix{<:Real}, q::Real)
     positives = Float64[]
     for value in rawcounts
         isfinite(value) && value > 0 && push!(positives, Float64(value))
     end
     isempty(positives) && return 0.0
     sort!(positives)
-    thresholdidx = clamp(
+    threshold_idx = clamp(
         ceil(Int, length(positives) * Float64(q)),
         1,
         length(positives))
-    positives[thresholdidx]
+    positives[threshold_idx]
 end

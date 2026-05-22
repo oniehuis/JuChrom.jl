@@ -66,6 +66,15 @@ end
 @safetestset "core/scan_timing/mz_retention.jl" begin
     include("./core/scan_timing/mz_retention.jl")
 end
+@safetestset "core/ladder/alkaneseries.jl" begin
+    include("./core/ladder/alkaneseries.jl")
+end
+@safetestset "core/ladder/traces.jl" begin
+    include("./core/ladder/traces.jl")
+end
+@safetestset "core/ladder/seriespath.jl" begin
+    include("./core/ladder/seriespath.jl")
+end
 @safetestset "core/transform/binning.jl" begin
     include("./core/transform/binning.jl")
 end

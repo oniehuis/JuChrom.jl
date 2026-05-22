@@ -212,7 +212,15 @@ Works for scalars, vectors, and matrices via broadcasting.
 - Use this when `y` is a true (non-estimated) input. For estimated inputs, see [`varpredbias`].
 """
 @inline function varpred(y, p::QuadVarParams; varfloor::Number=0)
-    @. apply_variance_floor(muladd(p.κ, y * y, muladd(p.ϕ, y, p.σ₀²)), varfloor)
+    @. apply_variance_floor(quadvar_polynomial(y, p.σ₀², p.ϕ, p.κ), varfloor)
+end
+
+@inline quadvar_input(y::Integer) = widen(y)
+@inline quadvar_input(y) = y
+
+@inline function quadvar_polynomial(y, σ₀², ϕ, κ)
+    y_safe = quadvar_input(y)
+    muladd(κ * y_safe, y_safe, muladd(ϕ, y_safe, σ₀²))
 end
 
 @inline function coerce_like_reference(value, reference, label::AbstractString)
@@ -270,7 +278,7 @@ Works for scalars, vectors, and matrices via broadcasting.
 - If you have a parameter bundle, use [`varpred(y, p::QuadVarParams; varfloor=...)`].
 """
 @inline function varpred(y, σ₀²::Number, ϕ::Number, κ::Number; varfloor::Number=0)
-    @. apply_variance_floor(muladd(κ, y * y, muladd(ϕ, y, σ₀²)), varfloor)
+    @. apply_variance_floor(quadvar_polynomial(y, σ₀², ϕ, κ), varfloor)
 end
 
 # ── varpredbias ───────────────────────────────────────────────────────────────────────────
@@ -305,5 +313,5 @@ Works for scalars, vectors, and matrices via broadcasting.
 """
 @inline function varpredbias(y, p::QuadVarParams; varfloor::Number=0)
     den = one(p.κ) + p.κ
-    @. apply_variance_floor(muladd(p.κ, y*y, muladd(p.ϕ, y, p.σ₀²)) / den, varfloor)
+    @. apply_variance_floor(quadvar_polynomial(y, p.σ₀², p.ϕ, p.κ) / den, varfloor)
 end

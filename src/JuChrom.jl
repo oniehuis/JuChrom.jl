@@ -63,7 +63,10 @@ include("core/utils/units.jl")
 include("core/deconvolution/unimodalfit.jl")
 include("core/deconvolution/parafac2.jl")
 include("core/massspectrum/massspectrum.jl")
+include("core/ladder/alkane_reference_spectra.jl")
 include("core/ladder/alkaneseries.jl")
+include("core/ladder/traces.jl")
+include("core/ladder/seriespath.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
@@ -74,6 +77,7 @@ export AbstractMassSpectrum
 export AbstractScan
 export AbstractScanSeries
 export AbstractVarianceMassScanMatrix
+export AlkaneStandard
 export ChromScan
 export ChromScanSeries
 export MassScan
@@ -104,7 +108,11 @@ export derivinvmap
 export derivmap
 export dwellnormalize
 export extras
+export findalkanes
 export findalkaneseries
+export alkanereferencespectra
+export alkanereferencespectrum
+export defaultalkanestandard
 export findclosest
 export fitmap
 export fitquadvarmodel
