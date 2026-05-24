@@ -57,6 +57,13 @@ using JuChrom
             smoothing=0,
         )
         @test rawintensities(reused) ≈ rawintensities(trace)
+        @test_throws ArgumentError JuChrom.alkanematchtrace(
+            msm,
+            9;
+            channelinfo=channelinfo,
+            spectralpower=1.0,
+            smoothing=0,
+        )
 
         unitful = MassScanMatrix(
             [1.0, 2.0, 3.0],
@@ -277,6 +284,7 @@ using JuChrom
         @test attrs(first(unitful_trace)).scaninterval == 60.0
         @test extras(unitful_trace)["mz_unit"] == u"kTh"
         @test extras(unitful_trace)["retention_unit"] == u"s"
+        @test_throws ArgumentError JuChrom.raw_retention_value(unitful, 1.0u"Th")
 
         high_threshold_trace = JuChrom.alkanemzpeakdistancetrace(
             msm,
@@ -326,6 +334,24 @@ using JuChrom
             )
         end
 
+        function evidence_test_trace_without_carbon_attrs(
+            values;
+            carbon=nothing,
+            retentions=[1.0, 2.0, 3.0],
+        )
+            chroms = [
+                ChromScan(rt, nothing, y, nothing)
+                for (rt, y) in zip(retentions, values)
+            ]
+            trace_extras = Dict{String, Any}("source" => "unit")
+            isnothing(carbon) || (trace_extras["carbon"] = carbon)
+            ChromScanSeries(
+                chroms;
+                sample=(name="evidence test",),
+                extras=trace_extras,
+            )
+        end
+
         molecularion = evidence_test_trace([1.0, 0.5, 0.25])
         match = evidence_test_trace([0.2, 0.4, 0.8])
         distance = evidence_test_trace([0.5, 0.25, 0.0])
@@ -351,6 +377,27 @@ using JuChrom
         @test !extras(without_distance)["distance_evidence_included"]
         @test !attrs(first(without_distance)).distanceevidenceincluded
 
+        extras_carbon_molecularion = evidence_test_trace_without_carbon_attrs(
+            [1.0, 0.5, 0.25];
+            carbon=Int8(9),
+        )
+        extras_carbon_trace = JuChrom.alkaneevidencetrace(
+            extras_carbon_molecularion,
+            match,
+        )
+        @test attrs(first(extras_carbon_trace)).carbon === 9
+        @test extras(extras_carbon_trace)["carbon"] === 9
+
+        missing_carbon_molecularion = evidence_test_trace_without_carbon_attrs(
+            [1.0, 0.5, 0.25],
+        )
+        missing_carbon_trace = JuChrom.alkaneevidencetrace(
+            missing_carbon_molecularion,
+            match,
+        )
+        @test ismissing(attrs(first(missing_carbon_trace)).carbon)
+        @test ismissing(extras(missing_carbon_trace)["carbon"])
+
         mismatched_length = evidence_test_trace([1.0, 2.0])
         @test_throws DimensionMismatch JuChrom.alkaneevidencetrace(
             molecularion,
@@ -362,5 +409,10 @@ using JuChrom
             molecularion,
             mismatched_retention,
         )
+    end
+
+    @testset "trace helper branches" begin
+        @test JuChrom.spectral_power_transform_value(-4.0, 0.5, false) == -2.0
+        @test JuChrom.spectral_power_transform_value(3, 2, false) == 9.0
     end
 end

@@ -15,6 +15,109 @@ function alkaneseries_test_matrix()
     )
 end
 
+@testset "alkane reference spectrum helper" begin
+    mzs = Int16[43, 57, 71]
+    relative_abundances = Float32[0.25, 1.0, 0.5]
+    label = SubString("pentadecane reference", 1, 11)
+
+    spectrum = JuChrom.alkane_reference_spectrum(
+        Int8(15),
+        label,
+        1500//1,
+        mzs,
+        relative_abundances,
+    )
+
+    @test spectrum isa MassSpectrum
+    @test mzvalues(spectrum) == [43, 57, 71]
+    @test eltype(mzvalues(spectrum)) == Int
+    @test intensities(spectrum) == [0.25, 1.0, 0.5]
+    @test eltype(intensities(spectrum)) == Float64
+
+    spectrum_attrs = attrs(spectrum)
+    @test spectrum_attrs.ri === 1500.0
+    @test spectrum_attrs.order === 15
+    @test spectrum_attrs.label == "pentadecane"
+    @test spectrum_attrs.label isa String
+    @test spectrum_attrs.source == :experimental_ladder_spectra
+    @test spectrum_attrs.normalization == :base_peak
+    @test spectrum_attrs.relative_abundance_threshold ==
+        JuChrom.ALKANE_REFERENCE_RELATIVE_ABUNDANCE_THRESHOLD
+
+    mzs[1] = 41
+    relative_abundances[1] = 0.75
+    @test mzvalues(spectrum) == [43, 57, 71]
+    @test intensities(spectrum) == [0.25, 1.0, 0.5]
+
+    @test_throws DimensionMismatch JuChrom.alkane_reference_spectrum(
+        15,
+        "invalid",
+        1500.0,
+        [43, 57],
+        [1.0],
+    )
+end
+
+@testset "AlkaneSeriesResult convenience constructors" begin
+    standard = (name="test standard",)
+    variances = [1.0 2.0; 3.0 4.0]
+    varianceinfo = (estimator=:unit,)
+    baselineinfo = (estimator=:baseline,)
+    channelinfo = (mzindices=[1, 2],)
+    traces = (evidence=Dict{Int, ChromScanSeries}(),)
+
+    with_varianceinfo = AlkaneSeriesResult(standard, variances, varianceinfo)
+    @test with_varianceinfo.standard === standard
+    @test with_varianceinfo.variances === variances
+    @test with_varianceinfo.varianceinfo === varianceinfo
+    @test with_varianceinfo.baselineinfo === nothing
+    @test with_varianceinfo.channelinfo === nothing
+    @test with_varianceinfo.traces === nothing
+    @test with_varianceinfo.seriespath === nothing
+
+    with_baselineinfo = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+    )
+    @test with_baselineinfo.baselineinfo === baselineinfo
+    @test with_baselineinfo.channelinfo === nothing
+    @test with_baselineinfo.traces === nothing
+    @test with_baselineinfo.seriespath === nothing
+
+    with_channelinfo = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+    )
+    @test with_channelinfo.channelinfo === channelinfo
+    @test with_channelinfo.traces === nothing
+    @test with_channelinfo.seriespath === nothing
+
+    with_traces = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+    )
+    @test with_traces.traces === traces
+    @test with_traces.seriespath === nothing
+end
+
+@testset "alkane series preprocessing helpers" begin
+    varianceestimate = [1.0 2.0; 3.0 4.0]
+    extracted_variances, extracted_info =
+        JuChrom.extract_alkane_series_variances(varianceestimate)
+
+    @test extracted_variances === varianceestimate
+    @test extracted_info === nothing
+end
+
 @testset "findalkaneseries preprocessing boundary" begin
     rawcounts = alkaneseries_test_matrix()
     msm = MassScanMatrix(collect(1.0:size(rawcounts, 1)), [50.0, 60.0, 70.0], rawcounts)
@@ -71,6 +174,15 @@ end
         @test [reference.carbon for reference in channels.references] == [8, 9, 10]
         @test all(reference -> reference.mzindices == [3], channels.references)
         @test all(reference -> reference.mzvalues == [70.0], channels.references)
+
+        vector_standard_channels = JuChrom.alkane_mz_channels(
+            msm;
+            standard=alkanereferencespectra(),
+            carbonrange=8:8,
+            minrelativeintensity=0.05,
+        )
+        @test only(vector_standard_channels.references).carbon == 8
+        @test only(vector_standard_channels.references).referenceattrs.label == "octane"
 
         c8 = first(channels.references)
         @test c8.referenceattrs.label == "octane"

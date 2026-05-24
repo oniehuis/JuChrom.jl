@@ -71,6 +71,65 @@ end
         @test only(result.runresults).success == false
     end
 
+    @testset "handles short and disjoint candidate runs" begin
+        single_step = JuChrom.alkaneseriespath(
+            Dict(8 => series_path_test_trace([0.0, 2.0, 0.0]));
+            minsteps=1,
+            stepreward=0.0,
+            minrelativepeakheight=0.0,
+            minpeakheight=0.1,
+        )
+        @test single_step.success
+        @test single_step.carbonnumbers == [8]
+        @test single_step.scanindices == [2]
+        @test single_step.objective == 2.0
+
+        disjoint = JuChrom.alkaneseriespath(
+            Dict(
+                8 => series_path_test_trace([0.0, 1.0, 0.0]),
+                10 => series_path_test_trace([0.0, 1.0, 0.0]),
+            );
+            minsteps=2,
+            stepreward=0.0,
+            minrelativepeakheight=0.0,
+            minpeakheight=0.1,
+        )
+        @test !disjoint.success
+        @test disjoint.candidateruns == [[8], [10]]
+        @test [run.carbonrange for run in disjoint.runresults] == [[8], [10]]
+    end
+
+    @testset "reuses higher-objective equivalent DP states" begin
+        states = JuChrom.SeriesPathState[]
+        statemap = Dict{Tuple{Int, Int, Int}, Int}()
+
+        existing = JuChrom.push_series_path_state!(
+            states,
+            statemap,
+            1,
+            0,
+            1,
+            5.0,
+            1,
+            2,
+            nothing,
+        )
+        reused = JuChrom.push_series_path_state!(
+            states,
+            statemap,
+            1,
+            0,
+            1,
+            4.0,
+            1,
+            2,
+            nothing,
+        )
+
+        @test reused == existing
+        @test length(states) == 1
+    end
+
     @testset "validates settings and traces" begin
         traces = Dict(8 => series_path_test_trace([0.0, 1.0, 0.0]))
 
