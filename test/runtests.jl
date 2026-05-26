@@ -75,6 +75,12 @@ end
 @safetestset "core/ladder/seriespath.jl" begin
     include("./core/ladder/seriespath.jl")
 end
+@safetestset "core/ladder/apex.jl" begin
+    include("./core/ladder/apex.jl")
+end
+@safetestset "core/ladder/spectra.jl" begin
+    include("./core/ladder/spectra.jl")
+end
 @safetestset "core/transform/binning.jl" begin
     include("./core/transform/binning.jl")
 end

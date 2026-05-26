@@ -2,6 +2,7 @@ module ArplsTests
 
 using Test
 using LinearAlgebra
+using Logging
 using Random
 using SparseArrays
 using Statistics
@@ -184,10 +185,17 @@ end
                                          ratio=1e-6, maxiter=500,
                                          peakthreshold=2.5, peakslope=1.5)
                                    for j in axes(ints, 2)])
-    @test_logs (:warn, r"m/z channel 1 \(m/z=100\.0\)") (
-               :warn, r"m/z channel 2 \(m/z=150\.0\)") (
-               :warn, r"m/z channel 3 \(m/z=200\.0\)") begin
+    logger = TestLogger()
+    with_logger(logger) do
         arpls(msm; λ=5e4, ratio=1e-12, maxiter=1)
+    end
+    warnmessages = [
+        string(log.message) for log in logger.logs if log.level == Logging.Warn
+    ]
+    @test length(warnmessages) == n_mzs
+    for (i, mz) in enumerate(mzs)
+        @test any(
+            occursin("m/z channel $i (m/z=$mz)", message) for message in warnmessages)
     end
 
     @test bmsm isa MassScanMatrix

@@ -67,6 +67,8 @@ include("core/ladder/alkane_reference_spectra.jl")
 include("core/ladder/alkaneseries.jl")
 include("core/ladder/traces.jl")
 include("core/ladder/seriespath.jl")
+include("core/ladder/apex.jl")
+include("core/ladder/spectra.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries

@@ -47,18 +47,18 @@ function alkanematchtrace(
         "reference spectrum for C$(carbon) has no positive intensity on the msm m/z grid"))
 
     I = rawintensities(msm)
-    scanvalues = Vector{Float64}(undef, length(mzindices))
+    reference_norm2 = sum(abs2, referencevalues)
     match = Vector{Float64}(undef, size(I, 1))
-    for scanindex in axes(I, 1)
-        @inbounds for (k, mzindex) in pairs(mzindices)
-            scanvalues[k] = spectral_power_transform_value(
-                I[scanindex, mzindex],
-                spectralpower,
-                positiveonly,
-            )
-        end
-        similarity = cossim(scanvalues, referencevalues, positiveonly)
-        match[scanindex] = isnan(similarity) ? 0.0 : similarity
+    Threads.@threads for scanindex in axes(I, 1)
+        match[scanindex] = alkane_match_similarity(
+            I,
+            scanindex,
+            mzindices,
+            referencevalues,
+            reference_norm2,
+            spectralpower,
+            positiveonly,
+        )
     end
     match = trapezoid_smooth(match, smoothing)
 
@@ -186,48 +186,39 @@ function alkane_molecular_ion_trace(
 end
 
 """
-    alkanemzpeakdistancetrace(msm::MassScanMatrix, carbon::Integer;
-        variances, standard=defaultalkanestandard(), channelinfo=nothing,
-        minrelativeintensity=0.05, mzretentionkwargs=default, smoothing=3,
+    alkanemzpeakdistancetrace(msm::MassScanMatrix, carbon::Integer, peak_times_by_mz_raw;
+        channelinfo, minrelativeintensity=0.05, mzretentionkwargs, smoothing=3,
         peakzmin=4.0, peakeps=1e-12, peakvariancefloor=1.0)
         -> ChromScanSeries
 
 Infer an m/z-peak-distance evidence trace for the n-alkane with carbon number `carbon`.
 
-For each m/z trace, local maxima with z-scores at least `peakzmin` are converted to
-parabolic apex retentions. For every scan, selected reference-spectrum m/z channels are
-shifted to their within-scan sampling retention via [`mzretention`](@ref). Their distances
-to the nearest m/z peak apex are summarized by the median and converted to unitless evidence with
-`1 / (1 + d_scan^2)`. Missing or nonfinite distances contribute zero evidence.
+`peak_times_by_mz_raw` is precomputed by [`alkane_mzpeak_times_by_mz`](@ref). For every
+scan, selected reference-spectrum m/z channels are shifted to their within-scan sampling
+retention via [`mzretention`](@ref). Their distances to the nearest m/z peak apex are
+summarized by the median and converted to unitless evidence with `1 / (1 + d_scan^2)`.
+Missing or nonfinite distances contribute zero evidence.
 """
 function alkanemzpeakdistancetrace(
     msm::MassScanMatrix,
-    carbon::Integer;
-    variances,
-    standard=defaultalkanestandard(),
-    channelinfo=nothing,
+    carbon::Integer,
+    peak_times_by_mz_raw;
+    channelinfo,
     minrelativeintensity=0.05,
-    mzretentionkwargs=default_alkane_mzretention_kwargs(msm),
+    mzretentionkwargs,
     smoothing::Integer=3,
     peakzmin::Real=4.0,
     peakeps::Real=1e-12,
     peakvariancefloor::Real=1.0
 )
     carbon > 0 || throw(ArgumentError("carbon must be positive"))
-    validate_alkane_series_variances(msm, variances)
     validate_alkane_channel_settings(minrelativeintensity)
     smoothing >= 0 || throw(ArgumentError("smoothing must be nonnegative"))
     validate_mzpeak_parameters(peakzmin, peakeps, peakvariancefloor)
+    length(peak_times_by_mz_raw) == mzcount(msm) || throw(DimensionMismatch(
+        "peak_times_by_mz_raw must contain one entry per m/z channel"))
 
-    channels = isnothing(channelinfo) ?
-        alkane_mz_channels(
-            msm;
-            standard=standard,
-            carbonrange=carbon:carbon,
-            minrelativeintensity=minrelativeintensity,
-        ) :
-        channelinfo
-    reference = alkane_channel_reference(channels, carbon)
+    reference = alkane_channel_reference(channelinfo, carbon)
 
     selected_mz_indices = reference.mzindices
     isempty(selected_mz_indices) && throw(ArgumentError(
@@ -235,14 +226,6 @@ function alkanemzpeakdistancetrace(
 
     scan_retention_values = retentions(msm)
     scan_interval = median_scan_interval(msm)
-    peak_times_by_mz_raw = alkane_mzpeak_times_by_mz(
-        msm,
-        variances;
-        mzretentionkwargs=mzretentionkwargs,
-        peakzmin=peakzmin,
-        peakeps=peakeps,
-        peakvariancefloor=peakvariancefloor,
-    )
     selected_peak_counts = [length(peak_times_by_mz_raw[index]) for index in selected_mz_indices]
 
     distances = Float64[]
@@ -271,7 +254,7 @@ function alkanemzpeakdistancetrace(
     end
     evidence = trapezoid_smooth(evidence, smoothing)
 
-    mz_unit = hasproperty(channels, :mzunit) ? channels.mzunit : mzunit(msm)
+    mz_unit = hasproperty(channelinfo, :mzunit) ? channelinfo.mzunit : mzunit(msm)
     traceattrs = (
         carbon=Int(carbon),
         referenceattrs=reference.referenceattrs,
@@ -404,6 +387,22 @@ function alkane_series_traces(
     mzpeakdistance_traces = Dict{Int, ChromScanSeries}()
     evidence_traces = Dict{Int, ChromScanSeries}()
 
+    distance_mzretentionkwargs = nothing
+    peak_times_by_mz_raw = nothing
+    if includedistance
+        distance_mzretentionkwargs = isnothing(mzretentionkwargs) ?
+            default_alkane_mzretention_kwargs(msm) :
+            mzretentionkwargs
+        peak_times_by_mz_raw = alkane_mzpeak_times_by_mz(
+            msm,
+            variances;
+            mzretentionkwargs=distance_mzretentionkwargs,
+            peakzmin=mzpeakzmin,
+            peakeps=mzpeakeps,
+            peakvariancefloor=mzpeakvariancefloor,
+        )
+    end
+
     for carbon in carbon_numbers
         carbon = Int(carbon)
         match_traces[carbon] = alkanematchtrace(
@@ -423,21 +422,17 @@ function alkane_series_traces(
             smoothing=smoothing,
         )
         if includedistance
-            distance_kwargs = isnothing(mzretentionkwargs) ?
-                NamedTuple() :
-                (mzretentionkwargs=mzretentionkwargs,)
             mzpeakdistance_traces[carbon] = alkanemzpeakdistancetrace(
                 msm,
-                carbon;
-                variances=variances,
-                standard=standard,
+                carbon,
+                peak_times_by_mz_raw;
                 channelinfo=channelinfo,
                 minrelativeintensity=minrelativeintensity,
+                mzretentionkwargs=distance_mzretentionkwargs,
                 smoothing=smoothing,
                 peakzmin=mzpeakzmin,
                 peakeps=mzpeakeps,
                 peakvariancefloor=mzpeakvariancefloor,
-                distance_kwargs...,
             )
         end
         evidence_traces[carbon] = alkaneevidencetrace(
@@ -462,6 +457,33 @@ function mz_window_indices(
     halfwidth::Integer
 )
     findall(mz -> abs(Float64(mz) - Float64(center)) <= halfwidth, mzs)
+end
+
+function alkane_match_similarity(
+    intensities::AbstractMatrix{<:Real},
+    scanindex::Integer,
+    mzindices::AbstractVector{<:Integer},
+    referencevalues::AbstractVector{<:Real},
+    reference_norm2::Real,
+    spectralpower::Real,
+    positiveonly::Bool,
+)
+    dotproduct = 0.0
+    scan_norm2 = 0.0
+    @inbounds for (k, mzindex) in pairs(mzindices)
+        value = spectral_power_transform_value(
+            intensities[scanindex, mzindex],
+            spectralpower,
+            positiveonly,
+        )
+        referencevalue = Float64(referencevalues[k])
+        dotproduct += value * referencevalue
+        scan_norm2 += abs2(value)
+    end
+
+    scan_norm2 > 0 || return 0.0
+    similarity = dotproduct / sqrt(scan_norm2 * Float64(reference_norm2))
+    positiveonly ? clamp(similarity, 0.0, 1.0) : clamp(similarity, -1.0, 1.0)
 end
 
 function validate_product_trace_alignment(
@@ -533,7 +555,7 @@ function alkane_mzpeak_times_by_mz(
     retention_values = retentions(msm)
     peak_times_by_mz = Vector{Vector{Float64}}(undef, mzcount(msm))
 
-    for mz_index in 1:mzcount(msm)
+    Threads.@threads for mz_index in 1:mzcount(msm)
         trace = @view raw_counts[:, mz_index]
         variance_trace = floored_mzpeak_variances(
             @view(variances[:, mz_index]),

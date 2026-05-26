@@ -65,6 +65,9 @@ end
     baselineinfo = (estimator=:baseline,)
     channelinfo = (mzindices=[1, 2],)
     traces = (evidence=Dict{Int, ChromScanSeries}(),)
+    seriespath = (success=false,)
+    apexes = (success=false,)
+    stepspectra = (success=false,)
 
     with_varianceinfo = AlkaneSeriesResult(standard, variances, varianceinfo)
     @test with_varianceinfo.standard === standard
@@ -74,6 +77,8 @@ end
     @test with_varianceinfo.channelinfo === nothing
     @test with_varianceinfo.traces === nothing
     @test with_varianceinfo.seriespath === nothing
+    @test with_varianceinfo.apexes === nothing
+    @test with_varianceinfo.stepspectra === nothing
 
     with_baselineinfo = AlkaneSeriesResult(
         standard,
@@ -85,6 +90,8 @@ end
     @test with_baselineinfo.channelinfo === nothing
     @test with_baselineinfo.traces === nothing
     @test with_baselineinfo.seriespath === nothing
+    @test with_baselineinfo.apexes === nothing
+    @test with_baselineinfo.stepspectra === nothing
 
     with_channelinfo = AlkaneSeriesResult(
         standard,
@@ -96,6 +103,8 @@ end
     @test with_channelinfo.channelinfo === channelinfo
     @test with_channelinfo.traces === nothing
     @test with_channelinfo.seriespath === nothing
+    @test with_channelinfo.apexes === nothing
+    @test with_channelinfo.stepspectra === nothing
 
     with_traces = AlkaneSeriesResult(
         standard,
@@ -107,6 +116,49 @@ end
     )
     @test with_traces.traces === traces
     @test with_traces.seriespath === nothing
+    @test with_traces.apexes === nothing
+    @test with_traces.stepspectra === nothing
+
+    with_seriespath = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+        seriespath,
+    )
+    @test with_seriespath.seriespath === seriespath
+    @test with_seriespath.apexes === nothing
+    @test with_seriespath.stepspectra === nothing
+
+    with_apexes = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+        seriespath,
+        apexes,
+    )
+    @test with_apexes.seriespath === seriespath
+    @test with_apexes.apexes === apexes
+    @test with_apexes.stepspectra === nothing
+
+    with_stepspectra = AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+        seriespath,
+        apexes,
+        stepspectra,
+    )
+    @test with_stepspectra.apexes === apexes
+    @test with_stepspectra.stepspectra === stepspectra
 end
 
 @testset "alkane series preprocessing helpers" begin
@@ -247,6 +299,13 @@ end
         σ² = fill(2.0, size(rawcounts))
         result = findalkaneseries(msm, σ²; standard=standard)
         defaultresult = findalkaneseries(msm, σ²)
+        selectedspectraresult = findalkaneseries(
+            msm,
+            σ²;
+            standard=standard,
+            extractstepspectra=true,
+            stepspectracarbons=8:10,
+        )
 
         @test result isa AlkaneSeriesResult
         @test result.standard === standard
@@ -268,6 +327,9 @@ end
         @test !result.seriespath.success
         @test result.seriespath.failurereason ==
             "no local maxima found in evidence traces"
+        @test !result.apexes.success
+        @test occursin("series path failed", result.apexes.failurereason)
+        @test result.stepspectra === nothing
         @test sort(collect(keys(result.seriespath.candidatesbycarbon))) == collect(8:40)
         @test all(isempty, values(result.seriespath.candidatesbycarbon))
         @test rawretentions(result.traces.match[8]) == rawretentions(msm)
@@ -281,11 +343,26 @@ end
             rawintensities(result.traces.mzpeakdistance[8])
         @test defaultresult.standard isa AlkaneStandard
         @test defaultresult.channelinfo.mzindices == [3]
+        @test !selectedspectraresult.stepspectra.success
+        @test isempty(selectedspectraresult.stepspectra.spectra)
+        @test selectedspectraresult.stepspectra.settings.carbons == [8, 9, 10]
         @test_throws MethodError findalkaneseries(msm; standard=standard)
         @test_throws MethodError findalkaneseries(
             msm;
             standard=standard,
             variances=σ²,
+        )
+        @test_throws ArgumentError findalkaneseries(
+            msm,
+            σ²;
+            standard=standard,
+            apexweighting=:intensity,
+        )
+        @test_throws ArgumentError findalkaneseries(
+            msm,
+            σ²;
+            standard=standard,
+            stepspectraweighting=:none,
         )
     end
 
@@ -305,6 +382,8 @@ end
         @test isempty(result.traces.mzpeakdistance)
         @test sort(collect(keys(result.traces.evidence))) == [8]
         @test !result.seriespath.success
+        @test !result.apexes.success
+        @test result.stepspectra === nothing
         @test !extras(result.traces.evidence[8])["distance_evidence_included"]
         @test rawintensities(result.traces.evidence[8]) ≈
             rawintensities(result.traces.molecularion[8]) .*

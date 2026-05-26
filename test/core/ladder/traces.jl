@@ -210,11 +210,21 @@ using JuChrom
             dwellref=:middle,
             dwell=:homogeneous,
         )
+        channelinfo = JuChrom.alkane_mz_channels(msm; carbonrange=8:8)
+        peak_times_by_mz_raw = JuChrom.alkane_mzpeak_times_by_mz(
+            msm,
+            variances;
+            mzretentionkwargs=mzretentionkwargs,
+            peakzmin=4.0,
+            peakeps=1e-12,
+            peakvariancefloor=1.0,
+        )
 
         trace = JuChrom.alkanemzpeakdistancetrace(
             msm,
-            8;
-            variances=variances,
+            8,
+            peak_times_by_mz_raw;
+            channelinfo=channelinfo,
             mzretentionkwargs=mzretentionkwargs,
             smoothing=0,
         )
@@ -246,10 +256,21 @@ using JuChrom
 
         flatcounts = ones(3, 3)
         flatmsm = MassScanMatrix([0.0, 1.0, 2.0], [43.0, 57.0, 70.0], flatcounts)
+        flatvariances = ones(size(flatcounts))
+        flatchannelinfo = JuChrom.alkane_mz_channels(flatmsm; carbonrange=8:8)
+        flat_peak_times_by_mz_raw = JuChrom.alkane_mzpeak_times_by_mz(
+            flatmsm,
+            flatvariances;
+            mzretentionkwargs=mzretentionkwargs,
+            peakzmin=4.0,
+            peakeps=1e-12,
+            peakvariancefloor=1.0,
+        )
         empty_trace = JuChrom.alkanemzpeakdistancetrace(
             flatmsm,
-            8;
-            variances=ones(size(flatcounts)),
+            8,
+            flat_peak_times_by_mz_raw;
+            channelinfo=flatchannelinfo,
             mzretentionkwargs=mzretentionkwargs,
             smoothing=0,
         )
@@ -268,10 +289,20 @@ using JuChrom
             dwellref=:middle,
             dwell=:homogeneous,
         )
+        unitful_channelinfo = JuChrom.alkane_mz_channels(unitful; carbonrange=8:8)
+        unitful_peak_times_by_mz_raw = JuChrom.alkane_mzpeak_times_by_mz(
+            unitful,
+            variances;
+            mzretentionkwargs=unitful_kwargs,
+            peakzmin=4.0,
+            peakeps=1e-12,
+            peakvariancefloor=1.0,
+        )
         unitful_trace = JuChrom.alkanemzpeakdistancetrace(
             unitful,
-            8;
-            variances=variances,
+            8,
+            unitful_peak_times_by_mz_raw;
+            channelinfo=unitful_channelinfo,
             mzretentionkwargs=unitful_kwargs,
             smoothing=0,
         )
@@ -286,10 +317,19 @@ using JuChrom
         @test extras(unitful_trace)["retention_unit"] == u"s"
         @test_throws ArgumentError JuChrom.raw_retention_value(unitful, 1.0u"Th")
 
+        high_threshold_peak_times_by_mz_raw = JuChrom.alkane_mzpeak_times_by_mz(
+            msm,
+            variances;
+            mzretentionkwargs=mzretentionkwargs,
+            peakzmin=100.0,
+            peakeps=1e-12,
+            peakvariancefloor=1.0,
+        )
         high_threshold_trace = JuChrom.alkanemzpeakdistancetrace(
             msm,
-            8;
-            variances=variances,
+            8,
+            high_threshold_peak_times_by_mz_raw;
+            channelinfo=channelinfo,
             mzretentionkwargs=mzretentionkwargs,
             peakzmin=100.0,
             smoothing=0,
@@ -297,25 +337,24 @@ using JuChrom
         @test rawintensities(high_threshold_trace) == [0.0, 0.0, 0.0]
         @test attrs(first(high_threshold_trace)).selectedpeakcounts == [0, 0, 0]
 
-        @test_throws UndefKeywordError JuChrom.alkanemzpeakdistancetrace(msm, 8)
+        @test_throws UndefKeywordError JuChrom.alkanemzpeakdistancetrace(
+            msm,
+            8,
+            peak_times_by_mz_raw;
+            channelinfo=channelinfo,
+        )
         @test_throws DimensionMismatch JuChrom.alkanemzpeakdistancetrace(
             msm,
-            8;
-            variances=ones(size(rawcounts, 1), size(rawcounts, 2) + 1),
-            mzretentionkwargs=mzretentionkwargs,
-        )
-        bad_variances = copy(variances)
-        bad_variances[1, 1] = -1.0
-        @test_throws ArgumentError JuChrom.alkanemzpeakdistancetrace(
-            msm,
-            8;
-            variances=bad_variances,
+            8,
+            peak_times_by_mz_raw[1:2];
+            channelinfo=channelinfo,
             mzretentionkwargs=mzretentionkwargs,
         )
         @test_throws ArgumentError JuChrom.alkanemzpeakdistancetrace(
             msm,
-            8;
-            variances=variances,
+            8,
+            peak_times_by_mz_raw;
+            channelinfo=channelinfo,
             mzretentionkwargs=mzretentionkwargs,
             smoothing=-1,
         )

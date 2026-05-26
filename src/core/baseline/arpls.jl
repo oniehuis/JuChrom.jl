@@ -131,7 +131,7 @@ function arpls(
 
     penalty = λ * arplspenalty(scancount(msm))
     mzs = rawmzvalues(msm)
-    for i in axes(ints, 2)
+    @threads :dynamic for i in axes(ints, 2)
         varianceweights = isnothing(variances) ?
             (residualscales=nothing, precisionweights=nothing) :
             arplsvarianceweights(@view(variances[:, i]), scancount(msm), variancefloor)

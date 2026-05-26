@@ -1,4 +1,4 @@
-struct AlkaneSeriesResult{S,V,I,B,C,T,P}
+struct AlkaneSeriesResult{S,V,I,B,C,T,P,A,Q}
     standard::S
     variances::V
     varianceinfo::I
@@ -6,6 +6,8 @@ struct AlkaneSeriesResult{S,V,I,B,C,T,P}
     channelinfo::C
     traces::T
     seriespath::P
+    apexes::A
+    stepspectra::Q
 end
 
 AlkaneSeriesResult(standard, variances, varianceinfo) =
@@ -13,6 +15,8 @@ AlkaneSeriesResult(standard, variances, varianceinfo) =
         standard,
         variances,
         varianceinfo,
+        nothing,
+        nothing,
         nothing,
         nothing,
         nothing,
@@ -28,6 +32,8 @@ AlkaneSeriesResult(standard, variances, varianceinfo, baselineinfo) =
         nothing,
         nothing,
         nothing,
+        nothing,
+        nothing,
     )
 
 AlkaneSeriesResult(standard, variances, varianceinfo, baselineinfo, channelinfo) =
@@ -37,6 +43,8 @@ AlkaneSeriesResult(standard, variances, varianceinfo, baselineinfo, channelinfo)
         varianceinfo,
         baselineinfo,
         channelinfo,
+        nothing,
+        nothing,
         nothing,
         nothing,
     )
@@ -49,6 +57,51 @@ AlkaneSeriesResult(standard, variances, varianceinfo, baselineinfo, channelinfo,
         baselineinfo,
         channelinfo,
         traces,
+        nothing,
+        nothing,
+        nothing,
+    )
+
+AlkaneSeriesResult(
+    standard,
+    variances,
+    varianceinfo,
+    baselineinfo,
+    channelinfo,
+    traces,
+    seriespath,
+) =
+    AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+        seriespath,
+        nothing,
+        nothing,
+    )
+
+AlkaneSeriesResult(
+    standard,
+    variances,
+    varianceinfo,
+    baselineinfo,
+    channelinfo,
+    traces,
+    seriespath,
+    apexes,
+) =
+    AlkaneSeriesResult(
+        standard,
+        variances,
+        varianceinfo,
+        baselineinfo,
+        channelinfo,
+        traces,
+        seriespath,
+        apexes,
         nothing,
     )
 
@@ -67,8 +120,11 @@ pass it as `baselineinfo`.
 Reference-spectrum m/z channels shared with `msm` are identified before downstream
 analysis and stored in `result.channelinfo`. Match, molecular-ion, m/z-peak-distance, and
 combined evidence traces are stored in `result.traces`. The dynamic-programming series
-path and its candidates are stored in `result.seriespath`. The `msm` m/z axis must be
-integer binned.
+path and its candidates are stored in `result.seriespath`, and variance-weighted apex
+refinements are stored in `result.apexes`. If requested, full-grid ladder step mass
+spectra are stored in `result.stepspectra`. Set `stepspectracarbons` to `:all`, one
+carbon number, or a collection such as `10:20` to choose which ladder step spectra are
+extracted. The `msm` m/z axis must be integer binned.
 """
 function findalkaneseries(
     msm::MassScanMatrix,
@@ -101,8 +157,11 @@ function findalkaneseries(
     apexscanwindow=2,
     apexweighting=:variance,
     maxapexoffsetscans=1.0,
+    apexlogfloorfraction=1e-3,
+    apexvariancefloor=1.0,
 
     extractstepspectra=false,
+    stepspectracarbons=:all,
     stepspectrascanwindow=2,
     stepspectraweighting=:variance,
     stepspectraallownegative=true,
@@ -111,6 +170,10 @@ function findalkaneseries(
     # Validate inputs
     isnothing(standard) && throw(ArgumentError(
         "findalkaneseries requires an alkane standard"))
+    apexweighting == :variance || throw(ArgumentError(
+        "apexweighting is fixed to :variance"))
+    stepspectraweighting == :variance || throw(ArgumentError(
+        "stepspectraweighting is fixed to :variance"))
 
     validate_alkane_series_variances(msm, variances)
     channelinfo = alkane_mz_channels(
@@ -145,6 +208,29 @@ function findalkaneseries(
         spacingweight=spacingweight,
         gapincreaseweight=gapincreaseweight,
     )
+    apexes = refine_alkane_series_apexes(
+        msm,
+        variances,
+        seriespath;
+        channelinfo=channelinfo,
+        scanwindow=apexscanwindow,
+        maxapexoffsetscans=maxapexoffsetscans,
+        mzretentionkwargs=mzretentionkwargs,
+        logfloorfraction=apexlogfloorfraction,
+        variancefloor=apexvariancefloor,
+    )
+    stepspectra = extractstepspectra ?
+        alkane_series_step_spectra(
+            msm,
+            variances,
+            apexes;
+            scanwindow=stepspectrascanwindow,
+            carbons=stepspectracarbons,
+            mzretentionkwargs=mzretentionkwargs,
+            variancefloor=apexvariancefloor,
+            allownegative=stepspectraallownegative,
+        ) :
+        nothing
 
     AlkaneSeriesResult(
         standard,
@@ -154,6 +240,8 @@ function findalkaneseries(
         channelinfo,
         traces,
         seriespath,
+        apexes,
+        stepspectra,
     )
 end
 
