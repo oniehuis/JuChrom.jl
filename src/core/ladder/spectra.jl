@@ -62,7 +62,7 @@ function ladder_step_mass_spectrum(
         heightsources[mzindex] = :apex_model
     end
 
-    if threaded && Threads.nthreads() > 1
+    if threaded
         Threads.@threads for mzindex in mzindices
             fit_ladder_step_nonreference_ion!(
                 intensities,

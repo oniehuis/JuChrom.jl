@@ -215,6 +215,12 @@ end
         apexes;
         carbons=[8, 9.5],
     )
+    @test_throws ArgumentError JuChrom.alkane_series_step_spectra(
+        msm,
+        variances,
+        apexes;
+        carbons=:missing,
+    )
 
     failed = JuChrom.alkane_series_step_spectra(
         msm,

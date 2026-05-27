@@ -127,6 +127,34 @@ end
         abs(apex.initial_apex.apex_scan_index - apex.initial_apex.input_scan_index)
 end
 
+@testset "two-pass apex refinement can shift more than once" begin
+    msm = apex_test_msm(; apexretention=6.75)
+    variances = fill(1.0, size(rawintensities(msm)))
+    channelinfo = apex_channelinfo(msm)
+    peak = (carbon=8, scanindex=5, retention=5.0, score=1.0)
+
+    apex = JuChrom.ladder_peak_apex_twopass(
+        msm,
+        peak,
+        variances;
+        channelinfo=channelinfo,
+        mzretentionkwargs=APEX_MZRETENTION_KWARGS,
+        scanwindow=2,
+        maxapexoffsetscans=1.0,
+        logfloorfraction=1e-9,
+        variancefloor=1e-6,
+    )
+
+    @test apex.success
+    @test apex.shift_attempted
+    @test apex.shift_direction == 1
+    @test apex.shift_count == 2
+    @test !apex.initial_continuous_valid
+    @test apex.input_scan_index == 7
+    @test apex.ladder_scan_index == 5
+    @test apex.apex_retention ≈ 6.75 atol=0.02
+end
+
 @testset "invalid continuous apex falls back to ladder snapshot" begin
     msm = apex_test_msm(; mode=:monotone)
     variances = fill(1.0, size(rawintensities(msm)))
@@ -172,4 +200,39 @@ end
     @test occursin("series path failed", apexes.failurereason)
     @test isempty(apexes.results)
     @test isempty(apexes.bycarbon)
+
+    emptypath = (success=true, path=NamedTuple[])
+    emptyapexes = JuChrom.refine_alkane_series_apexes(
+        msm,
+        variances,
+        emptypath;
+        channelinfo=channelinfo,
+    )
+    @test !emptyapexes.success
+    @test emptyapexes.failurereason == "series path contains no peaks"
+    @test isempty(emptyapexes.results)
+    @test isempty(emptyapexes.bycarbon)
+
+    path = [(c_count=8, scan_index=5, score=1.0)]
+    refined = JuChrom.refine_alkane_series_apexes(
+        msm,
+        variances,
+        path;
+        channelinfo=channelinfo,
+        mzretentionkwargs=APEX_MZRETENTION_KWARGS,
+        logfloorfraction=1e-9,
+        variancefloor=1e-6,
+    )
+
+    @test refined.success
+    @test refined.failurereason === nothing
+    @test refined.carbonnumbers == [8]
+    @test only(refined.apexretentions) ≈ 5.35 atol=0.02
+    @test only(refined.ladderretentions) == rawretentions(msm)[5]
+    @test only(refined.ladderscanindices) == 5
+    @test refined.bycarbon[8] == only(refined.results)
+    @test only(refined.results).peak === only(path)
+    @test only(refined.results).continuous_refinement
+
+    @test_throws ArgumentError JuChrom.apex_peak_scan_index((carbon=8,))
 end
