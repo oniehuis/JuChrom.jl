@@ -234,4 +234,28 @@ end
     )
     @test !failed.success
     @test isempty(failed.spectra)
+
+    noapexes = JuChrom.alkane_series_step_spectra(
+        msm,
+        variances,
+        NamedTuple[];
+        scanwindow=2,
+    )
+    @test !noapexes.success
+    @test noapexes.failurereason == "no apex results available"
+    @test isempty(noapexes.spectra)
+
+    nofailedreason = JuChrom.alkane_series_step_spectra(
+        msm,
+        variances,
+        (
+            success=false,
+            failurereason=nothing,
+            results=NamedTuple[],
+        );
+        scanwindow=2,
+    )
+    @test !nofailedreason.success
+    @test nofailedreason.failurereason == "no apex results available"
+    @test isempty(nofailedreason.spectra)
 end
