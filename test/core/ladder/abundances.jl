@@ -152,6 +152,24 @@ end
     @test floored ≈ fill(4 / 5, 3)
 end
 
+@testset "alkane_abundance_fit returns abundance and variance in one pass" begin
+    X, variance, mzindices, referenceintensities = abundance_test_inputs()
+
+    fit = JuChrom.alkane_abundance_fit(
+        X,
+        variance,
+        mzindices,
+        referenceintensities,
+        1.0,
+        false,
+        8
+    )
+
+    @test fit isa JuChrom.AlkaneAbundanceFit
+    @test fit.abundance ≈ [10.0, 99 / 17, -2.0]
+    @test fit.abundancevariance ≈ [1 / 5, 4 / 17, 2 / 5]
+end
+
 @testset "alkane_abundances and alkane_abundance_variances wrappers" begin
     X, variance, mzindices, referenceintensities = abundance_test_inputs()
     msm = MassScanMatrix([1.0, 2.0, 3.0], [29.0, 43.0, 57.0, 71.0], X)

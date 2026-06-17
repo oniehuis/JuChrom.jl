@@ -225,6 +225,13 @@ sequential quadrupole scan directions, and `:simultaneous` for TOF-like or other
 full-spectrum acquisition where all m/z values in a scan are treated as observed at the
 scan-level retention. The default `:inferdirection` infers only the sequential quadrupole
 direction by comparing `:ascending` and `:descending`; it does not test `:simultaneous`.
+`apexionexcludemzvalues` lists m/z values ignored when automatically choosing apex-fit
+ions, and `apexionmzvalues` can provide an explicit ion list instead. If ions are chosen
+from the reference spectrum, `apexionminrelativeintensity` sets the minimum relative
+reference intensity and `apexminioncount` is the required number of fitted ions. If an
+initial apex fit is not centered, `apexmaxshiftfromguess` limits how far recentering may
+move from the path candidate, and `apexfitqualityoutlierz` controls the robust fit-quality
+flagging of refined apexes.
 `apexmzscanordermaxpeaks` is the initial number of spread-out ladder peaks used for this
 direction inference. If the subset is insufficient or ambiguous, more peaks may be used as
 defined by the scan-order inference logic. `apexmzscanorderminpeaks` is the minimum number
@@ -285,9 +292,15 @@ function findalkaneseries(
     apexlogfloorfraction=1e-3,
     apexmzscanorder=:inferdirection,
     apexmzretentionkwargs=nothing,
+    apexionexcludemzvalues=DEFAULT_ALKANE_APEX_EXCLUDED_MZVALUES,
+    apexionmzvalues=nothing,
+    apexionminrelativeintensity=0.1,
+    apexminioncount=3,
+    apexmaxshiftfromguess=3.0,
+    apexfitqualityoutlierz=3.0,
     apexmzscanordermaxpeaks=3,
-    apexmzscanorderminpeaks=3,
-    apexmzscanorderminapexvarianceratio=1.25,
+    apexmzscanorderminpeaks=5,
+    apexmzscanorderminapexvarianceratio=2.0,
     apexmzscanordershapeioncount=3,
     apexmzscanordershapemzspacing=14,
     apexmzscanorderextremeioncount=5,
@@ -357,24 +370,33 @@ function findalkaneseries(
         massspectrummatch=pathmassspectrummatch,
         massspectrummatchdistanceweight=pathmassspectrummatchdistanceweight
     )
+    apexsettings = AlkaneLadderApexSettings(
+        standard,
+        apexscanwindow,
+        variancefloor,
+        apexlogfloorfraction,
+        apexmzretentionkwargs,
+        apexmzscanorder,
+        apexionexcludemzvalues,
+        apexionmzvalues,
+        apexionminrelativeintensity,
+        apexminioncount,
+        apexmaxshiftfromguess,
+        apexfitqualityoutlierz,
+        apexmzscanordermaxpeaks,
+        apexmzscanorderminpeaks,
+        apexmzscanorderminapexvarianceratio,
+        apexmzscanordershapeioncount,
+        apexmzscanordershapemzspacing,
+        apexmzscanorderextremeioncount,
+        apexmzscanorderminioncount
+    )
     apexinfo = alkaneladderapexes(
         msm,
         variances,
         abundanceinfo,
-        pathinfo;
-        standard=standard,
-        scanwindow=apexscanwindow,
-        variancefloor=variancefloor,
-        logfloorfraction=apexlogfloorfraction,
-        mzretentionkwargs=apexmzretentionkwargs,
-        mzscanorder=apexmzscanorder,
-        mzscanordermaxpeaks=apexmzscanordermaxpeaks,
-        mzscanorderminpeaks=apexmzscanorderminpeaks,
-        mzscanorderminapexvarianceratio=apexmzscanorderminapexvarianceratio,
-        mzscanordershapeioncount=apexmzscanordershapeioncount,
-        mzscanordershapemzspacing=apexmzscanordershapemzspacing,
-        mzscanorderextremeioncount=apexmzscanorderextremeioncount,
-        mzscanorderminioncount=apexmzscanorderminioncount
+        pathinfo,
+        apexsettings
     )
     additioninfo = alkaneladderadditions(
         msm,
@@ -615,11 +637,7 @@ extract_alkane_series_variances(varianceestimate) =
     varianceestimate.variances, varianceestimate
 
 function alkane_standard_spectra(standard::AlkaneStandard)
-    spectra = standard.spectra
-    spectra isa AbstractVector{<:AbstractMassSpectrum} || throw(ArgumentError(
-        "standard.spectra must be a vector of mass spectra"))
-
-    validate_alkane_standard_spectra(spectra)
+    validate_alkane_standard_spectra(standard.spectra)
 end
 
 alkane_standard_spectra(spectra::AbstractVector{<:AbstractMassSpectrum}) =

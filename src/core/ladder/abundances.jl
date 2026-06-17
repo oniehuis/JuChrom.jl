@@ -28,6 +28,22 @@ struct AlkaneAbundanceInfo{S<:NamedTuple}
     settings::S
 end
 
+struct AlkaneAbundanceFit
+    abundance::Vector{Float64}
+    abundancevariance::Vector{Float64}
+end
+
+struct AlkaneAbundanceFitInfo
+    abundances::Dict{Int, Vector{Float64}}
+    abundancevariances::Dict{Int, Vector{Float64}}
+end
+
+struct AlkaneAbundanceFitEntry
+    carbon::Int
+    abundance::Vector{Float64}
+    abundancevariance::Vector{Float64}
+end
+
 function alkane_abundance_info(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
@@ -37,28 +53,23 @@ function alkane_abundance_info(
     thresholdfraction::Real,
     minrisez::Real
 )
-    abundances = alkane_abundances(
+    abundancefitinfo = alkane_abundance_fit_info(
         msm,
         variances,
         channelinfo,
         variancefloor,
         nonnegative
     )
-    abundancevariances = alkane_abundance_variances(
-        variances,
-        channelinfo,
-        variancefloor
-    )
     windows = alkane_abundance_windows(
-        abundances,
-        abundancevariances,
+        abundancefitinfo.abundances,
+        abundancefitinfo.abundancevariances,
         thresholdfraction,
         minrisez
     )
 
     AlkaneAbundanceInfo(
-        abundances,
-        abundancevariances,
+        abundancefitinfo.abundances,
+        abundancefitinfo.abundancevariances,
         windows,
         (
             variancefloor=Float64(variancefloor),
@@ -67,6 +78,48 @@ function alkane_abundance_info(
             minrisez=Float64(minrisez)
         )
     )
+end
+
+function alkane_abundance_fit_info(
+    msm::MassScanMatrix,
+    variances::AbstractMatrix{<:Real},
+    channelinfo::AlkaneChannelInfo,
+    variancefloor::Real,
+    nonnegative::Bool
+)
+    validate_alkane_abundance_variancefloor(variancefloor)
+    validate_alkane_series_variances(msm, variances)
+
+    X = rawintensities(msm)
+    references = channelinfo.references
+    results = Vector{AlkaneAbundanceFitEntry}(undef, length(references))
+    Base.Threads.@threads for index in eachindex(references)
+        reference = references[index]
+        carbon = reference.carbon
+        fit = alkane_abundance_fit(
+            X,
+            variances,
+            reference.mzindices,
+            alkane_reference_abundance_intensities(reference),
+            variancefloor,
+            nonnegative,
+            carbon
+        )
+        results[index] = AlkaneAbundanceFitEntry(
+            carbon,
+            fit.abundance,
+            fit.abundancevariance
+        )
+    end
+
+    abundances = Dict{Int, Vector{Float64}}()
+    abundancevariances = Dict{Int, Vector{Float64}}()
+    for result in results
+        abundances[result.carbon] = result.abundance
+        abundancevariances[result.carbon] = result.abundancevariance
+    end
+
+    AlkaneAbundanceFitInfo(abundances, abundancevariances)
 end
 
 function alkane_abundances(
@@ -174,32 +227,15 @@ function alkane_abundance(
     nonnegative::Bool,
     carbon::Integer
 )
-    validate_alkane_reference_abundance_channels(
+    alkane_abundance_fit(
+        X,
+        variances,
         mzindices,
         referenceintensities,
-        size(X, 2),
+        variancefloor,
+        nonnegative,
         carbon
-    )
-    size(variances) == size(X) || throw(DimensionMismatch(
-        "variances must have size $(size(X)), matching rawintensities(msm)"))
-
-    abundance = Vector{Float64}(undef, size(X, 1))
-    for scanindex in axes(X, 1)
-        numerator = 0.0
-        denominator = 0.0
-        for (mzindex, referenceintensity) in zip(mzindices, referenceintensities)
-            weight = inv(max(variances[scanindex, mzindex], variancefloor))
-            numerator += weight * X[scanindex, mzindex] * referenceintensity
-            denominator += weight * referenceintensity^2
-        end
-
-        denominator > 0 || throw(ArgumentError(
-            "reference spectrum for C$(carbon) has no positive abundance weight"))
-        value = numerator / denominator
-        abundance[scanindex] = nonnegative ? max(value, 0.0) : value
-    end
-
-    abundance
+    ).abundance
 end
 
 function alkane_abundance_variance(
@@ -230,6 +266,45 @@ function alkane_abundance_variance(
     end
 
     abundancevariance
+end
+
+function alkane_abundance_fit(
+    X::AbstractMatrix{<:Real},
+    variances::AbstractMatrix{<:Real},
+    mzindices::AbstractVector{<:Integer},
+    referenceintensities::AbstractVector{<:Real},
+    variancefloor::Real,
+    nonnegative::Bool,
+    carbon::Integer
+)
+    validate_alkane_reference_abundance_channels(
+        mzindices,
+        referenceintensities,
+        size(X, 2),
+        carbon
+    )
+    size(variances) == size(X) || throw(DimensionMismatch(
+        "variances must have size $(size(X)), matching rawintensities(msm)"))
+
+    abundance = Vector{Float64}(undef, size(X, 1))
+    abundancevariance = Vector{Float64}(undef, size(X, 1))
+    for scanindex in axes(X, 1)
+        numerator = 0.0
+        denominator = 0.0
+        for (mzindex, referenceintensity) in zip(mzindices, referenceintensities)
+            weight = inv(max(variances[scanindex, mzindex], variancefloor))
+            numerator += weight * X[scanindex, mzindex] * referenceintensity
+            denominator += weight * referenceintensity^2
+        end
+
+        denominator > 0 || throw(ArgumentError(
+            "reference spectrum for C$(carbon) has no positive abundance weight"))
+        value = numerator / denominator
+        abundance[scanindex] = nonnegative ? max(value, 0.0) : value
+        abundancevariance[scanindex] = inv(denominator)
+    end
+
+    AlkaneAbundanceFit(abundance, abundancevariance)
 end
 
 function alkane_reference_abundance_intensities(reference::AlkaneReferenceChannels)

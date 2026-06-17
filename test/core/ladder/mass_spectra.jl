@@ -11,9 +11,11 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
     signal = MassScanMatrix(retentions, mzs, signal_intensities)
     variances = ones(size(signal_intensities))
     abundance = profile .* sum(heights[1:3])
-    abundanceinfo = (
-        abundances=Dict(8 => abundance),
-        abundancevariances=Dict(8 => ones(length(retentions)))
+    abundanceinfo = AlkaneAbundanceInfo(
+        Dict(8 => abundance),
+        Dict(8 => ones(length(retentions))),
+        Dict{Int, Vector{AlkaneAbundanceWindow}}(),
+        NamedTuple()
     )
     candidate = (
         ladderstep=8,
@@ -28,17 +30,33 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
         dwellref=:middle,
         dwell=:homogeneous
     )
+    settings = JuChrom.AlkaneLadderApexSettings(
+        defaultalkanestandard(),
+        2,
+        1.0,
+        1e-9,
+        mzkwargs,
+        :ascending,
+        (),
+        [100.0, 101.0, 102.0],
+        0.1,
+        3,
+        3.0,
+        3.0,
+        3,
+        3,
+        1.25,
+        3,
+        14,
+        5,
+        8
+    )
     apex = alkaneladderapex(
         signal,
         variances,
         abundanceinfo,
-        candidate;
-        scanwindow=2,
-        apexionmzvalues=[100.0, 101.0, 102.0],
-        minioncount=3,
-        mzretentionkwargs=mzkwargs,
-        variancefloor=1.0,
-        logfloorfraction=1e-9
+        candidate,
+        settings
     )
 
     raw = signal

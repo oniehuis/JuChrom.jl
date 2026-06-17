@@ -25,7 +25,7 @@ function alkaneladderadditions(
     apexlogfloorfraction::Real=1e-3,
     apexionexcludemzvalues=DEFAULT_ALKANE_APEX_EXCLUDED_MZVALUES,
     apexionmzvalues=nothing,
-    apexionminrelativeintensity::Real=DEFAULT_ALKANE_APEX_ION_MIN_RELATIVE_INTENSITY,
+    apexionminrelativeintensity::Real=0.1,
     apexminioncount::Integer=3,
     apexmzretentionkwargs=nothing,
     apexmaxshiftfromguess::Real=3.0,
@@ -173,6 +173,30 @@ function alkane_ladder_addition_apex_mzretentionkwargs(apexinfo, apexmzretention
     throw(ArgumentError(
         "apexmzretentionkwargs must be provided when apexinfo does not contain " *
         "resolved mzretentionkwargs"))
+end
+
+function alkane_ladder_addition_apex_settings(settings::NamedTuple, standard)
+    AlkaneLadderApexSettings(
+        standard,
+        settings.apexscanwindow,
+        settings.apexvariancefloor,
+        settings.apexlogfloorfraction,
+        settings.apexmzretentionkwargs,
+        get(settings.apexmzretentionkwargs, :order, :inferdirection),
+        settings.apexionexcludemzvalues,
+        settings.apexionmzvalues,
+        settings.apexionminrelativeintensity,
+        settings.apexminioncount,
+        settings.apexmaxshiftfromguess,
+        nothing,
+        nothing,
+        0,
+        1.25,
+        0,
+        14,
+        0,
+        0
+    )
 end
 
 function alkane_ladder_addition_carbonrange(abundanceinfo, carbonrange)
@@ -337,8 +361,8 @@ function alkane_edge_addition(
 
     edgeanchors = alkane_ladder_edge_extension_anchor_results(
         anchors,
-        direction;
-        maxanchors=settings.edgemaxanchors
+        direction,
+        settings.edgemaxanchors
     )
     length(edgeanchors) >= 2 || return NamedTuple[], merge(
         alkane_ladder_addition_diagnostic_base(
@@ -661,17 +685,17 @@ function alkane_best_ladder_addition_window(
     requiredcosine = if source == :gapfilled
         alkane_single_gap_required_cosine(
             get(kwargs, :leftanchor, nothing),
-            get(kwargs, :rightanchor, nothing);
-            mincosinefloor=settings.gapmincosinefloor,
-            cosinetolerance=settings.gapcosinetolerance
+            get(kwargs, :rightanchor, nothing),
+            settings.gapmincosinefloor,
+            settings.gapcosinetolerance
         )
     else
         alkane_edge_extension_required_cosine(
             get(kwargs, :edgeanchors, NamedTuple[]),
-            direction;
-            mincosinefloor=settings.edgemincosinefloor,
-            cosinetolerance=settings.edgecosinetolerance,
-            cosineanchorcount=settings.edgecosineanchorcount
+            direction,
+            settings.edgemincosinefloor,
+            settings.edgecosinetolerance,
+            settings.edgecosineanchorcount
         )
     end
     for window in windows
@@ -691,8 +715,8 @@ function alkane_best_ladder_addition_window(
                 abundance,
                 window,
                 direction,
-                scancount;
-                maxboundaryapexdistance=settings.apexmaxshiftfromguess
+                scancount,
+                settings.apexmaxshiftfromguess
             )
             continue
         end
@@ -756,21 +780,13 @@ function alkane_best_ladder_addition_window(
                 window=window
             )
         )
+        apexsettings = alkane_ladder_addition_apex_settings(settings, standard)
         apex = alkaneladderapex(
             msm,
             variances,
             abundanceinfo,
-            candidate;
-            scanwindow=settings.apexscanwindow,
-            standard=standard,
-            apexionexcludemzvalues=settings.apexionexcludemzvalues,
-            apexionmzvalues=settings.apexionmzvalues,
-            apexionminrelativeintensity=settings.apexionminrelativeintensity,
-            minioncount=settings.apexminioncount,
-            mzretentionkwargs=settings.apexmzretentionkwargs,
-            variancefloor=settings.apexvariancefloor,
-            logfloorfraction=settings.apexlogfloorfraction,
-            maxapexshiftfromguess=settings.apexmaxshiftfromguess
+            candidate,
+            apexsettings
         )
         apex.success || continue
         rank = (Float64(score), Float64(match.cosine), Float64(apexabundance))
@@ -881,7 +897,7 @@ end
 
 function alkane_ladder_edge_extension_anchor_results(
     anchors::AbstractVector,
-    direction::Symbol;
+    direction::Symbol,
     maxanchors::Integer
 )
     sorted = sort(collect(anchors); by=anchor -> Int(anchor.ladderstep))
@@ -896,7 +912,7 @@ end
 
 function alkane_single_gap_required_cosine(
     left,
-    right;
+    right,
     mincosinefloor::Real,
     cosinetolerance::Real
 )
@@ -912,7 +928,7 @@ end
 
 function alkane_edge_extension_required_cosine(
     anchors::AbstractVector,
-    direction::Symbol;
+    direction::Symbol,
     mincosinefloor::Real,
     cosinetolerance::Real,
     cosineanchorcount::Integer
@@ -1032,7 +1048,7 @@ function alkane_ladder_edge_window_apex_is_boundary_truncated(
     abundance::AbstractVector{<:Real},
     window,
     direction::Symbol,
-    scancount::Integer;
+    scancount::Integer,
     maxboundaryapexdistance::Real
 )
     isfinite(maxboundaryapexdistance) && maxboundaryapexdistance >= 0 ||

@@ -20,27 +20,34 @@ function ladder_addition_test_inputs()
     )
     windows = Dict(
         8 => [
-            (ladderstep=8, leftindex=8, apexindex=10, rightindex=12,
-                apexabundance=20.0)
+            AlkaneAbundanceWindow(
+                8, 8, 10, 12, 0.01, 20.0, 0.01, 0.01, :threshold, :threshold
+            )
         ],
         9 => [
-            (ladderstep=9, leftindex=18, apexindex=20, rightindex=22,
-                apexabundance=30.0),
-            (ladderstep=9, leftindex=24, apexindex=26, rightindex=28,
-                apexabundance=100.0)
+            AlkaneAbundanceWindow(
+                9, 18, 20, 22, 0.01, 30.0, 0.01, 0.01, :threshold, :threshold
+            ),
+            AlkaneAbundanceWindow(
+                9, 24, 26, 28, 0.01, 100.0, 0.01, 0.01, :threshold, :threshold
+            )
         ],
         10 => [
-            (ladderstep=10, leftindex=28, apexindex=30, rightindex=32,
-                apexabundance=40.0)
+            AlkaneAbundanceWindow(
+                10, 28, 30, 32, 0.01, 40.0, 0.01, 0.01, :threshold, :threshold
+            )
         ],
         11 => [
-            (ladderstep=11, leftindex=38, apexindex=40, rightindex=42,
-                apexabundance=25.0)
+            AlkaneAbundanceWindow(
+                11, 38, 40, 42, 0.01, 25.0, 0.01, 0.01, :threshold, :threshold
+            )
         ]
     )
-    abundanceinfo = (
-        abundances=abundances,
-        windows=windows
+    abundanceinfo = AlkaneAbundanceInfo(
+        abundances,
+        Dict(step => ones(length(abundance)) for (step, abundance) in abundances),
+        windows,
+        NamedTuple()
     )
     msm = ladder_addition_test_msm(abundanceinfo)
     variances = ones(60, 1)
@@ -197,8 +204,9 @@ end
     msm, variances, abundanceinfo, pathinfo = ladder_addition_test_inputs()
     abundanceinfo.abundances[12] = test_ladder_addition_abundance([(50, 15.0)])
     abundanceinfo.windows[12] = [
-        (ladderstep=12, leftindex=48, apexindex=50, rightindex=52,
-            apexabundance=15.0)
+        AlkaneAbundanceWindow(
+            12, 48, 50, 52, 0.01, 15.0, 0.01, 0.01, :threshold, :threshold
+        )
     ]
     msm = ladder_addition_test_msm(abundanceinfo)
     apexinfo = (
@@ -237,8 +245,9 @@ end
     msm, variances, abundanceinfo, pathinfo = ladder_addition_test_inputs()
     abundanceinfo.abundances[12] = test_ladder_addition_abundance([(50, 15.0)])
     abundanceinfo.windows[12] = [
-        (ladderstep=12, leftindex=50, apexindex=50, rightindex=50,
-            apexabundance=15.0)
+        AlkaneAbundanceWindow(
+            12, 50, 50, 50, 0.01, 15.0, 0.01, 0.01, :threshold, :threshold
+        )
     ]
     apexinfo = (
         apexes=[

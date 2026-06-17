@@ -246,14 +246,15 @@ function alkane_ladder_step_mass_spectrum(
     alkane_ladder_apex_is_usable_for_spectrum(apex) || throw(ArgumentError(
         "ladder step C$(step.ladderstep) does not contain a usable peak model apex"))
 
-    nscans = length(apex.scan_indices)
+    fit = alkane_ladder_spectrum_apex_fit(apex)
+    nscans = length(fit.scan_indices)
     nscans >= 3 || throw(ArgumentError(
         "at least three scans are needed for peak-model spectrum extraction"))
 
     X = rawintensities(msm)
     scan_retentions = retentions(msm)
     target_retention = alkane_ladder_spectrum_fit_center_retention(apex)
-    mzkwargs = apex.mzretentionkwargs
+    mzkwargs = fit.mzretentionkwargs
     n_mz = mzcount(msm)
 
     spectrum_intensities = Vector{Float64}(undef, n_mz)
@@ -316,13 +317,13 @@ function alkane_ladder_step_mass_spectrum(
             model=:fixed_peak_model_wls,
             ladderstep=step.ladderstep,
             step_source=step.source,
-            apex_retention=apex.apex_retention,
-            apex_scan_index=apex.apex_scan_index,
-            input_scan_index=Int(apex.input_scan_index),
-            input_retention=Float64(apex.input_retention),
+            apex_retention=apex.apexretention,
+            apex_scan_index=apex.apexscanindex,
+            input_scan_index=fit.input_scan_index,
+            input_retention=fit.input_retention,
             fit_center_scan_index=alkane_ladder_spectrum_fit_center_scan_index(apex),
             fit_center_retention=target_retention,
-            scan_indices=collect(apex.scan_indices),
+            scan_indices=collect(fit.scan_indices),
             scanwindow=(nscans - 1) / 2,
             variance_weighted=true,
             variancefloor=Float64(variancefloor),
@@ -330,7 +331,7 @@ function alkane_ladder_step_mass_spectrum(
             allownegative=!nonnegative,
             threaded=threaded,
             mzretentionkwargs=mzkwargs,
-            peak_model=collect(apex.peak_model),
+            peak_model=collect(fit.peak_model),
             standard_errors=standarderrors,
             z_scores=zscores,
             fit_success=fitsuccess,
@@ -412,54 +413,45 @@ function alkane_ladder_fit_spectrum_ion!(
 end
 
 function alkane_ladder_apex_is_usable_for_spectrum(apex)
-    required = (
-        :success,
-        :apex_retention,
-        :apex_scan_index,
-        :input_scan_index,
-        :input_retention,
-        :beta,
-        :gamma,
-        :apex_x,
-        :x_scale,
-        :scan_indices,
-        :peak_model,
-        :mzretentionkwargs
-    )
-    all(field -> hasproperty(apex, field), required) || return false
+    apex.success || return false
+    fitresult = apex.fit
+    fitresult isa AlkaneLadderIonApexResult || return false
+    fit = fitresult.fit
 
-    apex.success &&
-        isfinite(apex.apex_retention) &&
-        isfinite(apex.apex_scan_index) &&
-        isfinite(apex.apex_x) &&
-        isfinite(apex.x_scale) &&
-        apex.x_scale > 0 &&
-        isfinite(apex.beta) &&
-        isfinite(apex.gamma) &&
-        length(apex.scan_indices) == length(apex.peak_model) &&
-        all(isfinite, apex.peak_model)
+    isfinite(apex.apexretention) &&
+        isfinite(apex.apexscanindex) &&
+        isfinite(fit.apex_x) &&
+        isfinite(fit.x_scale) &&
+        fit.x_scale > 0 &&
+        isfinite(fit.beta) &&
+        isfinite(fit.gamma) &&
+        length(fit.scan_indices) == length(fit.peak_model) &&
+        all(isfinite, fit.peak_model)
 end
 
 function alkane_ladder_spectrum_fit_center_retention(apex)
-    hasproperty(apex, :fit_center_retention) &&
-        return Float64(apex.fit_center_retention)
-
-    Float64(apex.input_retention)
+    alkane_ladder_spectrum_apex_fit(apex).fit_center_retention
 end
 
 function alkane_ladder_spectrum_fit_center_scan_index(apex)
-    hasproperty(apex, :fit_center_scan_index) &&
-        return Float64(apex.fit_center_scan_index)
+    alkane_ladder_spectrum_apex_fit(apex).fit_center_scan_index
+end
 
-    Float64(apex.input_scan_index)
+function alkane_ladder_spectrum_apex_fit(apex)
+    fitresult = apex.fit
+    fitresult isa AlkaneLadderIonApexResult || throw(ArgumentError(
+        "ladder apex does not contain an ion apex fit result"))
+
+    fitresult.fit
 end
 
 function alkane_ladder_spectrum_shape_at_retention(apex, observation_retention::Real)
+    fit = alkane_ladder_spectrum_apex_fit(apex)
     x = (Float64(observation_retention) - alkane_ladder_spectrum_fit_center_retention(apex)) /
-        Float64(apex.x_scale)
+        fit.x_scale
 
     exp(
-        Float64(apex.beta) * (x - Float64(apex.apex_x)) +
-        Float64(apex.gamma) * (abs2(x) - abs2(Float64(apex.apex_x)))
+        fit.beta * (x - fit.apex_x) +
+        fit.gamma * (abs2(x) - abs2(fit.apex_x))
     )
 end

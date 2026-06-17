@@ -63,6 +63,16 @@ struct AlkaneFittedIonAbundance
     variance::Float64
 end
 
+struct AlkaneMolecularIonContrastEntry{T<:Real}
+    carbon::Int
+    contrasts::Vector{AlkaneMolecularIonContrast{T}}
+end
+
+struct AlkaneMolecularIonZScoreEntry
+    carbon::Int
+    zscores::Vector{Float64}
+end
+
 function alkane_molecular_ion_info(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
@@ -127,35 +137,53 @@ function alkane_molecular_ion_window_contrasts(
     X = rawintensities(msm)
     mzbins = alkane_mz_bins(msm)
     grid_mzs = rawmzvalues(msm)
-    contrasts = Dict{Int, Vector{AlkaneMolecularIonContrast{eltype(grid_mzs)}}}()
-
-    for (carbon, stepwindows) in pairs(windows)
+    contrasttype = AlkaneMolecularIonContrast{eltype(grid_mzs)}
+    windowpairs = collect(pairs(windows))
+    for (carbon, stepwindows) in windowpairs
         step = carbon
         haskey(abundances, step) || throw(ArgumentError(
             "abundances does not contain a vector for C$(step)"))
-
         molecularion = alkane_molecular_ion(step, stepmass)
         centerindices = alkane_molecular_ion_group_indices(
             mzbins,
             molecularion,
             ionwindow
         )
-        lowerindices = alkane_mz_window_indices(
+        alkane_molecular_ion_group_is_annotatable(
             mzbins,
-            molecularion - stepmass,
-            ionwindow
-        )
-        upperindices = alkane_mz_window_indices(
-            mzbins,
-            molecularion + stepmass,
-            ionwindow
-        )
-        if !alkane_molecular_ion_group_is_annotatable(
-                mzbins,
-                molecularion,
-                centerindices
-            )
-            contrasts[step] = AlkaneMolecularIonContrast{eltype(grid_mzs)}[]
+            molecularion,
+            centerindices
+        ) || continue
+
+        abundance = alkane_abundance_values(abundances[step], step)
+        length(abundance) == size(X, 1) || throw(DimensionMismatch(
+            "abundance vector for C$(step) must have length $(size(X, 1))"))
+        for window in stepwindows
+            1 ≤ window.leftindex ≤ window.rightindex ≤ length(abundance) ||
+                throw(DimensionMismatch(
+                    "window indices for C$(step) must fit abundance length"))
+        end
+    end
+
+    results = Vector{AlkaneMolecularIonContrastEntry{eltype(grid_mzs)}}(
+        undef,
+        length(windowpairs)
+    )
+
+    Base.Threads.@threads for index in eachindex(windowpairs)
+        carbon = first(windowpairs[index])
+        stepwindows = last(windowpairs[index])
+        step = carbon
+        haskey(abundances, step) || throw(ArgumentError(
+            "abundances does not contain a vector for C$(step)"))
+
+        molecularion = alkane_molecular_ion(step, stepmass)
+        centerindices = alkane_molecular_ion_group_indices(mzbins, molecularion, ionwindow)
+        lowerindices = alkane_mz_window_indices(mzbins, molecularion - stepmass, ionwindow)
+        upperindices = alkane_mz_window_indices(mzbins, molecularion + stepmass, ionwindow)
+
+        if !alkane_molecular_ion_group_is_annotatable(mzbins, molecularion, centerindices)
+            results[index] = AlkaneMolecularIonContrastEntry(step, contrasttype[])
             continue
         end
 
@@ -163,7 +191,7 @@ function alkane_molecular_ion_window_contrasts(
         length(abundance) == size(X, 1) || throw(DimensionMismatch(
             "abundance vector for C$(step) must have length $(size(X, 1))"))
 
-        stepcontrasts = AlkaneMolecularIonContrast{eltype(grid_mzs)}[]
+        stepcontrasts = contrasttype[]
         for window in stepwindows
             alkane_abundance_window_has_positive_peak_model(abundance, window) ||
                 continue
@@ -183,7 +211,12 @@ function alkane_molecular_ion_window_contrasts(
                 )
             )
         end
-        contrasts[step] = stepcontrasts
+        results[index] = AlkaneMolecularIonContrastEntry(step, stepcontrasts)
+    end
+
+    contrasts = Dict{Int, Vector{AlkaneMolecularIonContrast{eltype(grid_mzs)}}}()
+    for result in results
+        contrasts[result.carbon] = result.contrasts
     end
 
     contrasts
@@ -197,8 +230,23 @@ function alkane_molecular_ion_zscore_vectors(
     isfinite(fillvalue) || throw(ArgumentError("fillvalue must be finite"))
     fill = Float64(fillvalue)
 
-    zscorevectors = Dict{Int, Vector{Float64}}()
-    for (carbon, abundance) in pairs(abundances)
+    abundancepairs = collect(pairs(abundances))
+    for (carbon, abundance) in abundancepairs
+        step = carbon
+        abundancevalues = alkane_abundance_values(abundance, step)
+        stepcontrasts = get(contrasts, step, AlkaneMolecularIonContrast[])
+        for contrast in stepcontrasts
+            1 ≤ contrast.leftindex ≤ contrast.rightindex ≤ length(abundancevalues) ||
+                throw(DimensionMismatch(
+                    "window indices for C$(step) must fit abundance length"))
+        end
+    end
+
+    results = Vector{AlkaneMolecularIonZScoreEntry}(undef, length(abundancepairs))
+
+    Base.Threads.@threads for pairindex in eachindex(abundancepairs)
+        carbon = first(abundancepairs[pairindex])
+        abundance = last(abundancepairs[pairindex])
         step = carbon
         abundancevalues = alkane_abundance_values(abundance, step)
         zscores = Base.fill(fill, length(abundancevalues))
@@ -215,7 +263,12 @@ function alkane_molecular_ion_zscore_vectors(
             end
         end
 
-        zscorevectors[step] = zscores
+        results[pairindex] = AlkaneMolecularIonZScoreEntry(step, zscores)
+    end
+
+    zscorevectors = Dict{Int, Vector{Float64}}()
+    for result in results
+        zscorevectors[result.carbon] = result.zscores
     end
 
     zscorevectors

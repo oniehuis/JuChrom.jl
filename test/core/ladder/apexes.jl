@@ -10,9 +10,11 @@ function test_alkane_ion_apex_inputs(; apexretention=3.25, centerindex=3)
     msm = MassScanMatrix(retentions, mzs, X)
     variances = ones(size(X))
     abundance = vec(sum(X; dims=2))
-    abundanceinfo = (
-        abundances=Dict(8 => abundance),
-        abundancevariances=Dict(8 => ones(length(retentions)))
+    abundanceinfo = AlkaneAbundanceInfo(
+        Dict(8 => abundance),
+        Dict(8 => ones(length(retentions))),
+        Dict{Int, Vector{AlkaneAbundanceWindow}}(),
+        NamedTuple()
     )
     candidate = (
         ladderstep=8,
@@ -31,6 +33,165 @@ function test_alkane_ion_apex_inputs(; apexretention=3.25, centerindex=3)
     msm, variances, abundanceinfo, candidate, mzkwargs
 end
 
+function test_apex_path_contrast(candidate)
+    scanindex = candidate.scanindex
+    leftindex = candidate.window.leftindex
+    rightindex = candidate.window.rightindex
+    AlkaneMolecularIonContrast(
+        candidate.ladderstep,
+        leftindex,
+        scanindex,
+        rightindex,
+        collect(leftindex:rightindex),
+        ones(rightindex - leftindex + 1),
+        1.0,
+        114,
+        Int[],
+        Int[],
+        Int[],
+        Float64[],
+        Float64[],
+        Float64[],
+        false,
+        false,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+    )
+end
+
+function test_apex_path_candidate(candidate)
+    contrast = test_apex_path_contrast(candidate)
+    JuChrom.AlkaneLadderPathCandidate(
+        candidate.ladderstep,
+        candidate.scanindex,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        NaN,
+        NaN,
+        0,
+        :molecular_ion_dp,
+        true,
+        false,
+        Float64(candidate.scanindex),
+        0.0,
+        NaN,
+        contrast
+    )
+end
+
+function test_apex_pathinfo(candidate)
+    test_apex_pathinfo_from_candidates([test_apex_path_candidate(candidate)])
+end
+
+function test_apex_pathinfo_from_candidates(pathcandidates)
+    candidatesbystep = Dict(
+        candidate.ladderstep => [candidate] for candidate in pathcandidates
+    )
+    JuChrom.AlkaneLadderPathInfo(
+        true,
+        :success,
+        :success,
+        nothing,
+        "",
+        [candidate.ladderstep for candidate in pathcandidates],
+        [candidate.scanindex for candidate in pathcandidates],
+        [candidate.score for candidate in pathcandidates],
+        [candidate.z for candidate in pathcandidates],
+        [candidate.centerz for candidate in pathcandidates],
+        [candidate.isolationz for candidate in pathcandidates],
+        [candidate.centervslowerz for candidate in pathcandidates],
+        [candidate.centervsupperz for candidate in pathcandidates],
+        [candidate.massspectrumcosine for candidate in pathcandidates],
+        [candidate.massspectrumdistance for candidate in pathcandidates],
+        [candidate.source for candidate in pathcandidates],
+        [candidate.misupported for candidate in pathcandidates],
+        [candidate.gapfilled for candidate in pathcandidates],
+        [candidate.expectedscan for candidate in pathcandidates],
+        [candidate.scanerror for candidate in pathcandidates],
+        [candidate.requiredcosine for candidate in pathcandidates],
+        Int[],
+        Int[],
+        Float64[],
+        0,
+        sum(candidate.score for candidate in pathcandidates),
+        sum(candidate.score for candidate in pathcandidates),
+        [candidate.window for candidate in pathcandidates],
+        pathcandidates,
+        candidatesbystep,
+        candidatesbystep,
+        Vector{Int}[],
+        JuChrom.AlkaneLadderPathRunResult[],
+        NamedTuple()
+    )
+end
+
+function test_empty_apex_pathinfo()
+    candidatesbystep = Dict{Int, Vector{JuChrom.AlkaneLadderPathCandidate{
+        AlkaneMolecularIonContrast{Float64}
+    }}}()
+    JuChrom.AlkaneLadderPathInfo(
+        false,
+        :failed,
+        :no_candidates,
+        "no candidates",
+        "no candidates",
+        Int[],
+        Int[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Symbol[],
+        Bool[],
+        Bool[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Int[],
+        Int[],
+        Float64[],
+        0,
+        -Inf,
+        -Inf,
+        AlkaneMolecularIonContrast[],
+        JuChrom.AlkaneLadderPathCandidate[],
+        candidatesbystep,
+        candidatesbystep,
+        Vector{Int}[],
+        JuChrom.AlkaneLadderPathRunResult[],
+        NamedTuple()
+    )
+end
+
 function test_mzretention_timing_kwargs(mzkwargs)
     (
         retentionref=mzkwargs.retentionref,
@@ -41,9 +202,53 @@ function test_mzretention_timing_kwargs(mzkwargs)
     )
 end
 
+function test_apex_settings(;
+    standard=defaultalkanestandard(),
+    scanwindow=2,
+    variancefloor=1.0,
+    logfloorfraction=1e-3,
+    mzretentionkwargs=nothing,
+    mzscanorder=:inferdirection,
+    apexionexcludemzvalues=(),
+    apexionmzvalues=nothing,
+    apexionminrelativeintensity=0.1,
+    minioncount=3,
+    maxapexshiftfromguess=3.0,
+    apexfitqualityoutlierz=3.0,
+    mzscanordermaxpeaks=3,
+    mzscanorderminpeaks=5,
+    mzscanorderminapexvarianceratio=2.0,
+    mzscanordershapeioncount=3,
+    mzscanordershapemzspacing=14,
+    mzscanorderextremeioncount=5,
+    mzscanorderminioncount=8
+)
+    JuChrom.AlkaneLadderApexSettings(
+        standard,
+        scanwindow,
+        variancefloor,
+        logfloorfraction,
+        mzretentionkwargs,
+        mzscanorder,
+        apexionexcludemzvalues,
+        apexionmzvalues,
+        apexionminrelativeintensity,
+        minioncount,
+        maxapexshiftfromguess,
+        apexfitqualityoutlierz,
+        mzscanordermaxpeaks,
+        mzscanorderminpeaks,
+        mzscanorderminapexvarianceratio,
+        mzscanordershapeioncount,
+        mzscanordershapemzspacing,
+        mzscanorderextremeioncount,
+        mzscanorderminioncount
+    )
+end
+
 function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
     retentions = collect(1.0:(10.0 + 5.0 * length(carbons)))
-    mzs = collect(43.0:14.0:211.0)
+    mzs = collect(43:14:211)
     ionheights = [100.0, 92.0, 84.0, 76.0, 68.0, 60.0, 52.0,
         44.0, 36.0, 28.0, 20.0, 14.0, 10.0]
     spectra = [
@@ -70,7 +275,6 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
         apexretention = 6.0 + 5.0 * (offset - 1)
         for mzindex in eachindex(mzs), scanindex in eachindex(retentions)
             observation = JuChrom.alkane_ladder_observation_retention(
-                MassScanMatrix(retentions, mzs, zeros(length(retentions), length(mzs))),
                 retentions,
                 scanindex,
                 mzindex,
@@ -98,8 +302,11 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
     msm = MassScanMatrix(retentions, mzs, X)
     variances = ones(size(X))
     timingkwargs = test_mzretention_timing_kwargs(mzkwargs)
+    pathinfo = test_apex_pathinfo_from_candidates([
+        test_apex_path_candidate(candidate) for candidate in path
+    ])
 
-    msm, variances, (path=path,), standard, timingkwargs
+    msm, variances, pathinfo, standard, timingkwargs
 end
 
 @testset "alkane scan-order contrast ion selection uses paired m/z extremes" begin
@@ -115,8 +322,8 @@ end
     selection = JuChrom.alkane_ladder_scan_order_extreme_apex_mzvalues(
         msm,
         standard,
-        16;
-        extremeioncount=5
+        16,
+        5
     )
 
     @test selection.selection == :reference_alkane_series_extreme_grid_ions
@@ -128,13 +335,9 @@ end
 
 @testset "alkaneladderapexes refines selected path apex from selected ions" begin
     msm, variances, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()
-    pathinfo = (path=[candidate],)
+    pathinfo = test_apex_pathinfo(candidate)
 
-    apexinfo = alkaneladderapexes(
-        msm,
-        variances,
-        abundanceinfo,
-        pathinfo;
+    settings = test_apex_settings(
         scanwindow=2,
         apexionmzvalues=[100.0, 101.0, 102.0],
         minioncount=3,
@@ -142,6 +345,13 @@ end
         mzscanorder=:ascending,
         variancefloor=1.0,
         logfloorfraction=1e-9
+    )
+    apexinfo = alkaneladderapexes(
+        msm,
+        variances,
+        abundanceinfo,
+        pathinfo,
+        settings
     )
     apex = only(apexinfo.apexes)
 
@@ -152,9 +362,9 @@ end
     @test apex.apexretention ≈ 3.25 atol = 1e-5
     @test apex.apexscanindex ≈ 3.25 atol = 1e-5
     @test apex.apexoffsetscans ≈ 0.25 atol = 1e-5
-    @test apex.apex_ion_selection == :explicit_mzvalues
-    @test apex.mz_indices == [1, 2, 3]
-    @test apex.recenter_attempts == 0
+    @test apex.fit.fit.apex_ion_selection == :explicit_mzvalues
+    @test apex.fit.fit.mz_indices == [1, 2, 3]
+    @test apex.fit.recenter_attempts == 0
     @test apexinfo.bycarbon[8].apexretention ≈ apex.apexretention
 end
 
@@ -162,11 +372,7 @@ end
     msm, variances, abundanceinfo, candidate, mzkwargs =
         test_alkane_ion_apex_inputs(; apexretention=4.2, centerindex=3)
 
-    apex = alkaneladderapex(
-        msm,
-        variances,
-        abundanceinfo,
-        candidate;
+    settings = test_apex_settings(
         scanwindow=1,
         apexionmzvalues=[100.0, 101.0, 102.0],
         minioncount=3,
@@ -175,21 +381,34 @@ end
         logfloorfraction=1e-9,
         maxapexshiftfromguess=3.0
     )
+    apex = alkaneladderapex(
+        msm,
+        variances,
+        abundanceinfo,
+        candidate,
+        settings
+    )
 
     @test apex.success
     @test apex.apexretention ≈ 4.2 atol = 1e-5
-    @test apex.recenter_attempts > 0
-    @test apex.recenter_used
+    @test apex.fit.recenter_attempts > 0
+    @test apex.fit.recenter_used
     @test any(a -> a.success && abs(a.apex_offset_from_fit_center_scans) <= 0.25,
-        apex.all_apex_attempts)
+        apex.fit.all_apex_attempts)
     @test apex.candidate == candidate
 end
 
 @testset "alkaneladderapexes returns empty result for failed path" begin
     msm, variances, abundanceinfo, _, _ = test_alkane_ion_apex_inputs()
-    pathinfo = (path=NamedTuple[],)
+    pathinfo = test_empty_apex_pathinfo()
 
-    apexinfo = alkaneladderapexes(msm, variances, abundanceinfo, pathinfo)
+    apexinfo = alkaneladderapexes(
+        msm,
+        variances,
+        abundanceinfo,
+        pathinfo,
+        test_apex_settings()
+    )
 
     @test apexinfo.status == :failed
     @test apexinfo.reason == :no_path
@@ -202,15 +421,18 @@ end
 @testset "alkaneladderapex reports structured failure when too few ions are available" begin
     msm, variances, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()
 
-    apex = alkaneladderapex(
-        msm,
-        variances,
-        abundanceinfo,
-        candidate;
+    settings = test_apex_settings(
         scanwindow=2,
         apexionmzvalues=[100.0],
         minioncount=3,
         mzretentionkwargs=mzkwargs
+    )
+    apex = alkaneladderapex(
+        msm,
+        variances,
+        abundanceinfo,
+        candidate,
+        settings
     )
 
     @test !apex.success
@@ -246,9 +468,8 @@ end
     scanorder = alkaneladderscanorder(
         msm,
         variances,
-        pathinfo;
-        standard=standard,
-        mzretentionkwargs=provided
+        pathinfo,
+        test_apex_settings(; standard=standard, mzretentionkwargs=provided)
     )
 
     @test scanorder.mzretentionkwargs.order == :ascending
@@ -260,9 +481,8 @@ end
     scanorder = alkaneladderscanorder(
         msm,
         variances,
-        pathinfo;
-        standard=standard,
-        mzretentionkwargs=simultaneous
+        pathinfo,
+        test_apex_settings(; standard=standard, mzretentionkwargs=simultaneous)
     )
 
     @test scanorder.mzretentionkwargs.order == :simultaneous
@@ -272,44 +492,43 @@ end
     @test_throws ArgumentError alkaneladderscanorder(
         msm,
         variances,
-        pathinfo;
-        standard=standard,
-        mzretentionkwargs=provided,
-        mzscanorder=:descending
+        pathinfo,
+        test_apex_settings(;
+            standard=standard,
+            mzretentionkwargs=provided,
+            mzscanorder=:descending
+        )
     )
     @test_throws ArgumentError alkaneladderscanorder(
         msm,
         variances,
-        pathinfo;
-        standard=standard,
-        mzscanorder=:unknown
+        pathinfo,
+        test_apex_settings(; standard=standard, mzscanorder=:unknown)
     )
 end
 
 @testset "alkaneladderscanorder orders limited peaks across the path" begin
-    pathinfo = (
-        path=[
-            (
-                ladderstep=step,
-                scanindex=step,
-                window=(leftindex=step, rightindex=step)
-            )
-            for step in 8:40
-        ],
-    )
+    pathinfo = test_apex_pathinfo_from_candidates([
+        test_apex_path_candidate((
+            ladderstep=step,
+            scanindex=step,
+            window=(leftindex=step, rightindex=step)
+        ))
+        for step in 8:40
+    ])
 
-    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo; maxpeaks=5)
+    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo, 5)
     @test [candidate.ladderstep for candidate in selected[1:5]] == [8, 16, 24, 32, 40]
     @test sort([candidate.ladderstep for candidate in selected]) == collect(8:40)
 
-    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo; maxpeaks=6)
+    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo, 6)
     @test [candidate.ladderstep for candidate in selected[1:6]] == [8, 14, 21, 27, 34, 40]
 
-    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo; maxpeaks=nothing)
+    selected = JuChrom.alkane_ladder_scan_order_candidates(pathinfo, nothing)
     @test [candidate.ladderstep for candidate in selected] == collect(8:40)
 
-    shortpath = (path=pathinfo.path[1:5],)
-    selected = JuChrom.alkane_ladder_scan_order_candidates(shortpath; maxpeaks=4)
+    shortpath = test_apex_pathinfo_from_candidates(pathinfo.path[1:5])
+    selected = JuChrom.alkane_ladder_scan_order_candidates(shortpath, 4)
     @test [candidate.ladderstep for candidate in selected[1:4]] == [8, 9, 11, 12]
 
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_scan_order_settings(
@@ -330,21 +549,26 @@ end
     scanorder = alkaneladderscanorder(
         msm,
         variances,
-        pathinfo;
-        standard=standard,
-        mzretentionkwargs=timingkwargs,
-        scanwindow=2,
-        logfloorfraction=1e-9,
-        minpeaks=3,
-        minapexvarianceratio=1e12,
-        minioncount=8
+        pathinfo,
+        test_apex_settings(;
+            standard=standard,
+            mzretentionkwargs=timingkwargs,
+            scanwindow=2,
+            logfloorfraction=1e-9,
+            mzscanorderminpeaks=3,
+            mzscanorderminapexvarianceratio=1e12,
+            mzscanorderminioncount=8
+        )
     )
 
     @test scanorder.info.status == :ambiguous
     @test scanorder.info.expanded_for_ambiguity
+    @test scanorder.info.expanded_ions
     @test scanorder.info.initial_n_peaks_tried == 3
     @test scanorder.info.trials.ascending.n_tried == length(pathinfo.path)
     @test scanorder.info.trials.descending.n_tried == length(pathinfo.path)
+    @test maximum(scanorder.info.trials.ascending.ion_counts) > 10
+    @test maximum(scanorder.info.trials.descending.ion_counts) > 10
 end
 
 @testset "alkaneladderscanorder infers sequential scan direction symmetrically" begin
@@ -355,14 +579,16 @@ end
         scanorder = alkaneladderscanorder(
             msm,
             variances,
-            pathinfo;
-            standard=standard,
-            mzretentionkwargs=timingkwargs,
-            scanwindow=2,
-            logfloorfraction=1e-9,
-            maxpeaks=1,
-            minpeaks=3,
-            minioncount=8
+            pathinfo,
+            test_apex_settings(;
+                standard=standard,
+                mzretentionkwargs=timingkwargs,
+                scanwindow=2,
+                logfloorfraction=1e-9,
+                mzscanordermaxpeaks=1,
+                mzscanorderminpeaks=3,
+                mzscanorderminioncount=8
+            )
         )
 
         @test scanorder.mzretentionkwargs.order == trueorder

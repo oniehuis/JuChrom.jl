@@ -8,10 +8,13 @@ created from unfiltered C8-C40 robust consensus spectra with integer m/z values.
 Intensities are base-peak-normalized to 100, with negative consensus values floored at
 0, then rounded to four significant digits.
 """
-struct AlkaneStandard{S,M}
+struct AlkaneStandard{
+    T1<:AbstractVector{<:AbstractMassSpectrum},
+    T2<:NamedTuple
+}
     name::String
-    spectra::S
-    metadata::M
+    spectra::T1
+    metadata::T2
 end
 
 function alkane_reference_spectrum(

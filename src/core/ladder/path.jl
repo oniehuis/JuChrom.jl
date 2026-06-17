@@ -255,13 +255,7 @@ function alkane_ladder_path_mass_spectrum_match_context(
     enabled || return nothing
     (isnothing(msm) || isnothing(variances) || isnothing(standard)) && return nothing
 
-    alkane_ladder_mass_spectrum_match_context(
-        msm,
-        variances,
-        standard,
-        true,
-        1.0
-    )
+    alkane_ladder_mass_spectrum_match_context(msm, variances, standard, true, 1.0)
 end
 
 function alkane_ladder_path_candidates(
@@ -398,14 +392,20 @@ function alkane_best_ladder_path_in_run(
 
     candidates = [candidatesbystep[step] for step in steprun]
     length(candidates) < minsteps && return nothing
+    candidate_scanindices = [
+        [candidate.scanindex for candidate in stepcandidates]
+        for stepcandidates in candidates
+    ]
+    maxgaplogratio = log(maxgapratio)
 
     bestobjective = -Inf
     beststateid = nothing
     states = LadderWindowPathState[]
-    statesbypos = [Dict{Tuple{Int,Int,Int,Int}, Int}() for _ in candidates]
+    statesbypos = [Dict{Tuple{Int, Int, Int, Int}, Int}() for _ in candidates]
 
     for pos in eachindex(candidates)
         currentstates = statesbypos[pos]
+        current_scanindices = candidate_scanindices[pos]
         for curridx in eachindex(candidates[pos])
             curr = candidates[pos][curridx]
             objective = curr.score + stepreward
@@ -427,17 +427,18 @@ function alkane_best_ladder_path_in_run(
             end
         end
 
-        for prevpos in 1:(pos - 1)
+        for prevpos in Iterators.reverse(1:(pos - 1))
             stepgap = steprun[pos] - steprun[prevpos]
-            1 ≤ stepgap ≤ maxmissingsteps + 1 || continue
+            stepgap ≤ maxmissingsteps + 1 || break
+            stepgap ≥ 1 || continue
             missingsteps = stepgap - 1
 
             for stateid in values(statesbypos[prevpos])
                 state = states[stateid]
                 previous = candidates[prevpos][state.curridx]
-                for curridx in eachindex(candidates[pos])
+                firstcurridx = searchsortedlast(current_scanindices, previous.scanindex) + 1
+                for curridx in firstcurridx:length(candidates[pos])
                     curr = candidates[pos][curridx]
-                    curr.scanindex > previous.scanindex || continue
 
                     penalty = missingsteppenalty * missingsteps
                     if state.pathlength >= 2
@@ -452,7 +453,7 @@ function alkane_best_ladder_path_in_run(
                         nextgap = (curr.scanindex - previous.scanindex) / nextstepgap
                         gaplogratio = alkane_ladder_gap_log_ratio(previousgap, nextgap)
                         isfinite(gaplogratio) || continue
-                        abs(gaplogratio) ≤ log(maxgapratio) || continue
+                        abs(gaplogratio) ≤ maxgaplogratio || continue
                         penalty += spacingweight * abs2(gaplogratio)
                         penalty += gapincreaseweight * abs2(max(0.0, gaplogratio))
                     end
