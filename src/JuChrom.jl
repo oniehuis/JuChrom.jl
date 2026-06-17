@@ -82,6 +82,8 @@ export AbstractMassSpectrum
 export AbstractScan
 export AbstractScanSeries
 export AbstractVarianceMassScanMatrix
+export AlkaneAbundanceInfo
+export AlkaneAbundanceWindow
 export AlkaneLadderStep
 export AlkaneSeriesResult
 export AlkaneStandard

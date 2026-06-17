@@ -367,6 +367,8 @@ function alkane_ladder_fit_spectrum_ion!(
         nscans,
         mzindex,
         mzretentionkwargs,
+        alkane_ladder_spectrum_fit_center_scan_index(apex),
+        max(3, fld(Int(nscans), 2) + 2),
     )
 
     numerator = 0.0

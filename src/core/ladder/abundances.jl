@@ -1,3 +1,40 @@
+"""
+    AlkaneAbundanceWindow
+
+Peak window on an alkane abundance track.
+"""
+struct AlkaneAbundanceWindow
+    ladderstep::Int
+    leftindex::Int
+    apexindex::Int
+    rightindex::Int
+    leftabundance::Float64
+    apexabundance::Float64
+    rightabundance::Float64
+    threshold::Float64
+    leftstop::Symbol
+    rightstop::Symbol
+end
+
+"""
+    AlkaneAbundanceInfo
+
+Result of the alkane abundance stage.
+"""
+struct AlkaneAbundanceInfo{S <: NamedTuple}
+    abundances::Dict{Int, Vector{Float64}}
+    abundancevariances::Dict{Int, Vector{Float64}}
+    windows::Dict{Int, Vector{AlkaneAbundanceWindow}}
+    settings::S
+end
+
+Base.keys(::AlkaneAbundanceInfo) = (
+    :abundances,
+    :abundancevariances,
+    :windows,
+    :settings,
+)
+
 function alkaneabundanceinfo(
     msm::MassScanMatrix,
     variances,
@@ -26,11 +63,11 @@ function alkaneabundanceinfo(
         minrisez=minrisez,
     )
 
-    (
-        abundances=abundances,
-        abundancevariances=abundancevariances,
-        windows=windows,
-        settings=(
+    AlkaneAbundanceInfo(
+        abundances,
+        abundancevariances,
+        windows,
+        (
             variancefloor=Float64(variancefloor),
             nonnegative=nonnegative,
             thresholdfraction=Float64(thresholdfraction),
@@ -104,7 +141,7 @@ function alkaneabundancewindows(
     isnothing(abundancevariances) || abundancevariances isa AbstractDict || throw(
         ArgumentError("abundancevariances must be nothing or a dictionary"))
 
-    windows = Dict{Int, Vector{NamedTuple}}()
+    windows = Dict{Int, Vector{AlkaneAbundanceWindow}}()
     for (carbon, abundance) in pairs(abundances)
         step = Int(carbon)
         abundancevalues = alkane_abundance_values(abundance, step)
@@ -113,7 +150,7 @@ function alkaneabundancewindows(
         maxima = localmaxima(abundancevalues)
         minima = Set(localmaxima(-abundancevalues))
 
-        stepwindows = NamedTuple[]
+        stepwindows = AlkaneAbundanceWindow[]
         for apexindex in sort(collect(maxima); by=index -> abundancevalues[index], rev=true)
             abundancevalues[apexindex] > 0 || continue
             alkane_abundance_index_is_in_window(apexindex, stepwindows) && continue
@@ -334,17 +371,17 @@ function alkane_abundance_peak_window(
         minrisez,
     )
 
-    (
-        ladderstep=Int(carbon),
-        leftindex=leftindex,
-        apexindex=Int(apexindex),
-        rightindex=rightindex,
-        leftabundance=abundance[leftindex],
-        apexabundance=apexabundance,
-        rightabundance=abundance[rightindex],
-        threshold=threshold,
-        leftstop=leftstop,
-        rightstop=rightstop,
+    AlkaneAbundanceWindow(
+        carbon,
+        leftindex,
+        apexindex,
+        rightindex,
+        abundance[leftindex],
+        apexabundance,
+        abundance[rightindex],
+        threshold,
+        leftstop,
+        rightstop,
     )
 end
 

@@ -142,6 +142,7 @@ end
         minrisez=5.0,
     )
 
+    @test abundanceinfo isa AlkaneAbundanceInfo
     @test keys(abundanceinfo) == (:abundances, :abundancevariances, :windows, :settings)
     @test sort(collect(keys(abundanceinfo.abundances))) == [8, 9]
     @test sort(collect(keys(abundanceinfo.abundancevariances))) == [8, 9]
@@ -276,18 +277,17 @@ end
     )
 
     @test length(windows[8]) == 2
-    @test windows[8][1] == (
-        ladderstep=8,
-        leftindex=3,
-        apexindex=4,
-        rightindex=5,
-        leftabundance=0.1,
-        apexabundance=2.0,
-        rightabundance=0.2,
-        threshold=0.5,
-        leftstop=:localminimum,
-        rightstop=:threshold,
-    )
+    @test windows[8][1] isa AlkaneAbundanceWindow
+    @test windows[8][1].ladderstep == 8
+    @test windows[8][1].leftindex == 3
+    @test windows[8][1].apexindex == 4
+    @test windows[8][1].rightindex == 5
+    @test windows[8][1].leftabundance == 0.1
+    @test windows[8][1].apexabundance == 2.0
+    @test windows[8][1].rightabundance == 0.2
+    @test windows[8][1].threshold == 0.5
+    @test windows[8][1].leftstop == :localminimum
+    @test windows[8][1].rightstop == :threshold
     @test windows[8][2].apexindex == 2
     @test windows[8][2].leftindex == 1
     @test windows[8][2].rightindex == 3
@@ -322,6 +322,7 @@ end
         nothing,
         10.0,
     )
+    @test peakwindow isa AlkaneAbundanceWindow
     @test peakwindow.leftindex == 3
     @test peakwindow.rightindex == 5
     @test peakwindow.leftstop == :localminimum

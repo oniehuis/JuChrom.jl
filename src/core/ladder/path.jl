@@ -221,8 +221,8 @@ function alkane_ladder_path_candidates(
                 massspectrummatchcontext,
             )
             candidate_score = alkane_ladder_path_candidate_dp_score(
-                contrast,
-                match,
+                contrast.molecularionscore,
+                match.distance,
                 massspectrummatchdistanceweight,
             )
             push!(
@@ -275,15 +275,11 @@ function alkane_molecular_ion_window_has_candidate_evidence(
 end
 
 function alkane_ladder_path_candidate_dp_score(
-    contrast,
-    massspectrummatch,
+    score::Real,
+    distance::Real,
     distanceweight::Real,
 )
-    score = hasproperty(contrast, :molecularionscore) ?
-        Float64(contrast.molecularionscore) :
-        NaN
     isfinite(score) && score > 0 || return 0.0
-    distance = massspectrummatch.distance
     isfinite(distance) || return score
 
     score * exp(-Float64(distanceweight) * clamp(Float64(distance), 0.0, 1.0))

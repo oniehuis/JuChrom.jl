@@ -5,9 +5,15 @@ calibration. The production API is under active development.
 
 ```@docs
 AlkaneStandard
+AlkaneAbundanceWindow
+AlkaneAbundanceInfo
 defaultalkanestandard
 alkanereferencespectra
 alkanereferencespectrum
 findalkanes
 findalkaneseries
+alkaneladdersteps
+alkaneladderscanorder
+alkaneladderapexes
+alkaneladdermassspectra
 ```

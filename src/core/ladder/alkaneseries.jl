@@ -1,15 +1,15 @@
-struct AlkaneSeriesResult{S,V,VI,BI,CI,AI,MI,PI,API,ADI,DI}
-    standard::S
-    variances::V
-    varianceinfo::VI
-    baselineinfo::BI
-    channelinfo::CI
-    abundanceinfo::AI
-    molecularioninfo::MI
-    pathinfo::PI
-    apexinfo::API
-    additioninfo::ADI
-    datainfo::DI
+struct AlkaneSeriesResult{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
+    standard::T1
+    variances::T2
+    varianceinfo::T3
+    baselineinfo::T4
+    channelinfo::T5
+    abundanceinfo::T6
+    molecularioninfo::T7
+    pathinfo::T8
+    apexinfo::T9
+    additioninfo::T10
+    datainfo::T11
 end
 
 function AlkaneSeriesResult(
@@ -39,7 +39,7 @@ function AlkaneSeriesResult(
     )
 end
 
-struct AlkaneLadderStep{A}
+struct AlkaneLadderStep{T}
     ladderstep::Int
     apexscanindex::Float64
     apexretention::Float64
@@ -47,7 +47,7 @@ struct AlkaneLadderStep{A}
     massspectrumcosine::Float64
     requiredcosine::Float64
     goodforcalibration::Bool
-    apex::A
+    apex::T
 end
 
 """
@@ -63,101 +63,71 @@ function alkaneladdersteps(
     result::AlkaneSeriesResult;
     molecularion::Bool=true,
     gapfilled::Bool=true,
-    edgeextended::Bool=true,
+    edgeextended::Bool=true
 )
     steps = AlkaneLadderStep[]
     if molecularion
-        append!(
-            steps,
-            alkane_ladder_steps_from_apexes(
-                result.apexinfo;
-                source=:molecularion,
-            ),
-        )
+        append!(steps, alkane_ladder_steps_from_apexes(
+            result.apexinfo.apexes,
+            :molecularion,
+        ))
     end
 
     if gapfilled
-        append!(
-            steps,
-            alkane_ladder_steps_from_additions(
-                result.additioninfo,
-                :gapfilled,
-            ),
-        )
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.gapfilled,
+            :gapfilled,
+        ))
     end
 
     if edgeextended
-        append!(
-            steps,
-            alkane_ladder_steps_from_additions(
-                result.additioninfo,
-                :leftextended,
-            ),
-        )
-        append!(
-            steps,
-            alkane_ladder_steps_from_additions(
-                result.additioninfo,
-                :rightextended,
-            ),
-        )
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.leftextended,
+            :leftextended,
+        ))
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.rightextended,
+            :rightextended,
+        ))
     end
 
     sort!(steps; by=step -> step.ladderstep)
+
     steps
 end
 
-function alkane_ladder_steps_from_apexes(apexinfo; source::Symbol)
-    hasproperty(apexinfo, :apexes) || return AlkaneLadderStep[]
-
+function alkane_ladder_steps_from_apexes(apexes::AbstractVector, source::Symbol)
     steps = AlkaneLadderStep[]
-    for apex in apexinfo.apexes
-        hasproperty(apex, :success) && Bool(apex.success) || continue
-        push!(steps, alkane_ladder_step_from_apex(apex; source=source))
+    for apex in apexes
+        Bool(apex.success) || continue
+        push!(steps, alkane_ladder_step_from_apex(apex, source))
     end
 
     steps
 end
 
-function alkane_ladder_steps_from_additions(additioninfo, field::Symbol)
-    hasproperty(additioninfo, field) || return AlkaneLadderStep[]
-
+function alkane_ladder_steps_from_additions(additions::AbstractVector, source::Symbol)
     steps = AlkaneLadderStep[]
-    for addition in getproperty(additioninfo, field)
-        hasproperty(addition, :apex) || continue
+    for addition in additions
         apex = addition.apex
-        hasproperty(apex, :success) && Bool(apex.success) || continue
-        source = hasproperty(addition, :source) ? Symbol(addition.source) : field
-        push!(steps, alkane_ladder_step_from_apex(apex; source=source))
+        Bool(apex.success) || continue
+        push!(steps, alkane_ladder_step_from_apex(apex, source))
     end
 
     steps
 end
 
-function alkane_ladder_step_from_apex(apex; source::Symbol)
+function alkane_ladder_step_from_apex(apex, source::Symbol)
     AlkaneLadderStep(
-        Int(apex.ladderstep),
-        Float64(apex.apexscanindex),
-        Float64(apex.apexretention),
+        apex.ladderstep,
+        apex.apexscanindex,
+        apex.apexretention,
         source,
-        alkane_ladder_float_field(apex, :mass_spectrum_cosine, :massspectrumcosine),
-        alkane_ladder_float_field(apex, :required_cosine, :requiredcosine),
-        hasproperty(apex, :good_for_calibration) ?
-            Bool(apex.good_for_calibration) :
-            Bool(apex.success),
-        apex,
+        apex.mass_spectrum_cosine,
+        apex.required_cosine,
+        apex.good_for_calibration,
+        apex
     )
-end
-
-function alkane_ladder_float_field(object, fields::Symbol...)
-    for field in fields
-        hasproperty(object, field) || continue
-        value = getproperty(object, field)
-        value isa Real || continue
-        return Float64(value)
-    end
-
-    NaN
 end
 
 """
@@ -655,7 +625,7 @@ end
 function validate_alkane_channel_settings(minrelativeintensity)
     minrelativeintensity isa Real || throw(ArgumentError(
         "minrelativeintensity must be real"))
-    isfinite(minrelativeintensity) && 0 <= minrelativeintensity < 1 || throw(
+    isfinite(minrelativeintensity) && 0 ≤ minrelativeintensity < 1 || throw(
         ArgumentError("minrelativeintensity must be finite and in [0, 1)"))
 
     nothing
@@ -663,7 +633,7 @@ end
 
 function alkane_reference_channel_match(
     spectrum::AbstractMassSpectrum,
-    grid_index_by_mz::AbstractDict{Int,<:Integer},
+    grid_index_by_mz::AbstractDict{Int, <:Integer},
     grid_mzs::AbstractVector;
     minrelativeintensity::Real,
 )
@@ -671,7 +641,7 @@ function alkane_reference_channel_match(
     spectrum_intensities = Float64.(intensities(spectrum))
     all(isfinite, spectrum_intensities) || throw(ArgumentError(
         "reference spectrum contains nonfinite intensities"))
-    all(>=(0), spectrum_intensities) || throw(ArgumentError(
+    all(≥(0), spectrum_intensities) || throw(ArgumentError(
         "reference spectrum contains negative intensities"))
     max_intensity = maximum(spectrum_intensities)
     max_intensity > 0 || throw(ArgumentError(
@@ -688,10 +658,11 @@ function alkane_reference_channel_match(
     end
 
     mz_indices = sort!(collect(keys(reference_by_index)))
+
     (
-        mzindices=mz_indices,
-        mzvalues=collect(grid_mzs[mz_indices]),
-        referenceintensities=[reference_by_index[index] for index in mz_indices],
+        mzindices = mz_indices,
+        mzvalues = collect(grid_mzs[mz_indices]),
+        referenceintensities = [reference_by_index[index] for index in mz_indices],
     )
 end
 
