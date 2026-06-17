@@ -10,11 +10,13 @@ depends on how the scan interval is referenced and how sampling is scheduled wit
 
 Instrument software and data formats typically associate a single retention value with each
 scan. However, that value may represent the start, midpoint, or end of the scan interval,
-depending on vendor conventions, acquisition mode, and export settings. Within a scan, ions
-are acquired in a defined order (e.g., ascending or descending m/z), and each ion is
-assigned a dwell interval whose duration may be constant across ions or vary with
-instrument settings. As a result, different ions are sampled at systematically different
-retention coordinates within the same scan.
+depending on vendor conventions, acquisition mode, and export settings. In a sequential
+scanning instrument, ions are acquired in a defined order (e.g., ascending or descending
+m/z), and each ion is assigned a dwell interval whose duration may be constant across ions
+or vary with instrument settings. As a result, different ions are sampled at systematically
+different retention coordinates within the same scan. In simultaneous full-spectrum
+acquisition, such as TOF-like acquisition, all m/z values are instead treated as observed at
+the scan-level retention.
 
 For many downstream analyses—such as accurate peak-shape reconstruction and deconvolution—
 treating all ions in a scan as if they were measured at the same retention coordinate
@@ -33,17 +35,22 @@ reference usually cancels out because it is consistent across runs. It becomes c
 primarily when comparing data from different instruments or acquisition schemes with 
 different timing conventions, where absolute scan times are not directly comparable anyway.
 
-Practically, this means you mainly need to know whether dwell allocation is homogeneous or
-heterogeneous (and the dwell times if heterogeneous), and the acquisition direction
-(ascending or descending m/z). The example below shows how the acquisition direction can be
-inferred empirically. With these considerations in mind, the mapping from scan‑level time
-to an ion‑specific time reduces to combining a small set of explicit inputs:
+Practically, this means you mainly need to know whether the instrument acquires m/z values
+sequentially or simultaneously. For sequential scans, you also need to know whether dwell
+allocation is homogeneous or heterogeneous (and the dwell times if heterogeneous), and the
+acquisition direction (ascending or descending m/z). The example below shows how the
+acquisition direction can be inferred empirically for sequential data. With these
+considerations in mind, the mapping from scan‑level time to an ion‑specific time reduces to
+combining a small set of explicit inputs:
 
 - the reference point associated with the scan‑level retention value (often set to :start 
   in practice when the true reference is unknown),
 - the total scan interval,
 - the dwell allocation across ions and the acquisition order within the scan, and
 - the desired reference point within each ion’s dwell interval (typically :middle).
+
+For simultaneous acquisition, use `order=:simultaneous`; [`mzretention`](@ref) then returns
+the scan-level retention unchanged.
 
 The JuChrom function [`mzretention`](@ref) formalizes this mapping. Given a scan-level
 retention coordinate and a description of the within-scan sampling scheme, it computes the

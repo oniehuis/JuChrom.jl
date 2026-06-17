@@ -1789,6 +1789,19 @@ end
 
 # ── fitmap optimizer failure ────────────────────────────────────────────────
 
+@testset "fitmap solver time limit default and overrides" begin
+    rA = [1.0, 2.0, 3.0]
+    rB = [10.0, 20.0, 30.0]
+
+    @test JuChrom.DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT == 1.0
+    @test fitmap(rA, rB) isa JuChrom.RetentionMapper
+    @test fitmap(rA, rB; solver_time_limit=nothing) isa JuChrom.RetentionMapper
+    @test fitmap(rA, rB; solver_time_limit=0.5) isa JuChrom.RetentionMapper
+    @test_throws ArgumentError fitmap(rA, rB; solver_time_limit=0.0)
+end
+
+# ── fitmap optimizer failure ────────────────────────────────────────────────
+
 @testset "fitmap optimizer failure" begin
     function failing_optimizer()
         mock = MOIU.MockOptimizer(MOIU.Model{Float64}())

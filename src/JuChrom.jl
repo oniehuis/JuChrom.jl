@@ -17,6 +17,7 @@ using LinearAlgebra: Diagonal, I, cholesky, dot, eigen, mul!, norm, svd, Symmetr
     diagind
 using OSQP: OSQP
 using Roots: Bisection, find_zero
+using SHA: SHA256_CTX, bytes2hex, digest!, update!
 using SparseArrays: SparseMatrixCSC, sparse, spdiagm, spzeros, nnz
 using Statistics: cor, mean, median, quantile, std, var
 import Base: show, summary
@@ -65,10 +66,12 @@ include("core/deconvolution/parafac2.jl")
 include("core/massspectrum/massspectrum.jl")
 include("core/ladder/alkane_reference_spectra.jl")
 include("core/ladder/alkaneseries.jl")
-include("core/ladder/traces.jl")
-include("core/ladder/seriespath.jl")
-include("core/ladder/apex.jl")
-include("core/ladder/spectra.jl")
+include("core/ladder/abundances.jl")
+include("core/ladder/molecular_ions.jl")
+include("core/ladder/path.jl")
+include("core/ladder/apexes.jl")
+include("core/ladder/additions.jl")
+include("core/ladder/mass_spectra.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
@@ -79,6 +82,8 @@ export AbstractMassSpectrum
 export AbstractScan
 export AbstractScanSeries
 export AbstractVarianceMassScanMatrix
+export AlkaneLadderStep
+export AlkaneSeriesResult
 export AlkaneStandard
 export ChromScan
 export ChromScanSeries
@@ -95,7 +100,6 @@ export VarianceMassScanMatrix
 
 export attrs
 export acquisition
-export AlkaneSeriesResult
 export arpls
 export applymap
 export binmzvalues
@@ -112,6 +116,14 @@ export dwellnormalize
 export extras
 export findalkanes
 export findalkaneseries
+export alkaneladdersteps
+export alkaneladderpath
+export alkaneladderapex
+export alkaneladderapexes
+export alkaneladderadditions
+export alkaneladderscanorder
+export alkaneladdermassspectrum
+export alkaneladdermassspectra
 export alkanereferencespectra
 export alkanereferencespectrum
 export defaultalkanestandard

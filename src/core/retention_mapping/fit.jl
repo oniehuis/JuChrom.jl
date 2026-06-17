@@ -1,5 +1,7 @@
 # ── fitmap ────────────────────────────────────────────────────────────────────────────────
 
+const DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT = 1.0
+
 """
     fitmap(retentions_A::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}},
            retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
@@ -9,7 +11,7 @@
            λ_min::Real=1e-12,
            logλ_tolerance::Real=1e-4,
            max_lambda_iters::Integer=100,
-           solver_time_limit::Union{Nothing, Real}=nothing,
+           solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
            extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
            optimizer_factory=HiGHS.Optimizer)
 
@@ -30,9 +32,11 @@ controls for smoothness (`smoothness_penalty_n`, `λ_min`, `λ_max`, `max_lambda
 monotonicity enforcement (`monotonicity_grid_size`), optional metadata (`extras`), and an
 optimizer constructor (`optimizer_factory`, e.g. `HiGHS.Optimizer`) used to build the
 JuMP model. `solver_time_limit` sets a per-solve time limit in seconds (if supported by
-the optimizer). `logλ_tolerance` is the stopping tolerance on `log10(λ)` used by the
-binary search that tunes the smoothing parameter: when the log-range width falls below
-this value, the search stops (smaller values mean tighter λ tuning at higher cost).
+the optimizer). It defaults to `$(DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT)` seconds;
+pass `solver_time_limit=nothing` to disable the time limit or another positive number to
+override it. `logλ_tolerance` is the stopping tolerance on `log10(λ)` used by the binary
+search that tunes the smoothing parameter: when the log-range width falls below this
+value, the search stops (smaller values mean tighter λ tuning at higher cost).
 
 Returns a `RetentionMapper` containing the fitted spline, the chosen `λ`, and metadata.
 
@@ -88,7 +92,7 @@ function fitmap(
     λ_min::Real=1e-12,
     logλ_tolerance::Real=1e-4,
     max_lambda_iters::Integer=100,
-    solver_time_limit::Union{Nothing, Real}=nothing,
+    solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
     extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
     optimizer_factory=HiGHS.Optimizer,
     )
@@ -106,6 +110,10 @@ function fitmap(
         "retentions_A must all share the same unit"))
     all(u -> unit(u) == unit(first(retentions_B)), retentions_B) || throw(ArgumentError(
         "retentions_B must all share the same unit"))
+    if !isnothing(solver_time_limit)
+        isfinite(solver_time_limit) && solver_time_limit > 0 || throw(ArgumentError(
+            "solver_time_limit must be nothing or a finite positive number"))
+    end
 
     # Strip units for numerical processing
     if eltype(retentions_A) <: AbstractQuantity

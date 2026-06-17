@@ -23,11 +23,16 @@ scan.
 A scan spans a finite retention interval of width `scan_span`. The reported scan-level 
 `retention` typically refers to a particular reference point of that interval 
 (start/middle/end). Within that interval, m/z values are sampled sequentially, each over a 
-dwell interval. This function maps the scan-level `retention` to the retention coordinate 
-associated with one specific m/z dwell interval, using how `retention` is referenced within 
-the scan interval (`retentionref`), the dwell allocation model (`dwell`, 
-`dwellretention`/`scaninterval` or `dwellretentions`), the m/z acquisition order 
-(`order`), and which point within the dwell interval to return (`dwellref`).
+dwell interval, when `order` is `:ascending` or `:descending`. This function maps the
+scan-level `retention` to the retention coordinate associated with one specific m/z dwell
+interval, using how `retention` is referenced within the scan interval (`retentionref`),
+the dwell allocation model (`dwell`, `dwellretention`/`scaninterval` or
+`dwellretentions`), the m/z acquisition order (`order`), and which point within the dwell
+interval to return (`dwellref`).
+
+For simultaneous acquisition, use `order=:simultaneous`. In that mode all m/z values are
+treated as observed at the scan-level `retention`, and the function returns `retention`
+unchanged without requiring `mzindex`, `mzcount`, dwell, or scan-interval information.
 
 `retention` and all dwell/interval inputs may be unitless (`Real`) or unitful 
 (`Unitful.Quantity`), as long as they are mutually compatible for addition and subtraction. 
@@ -35,7 +40,8 @@ The target ion is specified either by index (`mzindex`) or by value (`mzvalue` t
 `mzvalues`), in which case the index is found via `findfirst(==(mzvalue), mzvalues)`. The 
 resolved index refers to the order in which `mzvalues` or `dwellretentions` are provided; 
 when the instrument acquires in descending m/z order but the vectors are stored in ascending 
-order, set `order=:descending` to obtain the correct within-scan position.
+order, set `order=:descending` to obtain the correct within-scan position. Valid orders are
+`:ascending`, `:descending`, and `:simultaneous`.
 
 Keyword arguments are interpreted as follows. `mzindex` is a 1-based index of the target m/z 
 in the provided list and is inferred from `mzvalue` and `mzvalues` when omitted. `mzcount` 
@@ -144,8 +150,10 @@ function mzretention(
         "dwellref must be :start, :middle, or :end"))
     dwell ∈ (:homogeneous, :heterogeneous) || throw(ArgumentError(
         "dwell must be :homogeneous or :heterogeneous"))
-    order ∈ (:ascending, :descending) || throw(ArgumentError(
-        "order must be :ascending or :descending"))
+    order ∈ (:ascending, :descending, :simultaneous) || throw(ArgumentError(
+        "order must be :ascending, :descending, or :simultaneous"))
+
+    order == :simultaneous && return retention
 
     # Resolve imzvalue index
     if isnothing(mzindex)
@@ -188,7 +196,11 @@ function mzretention(
                     ArgumentError("dwellretention*mzcount inconsistent with scaninterval"))
             end
         end
-        dwells = fill(dwellretention, mzcount)
+        scan_span = dwellretention * mzcount
+        this_dwell = dwellretention
+        offset_before = order == :ascending ?
+            dwellretention * (mzindex - 1) :
+            dwellretention * (mzcount - mzindex)
     else
          isnothing(dwellretentions) && throw(ArgumentError(
             "dwellretentions is required"))
@@ -196,25 +208,25 @@ function mzretention(
             "length(dwellretentions) must equal mzcount"))
         all(d -> d > zero(d), dwellretentions) || throw(ArgumentError(
             "all dwellretentions must be > 0"))
-        dwells = collect(dwellretentions)
         if !isnothing(scaninterval) && validate_span
             scaninterval > zero(scaninterval) || throw(ArgumentError(
                 "scaninterval must be > 0"))
-            implied = sum(dwells)
+            implied = sum(dwellretentions)
             atol_eff = isnothing(atol) ? zero(scaninterval) : atol
             isapprox(implied, scaninterval; rtol=rtol, atol=atol_eff) || throw(ArgumentError(
                 "sum(dwellretentions) inconsistent with scaninterval"))
         end
-    end
-
-    # Acquisition order
-    if order == :descending
-        dwells = reverse(dwells)
-        mzindex = mzcount - mzindex + 1
+        scan_span = sum(dwellretentions)
+        this_dwell = dwellretentions[mzindex]
+        offset_before = if order == :ascending
+            mzindex == 1 ? zero(scan_span) : sum(@view dwellretentions[1:mzindex-1])
+        else
+            mzindex == mzcount ? zero(scan_span) :
+                sum(@view dwellretentions[mzindex+1:mzcount])
+        end
     end
 
     # Scan start from retention reference
-    scan_span = sum(dwells)
     scan_start =
         retentionref == :start  ? retention :
         retentionref == :middle ? (retention - scan_span / 2) :
@@ -222,9 +234,6 @@ function mzretention(
 
     # Offset within scan
     z = zero(scan_span)
-    offset_before = mzindex == 1 ? z : sum(@view dwells[1:mzindex-1])
-    this_dwell = dwells[mzindex]
-
     dwell_offset =
         dwellref == :start  ? z :
         dwellref == :middle ? this_dwell/2 :

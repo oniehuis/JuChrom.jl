@@ -14,6 +14,7 @@ using Unitful
     @test_throws ArgumentError mzretention(1.0; mzindex=1, mzcount=1, dwellref=:foo)
     @test_throws ArgumentError mzretention(1.0; mzindex=1, mzcount=1, dwell=:foo)
     @test_throws ArgumentError mzretention(1.0; mzindex=1, mzcount=1, order=:foo)
+    @test_throws ArgumentError mzretention(1.0; order=:unknown)
 
     # mzindex resolution and validation
     @test_throws ArgumentError mzretention(1.0; mzvalue=5, mzvalues=[1, 2, 3], mzcount=3)
@@ -78,6 +79,13 @@ using Unitful
         order=:descending, retentionref=:start, dwellref=:start)
     @test r5 == 3.0
 
+    @test mzretention(10.0; order=:simultaneous) == 10.0
+    @test mzretention(10.0; order=:simultaneous, mzindex=3, mzcount=10,
+        scaninterval=8.0, retentionref=:start, dwellref=:end) == 10.0
+    @test mzretention(10.0; order=:simultaneous, mzindex=2, mzcount=3,
+        dwell=:heterogeneous, dwellretentions=[1.0, 2.0, 3.0],
+        retentionref=:end, dwellref=:start) == 10.0
+
     # retention_ref handling
     r6 = mzretention(10.0; mzindex=1, mzcount=2, dwell=:homogeneous, dwellretention=2.0,
         retentionref=:middle, dwellref=:start)
@@ -91,6 +99,7 @@ using Unitful
         scaninterval=20u"s", retentionref=:start, dwellref=:end)
     @test r8 ≈ (1.0u"minute" + 20u"s")
     @test Unitful.unit(r8) == u"minute"
+    @test mzretention(1.0u"minute"; order=:simultaneous) == 1.0u"minute"
 end
 
 end # module TestMzRetention

@@ -66,20 +66,29 @@ end
 @safetestset "core/scan_timing/mz_retention.jl" begin
     include("./core/scan_timing/mz_retention.jl")
 end
+@safetestset "core/ladder/alkane_reference_spectra.jl" begin
+    include("./core/ladder/alkane_reference_spectra.jl")
+end
 @safetestset "core/ladder/alkaneseries.jl" begin
     include("./core/ladder/alkaneseries.jl")
 end
-@safetestset "core/ladder/traces.jl" begin
-    include("./core/ladder/traces.jl")
+@safetestset "core/ladder/abundances.jl" begin
+    include("./core/ladder/abundances.jl")
 end
-@safetestset "core/ladder/seriespath.jl" begin
-    include("./core/ladder/seriespath.jl")
+@safetestset "core/ladder/molecular_ions.jl" begin
+    include("./core/ladder/molecular_ions.jl")
 end
-@safetestset "core/ladder/apex.jl" begin
-    include("./core/ladder/apex.jl")
+@safetestset "core/ladder/mass_spectra.jl" begin
+    include("./core/ladder/mass_spectra.jl")
 end
-@safetestset "core/ladder/spectra.jl" begin
-    include("./core/ladder/spectra.jl")
+@safetestset "core/ladder/path.jl" begin
+    include("./core/ladder/path.jl")
+end
+@safetestset "core/ladder/apexes.jl" begin
+    include("./core/ladder/apexes.jl")
+end
+@safetestset "core/ladder/additions.jl" begin
+    include("./core/ladder/additions.jl")
 end
 @safetestset "core/transform/binning.jl" begin
     include("./core/transform/binning.jl")
