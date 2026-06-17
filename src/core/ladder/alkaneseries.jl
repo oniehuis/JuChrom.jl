@@ -22,7 +22,7 @@ function AlkaneSeriesResult(
     molecularioninfo,
     pathinfo,
     apexinfo,
-    additioninfo,
+    additioninfo
 )
     AlkaneSeriesResult(
         standard,
@@ -35,7 +35,7 @@ function AlkaneSeriesResult(
         pathinfo,
         apexinfo,
         additioninfo,
-        nothing,
+        nothing
     )
 end
 
@@ -69,25 +69,25 @@ function alkaneladdersteps(
     if molecularion
         append!(steps, alkane_ladder_steps_from_apexes(
             result.apexinfo.apexes,
-            :molecularion,
+            :molecularion
         ))
     end
 
     if gapfilled
         append!(steps, alkane_ladder_steps_from_additions(
             result.additioninfo.gapfilled,
-            :gapfilled,
+            :gapfilled
         ))
     end
 
     if edgeextended
         append!(steps, alkane_ladder_steps_from_additions(
             result.additioninfo.leftextended,
-            :leftextended,
+            :leftextended
         ))
         append!(steps, alkane_ladder_steps_from_additions(
             result.additioninfo.rightextended,
-            :rightextended,
+            :rightextended
         ))
     end
 
@@ -264,7 +264,7 @@ function findalkaneseries(
     additionminradius=5.0,
     additionradiusfraction=0.15,
     additionpositionsigmafraction=0.05,
-    additionmaxextensionsteps=100,
+    additionmaxextensionsteps=100
 
 )
 
@@ -277,14 +277,14 @@ function findalkaneseries(
         msm;
         standard=standard,
         carbonrange=carbonrange,
-        minrelativeintensity=minrelativeintensity,
+        minrelativeintensity=minrelativeintensity
     )
     alkane_ladder_require_molecular_ion_channels(
         msm;
         carbonrange=channelinfo.carbonrange,
         ionwindow=molecularionwindow,
         stepmass=molecularionstepmass,
-        minsteps=pathminsteps,
+        minsteps=pathminsteps
     )
 
     # Infer the abundance of each ladder step for each scan, delineate local peak windows,
@@ -292,11 +292,11 @@ function findalkaneseries(
     abundanceinfo = alkaneabundanceinfo(
         msm,
         variances,
-        channelinfo;
-        variancefloor=variancefloor,
-        nonnegative=nonnegative,
-        thresholdfraction=thresholdfraction,
-        minrisez=minrisez,
+        channelinfo,
+        variancefloor,
+        nonnegative,
+        thresholdfraction,
+        minrisez
     )
     molecularioninfo = alkanemolecularioninfo(
         msm,
@@ -306,7 +306,7 @@ function findalkaneseries(
         stepmass=molecularionstepmass,
         variancefloor=variancefloor,
         centerzmin=molecularioncenterzmin,
-        isolationzmin=molecularionisolationzmin,
+        isolationzmin=molecularionisolationzmin
     )
     pathinfo = alkaneladderpath(
         molecularioninfo;
@@ -324,7 +324,7 @@ function findalkaneseries(
         variances=variances,
         standard=standard,
         massspectrummatch=pathmassspectrummatch,
-        massspectrummatchdistanceweight=pathmassspectrummatchdistanceweight,
+        massspectrummatchdistanceweight=pathmassspectrummatchdistanceweight
     )
     apexinfo = alkaneladderapexes(
         msm,
@@ -343,7 +343,7 @@ function findalkaneseries(
         mzscanordershapeioncount=apexmzscanordershapeioncount,
         mzscanordershapemzspacing=apexmzscanordershapemzspacing,
         mzscanorderextremeioncount=apexmzscanorderextremeioncount,
-        mzscanorderminioncount=apexmzscanorderminioncount,
+        mzscanorderminioncount=apexmzscanorderminioncount
     )
     additioninfo = alkaneladderadditions(
         msm,
@@ -360,7 +360,7 @@ function findalkaneseries(
         apexvariancefloor=variancefloor,
         apexlogfloorfraction=apexlogfloorfraction,
         apexmzretentionkwargs=apexinfo.settings.mzretentionkwargs,
-        carbonrange=channelinfo.carbonrange,
+        carbonrange=channelinfo.carbonrange
     )
 
     result_datainfo = isnothing(datainfo) ?
@@ -378,7 +378,7 @@ function findalkaneseries(
         pathinfo,
         apexinfo,
         additioninfo,
-        result_datainfo,
+        result_datainfo
     )
 end
 
@@ -386,7 +386,7 @@ function alkane_mz_channels(
     msm::MassScanMatrix;
     standard=defaultalkanestandard(),
     carbonrange=8:40,
-    minrelativeintensity=0.0,
+    minrelativeintensity=0.0
 )
     isnothing(standard) && throw(ArgumentError(
         "alkane m/z channel matching requires an alkane standard"))
@@ -412,7 +412,7 @@ function alkane_mz_channels(
             spectrum,
             grid_index_by_mz,
             grid_mzs;
-            minrelativeintensity=minrelativeintensity,
+            minrelativeintensity=minrelativeintensity
         )
         isempty(match.mzindices) && throw(ArgumentError(
             "reference spectrum for C$(carbon) has no m/z channels in common with msm"))
@@ -422,14 +422,14 @@ function alkane_mz_channels(
             referenceattrs=attrs(spectrum),
             mzindices=match.mzindices,
             mzvalues=match.mzvalues,
-            referenceintensities=match.referenceintensities,
+            referenceintensities=match.referenceintensities
         )
     end
 
     common_mz_indices = sort!(unique!(reduce(
         vcat,
         (info.mzindices for info in referenceinfo);
-        init=Int[],
+        init=Int[]
     )))
 
     (
@@ -438,7 +438,7 @@ function alkane_mz_channels(
         references=referenceinfo,
         carbonrange=Int.(carbon_numbers),
         minrelativeintensity=Float64(minrelativeintensity),
-        mzunit=mzunit(msm),
+        mzunit=mzunit(msm)
     )
 end
 
@@ -504,7 +504,7 @@ function findalkanes(
     baselinepeakslope=0.5,
     baselinezerothreshold=1.0,
 
-    kwargs...,
+    kwargs...
 )
 
     isnothing(standard) && throw(ArgumentError("findalkanes requires an alkane standard"))
@@ -519,7 +519,7 @@ function findalkanes(
         carbonrange=get(forwarded, :carbonrange, 8:40),
         ionwindow=get(forwarded, :molecularionwindow, 1),
         stepmass=get(forwarded, :molecularionstepmass, 14),
-        minsteps=get(forwarded, :pathminsteps, 5),
+        minsteps=get(forwarded, :pathminsteps, 5)
     )
 
     if isnothing(variances)
@@ -529,7 +529,7 @@ function findalkanes(
             mintransitioncount=variancemintransitioncount,
             positivecountquantile=variancepositivecountquantile,
             zerothresholdquantile=variancezerothresholdquantile,
-            intensityfloor=varianceintensityfloor,
+            intensityfloor=varianceintensityfloor
         )
         σ², varianceinfo = extract_alkane_series_variances(varianceestimate)
         validate_alkane_series_variances(msm, σ²)
@@ -547,7 +547,7 @@ function findalkanes(
             variances=σ²,
             peakthreshold=baselinepeakthreshold,
             peakslope=baselinepeakslope,
-            zerothreshold=baselinezerothreshold,
+            zerothreshold=baselinezerothreshold
         )
         validate_alkane_series_baselines(msm, baselines)
         (
@@ -557,7 +557,7 @@ function findalkanes(
             nonnegative=baselinenonnegative,
             peakthreshold=baselinepeakthreshold,
             peakslope=baselinepeakslope,
-            zerothreshold=baselinezerothreshold,
+            zerothreshold=baselinezerothreshold
         )
     else
         nothing
@@ -574,7 +574,7 @@ function findalkanes(
         varianceinfo=varianceinfo,
         baselineinfo=baselineinfo,
         datainfo=datainfo,
-        kwargs...,
+        kwargs...
     )
 end
 
@@ -635,7 +635,7 @@ function alkane_reference_channel_match(
     spectrum::AbstractMassSpectrum,
     grid_index_by_mz::AbstractDict{Int, <:Integer},
     grid_mzs::AbstractVector;
-    minrelativeintensity::Real,
+    minrelativeintensity::Real
 )
     spectrum_mzs = integer_mz_values(mzvalues(spectrum), "reference spectrum m/z values")
     spectrum_intensities = Float64.(intensities(spectrum))
@@ -662,7 +662,7 @@ function alkane_reference_channel_match(
     (
         mzindices = mz_indices,
         mzvalues = collect(grid_mzs[mz_indices]),
-        referenceintensities = [reference_by_index[index] for index in mz_indices],
+        referenceintensities = [reference_by_index[index] for index in mz_indices]
     )
 end
 

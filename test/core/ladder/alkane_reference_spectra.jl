@@ -11,7 +11,7 @@ using JuChrom
         label,
         1500//1,
         mzs,
-        relativeintensities,
+        relativeintensities
     )
 
     @test spectrum isa MassSpectrum
@@ -38,7 +38,7 @@ using JuChrom
         "invalid",
         1500.0,
         [43, 57],
-        [1.0],
+        [1.0]
     )
 end
 

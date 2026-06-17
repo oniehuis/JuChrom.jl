@@ -13,7 +13,7 @@ const DEFAULT_ALKANE_APEX_EXCLUDED_MZVALUES = (
     147,
     207,
     281,
-    355,
+    355
 )
 
 """
@@ -51,7 +51,7 @@ function alkaneladderapexes(
     mzscanordershapeioncount::Integer=3,
     mzscanordershapemzspacing::Integer=14,
     mzscanorderextremeioncount::Integer=5,
-    mzscanorderminioncount::Integer=8,
+    mzscanorderminioncount::Integer=8
 )
     validate_alkane_ladder_apex_settings(
         msm,
@@ -61,7 +61,7 @@ function alkaneladderapexes(
         apexionminrelativeintensity,
         variancefloor,
         logfloorfraction,
-        maxapexshiftfromguess,
+        maxapexshiftfromguess
     )
     hasproperty(abundanceinfo, :abundances) || throw(ArgumentError(
         "abundanceinfo must contain abundances"))
@@ -71,7 +71,7 @@ function alkaneladderapexes(
         base_mzkwargs = alkane_ladder_base_mzretention_kwargs(
             msm,
             mzretentionkwargs,
-            mzscanorder,
+            mzscanorder
         )
         return alkane_ladder_empty_apexinfo(
             :no_path,
@@ -92,7 +92,7 @@ function alkaneladderapexes(
             mzscanordershapeioncount=mzscanordershapeioncount,
             mzscanordershapemzspacing=mzscanordershapemzspacing,
             mzscanorderextremeioncount=mzscanorderextremeioncount,
-            mzscanorderminioncount=mzscanorderminioncount,
+            mzscanorderminioncount=mzscanorderminioncount
         )
     end
 
@@ -115,7 +115,7 @@ function alkaneladderapexes(
         shapeioncount=mzscanordershapeioncount,
         shapemzspacing=mzscanordershapemzspacing,
         extremeioncount=mzscanorderextremeioncount,
-        minioncount=mzscanorderminioncount,
+        minioncount=mzscanorderminioncount
     )
     resolved_mzretentionkwargs = scanorder.mzretentionkwargs
     if scanorder.info.selected_order == :unknown
@@ -138,7 +138,7 @@ function alkaneladderapexes(
             mzscanordershapeioncount=mzscanordershapeioncount,
             mzscanordershapemzspacing=mzscanordershapemzspacing,
             mzscanorderextremeioncount=mzscanorderextremeioncount,
-            mzscanorderminioncount=mzscanorderminioncount,
+            mzscanorderminioncount=mzscanorderminioncount
         )
     end
 
@@ -160,14 +160,14 @@ function alkaneladderapexes(
                 mzretentionkwargs=resolved_mzretentionkwargs,
                 variancefloor=variancefloor,
                 logfloorfraction=logfloorfraction,
-                maxapexshiftfromguess=maxapexshiftfromguess,
-            ),
+                maxapexshiftfromguess=maxapexshiftfromguess
+            )
         )
     end
 
     apexes = alkane_ladder_annotate_apex_fit_quality(
         apexes;
-        apexfitqualityoutlierz=apexfitqualityoutlierz,
+        apexfitqualityoutlierz=apexfitqualityoutlierz
     )
     bycarbon = Dict(apex.ladderstep => apex for apex in apexes)
     (
@@ -198,13 +198,13 @@ function alkaneladderapexes(
             mzscanordershapeioncount=Int(mzscanordershapeioncount),
             mzscanordershapemzspacing=Int(mzscanordershapemzspacing),
             mzscanorderextremeioncount=Int(mzscanorderextremeioncount),
-            mzscanorderminioncount=Int(mzscanorderminioncount),
+            mzscanorderminioncount=Int(mzscanorderminioncount)
         ),
         scanorderinfo=scanorder.info,
         calibrationexcluded=[apex.calibration_excluded for apex in apexes],
         goodforcalibration=[apex.good_for_calibration for apex in apexes],
         apexfitqualityscores=[apex.apex_fit_quality_score for apex in apexes],
-        apexfitqualityzscores=[apex.apex_fit_quality_zscore for apex in apexes],
+        apexfitqualityzscores=[apex.apex_fit_quality_zscore for apex in apexes]
     )
 end
 
@@ -227,7 +227,7 @@ function alkane_ladder_empty_apexinfo(
     mzscanordershapeioncount,
     mzscanordershapemzspacing,
     mzscanorderextremeioncount,
-    mzscanorderminioncount,
+    mzscanorderminioncount
 )
     (
         status=:failed,
@@ -257,13 +257,13 @@ function alkane_ladder_empty_apexinfo(
             mzscanordershapeioncount=Int(mzscanordershapeioncount),
             mzscanordershapemzspacing=Int(mzscanordershapemzspacing),
             mzscanorderextremeioncount=Int(mzscanorderextremeioncount),
-            mzscanorderminioncount=Int(mzscanorderminioncount),
+            mzscanorderminioncount=Int(mzscanorderminioncount)
         ),
         scanorderinfo=scanorderinfo,
         calibrationexcluded=Bool[],
         goodforcalibration=Bool[],
         apexfitqualityscores=Float64[],
-        apexfitqualityzscores=Float64[],
+        apexfitqualityzscores=Float64[]
     )
 end
 
@@ -271,21 +271,21 @@ function alkaneladderapexes(
     msm::MassScanMatrix,
     abundanceinfo,
     pathinfo;
-    kwargs...,
+    kwargs...
 )
     alkaneladderapexes(
         msm,
         ones(size(rawintensities(msm))),
         abundanceinfo,
         pathinfo;
-        kwargs...,
+        kwargs...
     )
 end
 
 function validate_alkane_ladder_apex_settings(
     scanwindow,
     variancefloor,
-    logfloorfraction,
+    logfloorfraction
 )
     scanwindow isa Integer || throw(ArgumentError("scanwindow must be an integer"))
     scanwindow >= 1 || throw(ArgumentError("scanwindow must be at least 1"))
@@ -304,7 +304,7 @@ function validate_alkane_ladder_apex_settings(
     apexionminrelativeintensity,
     variancefloor,
     logfloorfraction,
-    maxapexshiftfromguess,
+    maxapexshiftfromguess
 )
     validate_alkane_series_variances(msm, variances)
     validate_alkane_ladder_apex_settings(scanwindow, variancefloor, logfloorfraction)
@@ -335,7 +335,7 @@ function alkaneladderapex(
     mzretentionkwargs=nothing,
     variancefloor::Real=1.0,
     logfloorfraction::Real=1e-3,
-    maxapexshiftfromguess::Real=3.0,
+    maxapexshiftfromguess::Real=3.0
 )
     validate_alkane_ladder_apex_settings(
         msm,
@@ -345,7 +345,7 @@ function alkaneladderapex(
         apexionminrelativeintensity,
         variancefloor,
         logfloorfraction,
-        maxapexshiftfromguess,
+        maxapexshiftfromguess
     )
 
     retentions = Float64.(rawretentions(msm))
@@ -369,13 +369,13 @@ function alkaneladderapex(
             mzretentionkwargs=mzretentionkwargs,
             variancefloor=variancefloor,
             logfloorfraction=logfloorfraction,
-            maxapexshiftfromguess=maxapexshiftfromguess,
+            maxapexshiftfromguess=maxapexshiftfromguess
         )
         return alkane_ladder_apex_public_result(
             apex,
             candidate,
             abundance,
-            retentions,
+            retentions
         )
     catch err
         (err isa ArgumentError || err isa DimensionMismatch) || rethrow()
@@ -387,10 +387,10 @@ function alkaneladderapex(
                 retentions,
                 inputscan,
                 Int(scanwindow),
-                candidate,
+                candidate
             ),
             reason=:apex_fit_failed,
-            failurereason=sprint(showerror, err),
+            failurereason=sprint(showerror, err)
         )
     end
 end
@@ -399,14 +399,14 @@ function alkaneladderapex(
     msm::MassScanMatrix,
     abundanceinfo,
     candidate;
-    kwargs...,
+    kwargs...
 )
     alkaneladderapex(
         msm,
         ones(size(rawintensities(msm))),
         abundanceinfo,
         candidate;
-        kwargs...,
+        kwargs...
     )
 end
 
@@ -424,7 +424,7 @@ function alkane_ladder_ion_apex(
     mzretentionkwargs,
     variancefloor::Real,
     logfloorfraction::Real,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     input_scanindex = alkane_ladder_input_scan_index(candidate)
     raw_scan_retentions = Float64.(rawretentions(msm))
@@ -449,7 +449,7 @@ function alkane_ladder_ion_apex(
             logfloorfraction=logfloorfraction,
             fitcenterretention=center_retention,
             maxapexshiftfromguess=maxapexshiftfromguess,
-            attemptindex=length(attempts) + 1,
+            attemptindex=length(attempts) + 1
         )
         push!(attempts, apex)
 
@@ -465,12 +465,12 @@ function alkane_ladder_ion_apex(
             apex,
             raw_scan_retentions,
             input_scanindex,
-            maxapexshiftfromguess,
+            maxapexshiftfromguess
         )
         isnothing(next_center) && break
         next_center_scan = alkane_ladder_fractional_scan_index(
             raw_scan_retentions,
-            next_center,
+            next_center
         )
         abs(next_center_scan - apex.fit_center_scan_index) < 0.25 && break
         center_retention = next_center
@@ -480,11 +480,11 @@ function alkane_ladder_ion_apex(
         for fallback_center in alkane_ladder_center_search_retentions(
             raw_scan_retentions,
             input_scanindex,
-            maxapexshiftfromguess,
+            maxapexshiftfromguess
         )
             fallback_scan = alkane_ladder_fractional_scan_index(
                 raw_scan_retentions,
-                fallback_center,
+                fallback_center
             )
             alkane_ladder_center_already_attempted(attempts, fallback_scan) &&
                 continue
@@ -502,8 +502,8 @@ function alkane_ladder_ion_apex(
             all_apex_attempts=attempts,
             recenter_attempts=length(attempts) - 1,
             recenter_used=final_index > 1,
-            maxapexshiftfromguess=Float64(maxapexshiftfromguess),
-        ),
+            maxapexshiftfromguess=Float64(maxapexshiftfromguess)
+        )
     )
 end
 
@@ -523,7 +523,7 @@ function alkane_ladder_ion_apex_once(
     logfloorfraction::Real,
     fitcenterretention,
     maxapexshiftfromguess::Real,
-    attemptindex::Integer,
+    attemptindex::Integer
 )
     input_scanindex = alkane_ladder_input_scan_index(candidate)
     raw_scan_retentions = Float64.(rawretentions(msm))
@@ -533,7 +533,7 @@ function alkane_ladder_ion_apex_once(
         "fitcenterretention must be finite"))
     fit_center_scan_index = alkane_ladder_fractional_scan_index(
         raw_scan_retentions,
-        fit_center_retention,
+        fit_center_retention
     )
     localmargin = max(3, Int(scanwindow) + 2)
 
@@ -541,7 +541,7 @@ function alkane_ladder_ion_apex_once(
     model_scanindices = alkane_ladder_scan_indices_around_retention(
         raw_scan_retentions,
         fit_center_retention,
-        nscans,
+        nscans
     )
     length(model_scanindices) >= 3 || throw(ArgumentError(
         "at least three scans are needed for a log-quadratic apex fit"))
@@ -553,17 +553,17 @@ function alkane_ladder_ion_apex_once(
             ladderstep;
             excludemzvalues=apexionexcludemzvalues,
             minrelativeintensity=apexionminrelativeintensity,
-            minioncount=minioncount,
+            minioncount=minioncount
         ) :
         alkane_ladder_explicit_apex_mzvalue_selection(
             msm,
             apexionmzvalues;
-            minioncount=minioncount,
+            minioncount=minioncount
         )
     selected_mzindices = alkane_ladder_apex_mz_indices(
         msm,
         ion_selection.mzvalues;
-        minioncount=minioncount,
+        minioncount=minioncount
     )
 
     mzkwargs = isnothing(mzretentionkwargs) ?
@@ -579,7 +579,7 @@ function alkane_ladder_ion_apex_once(
         selected_mzindices,
         mzkwargs,
         fit_center_scan_index,
-        localmargin,
+        localmargin
     )
 
     Xraw = rawintensities(msm)
@@ -602,7 +602,7 @@ function alkane_ladder_ion_apex_once(
                 scan_retentions,
                 selected_scan,
                 selected_mz,
-                mzkwargs,
+                mzkwargs
             )
     end
 
@@ -631,7 +631,7 @@ function alkane_ladder_ion_apex_once(
             weights[row] = alkane_ladder_log_weight(
                 adjusted,
                 variances_by_mz[scancol, mzcol],
-                variancefloor,
+                variancefloor
             )
         end
     end
@@ -738,7 +738,7 @@ function alkane_ladder_ion_apex_once(
         logfloorfraction=Float64(logfloorfraction),
         variance_weighted=true,
         variancefloor=Float64(variancefloor),
-        mzretentionkwargs=mzkwargs,
+        mzretentionkwargs=mzkwargs
     )
 end
 
@@ -746,12 +746,12 @@ function alkane_ladder_apex_public_result(
     apex,
     candidate,
     abundance::AbstractVector{Float64},
-    retentions::AbstractVector{Float64},
+    retentions::AbstractVector{Float64}
 )
     step = alkane_ladder_candidate_step(candidate)
     scanindex = apex.input_scan_index
     reason = apex.success ? :success : Symbol(
-        replace(alkane_ladder_apex_failure_reason(apex), ' ' => '_'),
+        replace(alkane_ladder_apex_failure_reason(apex), ' ' => '_')
     )
     failurereason = apex.success ? nothing : alkane_ladder_apex_failure_reason(apex)
     merge(
@@ -807,14 +807,14 @@ function alkane_ladder_apex_public_result(
             calibration_excluded=false,
             calibration_exclusion_reason=nothing,
             good_for_calibration=Bool(apex.success),
-            candidate=candidate,
-        ),
+            candidate=candidate
+        )
     )
 end
 
 function alkane_ladder_annotate_apex_fit_quality(
     apexes::AbstractVector;
-    apexfitqualityoutlierz=DEFAULT_ALKANE_APEX_FIT_QUALITY_OUTLIER_Z,
+    apexfitqualityoutlierz=DEFAULT_ALKANE_APEX_FIT_QUALITY_OUTLIER_Z
 )
     if !isnothing(apexfitqualityoutlierz)
         isfinite(apexfitqualityoutlierz) && apexfitqualityoutlierz > 0 ||
@@ -870,9 +870,9 @@ function alkane_ladder_annotate_apex_fit_quality(
                     calibration_exclusion_reason=calibrationexcluded ?
                         "apex curve fit residual outlier" :
                         nothing,
-                    good_for_calibration=refined && !calibrationexcluded,
-                ),
-            ),
+                    good_for_calibration=refined && !calibrationexcluded
+                )
+            )
         )
     end
 
@@ -889,7 +889,7 @@ function alkane_ladder_apex_fit_quality_score(apex)
 end
 
 function alkane_ladder_apex_fit_quality_robust_zscores(
-    logscores::AbstractVector{<:Real},
+    logscores::AbstractVector{<:Real}
 )
     nsteps = length(logscores)
     zscores = fill(NaN, nsteps)
@@ -899,7 +899,7 @@ function alkane_ladder_apex_fit_quality_robust_zscores(
             median=NaN,
             mad=NaN,
             nsteps=nsteps,
-            applied=false,
+            applied=false
         )
     values = Float64.(collect(logscores))
     center = median(values)
@@ -911,7 +911,7 @@ function alkane_ladder_apex_fit_quality_robust_zscores(
             median=center,
             mad=mad,
             nsteps=nsteps,
-            applied=false,
+            applied=false
         )
 
     zscores .= 0.67448975 .* (values .- center) ./ mad
@@ -920,7 +920,7 @@ function alkane_ladder_apex_fit_quality_robust_zscores(
         median=center,
         mad=mad,
         nsteps=nsteps,
-        applied=true,
+        applied=true
     )
 end
 
@@ -955,7 +955,7 @@ function alkaneladderscanorder(
     shapeioncount::Integer=3,
     shapemzspacing::Integer=14,
     extremeioncount::Integer=5,
-    minioncount::Integer=8,
+    minioncount::Integer=8
 )
     validate_alkane_series_variances(msm, variances)
     hasproperty(pathinfo, :path) || throw(ArgumentError("pathinfo must contain path"))
@@ -966,13 +966,13 @@ function alkaneladderscanorder(
         shapeioncount,
         shapemzspacing,
         extremeioncount,
-        minioncount,
+        minioncount
     )
 
     base_mzkwargs = alkane_ladder_base_mzretention_kwargs(
         msm,
         mzretentionkwargs,
-        mzscanorder,
+        mzscanorder
     )
     order = alkane_ladder_mzretention_order(base_mzkwargs)
     if order != :inferdirection
@@ -980,7 +980,7 @@ function alkaneladderscanorder(
             "mzretentionkwargs.order must be :ascending, :descending, or :simultaneous"))
         return (
             mzretentionkwargs=base_mzkwargs,
-            info=alkane_ladder_provided_scan_order_info(order),
+            info=alkane_ladder_provided_scan_order_info(order)
         )
     end
 
@@ -1006,12 +1006,12 @@ function alkaneladderscanorder(
         shapeioncount=shapeioncount,
         shapemzspacing=shapemzspacing,
         extremeioncount=extremeioncount,
-        minioncount=minioncount,
+        minioncount=minioncount
     )
 
     (
         mzretentionkwargs=merge(base_mzkwargs, (order=info.selected_order,)),
-        info=info,
+        info=info
     )
 end
 
@@ -1022,7 +1022,7 @@ function validate_alkane_ladder_scan_order_settings(
     shapeioncount,
     shapemzspacing,
     extremeioncount,
-    minioncount,
+    minioncount
 )
     isnothing(maxpeaks) ||
         (maxpeaks isa Integer && maxpeaks >= 1) ||
@@ -1047,7 +1047,7 @@ end
 function alkane_ladder_base_mzretention_kwargs(
     msm::MassScanMatrix,
     mzretentionkwargs,
-    mzscanorder::Symbol,
+    mzscanorder::Symbol
 )
     mzscanorder in (:inferdirection, :ascending, :descending, :simultaneous) ||
         throw(ArgumentError(
@@ -1091,7 +1091,7 @@ function alkane_ladder_provided_scan_order_info(order::Symbol)
         n_peaks_tried=0,
         initial_n_peaks_tried=0,
         expanded_for_ambiguity=false,
-        trials=(ascending=nothing, descending=nothing),
+        trials=(ascending=nothing, descending=nothing)
     )
 end
 
@@ -1112,7 +1112,7 @@ function alkane_ladder_no_scan_order_info(reason::Symbol)
         n_peaks_tried=0,
         initial_n_peaks_tried=0,
         expanded_for_ambiguity=false,
-        trials=(ascending=nothing, descending=nothing),
+        trials=(ascending=nothing, descending=nothing)
     )
 end
 
@@ -1132,8 +1132,8 @@ function alkane_ladder_scan_order_candidates(pathinfo; maxpeaks)
             (
                 ladderstep=alkane_ladder_candidate_step(candidate),
                 scanindex=alkane_ladder_input_scan_index(candidate),
-                candidate=candidate,
-            ),
+                candidate=candidate
+            )
         )
     end
     sort!(pairs; by=pair -> pair.ladderstep)
@@ -1222,7 +1222,7 @@ function alkane_ladder_scan_order_expanding_trials(
     shapeioncount::Integer,
     shapemzspacing::Integer,
     extremeioncount::Integer,
-    minioncount::Integer,
+    minioncount::Integer
 )
     tested = NamedTuple[]
     ascending_results = NamedTuple[]
@@ -1251,8 +1251,8 @@ function alkane_ladder_scan_order_expanding_trials(
                 shapeioncount=shapeioncount,
                 shapemzspacing=shapemzspacing,
                 extremeioncount=extremeioncount,
-                minioncount=minioncount,
-            ),
+                minioncount=minioncount
+            )
         )
         push!(
             descending_results,
@@ -1272,8 +1272,8 @@ function alkane_ladder_scan_order_expanding_trials(
                 shapeioncount=shapeioncount,
                 shapemzspacing=shapemzspacing,
                 extremeioncount=extremeioncount,
-                minioncount=minioncount,
-            ),
+                minioncount=minioncount
+            )
         )
 
         length(tested) >= initialcount || continue
@@ -1281,23 +1281,23 @@ function alkane_ladder_scan_order_expanding_trials(
         ascending = alkane_ladder_scan_order_trial_summary(
             :ascending,
             tested,
-            ascending_results,
+            ascending_results
         )
         descending = alkane_ladder_scan_order_trial_summary(
             :descending,
             tested,
-            descending_results,
+            descending_results
         )
         info = alkane_ladder_choose_scan_order(
             ascending,
             descending;
             minpeaks=minpeaks,
-            minapexvarianceratio=minapexvarianceratio,
+            minapexvarianceratio=minapexvarianceratio
         )
         info = alkane_ladder_scan_order_info_with_expansion(
             info,
             initialcount,
-            expanded_for_ambiguity,
+            expanded_for_ambiguity
         )
         last = (ascending, descending, info)
 
@@ -1317,23 +1317,23 @@ function alkane_ladder_scan_order_expanding_trials(
         ascending = alkane_ladder_scan_order_trial_summary(
             :ascending,
             tested,
-            ascending_results,
+            ascending_results
         )
         descending = alkane_ladder_scan_order_trial_summary(
             :descending,
             tested,
-            descending_results,
+            descending_results
         )
         info = alkane_ladder_choose_scan_order(
             ascending,
             descending;
             minpeaks=minpeaks,
-            minapexvarianceratio=minapexvarianceratio,
+            minapexvarianceratio=minapexvarianceratio
         )
         info = alkane_ladder_scan_order_info_with_expansion(
             info,
             initialcount,
-            expanded_for_ambiguity,
+            expanded_for_ambiguity
         )
         return ascending, descending, info
     end
@@ -1344,11 +1344,11 @@ end
 function alkane_ladder_scan_order_info_with_expansion(
     info,
     initialcount::Integer,
-    expanded_for_ambiguity::Bool,
+    expanded_for_ambiguity::Bool
 )
     ntried = max(
         isnothing(info.trials.ascending) ? 0 : Int(info.trials.ascending.n_tried),
-        isnothing(info.trials.descending) ? 0 : Int(info.trials.descending.n_tried),
+        isnothing(info.trials.descending) ? 0 : Int(info.trials.descending.n_tried)
     )
 
     merge(
@@ -1356,8 +1356,8 @@ function alkane_ladder_scan_order_info_with_expansion(
         (
             n_peaks_tried=ntried,
             initial_n_peaks_tried=Int(initialcount),
-            expanded_for_ambiguity=expanded_for_ambiguity,
-        ),
+            expanded_for_ambiguity=expanded_for_ambiguity
+        )
     )
 end
 
@@ -1377,7 +1377,7 @@ function alkane_ladder_scan_order_trial(
     shapeioncount::Integer,
     shapemzspacing::Integer,
     extremeioncount::Integer,
-    minioncount::Integer,
+    minioncount::Integer
 )
     trial_mzkwargs = merge(base_mzretentionkwargs, (order=order,))
     apex_variances = Float64[]
@@ -1395,7 +1395,7 @@ function alkane_ladder_scan_order_trial(
                 standard,
                 step;
                 ioncount=shapeioncount,
-                mzspacing=shapemzspacing,
+                mzspacing=shapemzspacing
             )
             shape = alkane_ladder_ion_apex(
                 msm,
@@ -1411,7 +1411,7 @@ function alkane_ladder_scan_order_trial(
                 mzretentionkwargs=trial_mzkwargs,
                 variancefloor=variancefloor,
                 logfloorfraction=logfloorfraction,
-                maxapexshiftfromguess=maxapexshiftfromguess,
+                maxapexshiftfromguess=maxapexshiftfromguess
             )
             if !alkane_ladder_scan_order_shape_is_usable(shape)
                 push!(
@@ -1423,8 +1423,8 @@ function alkane_ladder_scan_order_trial(
                         ion_count=0,
                         mz_span=NaN,
                         shape_width=alkane_ladder_apex_width(shape),
-                        shape_mzvalues=shape_selection.mzvalues,
-                    ),
+                        shape_mzvalues=shape_selection.mzvalues
+                    )
                 )
                 continue
             end
@@ -1440,7 +1440,7 @@ function alkane_ladder_scan_order_trial(
                 minioncount=minioncount,
                 logfloorfraction=logfloorfraction,
                 variancefloor=variancefloor,
-                maxapexshiftfromguess=maxapexshiftfromguess,
+                maxapexshiftfromguess=maxapexshiftfromguess
             )
             if score.success
                 push!(apex_variances, score.apex_variance)
@@ -1456,8 +1456,8 @@ function alkane_ladder_scan_order_trial(
                         reason=score.reason,
                         ion_count=score.ion_count,
                         mz_span=score.mz_span,
-                        shape_width=score.shape_width,
-                    ),
+                        shape_width=score.shape_width
+                    )
                 )
             end
         catch err
@@ -1469,8 +1469,8 @@ function alkane_ladder_scan_order_trial(
                     reason=sprint(showerror, err),
                     ion_count=0,
                     mz_span=NaN,
-                    shape_width=NaN,
-                ),
+                    shape_width=NaN
+                )
             )
         end
     end
@@ -1493,7 +1493,7 @@ function alkane_ladder_scan_order_trial(
         median_mz_span=isempty(finite_spans) ? NaN : median(finite_spans),
         n_success=length(apex_variances),
         n_tried=length(candidates),
-        failures=failures,
+        failures=failures
     )
 end
 
@@ -1513,7 +1513,7 @@ function alkane_ladder_scan_order_trial_candidate(
     shapeioncount::Integer,
     shapemzspacing::Integer,
     extremeioncount::Integer,
-    minioncount::Integer,
+    minioncount::Integer
 )
     trial_mzkwargs = merge(base_mzretentionkwargs, (order=order,))
     candidate = candidateinfo.candidate
@@ -1524,7 +1524,7 @@ function alkane_ladder_scan_order_trial_candidate(
             standard,
             step;
             ioncount=shapeioncount,
-            mzspacing=shapemzspacing,
+            mzspacing=shapemzspacing
         )
         shape = alkane_ladder_ion_apex(
             msm,
@@ -1540,7 +1540,7 @@ function alkane_ladder_scan_order_trial_candidate(
             mzretentionkwargs=trial_mzkwargs,
             variancefloor=variancefloor,
             logfloorfraction=logfloorfraction,
-            maxapexshiftfromguess=maxapexshiftfromguess,
+            maxapexshiftfromguess=maxapexshiftfromguess
         )
         if !alkane_ladder_scan_order_shape_is_usable(shape)
             return (
@@ -1552,8 +1552,8 @@ function alkane_ladder_scan_order_trial_candidate(
                     ion_count=0,
                     mz_span=NaN,
                     shape_width=alkane_ladder_apex_width(shape),
-                    shape_mzvalues=shape_selection.mzvalues,
-                ),
+                    shape_mzvalues=shape_selection.mzvalues
+                )
             )
         end
 
@@ -1568,14 +1568,14 @@ function alkane_ladder_scan_order_trial_candidate(
             minioncount=minioncount,
             logfloorfraction=logfloorfraction,
             variancefloor=variancefloor,
-            maxapexshiftfromguess=maxapexshiftfromguess,
+            maxapexshiftfromguess=maxapexshiftfromguess
         )
         score.success && return (
             success=true,
             apex_variance=score.apex_variance,
             shape_width=score.shape_width,
             ion_count=score.ion_count,
-            mz_span=score.mz_span,
+            mz_span=score.mz_span
         )
 
         (
@@ -1586,8 +1586,8 @@ function alkane_ladder_scan_order_trial_candidate(
                 reason=score.reason,
                 ion_count=score.ion_count,
                 mz_span=score.mz_span,
-                shape_width=score.shape_width,
-            ),
+                shape_width=score.shape_width
+            )
         )
     catch err
         (
@@ -1598,8 +1598,8 @@ function alkane_ladder_scan_order_trial_candidate(
                 reason=sprint(showerror, err),
                 ion_count=0,
                 mz_span=NaN,
-                shape_width=NaN,
-            ),
+                shape_width=NaN
+            )
         )
     end
 end
@@ -1607,7 +1607,7 @@ end
 function alkane_ladder_scan_order_trial_summary(
     order::Symbol,
     candidates::AbstractVector,
-    results::AbstractVector,
+    results::AbstractVector
 )
     apex_variances = [result.apex_variance for result in results if result.success]
     shape_widths = [result.shape_width for result in results if result.success]
@@ -1633,7 +1633,7 @@ function alkane_ladder_scan_order_trial_summary(
         median_mz_span=isempty(finite_spans) ? NaN : median(finite_spans),
         n_success=length(apex_variances),
         n_tried=length(candidates),
-        failures=failures,
+        failures=failures
     )
 end
 
@@ -1648,20 +1648,20 @@ function alkane_ladder_scan_order_step_apex_variance(
     minioncount::Integer,
     logfloorfraction::Real,
     variancefloor::Real,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     step = alkane_ladder_candidate_step(candidate)
     ion_selection = alkane_ladder_scan_order_extreme_apex_mzvalues(
         msm,
         standard,
         step;
-        extremeioncount=extremeioncount,
+        extremeioncount=extremeioncount
     )
     required_ion_count = min(Int(minioncount), length(ion_selection.mzvalues))
     mzindices = alkane_ladder_apex_mz_indices(
         msm,
         ion_selection.mzvalues;
-        minioncount=required_ion_count,
+        minioncount=required_ion_count
     )
     fits = alkane_ladder_fixed_shape_ion_apices(
         msm,
@@ -1672,7 +1672,7 @@ function alkane_ladder_scan_order_step_apex_variance(
         inputscanindex=alkane_ladder_input_scan_index(candidate),
         logfloorfraction=logfloorfraction,
         variancefloor=variancefloor,
-        maxapexshiftfromguess=maxapexshiftfromguess,
+        maxapexshiftfromguess=maxapexshiftfromguess
     )
     successful = [fit for fit in fits if fit.success]
     ion_count = length(successful)
@@ -1686,7 +1686,7 @@ function alkane_ladder_scan_order_step_apex_variance(
             ion_count=ion_count,
             mz_span=mz_span,
             shape_width=shape_width,
-            apex_variance=NaN,
+            apex_variance=NaN
         )
     end
 
@@ -1698,7 +1698,7 @@ function alkane_ladder_scan_order_step_apex_variance(
         ion_count=ion_count,
         mz_span=mz_span,
         shape_width=shape_width,
-        apex_variance=apex_variance,
+        apex_variance=apex_variance
     )
 
     (
@@ -1710,7 +1710,7 @@ function alkane_ladder_scan_order_step_apex_variance(
         apex_variance=apex_variance,
         apex_scan_indices=apex_scan_indices,
         ion_selection=ion_selection,
-        ion_fits=fits,
+        ion_fits=fits
     )
 end
 
@@ -1718,7 +1718,7 @@ function alkane_ladder_choose_scan_order(
     ascending,
     descending;
     minpeaks::Integer,
-    minapexvarianceratio::Real,
+    minapexvarianceratio::Real
 )
     if !isfinite(ascending.score) && !isfinite(descending.score)
         return (
@@ -1737,7 +1737,7 @@ function alkane_ladder_choose_scan_order(
             n_peaks_tried=max(ascending.n_tried, descending.n_tried),
             initial_n_peaks_tried=0,
             expanded_for_ambiguity=false,
-            trials=(ascending=ascending, descending=descending),
+            trials=(ascending=ascending, descending=descending)
         )
     end
 
@@ -1768,7 +1768,7 @@ function alkane_ladder_choose_scan_order(
         n_peaks_tried=max(ascending.n_tried, descending.n_tried),
         initial_n_peaks_tried=0,
         expanded_for_ambiguity=false,
-        trials=(ascending=ascending, descending=descending),
+        trials=(ascending=ascending, descending=descending)
     )
 end
 
@@ -1781,7 +1781,7 @@ function alkane_ladder_fixed_shape_ion_apices(
     inputscanindex::Integer,
     logfloorfraction::Real,
     variancefloor::Real,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     alkane_ladder_scan_order_shape_is_usable(shape) || throw(ArgumentError(
         "shape apex is not usable for fixed-shape ion apex inference"))
@@ -1799,7 +1799,7 @@ function alkane_ladder_fixed_shape_ion_apices(
     fit_center_retention = alkane_ladder_fit_center_retention(shape)
     fit_center_scan_index = alkane_ladder_fractional_scan_index(
         raw_scan_retentions,
-        fit_center_retention,
+        fit_center_retention
     )
     nscans = length(shape.scan_indices)
     localmargin = max(3, fld(nscans, 2) + 2)
@@ -1816,7 +1816,7 @@ function alkane_ladder_fixed_shape_ion_apices(
             mzindex,
             mzretentionkwargs,
             fit_center_scan_index,
-            localmargin,
+            localmargin
         )
         intensities = [
             max(Float64(Xraw[scanindex, mzindex]), 0.0)
@@ -1832,7 +1832,7 @@ function alkane_ladder_fixed_shape_ion_apices(
                 scan_retentions,
                 scanindex,
                 mzindex,
-                mzretentionkwargs,
+                mzretentionkwargs
             )
             for scanindex in selected_scans
         ]
@@ -1847,7 +1847,7 @@ function alkane_ladder_fixed_shape_ion_apices(
             inputscanindex=inputscanindex,
             logfloorfraction=logfloorfraction,
             variancefloor=variancefloor,
-            maxapexshiftfromguess=maxapexshiftfromguess,
+            maxapexshiftfromguess=maxapexshiftfromguess
         )
         push!(
             fits,
@@ -1859,9 +1859,9 @@ function alkane_ladder_fixed_shape_ion_apices(
                     scan_indices=selected_scans,
                     observation_retentions=observation_retentions,
                     intensities=intensities,
-                    variances=local_variances,
-                ),
-            ),
+                    variances=local_variances
+                )
+            )
         )
     end
 
@@ -1879,7 +1879,7 @@ function alkane_ladder_fit_fixed_shape_ion_apex(
     inputscanindex::Integer,
     logfloorfraction::Real,
     variancefloor::Real,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     gamma_value = Float64(gamma)
     xscale_value = Float64(xscale)
@@ -1891,7 +1891,7 @@ function alkane_ladder_fit_fixed_shape_ion_apex(
         apex_x=NaN,
         beta=NaN,
         intercept=NaN,
-        reduced_normalized_residual=NaN,
+        reduced_normalized_residual=NaN
     )
     xscale_value > 0 && isfinite(xscale_value) || throw(ArgumentError(
         "fixed shape xscale must be finite and positive"))
@@ -1914,7 +1914,7 @@ function alkane_ladder_fit_fixed_shape_ion_apex(
         apex_x=NaN,
         beta=NaN,
         intercept=NaN,
-        reduced_normalized_residual=NaN,
+        reduced_normalized_residual=NaN
     )
 
     logfloor = Float64(logfloorfraction) * ymax
@@ -1934,7 +1934,7 @@ function alkane_ladder_fit_fixed_shape_ion_apex(
         apex_x=NaN,
         beta=NaN,
         intercept=NaN,
-        reduced_normalized_residual=NaN,
+        reduced_normalized_residual=NaN
     )
 
     design = hcat(ones(Float64, nobs), x)
@@ -1979,7 +1979,7 @@ function alkane_ladder_fit_fixed_shape_ion_apex(
         reduced_normalized_residual=reduced_normalized_residual,
         apex_shift_from_guess_scans=apex_shift_from_guess_scans,
         apex_within_allowed_shift=apex_within_allowed_shift,
-        apex_in_window=apex_in_window,
+        apex_in_window=apex_in_window
     )
 end
 
@@ -2044,7 +2044,7 @@ function alkane_ladder_discrete_apex(
     abundance::AbstractVector{Float64};
     scanindices,
     reason,
-    failurereason=String(reason),
+    failurereason=String(reason)
 )
     scanindex = alkane_ladder_input_scan_index(candidate)
     (
@@ -2109,7 +2109,7 @@ function alkane_ladder_discrete_apex(
         calibration_excluded=false,
         calibration_exclusion_reason=nothing,
         good_for_calibration=false,
-        candidate=candidate,
+        candidate=candidate
     )
 end
 
@@ -2145,7 +2145,7 @@ function alkane_ladder_fallback_scanindices(
     retentions::AbstractVector{Float64},
     scanindex::Integer,
     scanwindow::Integer,
-    candidate,
+    candidate
 )
     leftindex = max(1, Int(scanindex) - Int(scanwindow))
     rightindex = min(length(retentions), Int(scanindex) + Int(scanwindow))
@@ -2163,7 +2163,7 @@ function alkane_ladder_reference_filtered_apex_mzvalues(
     ladderstep;
     excludemzvalues,
     minrelativeintensity::Real,
-    minioncount::Integer,
+    minioncount::Integer
 )
     reference_key, spectrum = alkane_ladder_reference_spectrum(standard, ladderstep)
     ref_mzs = Float64.(mzvalues(spectrum))
@@ -2173,7 +2173,7 @@ function alkane_ladder_reference_filtered_apex_mzvalues(
         ref_mzs,
         ref_intensities;
         excludemzvalues=excludemzvalues,
-        minrelativeintensity=minrelativeintensity,
+        minrelativeintensity=minrelativeintensity
     )
     length(selected) >= minioncount || throw(ArgumentError(
         "fewer than $(minioncount) reference apex ions are available for C$(ladderstep)"))
@@ -2182,14 +2182,14 @@ function alkane_ladder_reference_filtered_apex_mzvalues(
         selection=:reference_relative_intensity_threshold,
         excluded_mzvalues=alkane_ladder_mzvalue_vector(
             excludemzvalues;
-            allowempty=true,
+            allowempty=true
         ),
         mzvalues=[candidate.mzvalue for candidate in selected],
         reference_mzvalues=ref_mzs,
         reference_relative_intensities=[
             candidate.relativeintensity for candidate in selected
         ],
-        reference_key=reference_key,
+        reference_key=reference_key
     )
 end
 
@@ -2197,7 +2197,7 @@ function alkane_ladder_scan_order_extreme_apex_mzvalues(
     msm::MassScanMatrix,
     standard,
     ladderstep;
-    extremeioncount::Integer,
+    extremeioncount::Integer
 )
     extremeioncount >= 1 || throw(ArgumentError(
         "scan-order extremeioncount must be a positive integer"))
@@ -2208,12 +2208,12 @@ function alkane_ladder_scan_order_extreme_apex_mzvalues(
     candidates = alkane_ladder_reference_all_present_ion_candidates(
         msm,
         ref_mzs,
-        ref_intensities,
+        ref_intensities
     )
     selected, excluded_mz = alkane_ladder_scan_order_extreme_ion_candidates(
         candidates,
         ladderstep;
-        extremeioncount=extremeioncount,
+        extremeioncount=extremeioncount
     )
     length(selected) >= 2 || throw(ArgumentError(
         "fewer than two scan-order contrast ions are present on the m/z grid " *
@@ -2228,14 +2228,14 @@ function alkane_ladder_scan_order_extreme_apex_mzvalues(
         reference_relative_intensities=[
             candidate.relativeintensity for candidate in selected
         ],
-        reference_key=reference_key,
+        reference_key=reference_key
     )
 end
 
 function alkane_ladder_scan_order_extreme_ion_candidates(
     candidates::AbstractVector,
     ladderstep;
-    extremeioncount::Integer,
+    extremeioncount::Integer
 )
     step = Int(ladderstep)
     molecular_mz = alkane_ladder_nominal_molecular_ion_mz(step)
@@ -2278,12 +2278,12 @@ alkane_ladder_is_alkane_fragment_series_mz(mz::Integer) =
 function alkane_ladder_explicit_apex_mzvalue_selection(
     msm::MassScanMatrix,
     mzvalues;
-    minioncount::Integer,
+    minioncount::Integer
 )
     selected_mzindices = alkane_ladder_apex_mz_indices(
         msm,
         mzvalues;
-        minioncount=minioncount,
+        minioncount=minioncount
     )
     (
         selection=:explicit_mzvalues,
@@ -2291,7 +2291,7 @@ function alkane_ladder_explicit_apex_mzvalue_selection(
         mzvalues=collect(rawmzvalues(msm)[selected_mzindices]),
         reference_mzvalues=Float64[],
         reference_relative_intensities=Float64[],
-        reference_key=nothing,
+        reference_key=nothing
     )
 end
 
@@ -2300,7 +2300,7 @@ function alkane_ladder_reference_threshold_apex_ion_candidates(
     ref_mzs::AbstractVector{<:Real},
     ref_intensities::AbstractVector{<:Real};
     excludemzvalues,
-    minrelativeintensity::Real,
+    minrelativeintensity::Real
 )
     length(ref_mzs) == length(ref_intensities) || throw(DimensionMismatch(
         "reference spectrum m/z and intensity vectors must have the same length"))
@@ -2325,7 +2325,7 @@ function alkane_ladder_reference_threshold_apex_ion_candidates(
         (
             mzvalue=Float64(grid[grid_index]),
             mzindex=grid_index,
-            relativeintensity=intensity / max_intensity,
+            relativeintensity=intensity / max_intensity
         )
         for (grid_index, intensity) in intensity_by_grid_index
         if intensity / max_intensity >= Float64(minrelativeintensity)
@@ -2338,7 +2338,7 @@ end
 function alkane_ladder_reference_all_present_ion_candidates(
     msm::MassScanMatrix,
     ref_mzs::AbstractVector{<:Real},
-    ref_intensities::AbstractVector{<:Real},
+    ref_intensities::AbstractVector{<:Real}
 )
     length(ref_mzs) == length(ref_intensities) || throw(DimensionMismatch(
         "reference spectrum m/z and intensity vectors must have the same length"))
@@ -2362,7 +2362,7 @@ function alkane_ladder_reference_all_present_ion_candidates(
         (
             mzvalue=Float64(grid[grid_index]),
             mzindex=grid_index,
-            relativeintensity=intensity / max_intensity,
+            relativeintensity=intensity / max_intensity
         )
         for (grid_index, intensity) in intensity_by_grid_index
     ]
@@ -2376,7 +2376,7 @@ function alkane_ladder_scan_order_shape_ion_selection(
     standard,
     ladderstep;
     ioncount::Integer,
-    mzspacing::Integer,
+    mzspacing::Integer
 )
     ioncount >= 2 || throw(ArgumentError("shape ioncount must be at least 2"))
     mzspacing >= 1 || throw(ArgumentError("shape mzspacing must be at least 1"))
@@ -2386,7 +2386,7 @@ function alkane_ladder_scan_order_shape_ion_selection(
     candidates = alkane_ladder_reference_all_present_ion_candidates(
         msm,
         ref_mzs,
-        ref_intensities,
+        ref_intensities
     )
     length(candidates) >= ioncount || throw(ArgumentError(
         "fewer than $(ioncount) nonzero reference ions are present on the m/z grid " *
@@ -2394,7 +2394,7 @@ function alkane_ladder_scan_order_shape_ion_selection(
     best, score = alkane_ladder_best_spaced_shape_ion_candidates(
         candidates;
         ioncount=ioncount,
-        mzspacing=mzspacing,
+        mzspacing=mzspacing
     )
 
     (
@@ -2406,14 +2406,14 @@ function alkane_ladder_scan_order_shape_ion_selection(
         ],
         score=score,
         reference_key=reference_key,
-        reference_mzvalues=ref_mzs,
+        reference_mzvalues=ref_mzs
     )
 end
 
 function alkane_ladder_best_spaced_shape_ion_candidates(
     candidates;
     ioncount::Integer,
-    mzspacing::Integer,
+    mzspacing::Integer
 )
     by_nominal_mz = Dict{Int, NamedTuple}()
     for candidate in candidates
@@ -2434,7 +2434,7 @@ function alkane_ladder_best_spaced_shape_ion_candidates(
             candidate = get(
                 by_nominal_mz,
                 start_mz + offset * mzspacing,
-                nothing,
+                nothing
             )
             isnothing(candidate) && break
             push!(selected, candidate)
@@ -2484,7 +2484,7 @@ end
 function alkane_ladder_apex_mz_indices(
     msm::MassScanMatrix,
     mzvalues;
-    minioncount::Integer,
+    minioncount::Integer
 )
     targets = alkane_ladder_mzvalue_vector(mzvalues)
     grid = Float64.(alkane_mz_bins(msm))
@@ -2503,7 +2503,7 @@ end
 
 function alkane_ladder_nearest_grid_mz_index(
     grid::AbstractVector{<:Real},
-    target_mz::Real,
+    target_mz::Real
 )
     best_index = firstindex(grid)
     best_distance = Inf
@@ -2520,14 +2520,14 @@ end
 
 function alkane_ladder_mz_is_excluded(
     mz::Real,
-    excluded_mzvalues::AbstractVector{<:Real},
+    excluded_mzvalues::AbstractVector{<:Real}
 )
     any(excluded -> abs(Float64(mz) - Float64(excluded)) <= 0.5, excluded_mzvalues)
 end
 
 function alkane_ladder_default_mzretention_kwargs(
     msm::MassScanMatrix;
-    order::Symbol=:inferdirection,
+    order::Symbol=:inferdirection
 )
     order in (:inferdirection, :ascending, :descending, :simultaneous) ||
         throw(ArgumentError(
@@ -2544,7 +2544,7 @@ function alkane_ladder_default_mzretention_kwargs(
         mzcount=mzcount(msm),
         order=order,
         dwellref=:middle,
-        dwell=:homogeneous,
+        dwell=:homogeneous
     )
 end
 
@@ -2556,7 +2556,7 @@ function alkane_ladder_scan_indices_by_mz(
     mzindices::AbstractVector{<:Integer},
     mzretentionkwargs::NamedTuple,
     centerscanindex::Real,
-    localmargin::Integer,
+    localmargin::Integer
 )
     selected = Matrix{Int}(undef, nscans, length(mzindices))
     for (mzcol, mzindex) in pairs(mzindices)
@@ -2568,7 +2568,7 @@ function alkane_ladder_scan_indices_by_mz(
             mzindex,
             mzretentionkwargs,
             centerscanindex,
-            localmargin,
+            localmargin
         )
     end
 
@@ -2583,13 +2583,13 @@ function alkane_ladder_scan_indices_for_mz(
     mzindex::Integer,
     mzretentionkwargs::NamedTuple,
     centerscanindex::Real,
-    localmargin::Integer,
+    localmargin::Integer
 )
     scanrange = alkane_ladder_local_scan_search_range(
         scancount(msm),
         centerscanindex,
         nscans,
-        localmargin,
+        localmargin
     )
     candidates = Vector{Tuple{Float64, Float64, Int}}(undef, length(scanrange))
     for (candidateindex, scanindex) in pairs(scanrange)
@@ -2598,12 +2598,12 @@ function alkane_ladder_scan_indices_for_mz(
             scan_retentions,
             scanindex,
             mzindex,
-            mzretentionkwargs,
+            mzretentionkwargs
         )
         candidates[candidateindex] = (
             abs(observation_retention - targetretention),
             observation_retention,
-            scanindex,
+            scanindex
         )
     end
     sort!(candidates; by=candidate -> candidate[1])
@@ -2617,7 +2617,7 @@ function alkane_ladder_local_scan_search_range(
     totalscans::Integer,
     centerscanindex::Real,
     nscans::Integer,
-    localmargin::Integer,
+    localmargin::Integer
 )
     totalscans >= 1 || throw(ArgumentError("totalscans must be positive"))
     nscans >= 1 || throw(ArgumentError("nscans must be positive"))
@@ -2647,7 +2647,7 @@ function alkane_ladder_observation_retention(
     scan_retentions,
     scanindex::Integer,
     mzindex::Integer,
-    mzretentionkwargs::NamedTuple,
+    mzretentionkwargs::NamedTuple
 )
     kwargs = merge(mzretentionkwargs, (mzindex=Int(mzindex),))
     retention = Core.kwcall(kwargs, mzretention, scan_retentions[scanindex])
@@ -2674,7 +2674,7 @@ end
 function alkane_ladder_log_weight(
     adjusted_intensity::Real,
     variance::Real,
-    variancefloor::Real,
+    variancefloor::Real
 )
     v = max(Float64(variance), Float64(variancefloor))
     isfinite(v) && v > 0 || return 0.0
@@ -2690,14 +2690,14 @@ function alkane_ladder_best_apex_attempt_index(attempts::AbstractVector)
     isempty(attempts) && throw(ArgumentError("at least one apex attempt is required"))
     centered = findfirst(
         apex -> apex.success && alkane_ladder_apex_is_centered(apex),
-        attempts,
+        attempts
     )
     !isnothing(centered) && return centered
     successful = findlast(apex -> apex.success, attempts)
     !isnothing(successful) && return successful
     finite = findlast(
         apex -> isfinite(apex.apex_scan_index) && isfinite(apex.apex_retention),
-        attempts,
+        attempts
     )
     !isnothing(finite) && return finite
 
@@ -2711,14 +2711,14 @@ end
 function alkane_ladder_center_already_attempted(
     attempts::AbstractVector,
     center_scan_index::Real;
-    tolerance::Real=0.25,
+    tolerance::Real=0.25
 )
     any(
         apex -> hasproperty(apex, :fit_center_scan_index) &&
             isfinite(apex.fit_center_scan_index) &&
             abs(Float64(apex.fit_center_scan_index) - Float64(center_scan_index)) <=
                 Float64(tolerance),
-        attempts,
+        attempts
     )
 end
 
@@ -2740,14 +2740,14 @@ function alkane_ladder_next_center_retention(
     apex,
     raw_scan_retentions::AbstractVector{<:Real},
     input_scanindex::Integer,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     hasproperty(apex, :apex_scan_index) || return nothing
     isfinite(apex.apex_scan_index) || return nothing
     lower_scan = max(1.0, Float64(input_scanindex) - Float64(maxapexshiftfromguess))
     upper_scan = min(
         Float64(length(raw_scan_retentions)),
-        Float64(input_scanindex) + Float64(maxapexshiftfromguess),
+        Float64(input_scanindex) + Float64(maxapexshiftfromguess)
     )
     target_scan = clamp(Float64(apex.apex_scan_index), lower_scan, upper_scan)
     hasproperty(apex, :fit_center_scan_index) &&
@@ -2760,7 +2760,7 @@ end
 function alkane_ladder_center_search_retentions(
     raw_scan_retentions::AbstractVector{<:Real},
     input_scanindex::Integer,
-    maxapexshiftfromguess::Real,
+    maxapexshiftfromguess::Real
 )
     maxshift = Float64(maxapexshiftfromguess)
     maxshift == 0 && return Float64[]
@@ -2780,7 +2780,7 @@ function alkane_ladder_center_search_retentions(
         center_scan = clamp(
             Float64(input_scanindex) + offset,
             1.0,
-            Float64(length(raw_scan_retentions)),
+            Float64(length(raw_scan_retentions))
         )
         any(existing -> abs(existing - center_scan) <= 0.25, center_scan_indices) &&
             continue
@@ -2790,7 +2790,7 @@ function alkane_ladder_center_search_retentions(
     [
         alkane_ladder_retention_at_fractional_scan_index(
             raw_scan_retentions,
-            center_scan,
+            center_scan
         )
         for center_scan in center_scan_indices
     ]
@@ -2809,7 +2809,7 @@ end
 
 function alkane_ladder_fractional_scan_index(
     retentions::AbstractVector{<:Real},
-    retention::Real,
+    retention::Real
 )
     all(isfinite, retentions) || throw(ArgumentError("scan retentions must be finite"))
     isfinite(retention) || return NaN
@@ -2818,11 +2818,11 @@ function alkane_ladder_fractional_scan_index(
     increasing = last(retentions) >= first(retentions)
     increasing && return alkane_ladder_fractional_scan_index_increasing(
         retentions,
-        target,
+        target
     )
     reversed_index = alkane_ladder_fractional_scan_index_increasing(
         reverse(retentions),
-        target,
+        target
     )
 
     length(retentions) - reversed_index + 1
@@ -2830,7 +2830,7 @@ end
 
 function alkane_ladder_fractional_scan_index_increasing(
     retentions::AbstractVector{<:Real},
-    retention::Real,
+    retention::Real
 )
     retention <= first(retentions) && return 1.0
     retention >= last(retentions) && return Float64(length(retentions))
@@ -2846,12 +2846,12 @@ end
 
 alkane_fractional_scan_index(
     retentions::AbstractVector{Float64},
-    retention::Real,
+    retention::Real
 ) = alkane_ladder_fractional_scan_index(retentions, retention)
 
 function alkane_ladder_retention_at_fractional_scan_index(
     retentions::AbstractVector{<:Real},
-    scanindex::Real,
+    scanindex::Real
 )
     isempty(retentions) && throw(ArgumentError("scan retentions must not be empty"))
     all(isfinite, retentions) || throw(ArgumentError("scan retentions must be finite"))
@@ -2868,7 +2868,7 @@ end
 function alkane_ladder_scan_indices_around_retention(
     retentions::AbstractVector{<:Real},
     targetretention::Real,
-    nscans::Integer,
+    nscans::Integer
 )
     nscans >= 1 || throw(ArgumentError("nscans must be at least 1"))
     isempty(retentions) && throw(ArgumentError("scan retentions must not be empty"))
@@ -2879,7 +2879,7 @@ function alkane_ladder_scan_indices_around_retention(
     candidates = [
         (
             distance=abs(Float64(retentions[index]) - Float64(targetretention)),
-            scanindex=Int(index),
+            scanindex=Int(index)
         )
         for index in eachindex(retentions)
     ]

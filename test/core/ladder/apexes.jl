@@ -12,12 +12,12 @@ function test_alkane_ion_apex_inputs(; apexretention=3.25, centerindex=3)
     abundance = vec(sum(X; dims=2))
     abundanceinfo = (
         abundances=Dict(8 => abundance),
-        abundancevariances=Dict(8 => ones(length(retentions))),
+        abundancevariances=Dict(8 => ones(length(retentions)))
     )
     candidate = (
         ladderstep=8,
         scanindex=centerindex,
-        window=(leftindex=1, rightindex=length(retentions)),
+        window=(leftindex=1, rightindex=length(retentions))
     )
     mzkwargs = (
         retentionref=:middle,
@@ -25,7 +25,7 @@ function test_alkane_ion_apex_inputs(; apexretention=3.25, centerindex=3)
         mzcount=length(mzs),
         order=:ascending,
         dwellref=:middle,
-        dwell=:homogeneous,
+        dwell=:homogeneous
     )
 
     msm, variances, abundanceinfo, candidate, mzkwargs
@@ -37,7 +37,7 @@ function test_mzretention_timing_kwargs(mzkwargs)
         scaninterval=mzkwargs.scaninterval,
         mzcount=mzkwargs.mzcount,
         dwellref=mzkwargs.dwellref,
-        dwell=mzkwargs.dwell,
+        dwell=mzkwargs.dwell
     )
 end
 
@@ -50,7 +50,7 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
         MassSpectrum(
             mzs,
             ionheights;
-            attrs=(order=carbon, label="C$(carbon)", ri=100.0 * carbon),
+            attrs=(order=carbon, label="C$(carbon)", ri=100.0 * carbon)
         )
         for carbon in carbons
     ]
@@ -61,7 +61,7 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
         mzcount=length(mzs),
         order=trueorder,
         dwellref=:middle,
-        dwell=:homogeneous,
+        dwell=:homogeneous
     )
 
     X = zeros(length(retentions), length(mzs))
@@ -74,7 +74,7 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
                 retentions,
                 scanindex,
                 mzindex,
-                mzkwargs,
+                mzkwargs
             )
             X[scanindex, mzindex] += ionheights[mzindex] *
                 exp(-0.5 * abs2((observation - apexretention) / 0.65))
@@ -89,9 +89,9 @@ function test_scan_order_inputs(; trueorder=:ascending, carbons=8:11)
                 window=(
                     leftindex=max(1, inputscan - 4),
                     rightindex=min(length(retentions), inputscan + 4),
-                    apexabundance=maximum(X[:, offset]),
-                ),
-            ),
+                    apexabundance=maximum(X[:, offset])
+                )
+            )
         )
     end
 
@@ -108,7 +108,7 @@ end
     spectrum = MassSpectrum(
         mzs,
         collect(range(100.0, 20.0; length=length(mzs)));
-        attrs=(order=16, label="C16", ri=1600.0),
+        attrs=(order=16, label="C16", ri=1600.0)
     )
     standard = AlkaneStandard("test C16", [spectrum], NamedTuple())
 
@@ -116,7 +116,7 @@ end
         msm,
         standard,
         16;
-        extremeioncount=5,
+        extremeioncount=5
     )
 
     @test selection.selection == :reference_alkane_series_extreme_grid_ions
@@ -141,7 +141,7 @@ end
         mzretentionkwargs=test_mzretention_timing_kwargs(mzkwargs),
         mzscanorder=:ascending,
         variancefloor=1.0,
-        logfloorfraction=1e-9,
+        logfloorfraction=1e-9
     )
     apex = only(apexinfo.apexes)
 
@@ -173,7 +173,7 @@ end
         mzretentionkwargs=mzkwargs,
         variancefloor=1.0,
         logfloorfraction=1e-9,
-        maxapexshiftfromguess=3.0,
+        maxapexshiftfromguess=3.0
     )
 
     @test apex.success
@@ -210,7 +210,7 @@ end
         scanwindow=2,
         apexionmzvalues=[100.0],
         minioncount=3,
-        mzretentionkwargs=mzkwargs,
+        mzretentionkwargs=mzkwargs
     )
 
     @test !apex.success
@@ -225,17 +225,17 @@ end
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_apex_settings(
         0,
         1.0,
-        1e-3,
+        1e-3
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_apex_settings(
         2,
         0.0,
-        1e-3,
+        1e-3
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_apex_settings(
         2,
         1.0,
-        0.0,
+        0.0
     )
 end
 
@@ -248,7 +248,7 @@ end
         variances,
         pathinfo;
         standard=standard,
-        mzretentionkwargs=provided,
+        mzretentionkwargs=provided
     )
 
     @test scanorder.mzretentionkwargs.order == :ascending
@@ -262,7 +262,7 @@ end
         variances,
         pathinfo;
         standard=standard,
-        mzretentionkwargs=simultaneous,
+        mzretentionkwargs=simultaneous
     )
 
     @test scanorder.mzretentionkwargs.order == :simultaneous
@@ -275,14 +275,14 @@ end
         pathinfo;
         standard=standard,
         mzretentionkwargs=provided,
-        mzscanorder=:descending,
+        mzscanorder=:descending
     )
     @test_throws ArgumentError alkaneladderscanorder(
         msm,
         variances,
         pathinfo;
         standard=standard,
-        mzscanorder=:unknown,
+        mzscanorder=:unknown
     )
 end
 
@@ -292,7 +292,7 @@ end
             (
                 ladderstep=step,
                 scanindex=step,
-                window=(leftindex=step, rightindex=step),
+                window=(leftindex=step, rightindex=step)
             )
             for step in 8:40
         ],
@@ -319,7 +319,7 @@ end
         3,
         14,
         5,
-        8,
+        8
     )
 end
 
@@ -337,7 +337,7 @@ end
         logfloorfraction=1e-9,
         minpeaks=3,
         minapexvarianceratio=1e12,
-        minioncount=8,
+        minioncount=8
     )
 
     @test scanorder.info.status == :ambiguous
@@ -362,7 +362,7 @@ end
             logfloorfraction=1e-9,
             maxpeaks=1,
             minpeaks=3,
-            minioncount=8,
+            minioncount=8
         )
 
         @test scanorder.mzretentionkwargs.order == trueorder

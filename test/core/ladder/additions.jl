@@ -16,31 +16,31 @@ function ladder_addition_test_inputs()
         8 => test_ladder_addition_abundance([(10, 20.0)]),
         9 => test_ladder_addition_abundance([(20, 30.0), (26, 100.0)]),
         10 => test_ladder_addition_abundance([(30, 40.0)]),
-        11 => test_ladder_addition_abundance([(40, 25.0)]),
+        11 => test_ladder_addition_abundance([(40, 25.0)])
     )
     windows = Dict(
         8 => [
             (ladderstep=8, leftindex=8, apexindex=10, rightindex=12,
-                apexabundance=20.0),
+                apexabundance=20.0)
         ],
         9 => [
             (ladderstep=9, leftindex=18, apexindex=20, rightindex=22,
                 apexabundance=30.0),
             (ladderstep=9, leftindex=24, apexindex=26, rightindex=28,
-                apexabundance=100.0),
+                apexabundance=100.0)
         ],
         10 => [
             (ladderstep=10, leftindex=28, apexindex=30, rightindex=32,
-                apexabundance=40.0),
+                apexabundance=40.0)
         ],
         11 => [
             (ladderstep=11, leftindex=38, apexindex=40, rightindex=42,
-                apexabundance=25.0),
-        ],
+                apexabundance=25.0)
+        ]
     )
     abundanceinfo = (
         abundances=abundances,
-        windows=windows,
+        windows=windows
     )
     msm = ladder_addition_test_msm(abundanceinfo)
     variances = ones(60, 1)
@@ -64,14 +64,14 @@ function ladder_addition_test_mzretentionkwargs(msm)
         mzcount=mzcount(msm),
         order=:ascending,
         dwellref=:middle,
-        dwell=:homogeneous,
+        dwell=:homogeneous
     )
 end
 
 @testset "alkane ladder edge extension cap follows current anchors and carbon range" begin
     anchors = [
         (ladderstep=12,),
-        (ladderstep=15,),
+        (ladderstep=15,)
     ]
 
     @test JuChrom.alkane_ladder_edge_extension_step_cap(anchors, :left, 8:40) == 4
@@ -85,7 +85,7 @@ end
     apexinfo = (
         apexes=[
             (success=true, ladderstep=8, apexscanindex=10.0),
-            (success=true, ladderstep=10, apexscanindex=30.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
         ],
     )
 
@@ -101,7 +101,7 @@ end
         massspectrummatch=false,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
     fill = only(additions.gapfilled)
 
@@ -124,12 +124,12 @@ end
     standard = AlkaneStandard(
         "test C9",
         [JuChrom.alkane_reference_spectrum(9, "nonane", 900.0, [100], [100.0])],
-        NamedTuple(),
+        NamedTuple()
     )
     apexinfo = (
         apexes=[
             (success=true, ladderstep=8, apexscanindex=10.0),
-            (success=true, ladderstep=10, apexscanindex=30.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
         ],
     )
 
@@ -147,7 +147,7 @@ end
         positionsigmafraction=0.5,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
     fill = only(additions.gapfilled)
 
@@ -161,7 +161,7 @@ end
     apexinfo = (
         apexes=[
             (success=true, ladderstep=9, apexscanindex=20.0),
-            (success=true, ladderstep=10, apexscanindex=30.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
         ],
     )
 
@@ -177,7 +177,7 @@ end
         massspectrummatch=false,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
     left = only(additions.leftextended)
     right = only(additions.rightextended)
@@ -198,13 +198,13 @@ end
     abundanceinfo.abundances[12] = test_ladder_addition_abundance([(50, 15.0)])
     abundanceinfo.windows[12] = [
         (ladderstep=12, leftindex=48, apexindex=50, rightindex=52,
-            apexabundance=15.0),
+            apexabundance=15.0)
     ]
     msm = ladder_addition_test_msm(abundanceinfo)
     apexinfo = (
         apexes=[
             (success=true, ladderstep=9, apexscanindex=20.0),
-            (success=true, ladderstep=10, apexscanindex=30.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
         ],
     )
 
@@ -220,7 +220,7 @@ end
         massspectrummatch=false,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
 
     @test [a.ladderstep for a in additions.rightextended] == [11, 12]
@@ -238,12 +238,12 @@ end
     abundanceinfo.abundances[12] = test_ladder_addition_abundance([(50, 15.0)])
     abundanceinfo.windows[12] = [
         (ladderstep=12, leftindex=50, apexindex=50, rightindex=50,
-            apexabundance=15.0),
+            apexabundance=15.0)
     ]
     apexinfo = (
         apexes=[
             (success=true, ladderstep=9, apexscanindex=20.0),
-            (success=true, ladderstep=10, apexscanindex=30.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
         ],
     )
 
@@ -259,7 +259,7 @@ end
         massspectrummatch=false,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
 
     @test [a.ladderstep for a in additions.rightextended] == [11]
@@ -273,7 +273,7 @@ end
     apexinfo = (
         apexes=[
             (success=true, ladderstep=8, apexscanindex=10.0),
-            (success=false, ladderstep=9, apexscanindex=20.0),
+            (success=false, ladderstep=9, apexscanindex=20.0)
         ],
     )
 
@@ -286,7 +286,7 @@ end
         massspectrummatch=false,
         apexionmzvalues=[100.0],
         apexminioncount=1,
-        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
 
     @test additions.status == :empty
@@ -301,22 +301,22 @@ end
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
         -1.0,
         0.5,
-        0.5,
+        0.5
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
         2.0,
         -0.5,
-        0.5,
+        0.5
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
         2.0,
         0.5,
-        0.0,
+        0.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
         2.0,
         0.5,
         0.5,
-        -1,
+        -1
     )
 end

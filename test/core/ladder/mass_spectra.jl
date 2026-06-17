@@ -13,12 +13,12 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
     abundance = profile .* sum(heights[1:3])
     abundanceinfo = (
         abundances=Dict(8 => abundance),
-        abundancevariances=Dict(8 => ones(length(retentions))),
+        abundancevariances=Dict(8 => ones(length(retentions)))
     )
     candidate = (
         ladderstep=8,
         scanindex=3,
-        window=(leftindex=1, rightindex=length(retentions)),
+        window=(leftindex=1, rightindex=length(retentions))
     )
     mzkwargs = (
         retentionref=:middle,
@@ -26,7 +26,7 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
         mzcount=length(mzs),
         order=:ascending,
         dwellref=:middle,
-        dwell=:homogeneous,
+        dwell=:homogeneous
     )
     apex = alkaneladderapex(
         signal,
@@ -38,7 +38,7 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
         minioncount=3,
         mzretentionkwargs=mzkwargs,
         variancefloor=1.0,
-        logfloorfraction=1e-9,
+        logfloorfraction=1e-9
     )
 
     raw = signal
@@ -62,7 +62,7 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
         (path=NamedTuple[],),
         (apexes=[apex],),
         (gapfilled=NamedTuple[], leftextended=NamedTuple[], rightextended=NamedTuple[]),
-        JuChrom.alkane_series_datainfo(raw, signal, variances),
+        JuChrom.alkane_series_datainfo(raw, signal, variances)
     )
 
     raw, signal, result
@@ -75,7 +75,7 @@ end
         msm,
         result,
         8;
-        threaded=false,
+        threaded=false
     )
 
     ints = intensities(spectrum)
@@ -92,7 +92,7 @@ end
         result,
         8;
         nonnegative=false,
-        threaded=false,
+        threaded=false
     )
     @test attrs(signed).allownegative
     @test intensities(signed)[4] ≈ -20.0 rtol = 1e-3
@@ -104,7 +104,7 @@ end
     extracted = alkaneladdermassspectra(
         msm,
         result;
-        threaded=false,
+        threaded=false
     )
     @test isempty(extracted.failures)
     @test haskey(extracted.spectra, 8)
@@ -113,17 +113,17 @@ end
     @test_throws ArgumentError alkaneladdermassspectra(
         signal,
         result;
-        threaded=false,
+        threaded=false
     )
 
     bad = MassScanMatrix(
         rawretentions(msm),
         rawmzvalues(msm),
-        rawintensities(msm) .+ 1.0,
+        rawintensities(msm) .+ 1.0
     )
     @test_throws ArgumentError alkaneladdermassspectra(
         bad,
         result;
-        threaded=false,
+        threaded=false
     )
 end

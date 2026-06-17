@@ -29,7 +29,7 @@ function alkaneladderadditions(
     apexminioncount::Integer=3,
     apexmzretentionkwargs=nothing,
     apexmaxshiftfromguess::Real=3.0,
-    carbonrange=nothing,
+    carbonrange=nothing
 )
     validate_alkane_series_variances(msm, variances)
     validate_alkane_ladder_addition_settings(
@@ -46,7 +46,7 @@ function alkaneladderadditions(
         edgecosinetolerance,
         edgecosineanchorcount,
         edgepositionsigmafraction,
-        massspectrumvariancefloor,
+        massspectrumvariancefloor
     )
     validate_alkane_ladder_apex_settings(
         msm,
@@ -56,7 +56,7 @@ function alkaneladderadditions(
         apexionminrelativeintensity,
         apexvariancefloor,
         apexlogfloorfraction,
-        apexmaxshiftfromguess,
+        apexmaxshiftfromguess
     )
     hasproperty(abundanceinfo, :abundances) || throw(ArgumentError(
         "abundanceinfo must contain abundances"))
@@ -67,7 +67,7 @@ function alkaneladderadditions(
 
     resolved_apex_mzretentionkwargs = alkane_ladder_addition_apex_mzretentionkwargs(
         apexinfo,
-        apexmzretentionkwargs,
+        apexmzretentionkwargs
     )
     resolved_carbonrange = alkane_ladder_addition_carbonrange(abundanceinfo, carbonrange)
     settings = (
@@ -95,14 +95,14 @@ function alkaneladderadditions(
         apexminioncount=Int(apexminioncount),
         apexmzretentionkwargs=resolved_apex_mzretentionkwargs,
         apexmaxshiftfromguess=Float64(apexmaxshiftfromguess),
-        carbonrange=resolved_carbonrange,
+        carbonrange=resolved_carbonrange
     )
     massspectrumcontext = alkane_ladder_mass_spectrum_match_context(
         msm,
         variances,
         standard;
         enabled=settings.massspectrummatch,
-        variancefloor=settings.massspectrumvariancefloor,
+        variancefloor=settings.massspectrumvariancefloor
     )
     anchors = alkane_successful_ladder_apexes(apexinfo)
     gapfilled, gapdiagnostics = alkane_single_gap_additions(
@@ -113,7 +113,7 @@ function alkaneladderadditions(
         scancount(msm);
         settings=settings,
         massspectrumcontext=massspectrumcontext,
-        standard=standard,
+        standard=standard
     )
     edgeanchors = NamedTuple[]
     append!(edgeanchors, anchors)
@@ -128,7 +128,7 @@ function alkaneladderadditions(
         scancount(msm);
         settings=settings,
         massspectrumcontext=massspectrumcontext,
-        standard=standard,
+        standard=standard
     )
     rightextended, rightdiagnostics = alkane_iterative_edge_additions(
         msm,
@@ -139,7 +139,7 @@ function alkaneladderadditions(
         scancount(msm);
         settings=settings,
         massspectrumcontext=massspectrumcontext,
-        standard=standard,
+        standard=standard
     )
 
     additions = NamedTuple[]
@@ -157,9 +157,9 @@ function alkaneladderadditions(
         diagnostics=(
             gapfilled=gapdiagnostics,
             leftextended=leftdiagnostics,
-            rightextended=rightdiagnostics,
+            rightextended=rightdiagnostics
         ),
-        settings=settings,
+        settings=settings
     )
 end
 
@@ -210,7 +210,7 @@ function validate_alkane_ladder_addition_settings(
     edgecosinetolerance=0.03,
     edgecosineanchorcount=3,
     edgepositionsigmafraction=0.1,
-    massspectrumvariancefloor=1.0,
+    massspectrumvariancefloor=1.0
 )
     isfinite(minradius) && minradius >= 0 || throw(ArgumentError(
         "minradius must be finite and nonnegative"))
@@ -271,13 +271,13 @@ function alkane_ladder_apex_anchor(apex)
         mass_spectrum_cosine=alkane_ladder_optional_float(
             apex,
             :mass_spectrum_cosine,
-            :massspectrumcosine,
+            :massspectrumcosine
         ),
         required_cosine=alkane_ladder_optional_float(
             apex,
             :required_cosine,
-            :requiredcosine,
-        ),
+            :requiredcosine
+        )
     )
 end
 
@@ -289,7 +289,7 @@ function alkane_single_gap_additions(
     scancount::Integer;
     settings,
     massspectrumcontext,
-    standard,
+    standard
 )
     additions = NamedTuple[]
     diagnostics = NamedTuple[]
@@ -311,7 +311,7 @@ function alkane_single_gap_additions(
             scancount;
             settings=settings,
             massspectrumcontext=massspectrumcontext,
-            standard=standard,
+            standard=standard
         )
         push!(diagnostics, evaluation.diagnostic)
         isnothing(evaluation.addition) || push!(additions, evaluation.addition)
@@ -329,7 +329,7 @@ function alkane_edge_addition(
     scancount::Integer;
     settings,
     massspectrumcontext,
-    standard,
+    standard
 )
     direction in (:left, :right) || throw(ArgumentError(
         "direction must be :left or :right"))
@@ -338,7 +338,7 @@ function alkane_edge_addition(
     edgeanchors = alkane_ladder_edge_extension_anchor_results(
         anchors,
         direction;
-        maxanchors=settings.edgemaxanchors,
+        maxanchors=settings.edgemaxanchors
     )
     length(edgeanchors) >= 2 || return NamedTuple[], merge(
         alkane_ladder_addition_diagnostic_base(
@@ -347,9 +347,9 @@ function alkane_edge_addition(
                 Int(last(sort(collect(anchors); by=apex -> Int(apex.ladderstep))).ladderstep) + 1,
             direction == :left ? :leftextended : :rightextended,
             NaN,
-            NaN,
+            NaN
         ),
-        (reason=:insufficient_refined_anchors,),
+        (reason=:insufficient_refined_anchors,)
     )
     edge = direction == :left ? first(edgeanchors) : last(edgeanchors)
     targetstep = direction == :left ?
@@ -369,7 +369,7 @@ function alkane_edge_addition(
         scancount;
         settings=settings,
         massspectrumcontext=massspectrumcontext,
-        standard=standard,
+        standard=standard
     )
     additions = isnothing(evaluation.addition) ?
         NamedTuple[] :
@@ -387,7 +387,7 @@ function alkane_iterative_edge_additions(
     scancount::Integer;
     settings,
     massspectrumcontext,
-    standard,
+    standard
 )
     additions = NamedTuple[]
     diagnostics = NamedTuple[]
@@ -399,8 +399,8 @@ function alkane_iterative_edge_additions(
         alkane_ladder_edge_extension_step_cap(
             workinganchors,
             direction,
-            settings.carbonrange,
-        ),
+            settings.carbonrange
+        )
     )
     for _ in 1:maxsteps
         stepadditions, diagnostic = alkane_edge_addition(
@@ -412,7 +412,7 @@ function alkane_iterative_edge_additions(
             scancount;
             settings=settings,
             massspectrumcontext=massspectrumcontext,
-            standard=standard,
+            standard=standard
         )
         isnothing(diagnostic) || push!(diagnostics, diagnostic)
         isempty(stepadditions) && break
@@ -429,7 +429,7 @@ end
 function alkane_ladder_edge_extension_step_cap(
     anchors::AbstractVector,
     direction::Symbol,
-    carbonrange,
+    carbonrange
 )
     isempty(anchors) && return 0
     direction in (:left, :right) || throw(ArgumentError(
@@ -459,13 +459,13 @@ function alkane_ladder_addition_anchor(addition)
         mass_spectrum_cosine=alkane_ladder_optional_float(
             addition,
             :mass_spectrum_cosine,
-            :massspectrumcosine,
+            :massspectrumcosine
         ),
         required_cosine=alkane_ladder_optional_float(
             addition,
             :required_cosine,
-            :requiredcosine,
-        ),
+            :requiredcosine
+        )
     )
 end
 
@@ -491,7 +491,7 @@ function alkane_ladder_addition_between_anchors(
     scancount::Integer;
     settings,
     massspectrumcontext,
-    standard,
+    standard
 )
     leftscan = Float64(leftanchor.apexscanindex)
     rightscan = Float64(rightanchor.apexscanindex)
@@ -502,11 +502,11 @@ function alkane_ladder_addition_between_anchors(
         Int(targetstep),
         source,
         expectedscan,
-        localstepgap,
+        localstepgap
     )
     localstepgap > 0 && isfinite(localstepgap) || return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:invalid_anchor_spacing,)),
+        diagnostic=merge(diagnostic, (reason=:invalid_anchor_spacing,))
     )
 
     evaluation = alkane_best_ladder_addition_window(
@@ -523,7 +523,7 @@ function alkane_ladder_addition_between_anchors(
         standard=standard,
         direction=:between,
         leftanchor=leftanchor,
-        rightanchor=rightanchor,
+        rightanchor=rightanchor
     )
 
     evaluation
@@ -541,7 +541,7 @@ function alkane_ladder_addition_from_edge(
     scancount::Integer;
     settings,
     massspectrumcontext,
-    standard,
+    standard
 )
     prediction = alkane_ladder_edge_extension_scan_prediction(edgeanchors, targetstep)
     isnothing(prediction) && return (
@@ -551,10 +551,10 @@ function alkane_ladder_addition_from_edge(
                 Int(targetstep),
                 source,
                 NaN,
-                NaN,
+                NaN
             ),
-            (reason=:no_scan_prediction,),
-        ),
+            (reason=:no_scan_prediction,)
+        )
     )
     expectedscan = prediction.expectedscan
     localstepgap = prediction.localstepgap
@@ -562,11 +562,11 @@ function alkane_ladder_addition_from_edge(
         Int(targetstep),
         source,
         expectedscan,
-        localstepgap,
+        localstepgap
     )
     localstepgap > 0 && isfinite(localstepgap) || return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:invalid_anchor_spacing,)),
+        diagnostic=merge(diagnostic, (reason=:invalid_anchor_spacing,))
     )
 
     alkane_best_ladder_addition_window(
@@ -583,7 +583,7 @@ function alkane_ladder_addition_from_edge(
         standard=standard,
         direction=direction,
         edgeanchor=edgeanchor,
-        edgeanchors=edgeanchors,
+        edgeanchors=edgeanchors
     )
 end
 
@@ -600,17 +600,17 @@ function alkane_best_ladder_addition_window(
     massspectrumcontext,
     standard,
     direction::Symbol,
-    kwargs...,
+    kwargs...
 )
     diagnostic = alkane_ladder_addition_diagnostic_base(
         targetstep,
         source,
         expectedscan,
-        localstepgap,
+        localstepgap
     )
     isfinite(expectedscan) || return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:nonfinite_expected_scan,)),
+        diagnostic=merge(diagnostic, (reason=:nonfinite_expected_scan,))
     )
 
     isedge = source in (:leftextended, :rightextended)
@@ -625,16 +625,16 @@ function alkane_best_ladder_addition_window(
         diagnostic,
         (
             searchradius=Float64(searchradius),
-            positionsigma=Float64(positionsigma),
-        ),
+            positionsigma=Float64(positionsigma)
+        )
     )
     searchradius > 0 && isfinite(searchradius) || return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:invalid_search_radius,)),
+        diagnostic=merge(diagnostic, (reason=:invalid_search_radius,))
     )
     positionsigma > 0 && isfinite(positionsigma) || return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:invalid_position_sigma,)),
+        diagnostic=merge(diagnostic, (reason=:invalid_position_sigma,))
     )
 
     windows = get(abundanceinfo.windows, Int(targetstep), NamedTuple[])
@@ -642,11 +642,11 @@ function alkane_best_ladder_addition_window(
     diagnostic = merge(diagnostic, (candidatewindows=length(windows),))
     isempty(windows) && return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:no_abundance_windows,)),
+        diagnostic=merge(diagnostic, (reason=:no_abundance_windows,))
     )
     isnothing(abundance) && return (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=:no_abundance_vector,)),
+        diagnostic=merge(diagnostic, (reason=:no_abundance_vector,))
     )
 
     best = nothing
@@ -663,7 +663,7 @@ function alkane_best_ladder_addition_window(
             get(kwargs, :leftanchor, nothing),
             get(kwargs, :rightanchor, nothing);
             mincosinefloor=settings.gapmincosinefloor,
-            cosinetolerance=settings.gapcosinetolerance,
+            cosinetolerance=settings.gapcosinetolerance
         )
     else
         alkane_edge_extension_required_cosine(
@@ -671,7 +671,7 @@ function alkane_best_ladder_addition_window(
             direction;
             mincosinefloor=settings.edgemincosinefloor,
             cosinetolerance=settings.edgecosinetolerance,
-            cosineanchorcount=settings.edgecosineanchorcount,
+            cosineanchorcount=settings.edgecosineanchorcount
         )
     end
     for window in windows
@@ -681,7 +681,7 @@ function alkane_best_ladder_addition_window(
             direction,
             expectedscan,
             scancount;
-            kwargs...,
+            kwargs...
         ) || continue
         directionok += 1
         scanerror = Float64(apexindex) - Float64(expectedscan)
@@ -692,7 +692,7 @@ function alkane_best_ladder_addition_window(
                 window,
                 direction,
                 scancount;
-                maxboundaryapexdistance=settings.apexmaxshiftfromguess,
+                maxboundaryapexdistance=settings.apexmaxshiftfromguess
             )
             continue
         end
@@ -704,7 +704,7 @@ function alkane_best_ladder_addition_window(
         spectrumcandidate = alkane_ladder_addition_spectrum_candidate(
             abundance,
             window,
-            Int(targetstep),
+            Int(targetstep)
         )
         isnothing(spectrumcandidate) && continue
         validpeakmodelwindows += 1
@@ -714,7 +714,7 @@ function alkane_best_ladder_addition_window(
         apexconsistentwindows += 1
         match = alkane_ladder_candidate_mass_spectrum_match(
             spectrumcandidate,
-            massspectrumcontext,
+            massspectrumcontext
         )
         if isfinite(match.cosine)
             finitecosine += 1
@@ -726,13 +726,13 @@ function alkane_best_ladder_addition_window(
             score = alkane_ladder_position_penalized_cosine_score(
                 match.cosine,
                 scanerror,
-                positionsigma,
+                positionsigma
             )
         else
             score = alkane_ladder_addition_score(
                 apexabundance,
                 scanerror,
-                positionsigma,
+                positionsigma
             )
         end
         isfinite(score) || continue
@@ -753,8 +753,8 @@ function alkane_best_ladder_addition_window(
                 massspectrumdistance=Float64(match.distance),
                 massspectrumioncount=Int(match.ioncount),
                 requiredcosine=Float64(requiredcosine),
-                window=window,
-            ),
+                window=window
+            )
         )
         apex = alkaneladderapex(
             msm,
@@ -770,7 +770,7 @@ function alkane_best_ladder_addition_window(
             mzretentionkwargs=settings.apexmzretentionkwargs,
             variancefloor=settings.apexvariancefloor,
             logfloorfraction=settings.apexlogfloorfraction,
-            maxapexshiftfromguess=settings.apexmaxshiftfromguess,
+            maxapexshiftfromguess=settings.apexmaxshiftfromguess
         )
         apex.success || continue
         rank = (Float64(score), Float64(match.cosine), Float64(apexabundance))
@@ -783,8 +783,8 @@ function alkane_best_ladder_addition_window(
                 apexsuccess=true,
                 apexscanindex=Float64(apex.apexscanindex),
                 apexretention=Float64(apex.apexretention),
-                apexrefinementreason=apex.reason,
-            ),
+                apexrefinementreason=apex.reason
+            )
         )
     end
 
@@ -798,8 +798,8 @@ function alkane_best_ladder_addition_window(
             apexconsistentwindows=apexconsistentwindows,
             finitecosinewindows=finitecosine,
             passingcosinewindows=passingcosine,
-            requiredcosine=Float64(requiredcosine),
-        ),
+            requiredcosine=Float64(requiredcosine)
+        )
     )
 
     if !isnothing(best)
@@ -815,9 +815,9 @@ function alkane_best_ladder_addition_window(
                     bestscore=best.score,
                     bestapexabundance=best.apexabundance,
                     bestapexscanindex=best.apexscanindex,
-                    bestcosine=best.massspectrumcosine,
-                ),
-            ),
+                    bestcosine=best.massspectrumcosine
+                )
+            )
         )
     end
 
@@ -832,7 +832,7 @@ function alkane_best_ladder_addition_window(
 
     (
         addition=nothing,
-        diagnostic=merge(diagnostic, (reason=reason,)),
+        diagnostic=merge(diagnostic, (reason=reason,))
     )
 end
 
@@ -841,7 +841,7 @@ function alkane_ladder_addition_direction_passes(
     direction::Symbol,
     expectedscan::Real,
     scancount::Integer;
-    kwargs...,
+    kwargs...
 )
     1 <= apexindex <= scancount || return false
     if direction == :between
@@ -882,7 +882,7 @@ end
 function alkane_ladder_edge_extension_anchor_results(
     anchors::AbstractVector,
     direction::Symbol;
-    maxanchors::Integer,
+    maxanchors::Integer
 )
     sorted = sort(collect(anchors); by=anchor -> Int(anchor.ladderstep))
     if direction == :left
@@ -898,7 +898,7 @@ function alkane_single_gap_required_cosine(
     left,
     right;
     mincosinefloor::Real,
-    cosinetolerance::Real,
+    cosinetolerance::Real
 )
     localcosines = Float64[]
     leftcosine = alkane_ladder_anchor_mass_spectrum_cosine(left)
@@ -915,7 +915,7 @@ function alkane_edge_extension_required_cosine(
     direction::Symbol;
     mincosinefloor::Real,
     cosinetolerance::Real,
-    cosineanchorcount::Integer,
+    cosineanchorcount::Integer
 )
     localanchors = direction == :left ?
         first(anchors, min(length(anchors), Int(cosineanchorcount))) :
@@ -951,7 +951,7 @@ end
 
 function alkane_ladder_edge_extension_scan_prediction(
     anchors::AbstractVector,
-    targetstep::Integer,
+    targetstep::Integer
 )
     length(anchors) >= 2 || return nothing
     sorted = sort(collect(anchors); by=anchor -> Int(anchor.ladderstep))
@@ -1024,7 +1024,7 @@ function alkane_ladder_edge_extension_scan_prediction(
         expectedscan=Float64(expected_scan),
         rmse=0.0,
         localstepgap=Float64(predicted_gap),
-        degree=1,
+        degree=1
     )
 end
 
@@ -1033,7 +1033,7 @@ function alkane_ladder_edge_window_apex_is_boundary_truncated(
     window,
     direction::Symbol,
     scancount::Integer;
-    maxboundaryapexdistance::Real,
+    maxboundaryapexdistance::Real
 )
     isfinite(maxboundaryapexdistance) && maxboundaryapexdistance >= 0 ||
         throw(ArgumentError(
@@ -1067,7 +1067,7 @@ end
 function alkane_ladder_addition_score(
     apexabundance::Real,
     scanerror::Real,
-    positionsigma::Real,
+    positionsigma::Real
 )
     isfinite(apexabundance) && apexabundance > 0 || return -Inf
     isfinite(scanerror) || return -Inf
@@ -1079,7 +1079,7 @@ end
 function alkane_ladder_position_penalized_cosine_score(
     cosine::Real,
     scanerror::Real,
-    positionsigma::Real,
+    positionsigma::Real
 )
     isfinite(cosine) && cosine > 0 || return -Inf
     isfinite(scanerror) || return -Inf
@@ -1093,7 +1093,7 @@ end
 function alkane_ladder_addition_spectrum_candidate(
     abundance::AbstractVector{<:Real},
     window,
-    step::Integer,
+    step::Integer
 )
     1 <= window.leftindex <= window.rightindex <= length(abundance) ||
         return nothing
@@ -1110,7 +1110,7 @@ function alkane_ladder_addition_spectrum_candidate(
         apexindex=first(scanindices) + peakoffset - 1,
         rightindex=Int(window.rightindex),
         scanindices=collect(scanindices),
-        peakmodel=collect(peakmodel),
+        peakmodel=collect(peakmodel)
     )
 end
 
@@ -1119,7 +1119,7 @@ function alkane_ladder_mass_spectrum_match_context(
     variances,
     standard;
     enabled::Bool,
-    variancefloor::Real,
+    variancefloor::Real
 )
     enabled || return nothing
     validate_alkane_series_variances(msm, variances)
@@ -1132,13 +1132,13 @@ function alkane_ladder_mass_spectrum_match_context(
         X=rawintensities(msm),
         variances=variances,
         variancefloor=Float64(variancefloor),
-        references=references,
+        references=references
     )
 end
 
 function alkane_ladder_mass_spectrum_reference_vectors(
     msm::MassScanMatrix,
-    standard,
+    standard
 )
     spectra = alkane_standard_spectra(standard)
     mzbins = alkane_mz_bins(msm)
@@ -1154,7 +1154,7 @@ function alkane_ladder_mass_spectrum_reference_vectors(
         reference = zeros(Float64, mzcount(msm))
         spectrum_mzs = integer_mz_values(
             mzvalues(spectrum),
-            "reference spectrum m/z values",
+            "reference spectrum m/z values"
         )
         spectrum_intensities = Float64.(intensities(spectrum))
         for (mz, intensity) in zip(spectrum_mzs, spectrum_intensities)
@@ -1174,13 +1174,13 @@ function alkane_ladder_candidate_mass_spectrum_match(candidate, context)
     isnothing(context) && return (
         cosine=NaN,
         distance=NaN,
-        ioncount=0,
+        ioncount=0
     )
     reference = get(context.references, Int(candidate.ladderstep), nothing)
     isnothing(reference) && return (
         cosine=NaN,
         distance=NaN,
-        ioncount=0,
+        ioncount=0
     )
 
     observed = Vector{Float64}(undef, length(reference))
@@ -1191,7 +1191,7 @@ function alkane_ladder_candidate_mass_spectrum_match(candidate, context)
             candidate.scanindices,
             mzindex,
             candidate.peakmodel;
-            variancefloor=context.variancefloor,
+            variancefloor=context.variancefloor
         )
         observed[mzindex] = max(Float64(fit.abundance), 0.0)
     end
@@ -1202,13 +1202,13 @@ function alkane_ladder_candidate_mass_spectrum_match(candidate, context)
     (
         cosine=cosine,
         distance=distance,
-        ioncount=Base.count(>(0.0), reference),
+        ioncount=Base.count(>(0.0), reference)
     )
 end
 
 function alkane_ladder_cosine_similarity(
     observed::AbstractVector{<:Real},
-    reference::AbstractVector{<:Real},
+    reference::AbstractVector{<:Real}
 )
     length(observed) == length(reference) || throw(DimensionMismatch(
         "observed and reference vectors must have the same length"))
@@ -1234,7 +1234,7 @@ function alkane_ladder_addition_diagnostic_base(
     targetstep::Integer,
     source::Symbol,
     expectedscan,
-    localstepgap,
+    localstepgap
 )
     (
         status=:failed,
@@ -1256,6 +1256,6 @@ function alkane_ladder_addition_diagnostic_base(
         bestscore=NaN,
         bestapexabundance=NaN,
         bestapexscanindex=NaN,
-        bestcosine=NaN,
+        bestcosine=NaN
     )
 end

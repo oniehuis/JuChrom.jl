@@ -10,7 +10,7 @@ function test_ladder_step_result()
         source=source,
         mass_spectrum_cosine=Float64(cosine),
         required_cosine=Float64(required),
-        good_for_calibration=good,
+        good_for_calibration=good
     )
 
     AlkaneSeriesResult(
@@ -26,34 +26,34 @@ function test_ladder_step_result()
             apexes=[
                 apex(10, 30; source=:molecularion, good=true),
                 apex(8, 10; source=:molecularion, good=false),
-                merge(apex(99, 99), (success=false,)),
+                merge(apex(99, 99), (success=false,))
             ],
         ),
         (
             additions=[
                 (
                     source=:gapfilled,
-                    apex=apex(9, 20; source=:gapfilled, cosine=0.95, required=0.85),
+                    apex=apex(9, 20; source=:gapfilled, cosine=0.95, required=0.85)
                 ),
                 (
                     source=:rightextended,
-                    apex=apex(11, 40; source=:rightextended, cosine=0.93, required=0.9),
-                ),
+                    apex=apex(11, 40; source=:rightextended, cosine=0.93, required=0.9)
+                )
             ],
             gapfilled=[
                 (
                     source=:gapfilled,
-                    apex=apex(9, 20; source=:gapfilled, cosine=0.95, required=0.85),
-                ),
+                    apex=apex(9, 20; source=:gapfilled, cosine=0.95, required=0.85)
+                )
             ],
             leftextended=NamedTuple[],
             rightextended=[
                 (
                     source=:rightextended,
-                    apex=apex(11, 40; source=:rightextended, cosine=0.93, required=0.9),
-                ),
-            ],
-        ),
+                    apex=apex(11, 40; source=:rightextended, cosine=0.93, required=0.9)
+                )
+            ]
+        )
     )
 end
 

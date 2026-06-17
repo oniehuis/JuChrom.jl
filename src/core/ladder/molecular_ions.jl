@@ -6,7 +6,7 @@ function alkanemolecularioninfo(
     stepmass::Integer=14,
     variancefloor::Real=1.0,
     centerzmin::Real=1.645,
-    isolationzmin::Real=1.645,
+    isolationzmin::Real=1.645
 )
     contrasts = alkanemolecularionwindowcontrasts(
         msm,
@@ -17,11 +17,11 @@ function alkanemolecularioninfo(
         stepmass=stepmass,
         variancefloor=variancefloor,
         centerzmin=centerzmin,
-        isolationzmin=isolationzmin,
+        isolationzmin=isolationzmin
     )
     zscorevectors = alkanemolecularionzscorevectors(
         abundanceinfo.abundances,
-        contrasts,
+        contrasts
     )
 
     (
@@ -32,8 +32,8 @@ function alkanemolecularioninfo(
             stepmass=Int(stepmass),
             variancefloor=Float64(variancefloor),
             centerzmin=Float64(centerzmin),
-            isolationzmin=Float64(isolationzmin),
-        ),
+            isolationzmin=Float64(isolationzmin)
+        )
     )
 end
 
@@ -46,14 +46,14 @@ function alkanemolecularionwindowcontrasts(
     stepmass::Integer=14,
     variancefloor::Real=1.0,
     centerzmin::Real=1.645,
-    isolationzmin::Real=1.645,
+    isolationzmin::Real=1.645
 )
     validate_alkane_molecular_ion_settings(
         ionwindow,
         stepmass,
         variancefloor,
         centerzmin,
-        isolationzmin,
+        isolationzmin
     )
     validate_alkane_series_variances(msm, variances)
 
@@ -71,22 +71,22 @@ function alkanemolecularionwindowcontrasts(
         centerindices = alkane_molecular_ion_group_indices(
             mzbins,
             molecularion,
-            Int(ionwindow),
+            Int(ionwindow)
         )
         lowerindices = alkane_mz_window_indices(
             mzbins,
             molecularion - Int(stepmass),
-            Int(ionwindow),
+            Int(ionwindow)
         )
         upperindices = alkane_mz_window_indices(
             mzbins,
             molecularion + Int(stepmass),
-            Int(ionwindow),
+            Int(ionwindow)
         )
         if !alkane_molecular_ion_group_is_annotatable(
                 mzbins,
                 molecularion,
-                centerindices,
+                centerindices
             )
             contrasts[step] = NamedTuple[]
             continue
@@ -114,8 +114,8 @@ function alkanemolecularionwindowcontrasts(
                     upperindices;
                     variancefloor=Float64(variancefloor),
                     centerzmin=Float64(centerzmin),
-                    isolationzmin=Float64(isolationzmin),
-                ),
+                    isolationzmin=Float64(isolationzmin)
+                )
             )
         end
         contrasts[step] = stepcontrasts
@@ -127,7 +127,7 @@ end
 function alkanemolecularionzscorevectors(
     abundances::AbstractDict,
     contrasts::AbstractDict;
-    fillvalue::Real=0.0,
+    fillvalue::Real=0.0
 )
     isfinite(fillvalue) || throw(ArgumentError("fillvalue must be finite"))
 
@@ -162,7 +162,7 @@ function validate_alkane_molecular_ion_settings(
     stepmass,
     variancefloor,
     centerzmin=1.645,
-    isolationzmin=1.645,
+    isolationzmin=1.645
 )
     ionwindow isa Integer || throw(ArgumentError("ionwindow must be an integer"))
     ionwindow >= 0 || throw(ArgumentError("ionwindow must be nonnegative"))
@@ -182,13 +182,13 @@ function alkane_ladder_require_molecular_ion_channels(
     carbonrange=8:40,
     ionwindow::Integer=1,
     stepmass::Integer=14,
-    minsteps::Integer=5,
+    minsteps::Integer=5
 )
     validate_alkane_molecular_ion_channel_precheck_settings(
         carbonrange,
         ionwindow,
         stepmass,
-        minsteps,
+        minsteps
     )
 
     mzbins = alkane_mz_bins(msm)
@@ -196,7 +196,7 @@ function alkane_ladder_require_molecular_ion_channels(
         mzbins;
         carbonrange=carbonrange,
         ionwindow=ionwindow,
-        stepmass=stepmass,
+        stepmass=stepmass
     )
     length(annotatable) >= Int(minsteps) && return annotatable
 
@@ -212,7 +212,7 @@ function alkane_ladder_annotatable_molecular_ion_steps(
     mzbins::AbstractVector{<:Integer};
     carbonrange=8:40,
     ionwindow::Integer=1,
-    stepmass::Integer=14,
+    stepmass::Integer=14
 )
     [
         Int(carbon) for carbon in carbonrange
@@ -222,8 +222,8 @@ function alkane_ladder_annotatable_molecular_ion_steps(
             alkane_molecular_ion_group_indices(
                 mzbins,
                 alkane_molecular_ion(Int(carbon); stepmass=Int(stepmass)),
-                Int(ionwindow),
-            ),
+                Int(ionwindow)
+            )
         )
     ]
 end
@@ -232,7 +232,7 @@ function validate_alkane_molecular_ion_channel_precheck_settings(
     carbonrange,
     ionwindow,
     stepmass,
-    minsteps,
+    minsteps
 )
     carbons = collect(carbonrange)
     isempty(carbons) && throw(ArgumentError("carbonrange must not be empty"))
@@ -254,7 +254,7 @@ alkane_molecular_ion(carbon::Integer; stepmass::Integer=14) =
 function alkane_mz_window_indices(
     mzs::AbstractVector{<:Integer},
     center::Integer,
-    halfwidth::Integer,
+    halfwidth::Integer
 )
     halfwidth >= 0 || throw(ArgumentError("halfwidth must be nonnegative"))
 
@@ -264,7 +264,7 @@ end
 function alkane_molecular_ion_group_indices(
     mzs::AbstractVector{<:Integer},
     molecularion::Integer,
-    forwardwindow::Integer,
+    forwardwindow::Integer
 )
     forwardwindow >= 0 || throw(ArgumentError("forwardwindow must be nonnegative"))
     lower = Int(molecularion)
@@ -276,7 +276,7 @@ end
 function alkane_molecular_ion_group_is_annotatable(
     mzs::AbstractVector{<:Integer},
     molecularion::Integer,
-    centerindices::AbstractVector{<:Integer},
+    centerindices::AbstractVector{<:Integer}
 )
     mi = Int(molecularion)
     hasmi = any(index -> Int(mzs[index]) == mi, centerindices)
@@ -290,7 +290,7 @@ end
 
 function alkane_abundance_window_has_positive_peak_model(
     abundance::AbstractVector{<:Real},
-    window,
+    window
 )
     1 <= window.leftindex <= window.rightindex <= length(abundance) ||
         throw(DimensionMismatch(
@@ -311,7 +311,7 @@ function alkane_molecular_ion_window_contrast(
     upperindices::AbstractVector{<:Integer};
     variancefloor::Float64,
     centerzmin::Float64,
-    isolationzmin::Float64,
+    isolationzmin::Float64
 )
     scanindices = window.leftindex:window.rightindex
     peakmodel = Float64.(abundance[scanindices])
@@ -328,7 +328,7 @@ function alkane_molecular_ion_window_contrast(
         scanindices,
         centerindices,
         peakmodel;
-        variancefloor=variancefloor,
+        variancefloor=variancefloor
     )
     lowerused = !isempty(lowerindices)
     upperused = !isempty(upperindices)
@@ -339,7 +339,7 @@ function alkane_molecular_ion_window_contrast(
             scanindices,
             lowerindices,
             peakmodel;
-            variancefloor=variancefloor,
+            variancefloor=variancefloor
         ) :
         (abundance=0.0, variance=0.0)
     upperfit = upperused ?
@@ -349,7 +349,7 @@ function alkane_molecular_ion_window_contrast(
             scanindices,
             upperindices,
             peakmodel;
-            variancefloor=variancefloor,
+            variancefloor=variancefloor
         ) :
         (abundance=0.0, variance=0.0)
 
@@ -420,7 +420,7 @@ function alkane_molecular_ion_window_contrast(
         centervsupperz=centervsupperz,
         isolationz=isolationz,
         molecularionscore=molecularionscore,
-        z=z,
+        z=z
     )
 end
 
@@ -430,7 +430,7 @@ function alkane_fitted_ion_group_abundance(
     scanindices,
     mzindices::AbstractVector{<:Integer},
     peakmodel::AbstractVector{<:Real};
-    variancefloor::Float64,
+    variancefloor::Float64
 )
     abundance = 0.0
     abundancevariance = 0.0
@@ -442,7 +442,7 @@ function alkane_fitted_ion_group_abundance(
             scanindices,
             mzindex,
             peakmodel;
-            variancefloor=variancefloor,
+            variancefloor=variancefloor
         )
         abundance += fit.abundance
         abundancevariance += fit.variance
@@ -457,7 +457,7 @@ function alkane_fitted_ion_abundance(
     scanindices,
     mzindex::Integer,
     peakmodel::AbstractVector{<:Real};
-    variancefloor::Float64,
+    variancefloor::Float64
 )
     size(variances) == size(X) || throw(DimensionMismatch(
         "variances must have size $(size(X)), matching X"))
@@ -494,7 +494,7 @@ end
 
 function alkane_molecular_ion_isolation_z(
     centervslowerz::Real,
-    centervsupperz::Real,
+    centervsupperz::Real
 )
     values = Float64[]
     isfinite(centervslowerz) && push!(values, Float64(centervslowerz))

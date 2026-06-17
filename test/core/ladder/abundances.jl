@@ -22,7 +22,7 @@ function abundance_test_channelinfo()
     (
         references=[
             (carbon=8, mzindices=[1, 3], referenceintensities=[2.0, 1.0]),
-            (carbon=9, mzindices=[2], referenceintensities=[4.0]),
+            (carbon=9, mzindices=[2], referenceintensities=[4.0])
         ],
     )
 end
@@ -34,10 +34,10 @@ end
         X,
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=1.0,
-        nonnegative=false,
-        carbon=8,
+        referenceintensities,
+        1.0,
+        false,
+        8
     )
 
     @test abundance ≈ [10.0, 99 / 17, -2.0]
@@ -46,10 +46,10 @@ end
         X,
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=4.0,
-        nonnegative=false,
-        carbon=8,
+        referenceintensities,
+        4.0,
+        false,
+        8
     )
     @test floored ≈ [10.0, 27 / 5, -2.0]
 
@@ -57,12 +57,23 @@ end
         X,
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=1.0,
-        nonnegative=true,
-        carbon=8,
+        referenceintensities,
+        1.0,
+        true,
+        8
     )
     @test clipped ≈ [10.0, 99 / 17, 0.0]
+
+    float32_reference = JuChrom.alkaneabundance(
+        X,
+        variance,
+        mzindices,
+        Float32[2.0, 1.0],
+        1.0,
+        false,
+        8
+    )
+    @test float32_reference ≈ abundance
 end
 
 @testset "alkaneabundancevariance formula" begin
@@ -71,9 +82,9 @@ end
     abundancevariance = JuChrom.alkaneabundancevariance(
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=1.0,
-        carbon=8,
+        referenceintensities,
+        1.0,
+        8
     )
 
     @test abundancevariance ≈ [1 / 5, 4 / 17, 2 / 5]
@@ -81,9 +92,9 @@ end
     floored = JuChrom.alkaneabundancevariance(
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=4.0,
-        carbon=8,
+        referenceintensities,
+        4.0,
+        8
     )
     @test floored ≈ fill(4 / 5, 3)
 end
@@ -96,14 +107,14 @@ end
     abundances = JuChrom.alkaneabundances(
         msm,
         variance,
-        channelinfo;
-        variancefloor=1.0,
-        nonnegative=false,
+        channelinfo,
+        1.0,
+        false
     )
     abundancevariances = JuChrom.alkaneabundancevariances(
         variance,
-        channelinfo;
-        variancefloor=1.0,
+        channelinfo,
+        1.0
     )
 
     @test sort(collect(keys(abundances))) == [8, 9]
@@ -111,10 +122,10 @@ end
         X,
         variance,
         mzindices,
-        referenceintensities;
-        variancefloor=1.0,
-        nonnegative=false,
-        carbon=8,
+        referenceintensities,
+        1.0,
+        false,
+        8
     )
     @test abundances[9] == zeros(3)
     @test abundancevariances[8] ≈ [1 / 5, 4 / 17, 2 / 5]
@@ -124,6 +135,8 @@ end
         msm,
         ones(2, 4),
         channelinfo,
+        1.0,
+        false
     )
 end
 
@@ -135,15 +148,14 @@ end
     abundanceinfo = JuChrom.alkaneabundanceinfo(
         msm,
         variance,
-        channelinfo;
-        variancefloor=4.0,
-        nonnegative=true,
-        thresholdfraction=0.25,
-        minrisez=5.0,
+        channelinfo,
+        4.0,
+        true,
+        0.25,
+        5.0
     )
 
     @test abundanceinfo isa AlkaneAbundanceInfo
-    @test keys(abundanceinfo) == (:abundances, :abundancevariances, :windows, :settings)
     @test sort(collect(keys(abundanceinfo.abundances))) == [8, 9]
     @test sort(collect(keys(abundanceinfo.abundancevariances))) == [8, 9]
     @test sort(collect(keys(abundanceinfo.windows))) == [8, 9]
@@ -153,7 +165,7 @@ end
         variancefloor=4.0,
         nonnegative=true,
         thresholdfraction=0.25,
-        minrisez=5.0,
+        minrisez=5.0
     )
 end
 
@@ -164,10 +176,10 @@ end
     @test intensities == [1.0, 0.5]
     @test eltype(intensities) == Float64
     @test_throws ArgumentError JuChrom.alkane_reference_abundance_intensities(
-        (carbon=8, referenceintensities=[1.0, Inf]),
+        (carbon=8, referenceintensities=[1.0, Inf])
     )
     @test_throws ArgumentError JuChrom.alkane_reference_abundance_intensities(
-        (carbon=8, referenceintensities=[1.0, -0.5]),
+        (carbon=8, referenceintensities=[1.0, -0.5])
     )
 end
 
@@ -179,43 +191,55 @@ end
     @test JuChrom.validate_alkane_abundance_variances_matrix([1.0 2.0]) === nothing
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variances_matrix([1.0 Inf])
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variances_matrix([1.0 -1.0])
-    @test_throws ArgumentError JuChrom.validate_alkane_abundance_variances_matrix([1.0, 2.0])
+    @test_throws MethodError JuChrom.validate_alkane_abundance_variances_matrix([1.0, 2.0])
 
     @test JuChrom.validate_alkane_reference_abundance_channels(
         [1, 2],
         [1.0, 0.5],
-        2;
-        carbon=8,
+        2,
+        8
     ) === nothing
     @test_throws DimensionMismatch JuChrom.validate_alkane_reference_abundance_channels(
         [1],
         [1.0, 0.5],
-        2;
-        carbon=8,
+        2,
+        8
     )
     @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
         Int[],
         Float64[],
-        2;
-        carbon=8,
+        2,
+        8
     )
-    @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
+    @test_throws MethodError JuChrom.validate_alkane_reference_abundance_channels(
         [1.5],
         [1.0],
-        2;
-        carbon=8,
+        2,
+        8
     )
     @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
         [3],
         [1.0],
-        2;
-        carbon=8,
+        2,
+        8
     )
     @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
         [1, 2],
         [0.0, 0.0],
-        2;
-        carbon=8,
+        2,
+        8
+    )
+    @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
+        [1, 2],
+        [1.0, Inf],
+        2,
+        8
+    )
+    @test_throws ArgumentError JuChrom.validate_alkane_reference_abundance_channels(
+        [1, 2],
+        [1.0, -1.0],
+        2,
+        8
     )
 
     X, variance, _, referenceintensities = abundance_test_inputs()
@@ -223,10 +247,10 @@ end
         X,
         variance[:, 1:3],
         [1, 3],
-        referenceintensities;
-        variancefloor=1.0,
-        nonnegative=false,
-        carbon=8,
+        referenceintensities,
+        1.0,
+        false,
+        8
     )
 end
 
@@ -238,7 +262,7 @@ end
 
     @test JuChrom.alkane_abundance_values([1, 2, 3], 8) == [1.0, 2.0, 3.0]
     @test_throws ArgumentError JuChrom.alkane_abundance_values([1.0, Inf], 8)
-    @test_throws ArgumentError JuChrom.alkane_abundance_values(["bad"], 8)
+    @test_throws MethodError JuChrom.alkane_abundance_values(["bad"], 8)
 
     variance = Dict(8 => [0.1, 0.2, 0.3])
     @test JuChrom.alkane_abundance_window_variances(variance, 8, [1.0, 2.0, 3.0]) ==
@@ -246,25 +270,28 @@ end
     @test_throws ArgumentError JuChrom.alkane_abundance_window_variances(
         Dict{Int, Vector{Float64}}(),
         8,
-        [1.0],
+        [1.0]
     )
     @test_throws DimensionMismatch JuChrom.alkane_abundance_window_variances(
         Dict(8 => [0.1, 0.2]),
         8,
-        [1.0],
+        [1.0]
     )
     @test_throws ArgumentError JuChrom.alkane_abundance_window_variances(
         Dict(8 => [0.1, Inf]),
         8,
-        [1.0, 2.0],
+        [1.0, 2.0]
     )
     @test_throws ArgumentError JuChrom.alkane_abundance_window_variances(
         Dict(8 => [0.1, -0.2]),
         8,
-        [1.0, 2.0],
+        [1.0, 2.0]
     )
 
-    windows = [(leftindex=2, rightindex=4), (leftindex=7, rightindex=9)]
+    windows = [
+        AlkaneAbundanceWindow(8, 2, 3, 4, 0.0, 1.0, 0.0, 0.0, :test, :test),
+        AlkaneAbundanceWindow(8, 7, 8, 9, 0.0, 1.0, 0.0, 0.0, :test, :test)
+    ]
     @test JuChrom.alkane_abundance_index_is_in_window(3, windows)
     @test !JuChrom.alkane_abundance_index_is_in_window(5, windows)
 end
@@ -272,8 +299,10 @@ end
 @testset "alkaneabundancewindows peak boundaries" begin
     abundance = [0.0, 1.0, 0.1, 2.0, 0.2, 0.0]
     windows = JuChrom.alkaneabundancewindows(
-        Dict(8 => abundance);
-        thresholdfraction=0.25,
+        Dict(8 => abundance),
+        nothing,
+        0.25,
+        10.0
     )
 
     @test length(windows[8]) == 2
@@ -294,16 +323,18 @@ end
 
     variance_limited = JuChrom.alkaneabundancewindows(
         Dict(8 => abundance),
-        Dict(8 => fill(0.01, length(abundance)));
-        thresholdfraction=0.01,
-        minrisez=10.0,
+        Dict(8 => fill(0.01, length(abundance))),
+        0.01,
+        10.0
     )
     @test length(variance_limited[8]) == 1
     @test variance_limited[8][1].leftindex == 1
     @test variance_limited[8][1].rightindex == 6
-    @test_throws ArgumentError JuChrom.alkaneabundancewindows(
+    @test_throws MethodError JuChrom.alkaneabundancewindows(
         Dict(8 => abundance),
         [0.1, 0.2],
+        0.05,
+        10.0
     )
 end
 
@@ -320,7 +351,7 @@ end
         4,
         0.25,
         nothing,
-        10.0,
+        10.0
     )
     @test peakwindow isa AlkaneAbundanceWindow
     @test peakwindow.leftindex == 3
@@ -328,7 +359,7 @@ end
     @test peakwindow.leftstop == :localminimum
     @test peakwindow.rightstop == :threshold
 
-    leftindex, leftstop = JuChrom.alkane_abundance_peak_window_left(
+    leftindex, leftstop = JuChrom.alkane_abundance_peak_window_side(
         abundance,
         nothing,
         minima,
@@ -336,8 +367,9 @@ end
         4,
         0.5,
         10.0,
+        :left
     )
-    rightindex, rightstop = JuChrom.alkane_abundance_peak_window_right(
+    rightindex, rightstop = JuChrom.alkane_abundance_peak_window_side(
         abundance,
         nothing,
         minima,
@@ -345,12 +377,13 @@ end
         4,
         0.5,
         10.0,
+        :right
     )
 
     @test (leftindex, leftstop) == (3, :localminimum)
     @test (rightindex, rightstop) == (5, :threshold)
 
-    @test JuChrom.alkane_abundance_peak_window_left(
+    @test JuChrom.alkane_abundance_peak_window_side(
         [1.0, 2.0, 1.0],
         nothing,
         Set{Int}(),
@@ -358,8 +391,9 @@ end
         2,
         0.0,
         10.0,
+        :left
     ) == (1, :boundary)
-    @test JuChrom.alkane_abundance_peak_window_right(
+    @test JuChrom.alkane_abundance_peak_window_side(
         [1.0, 2.0, 1.0],
         nothing,
         Set{Int}(),
@@ -367,7 +401,18 @@ end
         2,
         0.0,
         10.0,
+        :right
     ) == (3, :boundary)
+    @test_throws ArgumentError JuChrom.alkane_abundance_peak_window_side(
+        abundance,
+        nothing,
+        minima,
+        maxima,
+        4,
+        0.5,
+        10.0,
+        :bad
+    )
 end
 
 @testset "alkane abundance local-minimum stop logic" begin
@@ -381,7 +426,7 @@ end
         4,
         3,
         :left,
-        10.0,
+        10.0
     )
     @test !JuChrom.alkane_abundance_local_minimum_stops_window(
         abundance,
@@ -390,7 +435,7 @@ end
         4,
         3,
         :left,
-        10.0,
+        10.0
     )
     @test !JuChrom.alkane_abundance_local_minimum_stops_window(
         [0.0, 1.0, 1.0, 2.0],
@@ -399,7 +444,7 @@ end
         4,
         3,
         :left,
-        10.0,
+        10.0
     )
     @test JuChrom.alkane_abundance_local_minimum_stops_window(
         abundance,
@@ -408,7 +453,7 @@ end
         4,
         3,
         :left,
-        10.0,
+        10.0
     )
     @test JuChrom.alkane_abundance_local_minimum_stops_window(
         abundance,
@@ -417,7 +462,7 @@ end
         4,
         3,
         :left,
-        5.0,
+        5.0
     )
     @test !JuChrom.alkane_abundance_local_minimum_stops_window(
         abundance,
@@ -426,7 +471,7 @@ end
         4,
         3,
         :left,
-        10.0,
+        10.0
     )
 
     @test JuChrom.alkane_neighboring_peak_across_minimum(maxima, 4, 3, :left) == 2
@@ -436,6 +481,6 @@ end
         maxima,
         4,
         3,
-        :bad,
+        :bad
     )
 end

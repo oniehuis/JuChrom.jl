@@ -19,7 +19,7 @@ function alkane_reference_spectrum(
     label::AbstractString,
     ri::Real,
     mzs::AbstractVector{<:Integer},
-    relativeintensities::AbstractVector{<:Real},
+    relativeintensities::AbstractVector{<:Real}
 )
     MassSpectrum(
         collect(Int, mzs),
@@ -29,8 +29,8 @@ function alkane_reference_spectrum(
             order=Int(carbon),
             label=String(label),
             normalization=:base_peak,
-            minrelativeintensity=0.0,
-        ),
+            minrelativeintensity=0.0
+        )
     )
 end
 
@@ -1963,7 +1963,7 @@ const ALKANE_REFERENCE_SPECTRUM_DATA = (
             0.1855, 0.02747, 0.05815, 0.008752, 0.0002863, 0.0001053, 0.0, 0.002151, 0.0005204, 0.0002638, 5.92e-6, 0.0001545,
             0.0004222, 0.002798, 0.002848, 0.004523, 0.01136, 0.0001707, 0.001786, 0.0, 0.0004538, 0.000409, 0.001552, 0.001957,
             0.0003138, 0.00095, 0.0007828, 0.006124, 0.006663, 0.02699
-        ]),
+        ])
 )
 
 const ALKANE_REFERENCE_SPECTRA = [
@@ -1976,8 +1976,8 @@ const DEFAULT_ALKANE_STANDARD = AlkaneStandard(
     (
         carbon_range=8:40,
         normalization=:base_peak,
-        minrelativeintensity=0.0,
-    ),
+        minrelativeintensity=0.0
+    )
 )
 
 """
