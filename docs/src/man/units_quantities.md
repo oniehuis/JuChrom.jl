@@ -22,9 +22,6 @@ mz = 100.0u"Th"  # (Thomson)
 ```@example 1
 signal = 5.3u"pA"  # (picoampere)
 ```
-```@example 1
-ioncounts = [10, 25, 40]u"count"
-```
 - Attach units to arrays in the same way:
 ```@example 1
 rts = [1.0, 2.0, 3.0]u"s"
@@ -68,7 +65,7 @@ Below are the units you will see most often in this package:
 - Time: `u"s"` (second), `u"ms"` (millisecond), `u"minute"`
 - Current (intensity units for some detectors, e.g., FID): `u"A"` (ampere), `u"mA"`,
   `u"μA"`, `u"nA"`, `u"pA"`
-- Ion counts: `u"count"`
+- Raw ion counts: usually stored as unitless values until dwell normalization
 - Mass‑to‑charge: `u"Th"` (Thomson; optional), or unitless m/z
 
 ### Metric prefixes
@@ -94,26 +91,6 @@ The Thomson is not an officially recognized SI derived unit. It is used informal
 spectrometry as shorthand for “m/z in daltons per elementary charge (Da/e).” Use of `u"Th"` 
 is optional; you can treat m/z as unitless if you prefer. Use of `u"Th"` in JuChrom example 
 code is primarily to illustrate support for unitful m/z values.
-
-## The count unit (`u"count"`) in JuChrom
-
-Mass spectrometry file readers often store ion intensities as integrated counts over a
-scan or dwell interval. JuChrom provides `u"count"` for this case. The unit marks the
-stored values as counts without implying that they have already been normalized by time.
-
-```@example 1
-counts = [10.0, 25.0, 40.0]u"count"
-```
-
-When counts are divided by dwell intervals, the result is a rate:
-
-```@example 1
-counts ./ [0.5, 0.5, 1.0]u"s"
-```
-
-Use [`withintensityunit`](@ref) to attach `u"count"` to a `MassScanMatrix` whose raw
-intensities are already known to be counts, and use [`dwellnormalize`](@ref) to divide
-counts by m/z-specific dwell intervals.
 
 ## Further reading
 

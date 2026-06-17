@@ -25,7 +25,8 @@ x_whitened = whiten(x_clr, σ²_clr, 0.01)
 
 Mass spectrometry intensities may be stored as integrated ion counts over dwell intervals.
 Use [`withintensityunit`](@ref) when the numeric intensity values are known to have a unit
-that is not already recorded in the container. For ion counts, attach `u"count"`:
+that is not already recorded in the container. Raw ion-count matrices are normally left
+unitless until they are dwell-normalized:
 
 ```@example 2
 using JuChrom
@@ -36,16 +37,15 @@ msm = MassScanMatrix(
     [10.0 20.0 30.0; 40.0 50.0 60.0],
 )
 
-count_msm = withintensityunit(msm, u"count")
-intensityunit(count_msm)
+intensityunit(msm)
 ```
 
 Use [`dwellnormalize`](@ref) to divide count intensities by m/z-specific dwell intervals.
-The function accepts inputs whose intensity unit is either absent or `u"count"`. If counts
-are explicit, the output unit is count per dwell unit.
+The function accepts inputs whose intensity unit is absent and returns a rate with the
+reciprocal dwell unit.
 
 ```@example 2
-normalized = dwellnormalize(count_msm, [1.0, 2.0, 5.0], u"s")
+normalized = dwellnormalize(msm, [1.0, 2.0, 5.0], u"s")
 intensityunit(normalized)
 ```
 

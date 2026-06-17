@@ -100,9 +100,9 @@ function alkaneladderadditions(
     massspectrumcontext = alkane_ladder_mass_spectrum_match_context(
         msm,
         variances,
-        standard;
-        enabled=settings.massspectrummatch,
-        variancefloor=settings.massspectrumvariancefloor
+        standard,
+        settings.massspectrummatch,
+        settings.massspectrumvariancefloor
     )
     anchors = alkane_successful_ladder_apexes(apexinfo)
     gapfilled, gapdiagnostics = alkane_single_gap_additions(
@@ -1116,8 +1116,8 @@ end
 
 function alkane_ladder_mass_spectrum_match_context(
     msm::MassScanMatrix,
-    variances,
-    standard;
+    variances::AbstractMatrix{<:Real},
+    standard::AlkaneStandard,
     enabled::Bool,
     variancefloor::Real
 )
@@ -1190,8 +1190,8 @@ function alkane_ladder_candidate_mass_spectrum_match(candidate, context)
             context.variances,
             candidate.scanindices,
             mzindex,
-            candidate.peakmodel;
-            variancefloor=context.variancefloor
+            candidate.peakmodel,
+            context.variancefloor
         )
         observed[mzindex] = max(Float64(fit.abundance), 0.0)
     end

@@ -6,16 +6,14 @@
 Return a copy of `msm` whose intensity values are divided by m/z-specific dwell intervals.
 
 The input matrix is interpreted as containing integrated ion counts. Its intensity unit
-must either be absent or explicitly be `u"count"`. `dwell` provides one dwell interval per
-m/z value, in the unit specified by `unit`, and must therefore have length `mzcount(msm)`.
-Each intensity column is divided by the corresponding dwell value. If the input intensity
-unit is absent, the returned matrix uses `inverse(unit)` as its intensity unit. If the
-input intensity unit is `u"count"`, the returned matrix uses `u"count" * inverse(unit)`.
-Retention coordinates, m/z values, MS level, and metadata are preserved.
+must be absent. `dwell` provides one dwell interval per m/z value, in the unit specified by
+`unit`, and must therefore have length `mzcount(msm)`. Each intensity column is divided by
+the corresponding dwell value. The returned matrix uses `inverse(unit)` as its intensity
+unit. Retention coordinates, m/z values, MS level, and metadata are preserved.
 
-Throws `ArgumentError` if `intensityunit(msm)` is neither `nothing` nor `u"count"`, or if
-any dwell value is non-finite or non-positive. Throws `DimensionMismatch` if `dwell` does
-not have length `mzcount(msm)`.
+Throws `ArgumentError` if `intensityunit(msm)` is not `nothing`, or if any dwell value is
+non-finite or non-positive. Throws `DimensionMismatch` if `dwell` does not have length
+`mzcount(msm)`.
 
 # Examples
 ```jldoctest
@@ -38,8 +36,8 @@ function dwellnormalize(
     unit::Unitful.Units
 )
     inputunit = intensityunit(msm)
-    (isnothing(inputunit) || inputunit == JuChromUnits.count) ||
-        throw(ArgumentError("MassScanMatrix intensityunit must be nothing or count."))
+    isnothing(inputunit) ||
+        throw(ArgumentError("MassScanMatrix intensityunit must be nothing."))
 
     length(dwell) == mzcount(msm) ||
         throw(DimensionMismatch("dwell must have length mzcount(msm)."))
@@ -51,7 +49,7 @@ function dwellnormalize(
         throw(ArgumentError("all dwell values must be positive."))
 
     normalized = rawintensities(msm) * Diagonal(inv.(dwell))
-    normalizedunit = isnothing(inputunit) ? inverse(unit) : inputunit * inverse(unit)
+    normalizedunit = inverse(unit)
 
     MassScanMatrix(
         copy(rawretentions(msm)),
@@ -79,12 +77,11 @@ This method accepts dwell intervals with Unitful units and delegates to
 `dwellnormalize(msm, dwellvalues, dwellunit)` after checking and stripping the units. The
 unitful `dwell` vector must contain one dwell interval per m/z value and use a consistent
 unit. The returned matrix stores intensity values normalized by those dwell intervals and
-uses the reciprocal dwell unit as its intensity unit for unitless inputs, or the count per
-dwell unit for inputs whose intensity unit is `u"count"`.
+uses the reciprocal dwell unit as its intensity unit.
 
 Throws `ArgumentError` if units in `dwell` are inconsistent, if `intensityunit(msm)` is
-neither `nothing` nor `u"count"`, or if any dwell value is non-finite or non-positive.
-Throws `DimensionMismatch` if `dwell` does not have length `mzcount(msm)`.
+not `nothing`, or if any dwell value is non-finite or non-positive. Throws
+`DimensionMismatch` if `dwell` does not have length `mzcount(msm)`.
 
 # Examples
 ```jldoctest
@@ -121,12 +118,11 @@ retention coordinates, and the dwell interval is computed as that mean scan inte
 divided by `mzcount(msm)`. This method is intended for data where the stored intensities
 are integrated counts and the scan schedule is known to be uniform across m/z values. If
 the input intensity unit is absent, the returned matrix uses the reciprocal retention unit
-as its intensity unit. If the input intensity unit is `u"count"`, the returned matrix uses
-count per retention unit.
+as its intensity unit.
 
 Throws `ArgumentError` if `msm` has no retention unit, if it has fewer than two scans, if
-`intensityunit(msm)` is neither `nothing` nor `u"count"`, or if the inferred scan intervals
-are non-finite or non-positive.
+`intensityunit(msm)` is not `nothing`, or if the inferred scan intervals are non-finite or
+non-positive.
 
 # Examples
 ```jldoctest

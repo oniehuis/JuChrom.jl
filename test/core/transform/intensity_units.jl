@@ -42,22 +42,9 @@ using JuChrom
     @test rawintensities(unitful) == rawintensities(normalized)
     @test intensityunit(unitful) == JuChrom.inverse(u"ms")
 
-    count_msm = withintensityunit(msm, u"count")
-    count_normalized = dwellnormalize(count_msm, [1.0, 2.0, 5.0], u"s")
-    @test rawintensities(count_normalized) == rawintensities(normalized)
-    @test intensityunit(count_normalized) == u"count" * JuChrom.inverse(u"s")
-
-    count_unitful = dwellnormalize(count_msm, [1.0, 2.0, 5.0]u"ms")
-    @test rawintensities(count_unitful) == rawintensities(normalized)
-    @test intensityunit(count_unitful) == u"count" * JuChrom.inverse(u"ms")
-
     inferred = dwellnormalize(msm)
     @test rawintensities(inferred) == ints .* 3.0
     @test intensityunit(inferred) == JuChrom.inverse(u"s")
-
-    count_inferred = dwellnormalize(count_msm)
-    @test rawintensities(count_inferred) == ints .* 3.0
-    @test intensityunit(count_inferred) == u"count" * JuChrom.inverse(u"s")
 
     @test_throws DimensionMismatch dwellnormalize(msm, [1.0, 2.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [1.0, Inf, 5.0], u"s")
@@ -66,8 +53,8 @@ using JuChrom
     unitful_msm = MassScanMatrix(ret, mz, ints .* u"pA")
     @test_throws ArgumentError dwellnormalize(unitful_msm, [1.0, 2.0, 5.0], u"s")
 
-    rate_msm = withintensityunit(msm, u"count" * JuChrom.inverse(u"s"))
-    @test_throws ArgumentError dwellnormalize(rate_msm, [1.0, 2.0, 5.0], u"s")
+    annotated_msm = withintensityunit(msm, u"pA")
+    @test_throws ArgumentError dwellnormalize(annotated_msm, [1.0, 2.0, 5.0], u"s")
 
     unitless_retention = MassScanMatrix([1.0, 2.0], mz, ints)
     @test_throws ArgumentError dwellnormalize(unitless_retention)

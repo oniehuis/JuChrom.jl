@@ -1,7 +1,7 @@
 """
     AlkaneAbundanceWindow
 
-Peak window on an alkane abundance track.
+Abundance-track peak window for one candidate alkane ladder step.
 """
 struct AlkaneAbundanceWindow
     ladderstep::Int
@@ -19,37 +19,37 @@ end
 """
     AlkaneAbundanceInfo
 
-Result of the alkane abundance stage.
+Result of the alkane abundance-estimation stage.
 """
-struct AlkaneAbundanceInfo{S <: NamedTuple}
+struct AlkaneAbundanceInfo{S<:NamedTuple}
     abundances::Dict{Int, Vector{Float64}}
     abundancevariances::Dict{Int, Vector{Float64}}
     windows::Dict{Int, Vector{AlkaneAbundanceWindow}}
     settings::S
 end
 
-function alkaneabundanceinfo(
+function alkane_abundance_info(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
-    channelinfo::NamedTuple,
+    channelinfo::AlkaneChannelInfo,
     variancefloor::Real,
     nonnegative::Bool,
     thresholdfraction::Real,
     minrisez::Real
 )
-    abundances = alkaneabundances(
+    abundances = alkane_abundances(
         msm,
         variances,
         channelinfo,
         variancefloor,
         nonnegative
     )
-    abundancevariances = alkaneabundancevariances(
+    abundancevariances = alkane_abundance_variances(
         variances,
         channelinfo,
         variancefloor
     )
-    windows = alkaneabundancewindows(
+    windows = alkane_abundance_windows(
         abundances,
         abundancevariances,
         thresholdfraction,
@@ -69,10 +69,10 @@ function alkaneabundanceinfo(
     )
 end
 
-function alkaneabundances(
+function alkane_abundances(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
-    channelinfo::NamedTuple,
+    channelinfo::AlkaneChannelInfo,
     variancefloor::Real,
     nonnegative::Bool
 )
@@ -82,10 +82,10 @@ function alkaneabundances(
     X = rawintensities(msm)
     abundances = Dict{Int, Vector{Float64}}()
     for reference in channelinfo.references
-        carbon = Int(reference.carbon)
+        carbon = reference.carbon
         mzindices = reference.mzindices
         referenceintensities = alkane_reference_abundance_intensities(reference)
-        abundances[carbon] = alkaneabundance(
+        abundances[carbon] = alkane_abundance(
             X,
             variances,
             mzindices,
@@ -99,9 +99,9 @@ function alkaneabundances(
     abundances
 end
 
-function alkaneabundancevariances(
+function alkane_abundance_variances(
     variances::AbstractMatrix{<:Real},
-    channelinfo::NamedTuple,
+    channelinfo::AlkaneChannelInfo,
     variancefloor::Real
 )
     validate_alkane_abundance_variancefloor(variancefloor)
@@ -109,10 +109,10 @@ function alkaneabundancevariances(
 
     abundancevariances = Dict{Int, Vector{Float64}}()
     for reference in channelinfo.references
-        carbon = Int(reference.carbon)
+        carbon = reference.carbon
         mzindices = reference.mzindices
         referenceintensities = alkane_reference_abundance_intensities(reference)
-        abundancevariances[carbon] = alkaneabundancevariance(
+        abundancevariances[carbon] = alkane_abundance_variance(
             variances,
             mzindices,
             referenceintensities,
@@ -124,9 +124,9 @@ function alkaneabundancevariances(
     abundancevariances
 end
 
-function alkaneabundancewindows(
-    abundances::AbstractDict{<:Integer, <:AbstractVector{<:Real}},
-    abundancevariances::Union{Nothing, AbstractDict{<:Integer, <:AbstractVector{<:Real}}},
+function alkane_abundance_windows(
+    abundances::AbstractDict{Int, <:AbstractVector{<:Real}},
+    abundancevariances::Union{Nothing, AbstractDict{Int, <:AbstractVector{<:Real}}},
     thresholdfraction::Real,
     minrisez::Real
 )
@@ -136,7 +136,7 @@ function alkaneabundancewindows(
 
     windows = Dict{Int, Vector{AlkaneAbundanceWindow}}()
     for (carbon, abundance) in pairs(abundances)
-        step = Int(carbon)
+        step = carbon
         abundancevalues = alkane_abundance_values(abundance, step)
         variancevalues = isnothing(abundancevariances) ? nothing :
             alkane_abundance_window_variances(abundancevariances, step, abundancevalues)
@@ -147,28 +147,25 @@ function alkaneabundancewindows(
         for apexindex in sort(collect(maxima); by=index -> abundancevalues[index], rev=true)
             abundancevalues[apexindex] > 0 || continue
             alkane_abundance_index_is_in_window(apexindex, stepwindows) && continue
-            push!(
-                stepwindows,
-                alkane_abundance_peak_window(
+            push!(stepwindows, alkane_abundance_peak_window(
                     step,
                     abundancevalues,
                     minima,
                     maxima,
                     apexindex,
-                    Float64(thresholdfraction),
+                    thresholdfraction,
                     variancevalues,
-                    Float64(minrisez)
+                    minrisez
                 )
             )
         end
-
         windows[step] = stepwindows
     end
 
     windows
 end
 
-function alkaneabundance(
+function alkane_abundance(
     X::AbstractMatrix{<:Real},
     variances::AbstractMatrix{<:Real},
     mzindices::AbstractVector{<:Integer},
@@ -205,7 +202,7 @@ function alkaneabundance(
     abundance
 end
 
-function alkaneabundancevariance(
+function alkane_abundance_variance(
     variances::AbstractMatrix{<:Real},
     mzindices::AbstractVector{<:Integer},
     referenceintensities::AbstractVector{<:Real},
@@ -235,7 +232,7 @@ function alkaneabundancevariance(
     abundancevariance
 end
 
-function alkane_reference_abundance_intensities(reference::NamedTuple)
+function alkane_reference_abundance_intensities(reference::AlkaneReferenceChannels)
     referenceintensities = Float64.(reference.referenceintensities)
     all(isfinite, referenceintensities) || throw(ArgumentError(
         "reference intensities for C$(reference.carbon) must be finite"))
@@ -309,13 +306,13 @@ function alkane_abundance_values(abundance::AbstractVector{<:Real}, carbon::Inte
 end
 
 function alkane_abundance_window_variances(
-    abundancevariances::AbstractDict{<:Integer, <:AbstractVector{<:Real}},
+    abundancevariances::AbstractDict{Int, <:AbstractVector{Float64}},
     carbon::Integer,
     abundance::AbstractVector{Float64}
 )
     haskey(abundancevariances, carbon) || throw(ArgumentError(
         "abundancevariances does not contain a vector for C$(carbon)"))
-    variance = Float64.(abundancevariances[carbon])
+    variance = abundancevariances[carbon]
     length(variance) == length(abundance) || throw(DimensionMismatch(
         "abundance variance vector for C$(carbon) must match abundance length"))
     all(isfinite, variance) || throw(ArgumentError(
@@ -343,9 +340,9 @@ function alkane_abundance_peak_window(
     minima::AbstractSet{<:Integer},
     maxima::AbstractVector{<:Integer},
     apexindex::Integer,
-    thresholdfraction::Float64,
+    thresholdfraction::Real,
     abundancevariances::Union{Nothing, AbstractVector{Float64}},
-    minrisez::Float64
+    minrisez::Real
 )
     apexabundance = abundance[apexindex]
     threshold = thresholdfraction * apexabundance
@@ -360,6 +357,7 @@ function alkane_abundance_peak_window(
         minrisez,
         :left
     )
+
     rightindex, rightstop = alkane_abundance_peak_window_side(
         abundance,
         abundancevariances,
@@ -392,7 +390,7 @@ function alkane_abundance_peak_window_side(
     maxima::AbstractVector{<:Integer},
     apexindex::Integer,
     threshold::Float64,
-    minrisez::Float64,
+    minrisez::Real,
     direction::Symbol
 )
     step, boundary = if direction ≡ :left
@@ -430,7 +428,7 @@ function alkane_abundance_local_minimum_stops_window(
     apexindex::Integer,
     minimumindex::Integer,
     direction::Symbol,
-    minrisez::Float64
+    minrisez::Real
 )
     isnothing(abundancevariances) && return true
 
@@ -460,12 +458,12 @@ function alkane_neighboring_peak_across_minimum(
 )
     if direction ≡ :right
         for peakindex in maxima
-            peakindex > minimumindex && peakindex ≠ apexindex && return Int(peakindex)
+            peakindex > minimumindex && peakindex ≠ apexindex && return peakindex
         end
         return nothing
     elseif direction ≡ :left
         for peakindex in Iterators.reverse(maxima)
-            peakindex < minimumindex && peakindex ≠ apexindex && return Int(peakindex)
+            peakindex < minimumindex && peakindex ≠ apexindex && return peakindex
         end
         return nothing
     end

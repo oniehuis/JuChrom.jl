@@ -5,37 +5,109 @@ struct LadderWindowPathState
     curridx::Int
     objective::Float64
     pathlength::Int
-    parent::Union{Nothing,Int}
+    parent::Union{Nothing, Int}
+end
+
+struct AlkaneLadderPathCandidate{T<:AlkaneMolecularIonContrast}
+    ladderstep::Int
+    scanindex::Int
+    score::Float64
+    z::Float64
+    centerz::Float64
+    isolationz::Float64
+    centervslowerz::Float64
+    centervsupperz::Float64
+    molecularionscore::Float64
+    massspectrumcosine::Float64
+    massspectrumdistance::Float64
+    massspectrumioncount::Int
+    source::Symbol
+    misupported::Bool
+    gapfilled::Bool
+    expectedscan::Float64
+    scanerror::Float64
+    requiredcosine::Float64
+    window::T
+end
+
+struct AlkaneLadderPathRunBest{T<:AlkaneLadderPathCandidate}
+    objective::Float64
+    path::Vector{T}
+end
+
+struct AlkaneLadderPathRunResult
+    laddersteps::Vector{Int}
+    success::Bool
+    objective::Union{Missing, Float64}
+    pathlength::Int
+end
+
+struct AlkaneLadderPathInfo{
+    T1<:AlkaneLadderPathCandidate,
+    T2<:AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
+    T3<:AbstractVector{<:AbstractVector{Int}},
+    T4<:NamedTuple
+}
+    success::Bool
+    status::Symbol
+    reason::Symbol
+    failurereason::Union{Nothing, AbstractString}
+    message::AbstractString
+    laddersteps::Vector{Int}
+    scanindices::Vector{Int}
+    scores::Vector{Float64}
+    zscores::Vector{Float64}
+    centerzs::Vector{Float64}
+    isolationzs::Vector{Float64}
+    centervslowerzs::Vector{Float64}
+    centervsupperzs::Vector{Float64}
+    massspectrumcosines::Vector{Float64}
+    massspectrumdistances::Vector{Float64}
+    sources::Vector{Symbol}
+    misupported::Vector{Bool}
+    gapfilled::Vector{Bool}
+    expectedscanindices::Vector{Float64}
+    scanerrors::Vector{Float64}
+    requiredcosines::Vector{Float64}
+    gaps::Vector{Int}
+    stepgaps::Vector{Int}
+    scanstepgaps::Vector{Float64}
+    missingsteps::Int
+    objective::Float64
+    score::Float64
+    windows::Vector{<:AlkaneMolecularIonContrast}
+    path::Vector{T1}
+    candidates::T2
+    candidatesbystep::T2
+    candidateruns::T3
+    runresults::Vector{AlkaneLadderPathRunResult}
+    settings::T4
 end
 
 function alkaneladderpath(
-    molecularioninfo;
+    molecularioninfo::AlkaneMolecularIonInfo;
     kwargs...
 )
-    hasproperty(molecularioninfo, :contrasts) || throw(ArgumentError(
-        "molecularioninfo must contain contrasts"))
-
     alkaneladderpath(molecularioninfo.contrasts; kwargs...)
 end
 
 function alkaneladderpath(
-    contrasts::AbstractDict;
-    centerzmin::Real=1.645,
-    isolationzmin::Real=1.645,
-    minsteps::Integer=5,
-    stepreward::Real=0.05,
-    maxcandidatesperstep::Union{Nothing,Integer}=100,
-    spacingweight::Real=25.0,
-    gapincreaseweight::Real=5.0,
-    maxgapratio::Real=2.5,
-    allowsinglemissingstep::Bool=true,
-    maxmissingsteps::Integer=allowsinglemissingstep ? 1 : 0,
-    missingsteppenalty::Real=2.0,
-    msm=nothing,
-    variances=nothing,
-    standard=defaultalkanestandard(),
-    massspectrummatch::Bool=true,
-    massspectrummatchdistanceweight::Real=5.0
+    contrasts::AbstractDict{Int, <:AbstractVector{<:AlkaneMolecularIonContrast}};
+    centerzmin::Real,
+    isolationzmin::Real,
+    minsteps::Integer,
+    stepreward::Real,
+    maxcandidatesperstep::Union{Nothing, Integer},
+    spacingweight::Real,
+    gapincreaseweight::Real,
+    maxgapratio::Real,
+    maxmissingsteps::Integer,
+    missingsteppenalty::Real,
+    msm::Union{Nothing, MassScanMatrix},
+    variances::Union{Nothing, AbstractMatrix{<:Real}},
+    standard::Union{Nothing, AlkaneStandard},
+    massspectrummatch::Bool,
+    massspectrummatchdistanceweight::Real
 )
     validate_alkane_ladder_path_settings(
         centerzmin,
@@ -54,68 +126,67 @@ function alkaneladderpath(
     context = alkane_ladder_path_mass_spectrum_match_context(
         msm,
         variances,
-        standard;
-        enabled=massspectrummatch
+        standard,
+        massspectrummatch
     )
     settings = (
-        centerzmin=Float64(centerzmin),
-        isolationzmin=Float64(isolationzmin),
-        minsteps=Int(minsteps),
-        stepreward=Float64(stepreward),
+        centerzmin=centerzmin,
+        isolationzmin=isolationzmin,
+        minsteps=minsteps,
+        stepreward=stepreward,
         maxcandidatesperstep=maxcandidatesperstep,
-        spacingweight=Float64(spacingweight),
-        gapincreaseweight=Float64(gapincreaseweight),
-        maxgapratio=Float64(maxgapratio),
-        allowsinglemissingstep=Bool(allowsinglemissingstep),
-        maxmissingsteps=Int(maxmissingsteps),
-        missingsteppenalty=Float64(missingsteppenalty),
-        massspectrummatch=Bool(massspectrummatch),
+        spacingweight=spacingweight,
+        gapincreaseweight=gapincreaseweight,
+        maxgapratio=maxgapratio,
+        maxmissingsteps=maxmissingsteps,
+        missingsteppenalty=missingsteppenalty,
+        massspectrummatch=massspectrummatch,
         massspectrummatchactive=!isnothing(context),
-        massspectrummatchdistanceweight=Float64(massspectrummatchdistanceweight)
+        massspectrummatchdistanceweight=massspectrummatchdistanceweight
     )
 
     candidatesbystep = alkane_ladder_path_candidates(
-        contrasts;
-        centerzmin=settings.centerzmin,
-        isolationzmin=settings.isolationzmin,
-        maxcandidatesperstep=maxcandidatesperstep,
-        massspectrummatchcontext=context,
-        massspectrummatchdistanceweight=settings.massspectrummatchdistanceweight
+        contrasts,
+        centerzmin,
+        isolationzmin,
+        maxcandidatesperstep,
+        context,
+        massspectrummatchdistanceweight
     )
     candidateruns = alkane_ladder_candidate_runs(
-        candidatesbystep;
-        maxmissingsteps=settings.maxmissingsteps
+        candidatesbystep,
+        maxmissingsteps
     )
     isempty(candidateruns) && return alkane_ladder_path_failure(
         :no_candidates,
-        "no molecular-ion candidates pass centerzmin=$(settings.centerzmin) and isolationzmin=$(settings.isolationzmin)",
+        "no molecular-ion candidates pass centerzmin=$(centerzmin) and isolationzmin=$(isolationzmin)",
         candidatesbystep,
         candidateruns,
-        NamedTuple[],
+        AlkaneLadderPathRunResult[],
         settings
     )
 
     best = nothing
-    runresults = NamedTuple[]
+    runresults = AlkaneLadderPathRunResult[]
     for run in candidateruns
         runbest = alkane_best_ladder_path_in_run(
             run,
-            candidatesbystep;
-            minsteps=settings.minsteps,
-            stepreward=settings.stepreward,
-            spacingweight=settings.spacingweight,
-            gapincreaseweight=settings.gapincreaseweight,
-            maxgapratio=settings.maxgapratio,
-            maxmissingsteps=settings.maxmissingsteps,
-            missingsteppenalty=settings.missingsteppenalty
+            candidatesbystep,
+            minsteps,
+            stepreward,
+            spacingweight,
+            gapincreaseweight,
+            maxgapratio,
+            maxmissingsteps,
+            missingsteppenalty
         )
         push!(
             runresults,
-            (
-                laddersteps=collect(Int.(run)),
-                success=!isnothing(runbest),
-                objective=isnothing(runbest) ? missing : runbest.objective,
-                pathlength=isnothing(runbest) ? 0 : length(runbest.path)
+            AlkaneLadderPathRunResult(
+                run,
+                !isnothing(runbest),
+                isnothing(runbest) ? missing : runbest.objective,
+                isnothing(runbest) ? 0 : length(runbest.path)
             )
         )
         if !isnothing(runbest) && (isnothing(best) || runbest.objective > best.objective)
@@ -125,7 +196,7 @@ function alkaneladderpath(
 
     isnothing(best) && return alkane_ladder_path_failure(
         :no_valid_path,
-        "no valid path with at least $(settings.minsteps) strictly increasing steps",
+        "no valid path with at least $(minsteps) strictly increasing steps",
         candidatesbystep,
         candidateruns,
         runresults,
@@ -136,45 +207,39 @@ function alkaneladderpath(
 end
 
 function validate_alkane_ladder_path_settings(
-    centerzmin,
-    isolationzmin,
-    minsteps,
-    stepreward,
-    maxcandidatesperstep,
-    spacingweight,
-    gapincreaseweight,
-    maxgapratio,
-    maxmissingsteps,
-    missingsteppenalty,
-    massspectrummatchdistanceweight=5.0
+    centerzmin::Real,
+    isolationzmin::Real,
+    minsteps::Integer,
+    stepreward::Real,
+    maxcandidatesperstep::Union{Nothing, Integer},
+    spacingweight::Real,
+    gapincreaseweight::Real,
+    maxgapratio::Real,
+    maxmissingsteps::Integer,
+    missingsteppenalty::Real,
+    massspectrummatchdistanceweight::Real
 )
-    isfinite(centerzmin) && centerzmin >= 0 || throw(ArgumentError(
+    isfinite(centerzmin) && centerzmin ≥ 0 || throw(ArgumentError(
         "centerzmin must be finite and nonnegative"))
-    isfinite(isolationzmin) && isolationzmin >= 0 || throw(ArgumentError(
+    isfinite(isolationzmin) && isolationzmin ≥ 0 || throw(ArgumentError(
         "isolationzmin must be finite and nonnegative"))
-    minsteps isa Integer || throw(ArgumentError("minsteps must be an integer"))
-    minsteps >= 1 || throw(ArgumentError("minsteps must be at least 1"))
+    minsteps ≥ 1 || throw(ArgumentError("minsteps must be at least 1"))
     isfinite(stepreward) || throw(ArgumentError("stepreward must be finite"))
     isnothing(maxcandidatesperstep) ||
-        maxcandidatesperstep isa Integer ||
-        throw(ArgumentError("maxcandidatesperstep must be nothing or an integer"))
-    isnothing(maxcandidatesperstep) ||
-        maxcandidatesperstep >= 1 ||
+        maxcandidatesperstep ≥ 1 ||
         throw(ArgumentError("maxcandidatesperstep must be positive"))
-    isfinite(spacingweight) && spacingweight >= 0 || throw(ArgumentError(
+    isfinite(spacingweight) && spacingweight ≥ 0 || throw(ArgumentError(
         "spacingweight must be finite and nonnegative"))
-    isfinite(gapincreaseweight) && gapincreaseweight >= 0 || throw(ArgumentError(
+    isfinite(gapincreaseweight) && gapincreaseweight ≥ 0 || throw(ArgumentError(
         "gapincreaseweight must be finite and nonnegative"))
-    isfinite(maxgapratio) && maxgapratio >= 1 || throw(ArgumentError(
+    isfinite(maxgapratio) && maxgapratio ≥ 1 || throw(ArgumentError(
         "maxgapratio must be finite and at least 1"))
-    maxmissingsteps isa Integer || throw(ArgumentError(
-        "maxmissingsteps must be an integer"))
     maxmissingsteps in (0, 1) || throw(ArgumentError(
         "maxmissingsteps must be 0 or 1"))
-    isfinite(missingsteppenalty) && missingsteppenalty >= 0 || throw(ArgumentError(
+    isfinite(missingsteppenalty) && missingsteppenalty ≥ 0 || throw(ArgumentError(
         "missingsteppenalty must be finite and nonnegative"))
     isfinite(massspectrummatchdistanceweight) &&
-        massspectrummatchdistanceweight >= 0 ||
+        massspectrummatchdistanceweight ≥ 0 ||
         throw(ArgumentError(
             "mass-spectrum match distance weight must be finite and nonnegative"))
 
@@ -182,9 +247,9 @@ function validate_alkane_ladder_path_settings(
 end
 
 function alkane_ladder_path_mass_spectrum_match_context(
-    msm,
-    variances,
-    standard;
+    msm::Union{Nothing, MassScanMatrix},
+    variances::Union{Nothing, AbstractMatrix{<:Real}},
+    standard::Union{Nothing, AlkaneStandard},
     enabled::Bool
 )
     enabled || return nothing
@@ -193,28 +258,29 @@ function alkane_ladder_path_mass_spectrum_match_context(
     alkane_ladder_mass_spectrum_match_context(
         msm,
         variances,
-        standard;
-        enabled=true,
-        variancefloor=1.0
+        standard,
+        true,
+        1.0
     )
 end
 
 function alkane_ladder_path_candidates(
-    contrasts::AbstractDict;
+    contrasts::AbstractDict{Int, <:AbstractVector{T}},
     centerzmin::Real,
     isolationzmin::Real,
     maxcandidatesperstep::Union{Nothing,Integer},
     massspectrummatchcontext,
     massspectrummatchdistanceweight::Real
-)
-    candidatesbystep = Dict{Int, Vector{NamedTuple}}()
-    for step in sort(Int.(collect(keys(contrasts))))
-        candidates = NamedTuple[]
+) where {T<:AlkaneMolecularIonContrast}
+
+    candidatesbystep = Dict{Int, Vector{AlkaneLadderPathCandidate{T}}}()
+    for step in sort(collect(keys(contrasts)))
+        candidates = AlkaneLadderPathCandidate{T}[]
         for contrast in contrasts[step]
             alkane_molecular_ion_window_has_candidate_evidence(
-                contrast;
-                centerzmin=centerzmin,
-                isolationzmin=isolationzmin
+                contrast,
+                centerzmin,
+                isolationzmin
             ) || continue
             match = alkane_ladder_candidate_mass_spectrum_match(
                 contrast,
@@ -225,22 +291,26 @@ function alkane_ladder_path_candidates(
                 match.distance,
                 massspectrummatchdistanceweight
             )
-            push!(
-                candidates,
-                (
-                    ladderstep=step,
-                    scanindex=Int(contrast.apexindex),
-                    score=candidate_score,
-                    z=Float64(contrast.z),
-                    centerz=Float64(contrast.centerz),
-                    isolationz=Float64(contrast.isolationz),
-                    centervslowerz=Float64(contrast.centervslowerz),
-                    centervsupperz=Float64(contrast.centervsupperz),
-                    molecularionscore=Float64(contrast.molecularionscore),
-                    massspectrumcosine=match.cosine,
-                    massspectrumdistance=match.distance,
-                    massspectrumioncount=match.ioncount,
-                    window=contrast
+            push!(candidates, AlkaneLadderPathCandidate(
+                    step,
+                    contrast.apexindex,
+                    candidate_score,
+                    contrast.z,
+                    contrast.centerz,
+                    contrast.isolationz,
+                    contrast.centervslowerz,
+                    contrast.centervsupperz,
+                    contrast.molecularionscore,
+                    match.cosine,
+                    match.distance,
+                    match.ioncount,
+                    :molecular_ion_dp,
+                    true,
+                    false,
+                    NaN,
+                    NaN,
+                    NaN,
+                    contrast
                 )
             )
         end
@@ -254,22 +324,13 @@ function alkane_ladder_path_candidates(
 end
 
 function alkane_molecular_ion_window_has_candidate_evidence(
-    contrast;
+    contrast::AlkaneMolecularIonContrast,
     centerzmin::Real,
     isolationzmin::Real
 )
-    hasproperty(contrast, :centerz) &&
-        isfinite(contrast.centerz) &&
-        contrast.centerz >= centerzmin ||
-        return false
-    hasproperty(contrast, :isolationz) &&
-        isfinite(contrast.isolationz) &&
-        contrast.isolationz >= isolationzmin ||
-        return false
-    hasproperty(contrast, :molecularionscore) &&
-        isfinite(contrast.molecularionscore) &&
-        contrast.molecularionscore > 0 ||
-        return false
+    isfinite(contrast.centerz) && contrast.centerz ≥ centerzmin || return false
+    isfinite(contrast.isolationz) && contrast.isolationz ≥ isolationzmin || return false
+    isfinite(contrast.molecularionscore) && contrast.molecularionscore > 0 || return false
 
     true
 end
@@ -282,36 +343,35 @@ function alkane_ladder_path_candidate_dp_score(
     isfinite(score) && score > 0 || return 0.0
     isfinite(distance) || return score
 
-    score * exp(-Float64(distanceweight) * clamp(Float64(distance), 0.0, 1.0))
+    score * exp(-distanceweight * clamp(distance, 0.0, 1.0))
 end
 
 function alkane_limit_ladder_path_candidates(
-    candidates::AbstractVector,
+    candidates::Vector{<:AlkaneLadderPathCandidate},
     maxcandidates::Union{Nothing,Integer}
 )
-    sorted = sort(collect(candidates); by=candidate -> candidate.scanindex)
+    sorted = sort(candidates; by=candidate -> candidate.scanindex)
     isnothing(maxcandidates) && return sorted
-    length(sorted) <= maxcandidates && return sorted
+    length(sorted) ≤ maxcandidates && return sorted
 
     order = sortperm(sorted; by=candidate -> candidate.score, rev=true)
-    limited = collect(sorted[order[1:maxcandidates]])
+    limited = sorted[order[1:maxcandidates]]
     sort!(limited; by=candidate -> candidate.scanindex)
 
     limited
 end
 
 function alkane_ladder_candidate_runs(
-    candidatesbystep::AbstractDict{Int};
-    maxmissingsteps::Int
+    candidatesbystep::AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
+    maxmissingsteps::Integer
 )
-    maxmissingsteps in (0, 1) || throw(ArgumentError(
-        "maxmissingsteps must be 0 or 1"))
+    maxmissingsteps in (0, 1) || throw(ArgumentError("maxmissingsteps must be 0 or 1"))
 
     runs = Vector{Vector{Int}}()
     current = Int[]
     for step in sort(collect(keys(candidatesbystep)))
         isempty(candidatesbystep[step]) && continue
-        if isempty(current) || step - last(current) <= maxmissingsteps + 1
+        if isempty(current) || step - last(current) ≤ maxmissingsteps + 1
             push!(current, step)
         else
             push!(runs, current)
@@ -325,19 +385,18 @@ end
 
 function alkane_best_ladder_path_in_run(
     steprun::AbstractVector{<:Integer},
-    candidatesbystep::AbstractDict{Int};
+    candidatesbystep::AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
     minsteps::Integer,
-    stepreward::Float64,
-    spacingweight::Float64,
-    gapincreaseweight::Float64,
-    maxgapratio::Float64,
-    maxmissingsteps::Int,
-    missingsteppenalty::Float64
+    stepreward::Real,
+    spacingweight::Real,
+    gapincreaseweight::Real,
+    maxgapratio::Real,
+    maxmissingsteps::Integer,
+    missingsteppenalty::Real
 )
-    maxmissingsteps in (0, 1) || throw(ArgumentError(
-        "maxmissingsteps must be 0 or 1"))
+    maxmissingsteps in (0, 1) || throw(ArgumentError("maxmissingsteps must be 0 or 1"))
 
-    candidates = [candidatesbystep[Int(step)] for step in steprun]
+    candidates = [candidatesbystep[step] for step in steprun]
     length(candidates) < minsteps && return nothing
 
     bestobjective = -Inf
@@ -362,15 +421,15 @@ function alkane_best_ladder_path_in_run(
                 minsteps,
                 nothing
             )
-            if minsteps <= 1 && states[stateid].objective > bestobjective
+            if minsteps ≤ 1 && states[stateid].objective > bestobjective
                 bestobjective = states[stateid].objective
                 beststateid = stateid
             end
         end
 
         for prevpos in 1:(pos - 1)
-            stepgap = Int(steprun[pos]) - Int(steprun[prevpos])
-            1 <= stepgap <= maxmissingsteps + 1 || continue
+            stepgap = steprun[pos] - steprun[prevpos]
+            1 ≤ stepgap ≤ maxmissingsteps + 1 || continue
             missingsteps = stepgap - 1
 
             for stateid in values(statesbypos[prevpos])
@@ -386,18 +445,14 @@ function alkane_best_ladder_path_in_run(
                         isnothing(parentid) && continue
                         parent = states[parentid]
                         prevprev = candidates[parent.pos][parent.curridx]
-                        previousstepgap =
-                            Int(steprun[state.pos]) - Int(steprun[parent.pos])
-                        nextstepgap =
-                            Int(steprun[pos]) - Int(steprun[state.pos])
-                        previousgap =
-                            (previous.scanindex - prevprev.scanindex) /
+                        previousstepgap = steprun[state.pos] - steprun[parent.pos]
+                        nextstepgap = steprun[pos] - steprun[state.pos]
+                        previousgap = (previous.scanindex - prevprev.scanindex) /
                             previousstepgap
-                        nextgap =
-                            (curr.scanindex - previous.scanindex) / nextstepgap
+                        nextgap = (curr.scanindex - previous.scanindex) / nextstepgap
                         gaplogratio = alkane_ladder_gap_log_ratio(previousgap, nextgap)
                         isfinite(gaplogratio) || continue
-                        abs(gaplogratio) <= log(maxgapratio) || continue
+                        abs(gaplogratio) ≤ log(maxgapratio) || continue
                         penalty += spacingweight * abs2(gaplogratio)
                         penalty += gapincreaseweight * abs2(max(0.0, gaplogratio))
                     end
@@ -417,8 +472,7 @@ function alkane_best_ladder_path_in_run(
                         stateid
                     )
                     newstate = states[newstateid]
-                    if newstate.pathlength >= minsteps &&
-                            newstate.objective > bestobjective
+                    if newstate.pathlength ≥ minsteps && newstate.objective > bestobjective
                         bestobjective = newstate.objective
                         beststateid = newstateid
                     end
@@ -429,33 +483,31 @@ function alkane_best_ladder_path_in_run(
 
     isnothing(beststateid) && return nothing
 
-    (
-        objective=bestobjective,
-        path=alkane_reconstruct_ladder_path(states, beststateid, candidates)
+    AlkaneLadderPathRunBest(
+        bestobjective,
+        alkane_reconstruct_ladder_path(states, beststateid, candidates)
     )
 end
 
 function alkane_push_ladder_path_state!(
     states::Vector{LadderWindowPathState},
-    statemap::Dict{Tuple{Int,Int,Int,Int}, Int},
+    statemap::Dict{Tuple{Int, Int, Int, Int}, Int},
     pos::Int,
     prevpos::Int,
     previdx::Int,
     curridx::Int,
     objective::Float64,
     pathlength::Int,
-    lengthcap::Int,
-    parent::Union{Nothing,Int}
+    lengthcap::Integer,
+    parent::Union{Nothing, Int}
 )
     key = (prevpos, previdx, curridx, min(pathlength, lengthcap))
     existing = get(statemap, key, nothing)
-    if !isnothing(existing) && states[existing].objective >= objective
+    if !isnothing(existing) && states[existing].objective ≥ objective
         return existing
     end
 
-    push!(
-        states,
-        LadderWindowPathState(
+    push!(states, LadderWindowPathState(
             pos,
             prevpos,
             previdx,
@@ -474,13 +526,26 @@ end
 function alkane_reconstruct_ladder_path(
     states::Vector{LadderWindowPathState},
     stateid::Int,
-    candidates::AbstractVector
-)
+    candidates::AbstractVector{<:AbstractVector{T}}
+) where {T<:AlkaneLadderPathCandidate}
+
+    path = T[]
+    alkane_reconstruct_ladder_path!(path, states, stateid, candidates)
+
+    path
+end
+
+function alkane_reconstruct_ladder_path!(
+    path::Vector{T},
+    states::Vector{LadderWindowPathState},
+    stateid::Int,
+    candidates::AbstractVector{<:AbstractVector{T}}
+) where {T<:AlkaneLadderPathCandidate}
+
     state = states[stateid]
-    if isnothing(state.parent)
-        return NamedTuple[candidates[state.pos][state.curridx]]
+    if !isnothing(state.parent)
+        alkane_reconstruct_ladder_path!(path, states, state.parent, candidates)
     end
-    path = alkane_reconstruct_ladder_path(states, state.parent, candidates)
     push!(path, candidates[state.pos][state.curridx])
 
     path
@@ -493,23 +558,14 @@ function alkane_ladder_gap_log_ratio(previousgap::Real, nextgap::Real)
     log(nextgap / previousgap)
 end
 
-function alkane_ladder_candidate_float_field(candidate, field::Symbol)
-    hasproperty(candidate, field) && return Float64(getproperty(candidate, field))
-    if hasproperty(candidate, :window) &&
-            !isnothing(candidate.window) &&
-            hasproperty(candidate.window, field)
-        return Float64(getproperty(candidate.window, field))
-    end
-
-    NaN
-end
+alkane_ladder_candidate_window(candidate::AlkaneLadderPathCandidate) = candidate.window
 
 function alkane_ladder_path_success(
-    best,
-    candidatesbystep,
-    candidateruns,
-    runresults,
-    settings
+    best::AlkaneLadderPathRunBest,
+    candidatesbystep::AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
+    candidateruns::AbstractVector{<:AbstractVector{Int}},
+    runresults::AbstractVector{AlkaneLadderPathRunResult},
+    settings::NamedTuple
 )
     path = best.path
     laddersteps = [candidate.ladderstep for candidate in path]
@@ -517,122 +573,86 @@ function alkane_ladder_path_success(
     stepgaps = diff(laddersteps)
     scangaps = diff(scanindices)
 
-    (
-        success=true,
-        status=:success,
-        reason=:success,
-        failurereason=nothing,
-        message="",
-        laddersteps=laddersteps,
-        scanindices=scanindices,
-        scores=[candidate.score for candidate in path],
-        zscores=[candidate.z for candidate in path],
-        centerzs=[
-            alkane_ladder_candidate_float_field(candidate, :centerz)
-            for candidate in path
-        ],
-        isolationzs=[
-            alkane_ladder_candidate_float_field(candidate, :isolationz)
-            for candidate in path
-        ],
-        centervslowerzs=[
-            alkane_ladder_candidate_float_field(candidate, :centervslowerz)
-            for candidate in path
-        ],
-        centervsupperzs=[
-            alkane_ladder_candidate_float_field(candidate, :centervsupperz)
-            for candidate in path
-        ],
-        massspectrumcosines=[
-            alkane_ladder_candidate_float_field(candidate, :massspectrumcosine)
-            for candidate in path
-        ],
-        massspectrumdistances=[
-            alkane_ladder_candidate_float_field(candidate, :massspectrumdistance)
-            for candidate in path
-        ],
-        sources=[
-            hasproperty(candidate, :source) ? candidate.source : :molecular_ion_dp
-            for candidate in path
-        ],
-        misupported=[
-            hasproperty(candidate, :misupported) ? Bool(candidate.misupported) : true
-            for candidate in path
-        ],
-        gapfilled=[
-            hasproperty(candidate, :gapfilled) ? Bool(candidate.gapfilled) : false
-            for candidate in path
-        ],
-        expectedscanindices=[
-            alkane_ladder_candidate_float_field(candidate, :expectedscan)
-            for candidate in path
-        ],
-        scanerrors=[
-            alkane_ladder_candidate_float_field(candidate, :scanerror)
-            for candidate in path
-        ],
-        requiredcosines=[
-            alkane_ladder_candidate_float_field(candidate, :requiredcosine)
-            for candidate in path
-        ],
-        gaps=scangaps,
-        stepgaps=stepgaps,
-        scanstepgaps=scangaps ./ stepgaps,
-        missingsteps=sum(max.(stepgaps .- 1, 0)),
-        objective=best.objective,
-        score=best.objective,
-        windows=[candidate.window for candidate in path],
-        path=path,
-        candidates=candidatesbystep,
-        candidatesbystep=candidatesbystep,
-        candidateruns=candidateruns,
-        runresults=runresults,
-        settings=settings
+    AlkaneLadderPathInfo(
+        true,
+        :success,
+        :success,
+        nothing,
+        "",
+        laddersteps,
+        scanindices,
+        [candidate.score for candidate in path],
+        [candidate.z for candidate in path],
+        [candidate.centerz for candidate in path],
+        [candidate.isolationz for candidate in path],
+        [candidate.centervslowerz for candidate in path],
+        [candidate.centervsupperz for candidate in path],
+        [candidate.massspectrumcosine for candidate in path],
+        [candidate.massspectrumdistance for candidate in path],
+        [candidate.source for candidate in path],
+        [candidate.misupported for candidate in path],
+        [candidate.gapfilled for candidate in path],
+        [candidate.expectedscan for candidate in path],
+        [candidate.scanerror for candidate in path],
+        [candidate.requiredcosine for candidate in path],
+        scangaps,
+        stepgaps,
+        scangaps ./ stepgaps,
+        sum(max.(stepgaps .- 1, 0)),
+        best.objective,
+        best.objective,
+        [alkane_ladder_candidate_window(candidate) for candidate in path],
+        path,
+        candidatesbystep,
+        candidatesbystep,
+        candidateruns,
+        runresults,
+        settings
     )
 end
 
 function alkane_ladder_path_failure(
     reason::Symbol,
-    message,
-    candidatesbystep,
-    candidateruns,
-    runresults,
-    settings
+    message::AbstractString,
+    candidatesbystep::AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
+    candidateruns::AbstractVector{<:AbstractVector{Int}},
+    runresults::AbstractVector{AlkaneLadderPathRunResult},
+    settings::NamedTuple
 )
-    (
-        success=false,
-        status=:failed,
-        reason=reason,
-        failurereason=message,
-        message=message,
-        laddersteps=Int[],
-        scanindices=Int[],
-        scores=Float64[],
-        zscores=Float64[],
-        centerzs=Float64[],
-        isolationzs=Float64[],
-        centervslowerzs=Float64[],
-        centervsupperzs=Float64[],
-        massspectrumcosines=Float64[],
-        massspectrumdistances=Float64[],
-        sources=Symbol[],
-        misupported=Bool[],
-        gapfilled=Bool[],
-        expectedscanindices=Float64[],
-        scanerrors=Float64[],
-        requiredcosines=Float64[],
-        gaps=Int[],
-        stepgaps=Int[],
-        scanstepgaps=Float64[],
-        missingsteps=0,
-        objective=-Inf,
-        score=-Inf,
-        windows=NamedTuple[],
-        path=NamedTuple[],
-        candidates=candidatesbystep,
-        candidatesbystep=candidatesbystep,
-        candidateruns=candidateruns,
-        runresults=runresults,
-        settings=settings
+    AlkaneLadderPathInfo(
+        false,
+        :failed,
+        reason,
+        message,
+        message,
+        Int[],
+        Int[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Symbol[],
+        Bool[],
+        Bool[],
+        Float64[],
+        Float64[],
+        Float64[],
+        Int[],
+        Int[],
+        Float64[],
+        0,
+        -Inf,
+        -Inf,
+        AlkaneMolecularIonContrast[],
+        AlkaneLadderPathCandidate[],
+        candidatesbystep,
+        candidatesbystep,
+        candidateruns,
+        runresults,
+        settings
     )
 end

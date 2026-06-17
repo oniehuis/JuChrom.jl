@@ -84,7 +84,11 @@ export AbstractScanSeries
 export AbstractVarianceMassScanMatrix
 export AlkaneAbundanceInfo
 export AlkaneAbundanceWindow
+export AlkaneChannelInfo
 export AlkaneLadderStep
+export AlkaneMolecularIonContrast
+export AlkaneMolecularIonInfo
+export AlkaneReferenceChannels
 export AlkaneSeriesResult
 export AlkaneStandard
 export ChromScan

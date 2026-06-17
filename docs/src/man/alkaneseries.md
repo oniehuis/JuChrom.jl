@@ -5,8 +5,12 @@ calibration. The production API is under active development.
 
 ```@docs
 AlkaneStandard
+AlkaneReferenceChannels
+AlkaneChannelInfo
 AlkaneAbundanceWindow
 AlkaneAbundanceInfo
+AlkaneMolecularIonContrast
+AlkaneMolecularIonInfo
 defaultalkanestandard
 alkanereferencespectra
 alkanereferencespectrum

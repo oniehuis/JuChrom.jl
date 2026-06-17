@@ -1,3 +1,34 @@
+"""
+    AlkaneReferenceChannels
+
+Matched reference-spectrum channels for one alkane ladder step.
+"""
+struct AlkaneReferenceChannels{T1<:NamedTuple, T2<:Real}
+    carbon::Int
+    referenceattrs::T1
+    mzindices::Vector{Int}
+    mzvalues::Vector{T2}
+    referenceintensities::Vector{Float64}
+end
+
+"""
+    AlkaneChannelInfo
+
+Matched alkane reference channels on the measured m/z grid.
+"""
+struct AlkaneChannelInfo{
+    T1<:Real,
+    T2<:AbstractVector{<:AlkaneReferenceChannels},
+    T3<:Union{Nothing,Unitful.Units}
+}
+    mzindices::Vector{Int}
+    mzvalues::Vector{T1}
+    references::T2
+    carbonrange::Vector{Int}
+    minrelativeintensity::Float64
+    mzunit::T3
+end
+
 struct AlkaneSeriesResult{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
     standard::T1
     variances::T2
@@ -289,7 +320,7 @@ function findalkaneseries(
 
     # Infer the abundance of each ladder step for each scan, delineate local peak windows,
     # and estimate the variance of each abundance estimate
-    abundanceinfo = alkaneabundanceinfo(
+    abundanceinfo = alkane_abundance_info(
         msm,
         variances,
         channelinfo,
@@ -298,15 +329,15 @@ function findalkaneseries(
         thresholdfraction,
         minrisez
     )
-    molecularioninfo = alkanemolecularioninfo(
+    molecularioninfo = alkane_molecular_ion_info(
         msm,
         variances,
-        abundanceinfo;
-        ionwindow=molecularionwindow,
-        stepmass=molecularionstepmass,
-        variancefloor=variancefloor,
-        centerzmin=molecularioncenterzmin,
-        isolationzmin=molecularionisolationzmin
+        abundanceinfo,
+        molecularionwindow,
+        molecularionstepmass,
+        variancefloor,
+        molecularioncenterzmin,
+        molecularionisolationzmin
     )
     pathinfo = alkaneladderpath(
         molecularioninfo;
@@ -417,12 +448,12 @@ function alkane_mz_channels(
         isempty(match.mzindices) && throw(ArgumentError(
             "reference spectrum for C$(carbon) has no m/z channels in common with msm"))
 
-        (
-            carbon=Int(carbon),
-            referenceattrs=attrs(spectrum),
-            mzindices=match.mzindices,
-            mzvalues=match.mzvalues,
-            referenceintensities=match.referenceintensities
+        AlkaneReferenceChannels(
+            Int(carbon),
+            attrs(spectrum),
+            match.mzindices,
+            match.mzvalues,
+            match.referenceintensities
         )
     end
 
@@ -432,13 +463,13 @@ function alkane_mz_channels(
         init=Int[]
     )))
 
-    (
-        mzindices=common_mz_indices,
-        mzvalues=collect(grid_mzs[common_mz_indices]),
-        references=referenceinfo,
-        carbonrange=Int.(carbon_numbers),
-        minrelativeintensity=Float64(minrelativeintensity),
-        mzunit=mzunit(msm)
+    AlkaneChannelInfo(
+        common_mz_indices,
+        collect(grid_mzs[common_mz_indices]),
+        referenceinfo,
+        Int.(carbon_numbers),
+        Float64(minrelativeintensity),
+        mzunit(msm)
     )
 end
 

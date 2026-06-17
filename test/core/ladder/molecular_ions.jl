@@ -11,45 +11,89 @@ function molecular_ion_test_inputs()
     msm = MassScanMatrix(collect(1.0:5.0), [100.0, 114.0, 115.0, 128.0, 129.0], X)
     variances = ones(size(X))
     abundance = [0.0, 1.0, 2.0, 1.0, 0.0]
-    window = (
-        ladderstep=8,
-        leftindex=1,
-        apexindex=3,
-        rightindex=5,
-        leftabundance=0.0,
-        apexabundance=2.0,
-        rightabundance=0.0,
-        threshold=0.1,
-        leftstop=:threshold,
-        rightstop=:threshold
+    window = AlkaneAbundanceWindow(
+        8,
+        1,
+        3,
+        5,
+        0.0,
+        2.0,
+        0.0,
+        0.1,
+        :threshold,
+        :threshold
     )
-    abundanceinfo = (
-        abundances=Dict(8 => abundance),
-        abundancevariances=Dict(8 => fill(0.1, length(abundance))),
-        windows=Dict(8 => [window]),
-        settings=NamedTuple()
+    abundanceinfo = AlkaneAbundanceInfo(
+        Dict(8 => abundance),
+        Dict(8 => fill(0.1, length(abundance))),
+        Dict(8 => [window]),
+        NamedTuple()
     )
 
     msm, variances, abundanceinfo, window, peakmodel
 end
 
-@testset "alkanemolecularioninfo combines molecular-ion pipeline" begin
+function test_molecular_ion_contrast(leftindex, rightindex, z, molecularionscore)
+    AlkaneMolecularIonContrast(
+        8,
+        leftindex,
+        leftindex,
+        rightindex,
+        collect(leftindex:rightindex),
+        ones(rightindex - leftindex + 1),
+        1.0,
+        114,
+        Int[],
+        Int[],
+        Int[],
+        Float64[],
+        Float64[],
+        Float64[],
+        false,
+        false,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        molecularionscore,
+        z
+    )
+end
+
+@testset "alkane_molecular_ion_info combines molecular-ion pipeline" begin
     msm, variances, abundanceinfo, _, _ = molecular_ion_test_inputs()
 
-    molecularioninfo = JuChrom.alkanemolecularioninfo(
+    molecularioninfo = JuChrom.alkane_molecular_ion_info(
         msm,
         variances,
-        abundanceinfo;
-        ionwindow=1,
-        stepmass=14,
-        variancefloor=1.0,
-        centerzmin=1.645,
-        isolationzmin=1.645
+        abundanceinfo,
+        1,
+        14,
+        1.0,
+        1.645,
+        1.645
     )
 
-    @test keys(molecularioninfo) == (:contrasts, :zscorevectors, :settings)
+    @test molecularioninfo isa AlkaneMolecularIonInfo
     @test sort(collect(keys(molecularioninfo.contrasts))) == [8]
     @test length(molecularioninfo.contrasts[8]) == 1
+    @test only(molecularioninfo.contrasts[8]) isa AlkaneMolecularIonContrast
     @test molecularioninfo.zscorevectors[8] ≈
         fill(only(molecularioninfo.contrasts[8]).z, 5)
     @test molecularioninfo.settings == (
@@ -61,19 +105,19 @@ end
     )
 end
 
-@testset "alkanemolecularionwindowcontrasts fits center and control ions" begin
+@testset "alkane_molecular_ion_window_contrasts fits center and control ions" begin
     msm, variances, abundanceinfo, _, peakmodel = molecular_ion_test_inputs()
 
-    contrasts = JuChrom.alkanemolecularionwindowcontrasts(
+    contrasts = JuChrom.alkane_molecular_ion_window_contrasts(
         msm,
         variances,
         abundanceinfo.abundances,
-        abundanceinfo.windows;
-        ionwindow=1,
-        stepmass=14,
-        variancefloor=1.0,
-        centerzmin=1.645,
-        isolationzmin=1.645
+        abundanceinfo.windows,
+        1,
+        14,
+        1.0,
+        1.645,
+        1.645
     )
     contrast = only(contrasts[8])
 
@@ -103,16 +147,16 @@ end
     @test contrast.isolationz ≈ 9 / sqrt(2)
     @test contrast.molecularionscore ≈ contrast.z
 
-    gatedcontrasts = JuChrom.alkanemolecularionwindowcontrasts(
+    gatedcontrasts = JuChrom.alkane_molecular_ion_window_contrasts(
         msm,
         variances,
         abundanceinfo.abundances,
-        abundanceinfo.windows;
-        ionwindow=1,
-        stepmass=14,
-        variancefloor=1.0,
-        centerzmin=100.0,
-        isolationzmin=1.645
+        abundanceinfo.windows,
+        1,
+        14,
+        1.0,
+        100.0,
+        1.645
     )
     gatedcontrast = only(gatedcontrasts[8])
     @test gatedcontrast.z ≈ contrast.z
@@ -120,45 +164,56 @@ end
 
     noabundance = copy(abundanceinfo.abundances)
     delete!(noabundance, 8)
-    @test_throws ArgumentError JuChrom.alkanemolecularionwindowcontrasts(
+    @test_throws ArgumentError JuChrom.alkane_molecular_ion_window_contrasts(
         msm,
         variances,
         noabundance,
-        abundanceinfo.windows
+        abundanceinfo.windows,
+        1,
+        14,
+        1.0,
+        1.645,
+        1.645
     )
 
     badabundances = Dict(8 => [1.0, 2.0])
-    @test_throws DimensionMismatch JuChrom.alkanemolecularionwindowcontrasts(
+    @test_throws DimensionMismatch JuChrom.alkane_molecular_ion_window_contrasts(
         msm,
         variances,
         badabundances,
-        abundanceinfo.windows
+        abundanceinfo.windows,
+        1,
+        14,
+        1.0,
+        1.645,
+        1.645
     )
 end
 
-@testset "alkanemolecularionzscorevectors maps window z-scores to scans" begin
+@testset "alkane_molecular_ion_zscore_vectors maps window z-scores to scans" begin
     abundances = Dict(8 => zeros(6))
     contrasts = Dict(8 => [
-        (leftindex=2, rightindex=4, z=3.0, molecularionscore=2.0),
-        (leftindex=3, rightindex=5, z=5.0, molecularionscore=4.0),
-        (leftindex=6, rightindex=6, z=NaN, molecularionscore=NaN)
+        test_molecular_ion_contrast(2, 4, 3.0, 2.0),
+        test_molecular_ion_contrast(3, 5, 5.0, 4.0),
+        test_molecular_ion_contrast(6, 6, NaN, NaN)
     ])
 
-    zscores = JuChrom.alkanemolecularionzscorevectors(
+    zscores = JuChrom.alkane_molecular_ion_zscore_vectors(
         abundances,
-        contrasts;
-        fillvalue=1.0
+        contrasts,
+        1.0
     )
 
     @test zscores[8] == [1.0, 2.0, 4.0, 4.0, 4.0, 1.0]
-    @test_throws ArgumentError JuChrom.alkanemolecularionzscorevectors(
+    @test_throws ArgumentError JuChrom.alkane_molecular_ion_zscore_vectors(
         abundances,
-        contrasts;
-        fillvalue=Inf
+        contrasts,
+        Inf
     )
-    @test_throws DimensionMismatch JuChrom.alkanemolecularionzscorevectors(
+    @test_throws DimensionMismatch JuChrom.alkane_molecular_ion_zscore_vectors(
         abundances,
-        Dict(8 => [(leftindex=1, rightindex=7, z=2.0)])
+        Dict(8 => [test_molecular_ion_contrast(1, 7, 2.0, 2.0)]),
+        0.0
     )
 end
 
@@ -214,17 +269,42 @@ end
     @test !JuChrom.alkane_molecular_ion_group_is_annotatable(mzs, 114, [2])
     @test !JuChrom.alkane_molecular_ion_group_is_annotatable(mzs, 116, Int[])
 
+    positivewindow = AlkaneAbundanceWindow(
+        8,
+        1,
+        2,
+        3,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        :test,
+        :test
+    )
+    badwindow = AlkaneAbundanceWindow(
+        8,
+        1,
+        2,
+        3,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        :test,
+        :test
+    )
+
     @test JuChrom.alkane_abundance_window_has_positive_peak_model(
         [0.0, 1.0, 0.0],
-        (ladderstep=8, leftindex=1, rightindex=3)
+        positivewindow
     )
     @test !JuChrom.alkane_abundance_window_has_positive_peak_model(
         [0.0, 0.0, 0.0],
-        (ladderstep=8, leftindex=1, rightindex=3)
+        badwindow
     )
     @test_throws DimensionMismatch JuChrom.alkane_abundance_window_has_positive_peak_model(
         [0.0, 1.0],
-        (ladderstep=8, leftindex=1, rightindex=3)
+        positivewindow
     )
 end
 
@@ -237,27 +317,31 @@ end
         variances[:, 1:1],
         1:5,
         1,
-        peakmodel;
-        variancefloor=1.0
+        peakmodel,
+        1.0
     )
 
+    @test fit isa JuChrom.AlkaneFittedIonAbundance
     @test fit.abundance ≈ 10.0
     @test fit.variance ≈ 2 / 3
-    @test JuChrom.alkane_fitted_ion_abundance(
+    zerofit = JuChrom.alkane_fitted_ion_abundance(
         X,
         variances[:, 1:1],
         1:5,
         1,
-        zeros(5);
-        variancefloor=1.0
-    ) == (abundance=0.0, variance=0.0)
+        zeros(5),
+        1.0
+    )
+    @test zerofit isa JuChrom.AlkaneFittedIonAbundance
+    @test zerofit.abundance == 0.0
+    @test zerofit.variance == 0.0
     @test_throws DimensionMismatch JuChrom.alkane_fitted_ion_abundance(
         X,
         variances[:, 1:1],
         1:5,
         1,
-        ones(4);
-        variancefloor=1.0
+        ones(4),
+        1.0
     )
 
     groupfit = JuChrom.alkane_fitted_ion_group_abundance(
@@ -265,19 +349,19 @@ end
         ones(5, 2),
         1:5,
         [1, 2],
-        peakmodel;
-        variancefloor=1.0
+        peakmodel,
+        1.0
     )
     @test groupfit.abundance ≈ 12.0
     @test groupfit.variance ≈ 4 / 3
 
     @test JuChrom.alkane_molecular_ion_control_veto_z(
-        (abundance=3.0, variance=1.0),
-        (abundance=5.0, variance=3.0)
+        JuChrom.AlkaneFittedIonAbundance(3.0, 1.0),
+        JuChrom.AlkaneFittedIonAbundance(5.0, 3.0)
     ) ≈ -1.0
     @test JuChrom.alkane_molecular_ion_center_vs_control_z(
-        (abundance=5.0, variance=3.0),
-        (abundance=3.0, variance=1.0)
+        JuChrom.AlkaneFittedIonAbundance(5.0, 3.0),
+        JuChrom.AlkaneFittedIonAbundance(3.0, 1.0)
     ) ≈ 1.0
     @test JuChrom.alkane_molecular_ion_isolation_z(2.0, 3.0) == 2.0
     @test isnan(JuChrom.alkane_molecular_ion_isolation_z(NaN, NaN))

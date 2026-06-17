@@ -180,17 +180,13 @@ module JuChromUnits
 import Unitful
 using Unitful: @unit
 
-# ── Count ─────────────────────────────────────────────────────────────────────────────────
-
-@unit count "count" Count 1 false
-
 # ── Thomson ───────────────────────────────────────────────────────────────────────────────
 
 @unit Th "Th" Thomson (Unitful.u / Unitful.q) true  # u = unified atomic mass unit, q = e = elementary charge, Th = u / e
 
 end
 
-using .JuChromUnits: count, aTh, cTh, dTh, daTh, ETh, fTh, GTh, hTh, kTh, mTh, MTh,
+using .JuChromUnits: aTh, cTh, dTh, daTh, ETh, fTh, GTh, hTh, kTh, mTh, MTh,
     nTh, pTh, PTh, TTh, Th, yTh, YTh, zTh, ZTh, μTh
 
 # Julia ≥ 1.12 enforces stricter world-age semantics for globals created via Core.eval.
