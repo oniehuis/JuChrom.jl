@@ -389,6 +389,27 @@ end
         carbonrange=8:12,
         pathminsteps=3
     )
+
+    @test_throws ArgumentError findalkaneseries(
+        msm,
+        CountVarianceEstimate(
+            ones(size(rawintensities(msm))),
+            nothing,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1,
+            1,
+            5,
+            1,
+            1.0,
+            0.0,
+            1.0
+        );
+        carbonrange=8:12,
+        pathminsteps=3
+    )
 end
 
 @testset "findalkaneseries stores molecular-ion info" begin
@@ -406,7 +427,21 @@ end
 
     result = findalkaneseries(
         msm,
-        ones(size(X));
+        CountVarianceEstimate(
+            ones(size(X)),
+            nothing,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            1,
+            1,
+            5,
+            1,
+            1.0,
+            0.0,
+            1.0
+        );
         standard=standard,
         carbonrange=8:8,
         thresholdfraction=0.05,
@@ -436,4 +471,89 @@ end
     @test only(result.apexinfo.apexes).ladderstep == 8
     @test hasproperty(result, :additioninfo)
     @test result.additioninfo.status ≡ :empty
+end
+
+@testset "findalkanes requires variance container for supplied variances" begin
+    peakmodel = [0.0, 0.5, 1.0, 0.5, 0.0]
+    X = zeros(5, 5)
+    X[:, 2] .= 100.0 .* peakmodel
+    X[:, 3] .= 20.0 .* peakmodel
+    X[:, 4] .= 5.0 .* peakmodel
+    msm = MassScanMatrix(collect(1.0:5.0), [100.0, 114.0, 115.0, 128.0, 129.0], X)
+    standard = AlkaneStandard(
+        "test C8",
+        [JuChrom.alkane_reference_spectrum(8, "octane", 800.0, [114], [100.0])],
+        NamedTuple()
+    )
+    mzretentionkwargs = (
+        retentionref=:middle,
+        scaninterval=1e-9,
+        mzcount=mzcount(msm),
+        dwellref=:middle,
+        dwell=:homogeneous
+    )
+
+    @test_throws ArgumentError findalkanes(
+        msm;
+        variances=ones(size(X)),
+        subtractbaseline=false,
+        standard=standard,
+        carbonrange=8:8,
+        thresholdfraction=0.05,
+        pathminsteps=1,
+        apexmzscanorder=:ascending,
+        apexmzretentionkwargs=mzretentionkwargs
+    )
+
+    varianceestimate = CountVarianceEstimate(
+        ones(size(X)),
+        nothing,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1,
+        1,
+        5,
+        1,
+        1.0,
+        0.0,
+        1.0
+    )
+    vmsm = VarianceMassScanMatrix(msm, ones(size(X)))
+
+    result = findalkanes(
+        msm;
+        variances=varianceestimate,
+        subtractbaseline=false,
+        standard=standard,
+        carbonrange=8:8,
+        thresholdfraction=0.05,
+        pathminsteps=1,
+        apexmzscanorder=:ascending,
+        apexmzretentionkwargs=mzretentionkwargs
+    )
+
+    @test result.varianceinfo isa CountVarianceEstimate
+    @test result.pathinfo.status ≡ :success
+
+    direct = findalkanes(
+        vmsm;
+        subtractbaseline=false,
+        standard=standard,
+        carbonrange=8:8,
+        thresholdfraction=0.05,
+        pathminsteps=1,
+        apexmzscanorder=:ascending,
+        apexmzretentionkwargs=mzretentionkwargs
+    )
+
+    @test direct.varianceinfo === vmsm
+    @test direct.pathinfo.status ≡ :success
+
+    @test_throws ArgumentError findalkanes(
+        vmsm;
+        variances=vmsm,
+        subtractbaseline=false
+    )
 end

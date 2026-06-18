@@ -19,7 +19,7 @@ Matched alkane reference channels on the measured m/z grid.
 struct AlkaneChannelInfo{
     T1<:Real,
     T2<:AbstractVector{<:AlkaneReferenceChannels},
-    T3<:Union{Nothing,Unitful.Units}
+    T3<:Union{Nothing, Unitful.Units}
 }
     mzindices::Vector{Int}
     mzvalues::Vector{T1}
@@ -29,7 +29,66 @@ struct AlkaneChannelInfo{
     mzunit::T3
 end
 
-struct AlkaneSeriesResult{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
+struct AlkaneReferenceChannelMatch{
+    T1<:AbstractVector{<:Integer},
+    T2<:AbstractVector{<:Real},
+    T3<:AbstractVector{<:Real}
+}
+    mzindices::T1
+    mzvalues::T2
+    referenceintensities::T3
+end
+
+struct AlkaneBaselineInfo{
+    T1<:MassScanMatrix,
+    T2<:Real,
+    T3<:Real,
+    T4<:Real,
+    T5<:Real,
+    T6<:Real
+}
+    baselines::T1
+    estimator::Symbol
+    λ::T2
+    nonnegative::Bool
+    peakthreshold::T3
+    peakslope::T4
+    zerothreshold::T5
+    zerofractionthreshold::T6
+end
+
+abstract type AbstractAlkaneAbundanceInfo end
+abstract type AbstractAlkaneMolecularIonInfo end
+abstract type AbstractAlkaneLadderPathInfo end
+abstract type AbstractAlkaneLadderApexInfo end
+abstract type AbstractAlkaneLadderAdditionInfo end
+abstract type AbstractAlkaneSeriesDataInfo end
+abstract type AbstractAlkaneLadderApex end
+
+"""
+    AlkaneSeriesResult
+
+Result container returned by [`findalkanes`](@ref) and [`findalkaneseries`](@ref).
+
+The ladder apices in `apexinfo` and `additioninfo` use raw numeric retention values. The
+corresponding unit of those values is stored in `retentionunit`, matching the analyzed
+`MassScanMatrix`. Reference-spectrum RI values remain part of the `standard` via
+`attrs(spectrum).ri`.
+"""
+struct AlkaneSeriesResult{
+    T1<:Union{Nothing, AlkaneStandard},
+    T2<:AbstractMatrix{<:Real},
+    T3<:Union{Nothing, NamedTuple, CountVarianceEstimate, AbstractVarianceMassScanMatrix},
+    T4<:Union{Nothing, AlkaneBaselineInfo},
+    T5<:Union{Nothing, AlkaneChannelInfo},
+    T6<:Union{Nothing, AbstractAlkaneAbundanceInfo},
+    T7<:Union{Nothing, AbstractAlkaneMolecularIonInfo},
+    T8<:Union{Nothing, AbstractAlkaneLadderPathInfo},
+    T9<:Union{Nothing, AbstractAlkaneLadderApexInfo},
+    T10<:Union{Nothing, AbstractAlkaneLadderAdditionInfo},
+    T11<:Union{Nothing, AbstractAlkaneSeriesDataInfo},
+    T12<:Union{Nothing, Unitful.Units}
+}
     standard::T1
     variances::T2
     varianceinfo::T3
@@ -41,19 +100,27 @@ struct AlkaneSeriesResult{T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11}
     apexinfo::T9
     additioninfo::T10
     datainfo::T11
+    retentionunit::T12
 end
 
+retentionunit(result::AlkaneSeriesResult) = result.retentionunit
+
 function AlkaneSeriesResult(
-    standard,
-    variances,
-    varianceinfo,
-    baselineinfo,
-    channelinfo,
-    abundanceinfo,
-    molecularioninfo,
-    pathinfo,
-    apexinfo,
-    additioninfo
+    standard::Union{Nothing, AlkaneStandard},
+    variances::AbstractMatrix{<:Real},
+    varianceinfo::Union{
+        Nothing,
+        NamedTuple,
+        CountVarianceEstimate,
+        AbstractVarianceMassScanMatrix
+    },
+    baselineinfo::Union{Nothing, AlkaneBaselineInfo},
+    channelinfo::Union{Nothing, AlkaneChannelInfo},
+    abundanceinfo::Union{Nothing, AbstractAlkaneAbundanceInfo},
+    molecularioninfo::Union{Nothing, AbstractAlkaneMolecularIonInfo},
+    pathinfo::Union{Nothing, AbstractAlkaneLadderPathInfo},
+    apexinfo::Union{Nothing, AbstractAlkaneLadderApexInfo},
+    additioninfo::Union{Nothing, AbstractAlkaneLadderAdditionInfo}
 )
     AlkaneSeriesResult(
         standard,
@@ -66,13 +133,22 @@ function AlkaneSeriesResult(
         pathinfo,
         apexinfo,
         additioninfo,
+        nothing,
         nothing
     )
 end
 
 abstract type AbstractAlkaneLadderCandidate end
 
-struct AlkaneLadderStep{T}
+"""
+    AlkaneLadderStep
+
+Stable public view of one refined alkane ladder step returned by
+[`alkaneladdersteps`](@ref).
+
+`apexretention` is unitless and has the unit stored in `result.retentionunit`.
+"""
+struct AlkaneLadderStep{T<:AbstractAlkaneLadderApex}
     ladderstep::Int
     apexscanindex::Float64
     apexretention::Float64
@@ -129,7 +205,10 @@ function alkaneladdersteps(
     steps
 end
 
-function alkane_ladder_steps_from_apexes(apexes::AbstractVector, source::Symbol)
+function alkane_ladder_steps_from_apexes(
+    apexes::AbstractVector{<:AbstractAlkaneLadderApex},
+    source::Symbol
+)
     steps = AlkaneLadderStep[]
     for apex in apexes
         Bool(apex.success) || continue
@@ -150,7 +229,7 @@ function alkane_ladder_steps_from_additions(additions::AbstractVector, source::S
     steps
 end
 
-function alkane_ladder_step_from_apex(apex, source::Symbol)
+function alkane_ladder_step_from_apex(apex::AbstractAlkaneLadderApex, source::Symbol)
     AlkaneLadderStep(
         apex.ladderstep,
         apex.apexscanindex,
@@ -164,105 +243,135 @@ function alkane_ladder_step_from_apex(apex, source::Symbol)
 end
 
 """
-    findalkaneseries(msm::MassScanMatrix, variances;
-        standard=defaultalkanestandard(), varianceinfo=nothing,
-        baselineinfo=nothing, datainfo=nothing, ...)
+    findalkaneseries(msm::MassScanMatrix, varianceestimate::CountVarianceEstimate; kwargs...)
+    findalkaneseries(vmsm::AbstractVarianceMassScanMatrix; kwargs...)
 
-Identify an n-alkane series in a preprocessed GC-MS mass-scan matrix.
+Identify an n-alkane ladder in a preprocessed GC-MS variance mass-scan matrix.
 
-This is the low-level analysis entry point. It assumes that `msm` is already the signal
-to analyze and therefore requires per-cell `variances`. It does not estimate variances
-or fit/subtract a baseline. If upstream preprocessing should be retained with the result,
-pass it as `baselineinfo`.
+`findalkaneseries` is the low-level entry point. It assumes that `msm` is already the
+signal to analyze and that the variance estimate carries one variance per intensity value.
+Use [`findalkanes`](@ref) when count variances should be estimated or an ARPLS baseline
+should be subtracted first. Bare variance matrices are not accepted; pass a
+[`CountVarianceEstimate`](@ref JuChrom.CountVarianceEstimate) or
+[`VarianceMassScanMatrix`](@ref JuChrom.VarianceMassScanMatrix) so the variance unit is
+checked against the signal intensity unit.
 
-The function first matches the alkane reference spectra to the integer-binned m/z grid of
-`msm`. For every requested carbon number it then estimates a scan-wise alkane abundance
-track by fitting the reference ion pattern to the measured scan intensities with the
-provided variances. Local abundance windows are detected on those tracks. Inside each
-window, molecular-ion evidence is computed by comparing the expected molecular ion with
-neighboring control ions. A dynamic-programming path then selects a monotone ladder through
-the carbon series, balancing molecular-ion score, retention spacing, missing steps, and
-optional local mass-spectrum match evidence. Finally, selected path steps are refined with
-ion-level apex fitting and m/z-retention timing correction. Single missing internal steps
-and edge extensions are proposed separately and are apex-refined before being returned.
+The algorithm matches reference spectra to the integer-binned m/z grid, fits scan-wise
+alkane abundance tracks, detects local abundance windows, scores molecular-ion contrast,
+selects a monotone ladder path by dynamic programming, refines selected apices with
+ion-level m/z-retention timing correction, and then proposes/refines single-step gap fills
+and edge extensions.
 
-`standard` supplies the reference spectra and defaults to `defaultalkanestandard()`.
-`varianceinfo`, `baselineinfo`, and `datainfo` are stored in the result so that callers can
-keep preprocessing provenance together with the ladder result; they do not change the
-algorithm except that `datainfo` is used as supplied instead of being generated from `msm`
-and `variances`. `carbonrange` selects the carbon numbers to consider. `minrelativeintensity`
-filters reference ions before m/z channel matching, with `0.0` retaining all reference ions.
+Regular tuning keywords:
 
-`variancefloor` is the minimum variance used in variance-weighted calculations, preventing
-near-zero variances from dominating fits. `nonnegative` controls whether abundance fits are
-floored at zero. `thresholdfraction` controls how far an abundance track may fall from its
-local apex before a peak window stops, expressed as a fraction of the apex abundance.
-`minrisez` is the minimum abundance rise, in abundance-standard-error units, required for
-accepting a local abundance window.
+  * `standard`: alkane reference spectra. The default is `defaultalkanestandard()`. Each
+    spectrum must carry `attrs(spectrum).order` and a finite Kováts retention index in
+    `attrs(spectrum).ri`.
+  * `carbonrange`: carbon numbers considered for the ladder.
+  * `minrelativeintensity`: minimum relative reference intensity retained during m/z
+    channel matching; `0.0` keeps all reference ions.
+  * `variancefloor`: minimum variance used in variance-weighted abundance, molecular-ion,
+    path-spectrum, apex, and addition calculations.
+  * `nonnegative`: if `true`, abundance estimates are floored at zero.
+  * `thresholdfraction`: abundance fraction of the local apex at which abundance-window
+    extension stops.
+  * `minrisez`: minimum abundance rise, in abundance standard-error units, required for
+    accepting a local abundance window.
+  * `molecularioncenterzmin`: minimum z-score for the molecular-ion center signal.
+  * `molecularionisolationzmin`: minimum z-score for molecular-ion contrast over flanking
+    control ions.
+  * `pathminsteps`: minimum number of steps required for a successful ladder path.
+  * `pathmaxmissingsteps`: maximum number of internal carbon steps that a path may skip.
+  * `pathmassspectrummatch`: enables full-spectrum reference matching in the path score.
+  * `apexmzscanorder`: m/z scan timing model. Use `:ascending`, `:descending`, or
+    `:simultaneous` when known. The default `:inferdirection` compares `:ascending` and
+    `:descending`; it does not test `:simultaneous`.
+  * `apexmzretentionkwargs`: explicit keyword arguments for [`mzretention`](@ref). If it
+    contains `order`, it must be consistent with `apexmzscanorder`.
+  * `apexionmzvalues`: explicit m/z values used for apex fitting. When `nothing`, ions are
+    selected from the reference spectrum.
+  * `apexmaxshiftfromguess`: maximum allowed apex shift, in scans, away from the path
+    candidate during ion-level apex refinement.
+  * `additionmaxextensionsteps`: maximum number of iterative edge-extension steps before
+    the end of `carbonrange` is reached.
+  * `additionmassspectrummatch`: enables mass-spectrum gates for proposed gap fills and
+    edge extensions.
 
-`molecularionwindow` controls the m/z half-window around the molecular-ion and control-ion
-locations. `molecularionstepmass` is the nominal m/z spacing between neighboring alkane
-fragment or molecular-ion positions. `molecularioncenterzmin` requires the molecular-ion
-center signal to be above noise, and `molecularionisolationzmin` requires it to be stronger
-than the flanking control ions. The molecular-ion score used downstream is based on the
-contrast after these gates.
+Advanced or usually-stable keywords:
 
-`pathminsteps` is the minimum number of steps required for a successful path.
-`pathstepreward` rewards longer paths. `pathmaxcandidatesperstep` limits how many candidate
-windows per carbon number are retained for dynamic programming. `pathspacingweight`
-penalizes deviations from smooth retention spacing. `pathgapincreaseweight` penalizes
-changes in spacing between neighboring ladder gaps. `pathmaxgapratio` rejects paths with
-implausibly large adjacent spacing ratios. `pathmaxmissingsteps` controls how many internal
-carbon steps may be skipped, and `pathmissingsteppenalty` penalizes such skips.
-`pathmassspectrummatch` enables local full-spectrum matching in the path objective, and
-`pathmassspectrummatchdistanceweight` controls how strongly poor mass-spectrum matches are
-penalized.
+  * `varianceinfo`, `baselineinfo`, `datainfo`: provenance objects stored in the result.
+    They do not change detection, except that `datainfo` is used instead of recomputing
+    checksums when supplied.
+  * `molecularionwindow`: m/z half-window around molecular-ion and control-ion locations.
+  * `molecularionstepmass`: nominal alkane molecular-ion mass increment.
+  * `pathstepreward`: reward added per selected path step.
+  * `pathmaxcandidatesperstep`: candidate-window cap per carbon number before dynamic
+    programming.
+  * `pathspacingweight`: penalty for nonsmooth retention spacing.
+  * `pathgapincreaseweight`: penalty for increasing spacing between neighboring path gaps.
+  * `pathmaxgapratio`: largest allowed adjacent scan-spacing ratio.
+  * `pathmissingsteppenalty`: penalty for each skipped internal carbon step.
+  * `pathmassspectrummatchdistanceweight`: strength of the path full-spectrum mismatch
+    penalty.
+  * `pathmassspectrumvariancefloor`: variance floor used only for path-stage local
+    full-spectrum matching.
+  * `apexscanwindow`: scans on each side of the candidate used for ion-level apex fitting.
+  * `apexlogfloorfraction`: local maximum fraction added before log-quadratic apex fits.
+  * `apexionexcludemzvalues`: m/z values ignored during automatic apex-ion selection.
+  * `apexionminrelativeintensity`: minimum relative reference intensity for automatic
+    apex-ion selection.
+  * `apexminioncount`: minimum number of ions required for a refined apex.
+  * `apexcenteredscantolerance`: scan-offset tolerance for treating an apex fit as
+    centered during recentering.
+  * `apexfitqualityoutlierz`: robust z-score threshold for excluding poor apex fits from
+    calibration; `nothing` disables this exclusion.
+  * `apexfitqualityminsteps`: minimum number of refined steps required before robust
+    apex-fit-quality z-scores are applied.
+  * `apexmzscanordermaxpeaks`: number of spread-out path peaks used in the first scan-order
+    inference attempt; `nothing` means all peaks.
+  * `apexmzscanorderminpeaks`: minimum usable peaks needed to accept scan-order inference.
+  * `apexmzscanorderminapexvarianceratio`: evidence ratio required between the better and
+    worse scan-order hypotheses.
+  * `apexmzscanordershapeioncount`: number of regularly spaced ions used to fit each
+    provisional peak shape during scan-order inference.
+  * `apexmzscanordershapemzspacing`: nominal m/z spacing of those provisional shape ions.
+  * `apexmzscanorderextremeioncount`: number of low/high m/z ion pairs used for fast
+    scan-order contrast.
+  * `apexmzscanorderminioncount`: minimum successful ion apex fits required per peak for
+    scan-order evidence.
+  * `additionminradius`, `additionradiusfraction`, `additionpositionsigmafraction`: scan
+    search radius and position penalty for single-step gap fills.
+  * `additiongapmincosinefloor`, `additiongapcosinetolerance`: mass-spectrum gate for gap
+    fills.
+  * `additionedgemaxanchors`, `additionedgeminradius`, `additionedgeradiusfraction`,
+    `additionedgemincosinefloor`, `additionedgecosinetolerance`,
+    `additionedgecosineanchorcount`, `additionedgepositionsigmafraction`: edge-extension
+    anchoring, search-radius, cosine, and position-penalty controls.
+  * `additionmassspectrumvariancefloor`: variance floor used for addition-stage
+    mass-spectrum matching.
 
-`apexscanwindow` sets the number of scans on each side of the candidate scan used for
-ion-level apex fitting. `apexlogfloorfraction` adds a small fraction of the local maximum
-before log fitting to stabilize low intensities. `apexmzretentionkwargs` may provide
-explicit keyword arguments for [`mzretention`](@ref). `apexmzscanorder` controls the m/z
-timing model used during apex refinement. Use `:ascending` or `:descending` for known
-sequential quadrupole scan directions, and `:simultaneous` for TOF-like or other
-full-spectrum acquisition where all m/z values in a scan are treated as observed at the
-scan-level retention. The default `:inferdirection` infers only the sequential quadrupole
-direction by comparing `:ascending` and `:descending`; it does not test `:simultaneous`.
-`apexionexcludemzvalues` lists m/z values ignored when automatically choosing apex-fit
-ions, and `apexionmzvalues` can provide an explicit ion list instead. If ions are chosen
-from the reference spectrum, `apexionminrelativeintensity` sets the minimum relative
-reference intensity and `apexminioncount` is the required number of fitted ions. If an
-initial apex fit is not centered, `apexmaxshiftfromguess` limits how far recentering may
-move from the path candidate, and `apexfitqualityoutlierz` controls the robust fit-quality
-flagging of refined apexes.
-`apexmzscanordermaxpeaks` is the initial number of spread-out ladder peaks used for this
-direction inference. If the subset is insufficient or ambiguous, more peaks may be used as
-defined by the scan-order inference logic. `apexmzscanorderminpeaks` is the minimum number
-of usable peaks needed to judge direction. `apexmzscanorderminapexvarianceratio` is the
-required evidence ratio between the better and worse scan-order hypotheses.
-`apexmzscanordershapeioncount` and `apexmzscanordershapemzspacing` control the small
-regularly spaced ion set used to fit each provisional peak shape during scan-order
-inference. `apexmzscanorderextremeioncount` controls how many low- and high-m/z contrast
-ions are selected for fixed-shape apex alignment, and `apexmzscanorderminioncount` caps the
-minimum number of successful ion apex fits required per candidate peak.
+Expected failure modes:
 
-`additionminradius`, `additionradiusfraction`, and `additionpositionsigmafraction` control
-the search radius and position penalty for proposed missing internal steps. The effective
-radius is the maximum of `additionminradius` and `additionradiusfraction` times the local
-step spacing, while `additionpositionsigmafraction` sets the Gaussian position scale used
-when ranking candidates. `additionmaxextensionsteps` limits iterative edge extension at
-both ends of the ladder. The effective per-edge value is additionally capped by the
-remaining carbon numbers between the current refined edge and the corresponding end of
-`carbonrange`.
+  * The function throws if the m/z axis is not integer-binned or if too few requested
+    carbon numbers have observable molecular-ion channels.
+  * A path may fail when molecular-ion contrast is too weak, when too few steps pass the
+    gates, or when retention spacing is too irregular for the path constraints.
+  * Scan-order inference can remain ambiguous when signals are very low, when only early
+    ladder steps are present and selected ions have little acquisition-time separation, or
+    when peaks are overloaded/saturated so ion apices differ for reasons other than m/z
+    scan timing.
 
 The returned `AlkaneSeriesResult` stores reference channel matching in `channelinfo`,
 abundance tracks and windows in `abundanceinfo`, molecular-ion evidence in
-`molecularioninfo`, the selected dynamic-programming path in `pathinfo`, refined path
-apexes in `apexinfo`, gap and edge additions in `additioninfo`, and preprocessing metadata
-in `varianceinfo`, `baselineinfo`, and `datainfo`.
+`molecularioninfo`, the selected path in `pathinfo`, refined apices in `apexinfo`,
+gap/edge additions in `additioninfo`, and preprocessing provenance in `varianceinfo`,
+`baselineinfo`, and `datainfo`. The raw retention unit of the analyzed matrix is stored in
+`retentionunit`; use it together with `attrs(spectrum).ri` from the standard when building
+an RT -> RI calibration mapper.
 """
 function findalkaneseries(
     msm::MassScanMatrix,
-    variances;
+    variance_source::Union{CountVarianceEstimate, AbstractVarianceMassScanMatrix};
     standard=defaultalkanestandard(),
     varianceinfo=nothing,
     baselineinfo=nothing,
@@ -290,6 +399,7 @@ function findalkaneseries(
     pathmissingsteppenalty=2.0,
     pathmassspectrummatch=true,
     pathmassspectrummatchdistanceweight=5.0,
+    pathmassspectrumvariancefloor=1.0,
     apexscanwindow=2,
     apexlogfloorfraction=1e-3,
     apexmzscanorder=:inferdirection,
@@ -299,7 +409,9 @@ function findalkaneseries(
     apexionminrelativeintensity=0.1,
     apexminioncount=3,
     apexmaxshiftfromguess=3.0,
+    apexcenteredscantolerance=0.25,
     apexfitqualityoutlierz=3.0,
+    apexfitqualityminsteps=6,
     apexmzscanordermaxpeaks=3,
     apexmzscanorderminpeaks=5,
     apexmzscanorderminapexvarianceratio=2.0,
@@ -324,6 +436,9 @@ function findalkaneseries(
     additionmassspectrumvariancefloor=1.0
 
 )
+    validate_alkane_series_variance_source(msm, variance_source)
+    variances, stored_varianceinfo = extract_alkane_series_variances(msm, variance_source)
+    result_varianceinfo = isnothing(varianceinfo) ? stored_varianceinfo : varianceinfo
 
     # Validate inputs
     isnothing(standard) && throw(ArgumentError(
@@ -331,10 +446,10 @@ function findalkaneseries(
 
     validate_alkane_series_variances(msm, variances)
     channelinfo = alkane_mz_channels(
-        msm;
-        standard=standard,
-        carbonrange=carbonrange,
-        minrelativeintensity=minrelativeintensity
+        msm,
+        standard,
+        carbonrange,
+        minrelativeintensity
     )
     alkane_ladder_require_molecular_ion_channels(
         msm;
@@ -381,7 +496,8 @@ function findalkaneseries(
         variances=variances,
         standard=standard,
         massspectrummatch=pathmassspectrummatch,
-        massspectrummatchdistanceweight=pathmassspectrummatchdistanceweight
+        massspectrummatchdistanceweight=pathmassspectrummatchdistanceweight,
+        massspectrumvariancefloor=pathmassspectrumvariancefloor
     )
     apexsettings = AlkaneLadderApexSettings(
         standard,
@@ -395,7 +511,9 @@ function findalkaneseries(
         apexionminrelativeintensity,
         apexminioncount,
         apexmaxshiftfromguess,
+        apexcenteredscantolerance,
         apexfitqualityoutlierz,
+        apexfitqualityminsteps,
         apexmzscanordermaxpeaks,
         apexmzscanorderminpeaks,
         apexmzscanorderminapexvarianceratio,
@@ -440,6 +558,9 @@ function findalkaneseries(
         apexminioncount,
         apexinfo.settings.mzretentionkwargs,
         apexmaxshiftfromguess,
+        apexcenteredscantolerance,
+        apexfitqualityoutlierz,
+        apexfitqualityminsteps,
         channelinfo.carbonrange
     )
     additioninfo = alkaneladderadditions(
@@ -459,7 +580,7 @@ function findalkaneseries(
     AlkaneSeriesResult(
         standard,
         variances,
-        varianceinfo,
+        result_varianceinfo,
         baselineinfo,
         channelinfo,
         abundanceinfo,
@@ -467,15 +588,27 @@ function findalkaneseries(
         pathinfo,
         apexinfo,
         additioninfo,
-        result_datainfo
+        result_datainfo,
+        retentionunit(msm)
     )
 end
 
+function findalkaneseries(vmsm::AbstractVarianceMassScanMatrix; kwargs...)
+    findalkaneseries(parent(vmsm), vmsm; kwargs...)
+end
+
+function findalkaneseries(msm::MassScanMatrix, variances; kwargs...)
+    throw(ArgumentError(
+        "findalkaneseries no longer accepts variances as a separate matrix; " *
+        "use findalkaneseries(msm, CountVarianceEstimate(...)) or " *
+        "findalkaneseries(VarianceMassScanMatrix(msm, variances))"))
+end
+
 function alkane_mz_channels(
-    msm::MassScanMatrix;
-    standard=defaultalkanestandard(),
-    carbonrange=8:40,
-    minrelativeintensity=0.0
+    msm::MassScanMatrix,
+    standard::AlkaneStandard,
+    carbonrange,
+    minrelativeintensity::Real
 )
     isnothing(standard) && throw(ArgumentError(
         "alkane m/z channel matching requires an alkane standard"))
@@ -500,8 +633,8 @@ function alkane_mz_channels(
         match = alkane_reference_channel_match(
             spectrum,
             grid_index_by_mz,
-            grid_mzs;
-            minrelativeintensity=minrelativeintensity
+            grid_mzs,
+            minrelativeintensity
         )
         isempty(match.mzindices) && throw(ArgumentError(
             "reference spectrum for C$(carbon) has no m/z channels in common with msm"))
@@ -532,55 +665,60 @@ function alkane_mz_channels(
 end
 
 """
-    findalkanes(msm::MassScanMatrix; standard=defaultalkanestandard(),
-        variances=nothing, subtractbaseline=true, kwargs...)
+    findalkanes(msm::MassScanMatrix; kwargs...)
+    findalkanes(vmsm::AbstractVarianceMassScanMatrix; kwargs...)
 
-Convenience wrapper for raw-count GC-MS data.
+Identify an n-alkane ladder from ordinary raw-count GC-MS data.
 
-This is the high-level entry point for ordinary uncorrected GC-MS count data. It estimates
-or accepts variances, optionally fits and subtracts a baseline, records preprocessing
-metadata, and then calls [`findalkaneseries`](@ref) on the prepared signal. Use
-`findalkaneseries` directly when you already have a baseline-corrected signal, a custom
-variance model, or nonstandard preprocessing that should not be repeated by this wrapper.
+`findalkanes` is the high-level entry point. It can estimate count variances, subtract an
+ARPLS baseline, store preprocessing provenance, and then call [`findalkaneseries`](@ref)
+on the prepared signal. If variances were estimated externally, pass them as a
+[`CountVarianceEstimate`](@ref JuChrom.CountVarianceEstimate) or
+[`VarianceMassScanMatrix`](@ref JuChrom.VarianceMassScanMatrix). Use `findalkaneseries`
+directly when the signal has already been preprocessed outside this function.
 
-`standard` supplies the reference alkane spectra and is passed through to
-`findalkaneseries`. `variances` may be an already prepared variance matrix with the same
-shape as `rawintensities(msm)`. When `variances ≡ nothing`, variances are estimated from
-the raw counts with [`countvariances`](@ref). `subtractbaseline` controls whether an ARPLS
-baseline is fitted and subtracted before ladder detection. If `subtractbaseline=false`,
-`variances` must be provided, because count-based variances are intended for uncorrected
-raw counts and should not be inferred from caller-preprocessed signals.
+Preprocessing keywords:
 
-`variancewindowsize`, `variancemintransitioncount`, `variancepositivecountquantile`, and
-`variancezerothresholdquantile` are passed to [`countvariances`](@ref) when `variances` is
-not supplied. They control the scan-window size, the minimum number of level crossings
-needed for a usable noise window, the positive-count quantile used for the count floor, and
-the quantile used to define near-zero windows. `varianceintensityfloor` overrides the
-automatically chosen intensity floor when it is not `nothing`.
+  * `standard`: alkane reference spectra passed to ladder detection.
+  * `variances`: caller-supplied [`CountVarianceEstimate`](@ref JuChrom.CountVarianceEstimate)
+    or [`AbstractVarianceMassScanMatrix`](@ref JuChrom.AbstractVarianceMassScanMatrix). If
+    `nothing`, variances are estimated from raw counts with [`countvariances`](@ref). Bare
+    variance matrices are rejected here because the variance unit must be checked against
+    the intensity unit of the analyzed matrix.
+  * `subtractbaseline`: if `true`, fit and subtract an ARPLS baseline before ladder
+    detection. If `false`, `variances` must be supplied.
+  * `variancewindowsize`: scan-window size used by `countvariances`.
+  * `variancemintransitioncount`: minimum transition count required for a usable variance
+    window.
+  * `variancepositivecountquantile`: positive-count quantile used for the count floor.
+  * `variancezerothresholdquantile`: quantile used to define near-zero windows during
+    variance estimation.
+  * `varianceintensityfloor`: explicit count-variance intensity floor, or `nothing` for
+    automatic selection.
+  * `baselineλ`: ARPLS smoothness parameter.
+  * `baselinenonnegative`: constrain fitted baselines to nonnegative intensities.
+  * `baselinepeakthreshold`: ARPLS peak-mask threshold.
+  * `baselinepeakslope`: ARPLS peak-mask slope parameter.
+  * `baselinezerothreshold`: intensity threshold used to identify zeros.
+  * `baselinezerofractionthreshold`: if at least this fraction of a channel is zero, zeros
+    are treated as real observations rather than sparse dropouts.
 
-`baselineλ`, `baselinenonnegative`, `baselinepeakthreshold`, `baselinepeakslope`,
-`baselinezerothreshold`, and `baselinezerofractionthreshold` are passed to [`arpls`](@ref)
-when `subtractbaseline=true`.
-`baselineλ` controls baseline smoothness. `baselinenonnegative` constrains the fitted
-baseline to nonnegative intensities. `baselinepeakthreshold`, `baselinepeakslope`, and
-`baselinezerothreshold` control peak masking and zero-level handling during baseline
-estimation. `baselinezerofractionthreshold` controls when zeros are treated as real
-observations rather than sparse dropouts.
+Ladder detection keywords are the same named controls documented for
+[`findalkaneseries`](@ref): `carbonrange`, `minrelativeintensity`, abundance thresholds,
+molecular-ion gates, path scoring, apex m/z scan-order handling, apex fit quality, gap
+filling, and edge extension.
 
-All remaining keyword arguments are forwarded unchanged to [`findalkaneseries`](@ref).
-This includes the carbon range, abundance-window thresholds, molecular-ion gates, path
-selection weights, apex m/z scan-order handling, and gap or edge extension settings.
-
-The returned result is the `AlkaneSeriesResult` from `findalkaneseries`. If variances were
-estimated, the full variance estimate is stored in `result.varianceinfo`. If a baseline was
-subtracted, the fitted baseline matrix and ARPLS settings are stored in
-`result.baselineinfo`, and the checksums in `result.datainfo` identify the raw matrix,
-baseline-corrected signal, and variance matrix used for detection.
+The returned `AlkaneSeriesResult` stores estimated variances in `result.varianceinfo`,
+baseline provenance in `result.baselineinfo`, and SHA-256 checksums for the raw matrix,
+analyzed signal, and variance matrix in `result.datainfo`.
 """
 function findalkanes(
     msm::MassScanMatrix;
     standard=defaultalkanestandard(),
     variances=nothing,
+
+    carbonrange=8:40,
+    minrelativeintensity=0.0,
 
     variancewindowsize=13,
     variancemintransitioncount=7,
@@ -596,7 +734,63 @@ function findalkanes(
     baselinezerothreshold=1.0,
     baselinezerofractionthreshold=0.2,
 
-    kwargs...
+    variancefloor=1.0,
+    nonnegative::Bool=false,
+    thresholdfraction=0.05,
+    minrisez=10.0,
+
+    molecularionwindow=1,
+    molecularionstepmass=14,
+    molecularioncenterzmin=1.645,
+    molecularionisolationzmin=1.645,
+
+    pathminsteps=5,
+    pathstepreward=0.05,
+    pathmaxcandidatesperstep=100,
+    pathspacingweight=25.0,
+    pathgapincreaseweight=5.0,
+    pathmaxgapratio=2.5,
+    pathmaxmissingsteps=1,
+    pathmissingsteppenalty=2.0,
+    pathmassspectrummatch=true,
+    pathmassspectrummatchdistanceweight=5.0,
+    pathmassspectrumvariancefloor=1.0,
+
+    apexscanwindow=2,
+    apexlogfloorfraction=1e-3,
+    apexmzscanorder=:inferdirection,
+    apexmzretentionkwargs=nothing,
+    apexionexcludemzvalues=DEFAULT_ALKANE_APEX_EXCLUDED_MZVALUES,
+    apexionmzvalues=nothing,
+    apexionminrelativeintensity=0.1,
+    apexminioncount=3,
+    apexmaxshiftfromguess=3.0,
+    apexcenteredscantolerance=0.25,
+    apexfitqualityoutlierz=3.0,
+    apexfitqualityminsteps=6,
+    apexmzscanordermaxpeaks=3,
+    apexmzscanorderminpeaks=5,
+    apexmzscanorderminapexvarianceratio=2.0,
+    apexmzscanordershapeioncount=3,
+    apexmzscanordershapemzspacing=14,
+    apexmzscanorderextremeioncount=5,
+    apexmzscanorderminioncount=8,
+
+    additionminradius=5.0,
+    additionradiusfraction=0.15,
+    additionpositionsigmafraction=0.05,
+    additionmaxextensionsteps=100,
+    additionmassspectrummatch=true,
+    additiongapmincosinefloor=0.85,
+    additiongapcosinetolerance=0.03,
+    additionedgemaxanchors=6,
+    additionedgeminradius=5.0,
+    additionedgeradiusfraction=0.2,
+    additionedgemincosinefloor=0.9,
+    additionedgecosinetolerance=0.03,
+    additionedgecosineanchorcount=3,
+    additionedgepositionsigmafraction=0.1,
+    additionmassspectrumvariancefloor=1.0
 )
 
     isnothing(standard) && throw(ArgumentError("findalkanes requires an alkane standard"))
@@ -605,13 +799,12 @@ function findalkanes(
         throw(ArgumentError("variances must be provided when subtractbaseline=false"))
     end
 
-    forwarded = (; kwargs...)
     alkane_ladder_require_molecular_ion_channels(
         msm;
-        carbonrange=get(forwarded, :carbonrange, 8:40),
-        ionwindow=get(forwarded, :molecularionwindow, 1),
-        stepmass=get(forwarded, :molecularionstepmass, 14),
-        minsteps=get(forwarded, :pathminsteps, 5)
+        carbonrange=carbonrange,
+        ionwindow=molecularionwindow,
+        stepmass=molecularionstepmass,
+        minsteps=pathminsteps
     )
 
     if isnothing(variances)
@@ -623,12 +816,11 @@ function findalkanes(
             zerothresholdquantile=variancezerothresholdquantile,
             intensityfloor=varianceintensityfloor
         )
-        σ², varianceinfo = extract_alkane_series_variances(varianceestimate)
+        σ², varianceinfo = extract_alkane_series_variances(msm, varianceestimate)
         validate_alkane_series_variances(msm, σ²)
     else
-        validate_alkane_series_variances(msm, variances)
-        σ² = variances
-        varianceinfo = nothing
+        validate_alkane_series_variance_source(msm, variances)
+        σ², varianceinfo = extract_alkane_series_variances(msm, variances)
     end
 
     baselineinfo = if subtractbaseline
@@ -643,15 +835,15 @@ function findalkanes(
             zerofractionthreshold=baselinezerofractionthreshold
         )
         validate_alkane_series_baselines(msm, baselines)
-        (
-            baselines=baselines,
-            estimator=:arpls,
-            λ=baselineλ,
-            nonnegative=baselinenonnegative,
-            peakthreshold=baselinepeakthreshold,
-            peakslope=baselinepeakslope,
-            zerothreshold=baselinezerothreshold,
-            zerofractionthreshold=baselinezerofractionthreshold
+        AlkaneBaselineInfo(
+            baselines,
+            :arpls,
+            baselineλ,
+            baselinenonnegative,
+            baselinepeakthreshold,
+            baselinepeakslope,
+            baselinezerothreshold,
+            baselinezerofractionthreshold
         )
     else
         nothing
@@ -663,19 +855,128 @@ function findalkanes(
 
     findalkaneseries(
         signal,
-        σ²;
+        varianceinfo;
         standard=standard,
         varianceinfo=varianceinfo,
         baselineinfo=baselineinfo,
         datainfo=datainfo,
-        kwargs...
+        carbonrange=carbonrange,
+        minrelativeintensity=minrelativeintensity,
+        variancefloor=variancefloor,
+        nonnegative=nonnegative,
+        thresholdfraction=thresholdfraction,
+        minrisez=minrisez,
+        molecularionwindow=molecularionwindow,
+        molecularionstepmass=molecularionstepmass,
+        molecularioncenterzmin=molecularioncenterzmin,
+        molecularionisolationzmin=molecularionisolationzmin,
+        pathminsteps=pathminsteps,
+        pathstepreward=pathstepreward,
+        pathmaxcandidatesperstep=pathmaxcandidatesperstep,
+        pathspacingweight=pathspacingweight,
+        pathgapincreaseweight=pathgapincreaseweight,
+        pathmaxgapratio=pathmaxgapratio,
+        pathmaxmissingsteps=pathmaxmissingsteps,
+        pathmissingsteppenalty=pathmissingsteppenalty,
+        pathmassspectrummatch=pathmassspectrummatch,
+        pathmassspectrummatchdistanceweight=pathmassspectrummatchdistanceweight,
+        pathmassspectrumvariancefloor=pathmassspectrumvariancefloor,
+        apexscanwindow=apexscanwindow,
+        apexlogfloorfraction=apexlogfloorfraction,
+        apexmzscanorder=apexmzscanorder,
+        apexmzretentionkwargs=apexmzretentionkwargs,
+        apexionexcludemzvalues=apexionexcludemzvalues,
+        apexionmzvalues=apexionmzvalues,
+        apexionminrelativeintensity=apexionminrelativeintensity,
+        apexminioncount=apexminioncount,
+        apexmaxshiftfromguess=apexmaxshiftfromguess,
+        apexcenteredscantolerance=apexcenteredscantolerance,
+        apexfitqualityoutlierz=apexfitqualityoutlierz,
+        apexfitqualityminsteps=apexfitqualityminsteps,
+        apexmzscanordermaxpeaks=apexmzscanordermaxpeaks,
+        apexmzscanorderminpeaks=apexmzscanorderminpeaks,
+        apexmzscanorderminapexvarianceratio=apexmzscanorderminapexvarianceratio,
+        apexmzscanordershapeioncount=apexmzscanordershapeioncount,
+        apexmzscanordershapemzspacing=apexmzscanordershapemzspacing,
+        apexmzscanorderextremeioncount=apexmzscanorderextremeioncount,
+        apexmzscanorderminioncount=apexmzscanorderminioncount,
+        additionminradius=additionminradius,
+        additionradiusfraction=additionradiusfraction,
+        additionpositionsigmafraction=additionpositionsigmafraction,
+        additionmaxextensionsteps=additionmaxextensionsteps,
+        additionmassspectrummatch=additionmassspectrummatch,
+        additiongapmincosinefloor=additiongapmincosinefloor,
+        additiongapcosinetolerance=additiongapcosinetolerance,
+        additionedgemaxanchors=additionedgemaxanchors,
+        additionedgeminradius=additionedgeminradius,
+        additionedgeradiusfraction=additionedgeradiusfraction,
+        additionedgemincosinefloor=additionedgemincosinefloor,
+        additionedgecosinetolerance=additionedgecosinetolerance,
+        additionedgecosineanchorcount=additionedgecosineanchorcount,
+        additionedgepositionsigmafraction=additionedgepositionsigmafraction,
+        additionmassspectrumvariancefloor=additionmassspectrumvariancefloor
     )
 end
 
-extract_alkane_series_variances(variances::AbstractMatrix{<:Real}) = variances, nothing
+function findalkanes(vmsm::AbstractVarianceMassScanMatrix; kwargs...)
+    forwarded = (; kwargs...)
+    haskey(forwarded, :variances) && throw(ArgumentError(
+        "do not pass variances when calling findalkanes on an AbstractVarianceMassScanMatrix"))
 
-extract_alkane_series_variances(varianceestimate) =
-    varianceestimate.variances, varianceestimate
+    findalkanes(parent(vmsm); variances=vmsm, kwargs...)
+end
+
+function extract_alkane_series_variances(
+    msm::MassScanMatrix,
+    estimate::CountVarianceEstimate
+)
+    rawvariances(estimate; unit=default_varianceunit(msm)), estimate
+end
+
+function extract_alkane_series_variances(
+    msm::MassScanMatrix,
+    vmsm::AbstractVarianceMassScanMatrix
+)
+    rawvariances(vmsm; unit=default_varianceunit(msm)), vmsm
+end
+
+function validate_alkane_series_variance_source(
+    msm::MassScanMatrix,
+    estimate::CountVarianceEstimate
+)
+    validate_varianceunit(msm, varianceunit(estimate))
+    size(rawvariances(estimate; unit=default_varianceunit(msm))) ==
+        size(rawintensities(msm)) || throw(DimensionMismatch(
+            "variance estimate matrix must match rawintensities(msm)"))
+
+    nothing
+end
+
+function validate_alkane_series_variance_source(
+    msm::MassScanMatrix,
+    variance_source::AbstractVarianceMassScanMatrix
+)
+    retentionunit(variance_source) == retentionunit(msm) || throw(ArgumentError(
+        "variance source retention unit must match msm retention unit"))
+    mzunit(variance_source) == mzunit(msm) || throw(ArgumentError(
+        "variance source m/z unit must match msm m/z unit"))
+    intensityunit(variance_source) == intensityunit(msm) || throw(ArgumentError(
+        "variance source intensity unit must match msm intensity unit"))
+    rawretentions(variance_source) == rawretentions(msm) || throw(DimensionMismatch(
+        "variance source retentions must match msm retentions"))
+    rawmzvalues(variance_source) == rawmzvalues(msm) || throw(DimensionMismatch(
+        "variance source m/z values must match msm m/z values"))
+    size(rawvariances(variance_source)) == size(rawintensities(msm)) ||
+        throw(DimensionMismatch(
+            "variance source variance matrix must match rawintensities(msm)"))
+
+    nothing
+end
+
+function validate_alkane_series_variance_source(msm::MassScanMatrix, variance_source)
+    throw(ArgumentError(
+        "variances must be nothing, CountVarianceEstimate, or AbstractVarianceMassScanMatrix"))
+end
 
 function alkane_standard_spectra(standard::AlkaneStandard)
     validate_alkane_standard_spectra(standard.spectra)
@@ -704,6 +1005,11 @@ function alkane_spectra_by_carbon(spectra::AbstractVector{<:AbstractMassSpectrum
         carbon = getproperty(spectrum_attrs, :order)
         carbon isa Integer || throw(ArgumentError(
             "attrs(spectrum).order must be an integer carbon number"))
+        :ri in keys(spectrum_attrs) || throw(ArgumentError(
+            "each alkane reference spectrum must have attrs(spectrum).ri"))
+        ri = spectrum_attrs.ri
+        ri isa Real && isfinite(ri) || throw(ArgumentError(
+            "attrs(spectrum).ri must be a finite Kováts retention index"))
         haskey(spectra_by_carbon, Int(carbon)) && throw(ArgumentError(
             "standard contains more than one reference spectrum for C$(carbon)"))
         spectra_by_carbon[Int(carbon)] = spectrum
@@ -712,9 +1018,7 @@ function alkane_spectra_by_carbon(spectra::AbstractVector{<:AbstractMassSpectrum
     spectra_by_carbon
 end
 
-function validate_alkane_channel_settings(minrelativeintensity)
-    minrelativeintensity isa Real || throw(ArgumentError(
-        "minrelativeintensity must be real"))
+function validate_alkane_channel_settings(minrelativeintensity::Real)
     isfinite(minrelativeintensity) && 0 ≤ minrelativeintensity < 1 || throw(
         ArgumentError("minrelativeintensity must be finite and in [0, 1)"))
 
@@ -724,7 +1028,7 @@ end
 function alkane_reference_channel_match(
     spectrum::AbstractMassSpectrum,
     grid_index_by_mz::AbstractDict{Int, <:Integer},
-    grid_mzs::AbstractVector;
+    grid_mzs::AbstractVector{<:Real},
     minrelativeintensity::Real
 )
     spectrum_mzs = integer_mz_values(mzvalues(spectrum), "reference spectrum m/z values")
@@ -749,10 +1053,10 @@ function alkane_reference_channel_match(
 
     mz_indices = sort!(collect(keys(reference_by_index)))
 
-    (
-        mzindices = mz_indices,
-        mzvalues = collect(grid_mzs[mz_indices]),
-        referenceintensities = [reference_by_index[index] for index in mz_indices]
+    AlkaneReferenceChannelMatch(
+        mz_indices,
+        collect(grid_mzs[mz_indices]),
+        [reference_by_index[index] for index in mz_indices]
     )
 end
 
@@ -763,7 +1067,7 @@ function alkane_mz_bins(msm::MassScanMatrix)
     integer_mz_values(mzs, "msm m/z channels")
 end
 
-function validate_alkane_mz_unit(unit)
+function validate_alkane_mz_unit(unit::Union{Nothing, Unitful.Units})
     isnothing(unit) && return nothing
 
     try
@@ -787,10 +1091,10 @@ function integer_mz_values(mzs::AbstractVector{<:Real}, label::AbstractString)
     integer_mzs
 end
 
-function validate_alkane_series_variances(msm::MassScanMatrix, variances)
-    variances isa AbstractMatrix{<:Real} || throw(ArgumentError(
-        "variances must be a matrix matching rawintensities(msm)"))
-
+function validate_alkane_series_variances(
+    msm::MassScanMatrix,
+    variances::AbstractMatrix{<:Real}
+)
     expectedsize = size(rawintensities(msm))
     size(variances) == expectedsize || throw(DimensionMismatch(
         "variances must have size $(expectedsize), matching rawintensities(msm)"))
@@ -803,10 +1107,11 @@ function validate_alkane_series_variances(msm::MassScanMatrix, variances)
     nothing
 end
 
-function validate_alkane_series_baselines(msm::MassScanMatrix, baselines)
+function validate_alkane_series_baselines(
+    msm::MassScanMatrix,
+    baselines::Union{Nothing, MassScanMatrix}
+)
     isnothing(baselines) && return nothing
-    baselines isa MassScanMatrix || throw(ArgumentError(
-        "baselines must be nothing or a MassScanMatrix matching msm"))
     size(rawintensities(baselines)) == size(rawintensities(msm)) || throw(
         DimensionMismatch("baselines must match the size of rawintensities(msm)"))
     retentions(baselines) == retentions(msm) || throw(DimensionMismatch(

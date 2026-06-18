@@ -93,6 +93,7 @@ export AlkaneSeriesResult
 export AlkaneStandard
 export ChromScan
 export ChromScanSeries
+export CountVarianceEstimate
 export MassScan
 export MassScanMatrix
 export MassScanSeries
@@ -230,8 +231,12 @@ include("IO/Loaders/MassHunterMSLoader.jl")
 # Makie extension
 export massspectrum
 export massspectrum!
+export tictrace
+export tictrace!
 function massspectrum end
 function massspectrum! end
+function tictrace end
+function tictrace! end
 
 # Unitful extension
 function __init__()

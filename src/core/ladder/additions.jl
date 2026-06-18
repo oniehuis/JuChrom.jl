@@ -22,7 +22,10 @@ struct AlkaneLadderAdditionSettings{
     T21<:Integer,
     T22<:NamedTuple,
     T23<:Real,
-    T24<:AbstractVector{<:Integer}
+    T24<:Real,
+    T25<:Union{Nothing, Real},
+    T26<:Integer,
+    T27<:AbstractVector{<:Integer}
 }
     minradius::T1
     radiusfraction::T2
@@ -48,7 +51,10 @@ struct AlkaneLadderAdditionSettings{
     apexminioncount::T21
     apexmzretentionkwargs::T22
     apexmaxshiftfromguess::T23
-    carbonrange::T24
+    apexcenteredscantolerance::T24
+    apexfitqualityoutlierz::T25
+    apexfitqualityminsteps::T26
+    carbonrange::T27
 end
 
 struct AlkaneLadderAdditionAnchor
@@ -217,7 +223,10 @@ struct AlkaneLadderAdditionDiagnostics
     rightextended::Vector{AlkaneLadderAdditionDiagnostic}
 end
 
-struct AlkaneLadderAdditionInfo{T1<:AlkaneLadderAddition, T2<:AlkaneLadderAdditionSettings}
+struct AlkaneLadderAdditionInfo{
+    T1<:AlkaneLadderAddition,
+    T2<:AlkaneLadderAdditionSettings
+} <: AbstractAlkaneLadderAdditionInfo
     status::Symbol
     additions::Vector{T1}
     gapfilled::Vector{T1}
@@ -289,6 +298,9 @@ function alkane_ladder_addition_settings(
     apexminioncount::Integer,
     apexmzretentionkwargs::Union{Nothing, NamedTuple},
     apexmaxshiftfromguess::Real,
+    apexcenteredscantolerance::Real,
+    apexfitqualityoutlierz::Union{Nothing, Real},
+    apexfitqualityminsteps::Integer,
     carbonrange::Union{Nothing, AbstractVector{<:Integer}, AbstractRange{<:Integer}}
 )
     validate_alkane_ladder_addition_settings(
@@ -315,7 +327,10 @@ function alkane_ladder_addition_settings(
         apexionminrelativeintensity,
         apexvariancefloor,
         apexlogfloorfraction,
-        apexmaxshiftfromguess
+        apexmaxshiftfromguess,
+        apexcenteredscantolerance,
+        apexfitqualityoutlierz,
+        apexfitqualityminsteps
     )
 
     resolved_apex_mzretentionkwargs = alkane_ladder_addition_apex_mzretentionkwargs(
@@ -348,6 +363,9 @@ function alkane_ladder_addition_settings(
         apexminioncount,
         resolved_apex_mzretentionkwargs,
         apexmaxshiftfromguess,
+        apexcenteredscantolerance,
+        apexfitqualityoutlierz,
+        apexfitqualityminsteps,
         resolved_carbonrange
     )
 end
@@ -452,7 +470,9 @@ function alkane_ladder_addition_apex_settings(
         settings.apexionminrelativeintensity,
         settings.apexminioncount,
         settings.apexmaxshiftfromguess,
-        nothing,
+        settings.apexcenteredscantolerance,
+        settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps,
         nothing,
         0,
         1.25,

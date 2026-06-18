@@ -117,3 +117,31 @@ end
     @test first(intensities(defaultalkanestandard().spectra[1])) ==
         original_c8_first_intensity
 end
+
+@testset "alkane ladder standards require RI metadata" begin
+    msm = MassScanMatrix([1.0, 2.0], [114.0], reshape([1.0, 2.0], 2, 1))
+
+    missing_ri = AlkaneStandard(
+        "missing RI",
+        [MassSpectrum([114], [100.0]; attrs=(order=8,))],
+        NamedTuple()
+    )
+    @test_throws ArgumentError JuChrom.alkane_mz_channels(
+        msm,
+        missing_ri,
+        8:8,
+        0.0
+    )
+
+    bad_ri = AlkaneStandard(
+        "bad RI",
+        [MassSpectrum([114], [100.0]; attrs=(order=8, ri=NaN))],
+        NamedTuple()
+    )
+    @test_throws ArgumentError JuChrom.alkane_mz_channels(
+        msm,
+        bad_ri,
+        8:8,
+        0.0
+    )
+end

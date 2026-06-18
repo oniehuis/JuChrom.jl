@@ -1,6 +1,6 @@
 const ALKANE_SERIES_CHECKSUM_VERSION = 1
 
-struct AlkaneSeriesDataInfo
+struct AlkaneSeriesDataInfo <: AbstractAlkaneSeriesDataInfo
     checksumalgorithm::Symbol
     checksumversion::Int
     rawmsmchecksum::String

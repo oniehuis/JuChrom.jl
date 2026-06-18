@@ -59,7 +59,8 @@ path_test_settings() = (
     variances=nothing,
     standard=nothing,
     massspectrummatch=false,
-    massspectrummatchdistanceweight=5.0
+    massspectrummatchdistanceweight=5.0,
+    massspectrumvariancefloor=1.0
 )
 
 @testset "alkaneladderpath selects an increasing scored path" begin
@@ -109,7 +110,8 @@ end
             maxgapratio=Float32(2.5),
             maxmissingsteps=Int32(1),
             missingsteppenalty=Float32(2.0),
-            massspectrummatchdistanceweight=Float32(5.0)
+            massspectrummatchdistanceweight=Float32(5.0),
+            massspectrumvariancefloor=Float32(1.0)
         )
     )
 
@@ -127,6 +129,8 @@ end
     @test pathinfo.settings.missingsteppenalty ≡ settings.missingsteppenalty
     @test pathinfo.settings.massspectrummatchdistanceweight ≡
         settings.massspectrummatchdistanceweight
+    @test pathinfo.settings.massspectrumvariancefloor ≡
+        settings.massspectrumvariancefloor
 end
 
 @testset "alkaneladderpath can bridge one missing step with a penalty" begin
@@ -192,7 +196,8 @@ end
         2.5,
         1,
         2.0,
-        5.0
+        5.0,
+        1.0
     ) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -205,7 +210,8 @@ end
         2.5,
         1,
         2.0,
-        5.0
+        5.0,
+        1.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -218,7 +224,8 @@ end
         2.5,
         1,
         2.0,
-        5.0
+        5.0,
+        1.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -231,7 +238,8 @@ end
         2.5,
         1,
         2.0,
-        5.0
+        5.0,
+        1.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -244,7 +252,8 @@ end
         2.5,
         -1,
         2.0,
-        5.0
+        5.0,
+        1.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -257,7 +266,8 @@ end
         2.5,
         1,
         -1.0,
-        5.0
+        5.0,
+        1.0
     )
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
@@ -270,6 +280,21 @@ end
         2.5,
         1,
         2.0,
-        -1.0
+        -1.0,
+        1.0
+    )
+    @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
+        1.645,
+        1.645,
+        1,
+        0.05,
+        100,
+        25.0,
+        5.0,
+        2.5,
+        1,
+        2.0,
+        5.0,
+        0.0
     )
 end

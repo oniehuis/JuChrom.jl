@@ -48,7 +48,7 @@ struct AlkaneLadderPathInfo{
     T2<:AbstractDict{Int, <:AbstractVector{<:AlkaneLadderPathCandidate}},
     T3<:AbstractVector{<:AbstractVector{Int}},
     T4<:NamedTuple
-}
+} <: AbstractAlkaneLadderPathInfo
     success::Bool
     status::Symbol
     reason::Symbol
@@ -108,7 +108,8 @@ function alkaneladderpath(
     variances::Union{Nothing, AbstractMatrix{<:Real}},
     standard::Union{Nothing, AlkaneStandard},
     massspectrummatch::Bool,
-    massspectrummatchdistanceweight::Real
+    massspectrummatchdistanceweight::Real,
+    massspectrumvariancefloor::Real
 )
     validate_alkane_ladder_path_settings(
         centerzmin,
@@ -121,14 +122,16 @@ function alkaneladderpath(
         maxgapratio,
         maxmissingsteps,
         missingsteppenalty,
-        massspectrummatchdistanceweight
+        massspectrummatchdistanceweight,
+        massspectrumvariancefloor
     )
 
     context = alkane_ladder_path_mass_spectrum_match_context(
         msm,
         variances,
         standard,
-        massspectrummatch
+        massspectrummatch,
+        massspectrumvariancefloor
     )
     settings = (
         centerzmin=centerzmin,
@@ -143,7 +146,8 @@ function alkaneladderpath(
         missingsteppenalty=missingsteppenalty,
         massspectrummatch=massspectrummatch,
         massspectrummatchactive=!isnothing(context),
-        massspectrummatchdistanceweight=massspectrummatchdistanceweight
+        massspectrummatchdistanceweight=massspectrummatchdistanceweight,
+        massspectrumvariancefloor=massspectrumvariancefloor
     )
 
     candidatesbystep = alkane_ladder_path_candidates(
@@ -218,7 +222,8 @@ function validate_alkane_ladder_path_settings(
     maxgapratio::Real,
     maxmissingsteps::Integer,
     missingsteppenalty::Real,
-    massspectrummatchdistanceweight::Real
+    massspectrummatchdistanceweight::Real,
+    massspectrumvariancefloor::Real
 )
     isfinite(centerzmin) && centerzmin ≥ 0 || throw(ArgumentError(
         "centerzmin must be finite and nonnegative"))
@@ -243,6 +248,7 @@ function validate_alkane_ladder_path_settings(
         massspectrummatchdistanceweight ≥ 0 ||
         throw(ArgumentError(
             "mass-spectrum match distance weight must be finite and nonnegative"))
+    validate_alkane_abundance_variancefloor(massspectrumvariancefloor)
 
     nothing
 end
@@ -251,12 +257,19 @@ function alkane_ladder_path_mass_spectrum_match_context(
     msm::Union{Nothing, MassScanMatrix},
     variances::Union{Nothing, AbstractMatrix{<:Real}},
     standard::Union{Nothing, AlkaneStandard},
-    enabled::Bool
+    enabled::Bool,
+    variancefloor::Real
 )
     enabled || return nothing
     (isnothing(msm) || isnothing(variances) || isnothing(standard)) && return nothing
 
-    alkane_ladder_mass_spectrum_match_context(msm, variances, standard, true, 1.0)
+    alkane_ladder_mass_spectrum_match_context(
+        msm,
+        variances,
+        standard,
+        true,
+        variancefloor
+    )
 end
 
 function alkane_ladder_path_candidates(

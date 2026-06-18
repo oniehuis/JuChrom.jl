@@ -1,4 +1,5 @@
 using Test
+using Unitful
 using JuChrom
 
 function _countvariance_test_matrix()
@@ -27,7 +28,8 @@ end
             positivecountquantile=0.0,
         )
 
-        @test result isa NamedTuple
+        @test result isa CountVarianceEstimate
+        @test varianceunit(result) ≡ nothing
         @test result.variances isa Matrix{Float64}
         @test size(result.variances) == size(rawcounts)
         @test result.noisesigma > 0
@@ -61,9 +63,58 @@ end
         frommatrix = countvariances(rawcounts; windowsize=5, mintransitioncount=1)
         frommsm = countvariances(msm; windowsize=5, mintransitioncount=1)
 
-        @test frommsm.variances ≈ frommatrix.variances
+        @test frommsm isa CountVarianceEstimate
+        @test frommsm.variances isa Matrix{Float64}
+        @test varianceunit(frommsm) ≡ nothing
+        @test rawvariances(frommsm) ≈ frommatrix.variances
         @test frommsm.noisesigma == frommatrix.noisesigma
         @test frommsm.intensityfloor == frommatrix.intensityfloor
+    end
+
+    @testset "MassScanMatrix wrapper preserves variance units" begin
+        msm = MassScanMatrix(
+            collect(1.0:size(rawcounts, 1)),
+            u"s",
+            [50.0, 60.0, 70.0],
+            nothing,
+            rawcounts,
+            u"pA"
+        )
+        result = countvariances(msm; windowsize=5, mintransitioncount=1)
+
+        @test result isa CountVarianceEstimate
+        @test result.variances isa Matrix{Float64}
+        @test varianceunit(result) == u"pA"^2
+        @test rawvariances(result) ≈
+            countvariances(rawcounts; windowsize=5, mintransitioncount=1).variances
+        @test variances(result) == result.variances .* u"pA"^2
+    end
+
+    @testset "unitful matrix wrapper preserves variance units" begin
+        result = countvariances(
+            rawcounts .* u"pA";
+            windowsize=5,
+            mintransitioncount=1
+        )
+
+        @test result isa CountVarianceEstimate
+        @test result.variances isa Matrix{Float64}
+        @test varianceunit(result) == u"pA"^2
+        @test rawvariances(result; unit=u"nA"^2) ≈
+            countvariances(rawcounts; windowsize=5, mintransitioncount=1).variances * 1e-6
+        floored = countvariances(
+            rawcounts .* u"pA";
+            windowsize=5,
+            mintransitioncount=1,
+            intensityfloor=25.0u"pA"
+        )
+        @test floored.intensityfloor == 25.0
+        @test_throws ArgumentError countvariances(
+            rawcounts;
+            windowsize=5,
+            mintransitioncount=1,
+            intensityfloor=25.0u"pA"
+        )
     end
 
     @testset "count noise helpers" begin

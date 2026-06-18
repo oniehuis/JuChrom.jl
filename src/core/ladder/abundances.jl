@@ -21,7 +21,7 @@ end
 
 Result of the alkane abundance-estimation stage.
 """
-struct AlkaneAbundanceInfo{S<:NamedTuple}
+struct AlkaneAbundanceInfo{S<:NamedTuple} <: AbstractAlkaneAbundanceInfo
     abundances::Dict{Int, Vector{Float64}}
     abundancevariances::Dict{Int, Vector{Float64}}
     windows::Dict{Int, Vector{AlkaneAbundanceWindow}}

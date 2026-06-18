@@ -52,7 +52,7 @@ Result of the molecular-ion evidence stage.
 struct AlkaneMolecularIonInfo{
     T1<:AbstractDict{Int,<:AbstractVector{<:AlkaneMolecularIonContrast}},
     T2<:NamedTuple
-}
+} <: AbstractAlkaneMolecularIonInfo
     contrasts::T1
     zscorevectors::Dict{Int, Vector{Float64}}
     settings::T2

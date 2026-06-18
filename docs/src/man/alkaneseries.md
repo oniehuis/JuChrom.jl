@@ -11,6 +11,8 @@ AlkaneAbundanceWindow
 AlkaneAbundanceInfo
 AlkaneMolecularIonContrast
 AlkaneMolecularIonInfo
+AlkaneSeriesResult
+AlkaneLadderStep
 defaultalkanestandard
 alkanereferencespectra
 alkanereferencespectrum

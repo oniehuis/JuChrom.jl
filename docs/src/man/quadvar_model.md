@@ -6,6 +6,7 @@ Use `countvariances` to estimate count-based variances directly from a
 `MassScanMatrix` when replicate-based variance estimates are not available.
 
 ```@docs
+CountVarianceEstimate
 countvariances
 ```
 

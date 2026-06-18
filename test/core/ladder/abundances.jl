@@ -51,9 +51,10 @@ end
     )
 
     channelinfo = JuChrom.alkane_mz_channels(
-        msm;
-        standard=standard,
-        carbonrange=8:8
+        msm,
+        standard,
+        8:8,
+        0.0
     )
 
     @test channelinfo isa AlkaneChannelInfo
@@ -68,9 +69,10 @@ end
 
     intmsm = MassScanMatrix([1.0, 2.0], [29, 43, 57], X)
     intchannelinfo = JuChrom.alkane_mz_channels(
-        intmsm;
-        standard=standard,
-        carbonrange=8:8
+        intmsm,
+        standard,
+        8:8,
+        0.0
     )
 
     @test intchannelinfo isa AlkaneChannelInfo

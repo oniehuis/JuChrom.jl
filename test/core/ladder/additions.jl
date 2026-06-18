@@ -104,6 +104,9 @@ function ladder_addition_test_settings(
     apexminioncount=1,
     apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
     apexmaxshiftfromguess=3.0,
+    apexcenteredscantolerance=0.25,
+    apexfitqualityoutlierz=3.0,
+    apexfitqualityminsteps=6,
     carbonrange=nothing
 )
     JuChrom.alkane_ladder_addition_settings(
@@ -135,6 +138,9 @@ function ladder_addition_test_settings(
         apexminioncount,
         apexmzretentionkwargs,
         apexmaxshiftfromguess,
+        apexcenteredscantolerance,
+        apexfitqualityoutlierz,
+        apexfitqualityminsteps,
         carbonrange
     )
 end

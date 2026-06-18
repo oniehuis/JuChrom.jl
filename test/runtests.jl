@@ -158,3 +158,6 @@ end
 @safetestset "ext/makie_extensions/massspectrum" begin
     include("ext/makie_extensions/massspectrum.jl")
 end
+@safetestset "ext/makie_extensions/tictrace" begin
+    include("ext/makie_extensions/tictrace.jl")
+end

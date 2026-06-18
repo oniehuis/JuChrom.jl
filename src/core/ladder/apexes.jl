@@ -171,14 +171,16 @@ struct AlkaneLadderApexSettings{
     T9<:Real,
     T10<:Integer,
     T11<:Real,
-    T12<:Union{Nothing, Real},
-    T13<:Union{Nothing, Integer},
+    T12<:Real,
+    T13<:Union{Nothing, Real},
     T14<:Integer,
-    T15<:Real,
+    T15<:Union{Nothing, Integer},
     T16<:Integer,
-    T17<:Integer,
+    T17<:Real,
     T18<:Integer,
-    T19<:Integer
+    T19<:Integer,
+    T20<:Integer,
+    T21<:Integer
 }
     standard::T1
     scanwindow::T2
@@ -191,14 +193,16 @@ struct AlkaneLadderApexSettings{
     apexionminrelativeintensity::T9
     minioncount::T10
     maxapexshiftfromguess::T11
-    apexfitqualityoutlierz::T12
-    mzscanordermaxpeaks::T13
-    mzscanorderminpeaks::T14
-    mzscanorderminapexvarianceratio::T15
-    mzscanordershapeioncount::T16
-    mzscanordershapemzspacing::T17
-    mzscanorderextremeioncount::T18
-    mzscanorderminioncount::T19
+    apexcenteredscantolerance::T12
+    apexfitqualityoutlierz::T13
+    apexfitqualityminsteps::T14
+    mzscanordermaxpeaks::T15
+    mzscanorderminpeaks::T16
+    mzscanorderminapexvarianceratio::T17
+    mzscanordershapeioncount::T18
+    mzscanordershapemzspacing::T19
+    mzscanorderextremeioncount::T20
+    mzscanorderminioncount::T21
 end
 
 struct AlkaneLadderApexFitQualityStats
@@ -290,7 +294,7 @@ struct AlkaneLadderApex{
     T1<:Union{AbstractAlkaneLadderCandidate, NamedTuple},
     T2<:Union{Nothing, AlkaneLadderIonApexResult},
     T3<:Real
-}
+} <: AbstractAlkaneLadderApex
     success::Bool
     reason::Symbol
     failurereason::Union{Nothing, String}
@@ -340,7 +344,7 @@ struct AlkaneLadderApexInfo{
     T2<:AbstractDict{Int, <:AlkaneLadderApex},
     T3<:AlkaneLadderApexSettings,
     T4<:AlkaneLadderScanOrderInfo
-}
+} <: AbstractAlkaneLadderApexInfo
     status::Symbol
     reason::Symbol
     apexes::T1
@@ -377,7 +381,10 @@ function alkaneladderapexes(
         settings.apexionminrelativeintensity,
         settings.variancefloor,
         settings.logfloorfraction,
-        settings.maxapexshiftfromguess
+        settings.maxapexshiftfromguess,
+        settings.apexcenteredscantolerance,
+        settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps
     )
 
     if isempty(pathinfo.path)
@@ -423,7 +430,8 @@ function alkaneladderapexes(
 
     apexes = alkane_ladder_annotate_apex_fit_quality(
         apexes,
-        settings.apexfitqualityoutlierz
+        settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps
     )
     bycarbon = Dict(apex.ladderstep => apex for apex in apexes)
     AlkaneLadderApexInfo(
@@ -476,7 +484,9 @@ function alkane_ladder_apex_settings_with_mzretentionkwargs(
         settings.apexionminrelativeintensity,
         settings.minioncount,
         settings.maxapexshiftfromguess,
+        settings.apexcenteredscantolerance,
         settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps,
         settings.mzscanordermaxpeaks,
         settings.mzscanorderminpeaks,
         settings.mzscanorderminapexvarianceratio,
@@ -505,7 +515,9 @@ function alkane_ladder_apex_settings_with_ion_selection(
         settings.apexionminrelativeintensity,
         minioncount,
         settings.maxapexshiftfromguess,
+        settings.apexcenteredscantolerance,
         settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps,
         settings.mzscanordermaxpeaks,
         settings.mzscanorderminpeaks,
         settings.mzscanorderminapexvarianceratio,
@@ -553,7 +565,10 @@ function validate_alkane_ladder_apex_settings(
     apexionminrelativeintensity::Real,
     variancefloor::Real,
     logfloorfraction::Real,
-    maxapexshiftfromguess::Real
+    maxapexshiftfromguess::Real,
+    apexcenteredscantolerance::Real,
+    apexfitqualityoutlierz::Union{Nothing, Real},
+    apexfitqualityminsteps::Integer
 )
     validate_alkane_series_variances(msm, variances)
     validate_alkane_ladder_apex_settings(scanwindow, variancefloor, logfloorfraction)
@@ -562,6 +577,16 @@ function validate_alkane_ladder_apex_settings(
         throw(ArgumentError("apexionminrelativeintensity must be finite and in [0, 1)"))
     isfinite(maxapexshiftfromguess) && maxapexshiftfromguess ≥ 0 || 
         throw(ArgumentError("maxapexshiftfromguess must be finite and nonnegative"))
+    isfinite(apexcenteredscantolerance) && apexcenteredscantolerance ≥ 0 ||
+        throw(ArgumentError(
+            "apexcenteredscantolerance must be finite and nonnegative"))
+    if !isnothing(apexfitqualityoutlierz)
+        isfinite(apexfitqualityoutlierz) && apexfitqualityoutlierz > 0 ||
+            throw(ArgumentError(
+                "apexfitqualityoutlierz must be finite and positive, or nothing"))
+    end
+    apexfitqualityminsteps ≥ 2 || throw(ArgumentError(
+        "apexfitqualityminsteps must be at least 2"))
 
     nothing
 end
@@ -581,7 +606,10 @@ function alkaneladderapex(
         settings.apexionminrelativeintensity,
         settings.variancefloor,
         settings.logfloorfraction,
-        settings.maxapexshiftfromguess
+        settings.maxapexshiftfromguess,
+        settings.apexcenteredscantolerance,
+        settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps
     )
 
     retentions = rawretentions(msm)
@@ -657,42 +685,65 @@ function alkane_ladder_ion_apex(
     center_retention = raw_scan_retentions[input_scanindex]
     for _ in 1:alkane_ladder_max_center_passes(settings.maxapexshiftfromguess)
         apex = fit_at_center!(center_retention)
-        apex.success && alkane_ladder_apex_is_centered(apex, 0.25) && break
+        apex.success &&
+            alkane_ladder_apex_is_centered(
+                apex,
+                settings.apexcenteredscantolerance
+            ) &&
+            break
 
         next_center = alkane_ladder_next_center_retention(
             apex,
             raw_scan_retentions,
             input_scanindex,
-            settings.maxapexshiftfromguess
+            settings.maxapexshiftfromguess,
+            settings.apexcenteredscantolerance
         )
         isnothing(next_center) && break
         next_center_scan = alkane_ladder_fractional_scan_index(
             raw_scan_retentions,
             next_center
         )
-        abs(next_center_scan - apex.fit_center_scan_index) < 0.25 && break
+        abs(next_center_scan - apex.fit_center_scan_index) <
+            settings.apexcenteredscantolerance &&
+            break
         center_retention = next_center
     end
 
-    if !alkane_ladder_has_centered_success(attempts)
+    if !alkane_ladder_has_centered_success(
+            attempts,
+            settings.apexcenteredscantolerance
+        )
         for fallback_center in alkane_ladder_center_search_retentions(
             raw_scan_retentions,
             input_scanindex,
-            settings.maxapexshiftfromguess
+            settings.maxapexshiftfromguess,
+            settings.apexcenteredscantolerance
         )
             fallback_scan = alkane_ladder_fractional_scan_index(
                 raw_scan_retentions,
                 fallback_center
             )
-            alkane_ladder_center_already_attempted(attempts, fallback_scan, 0.25) &&
-                continue
+            alkane_ladder_center_already_attempted(
+                attempts,
+                fallback_scan,
+                settings.apexcenteredscantolerance
+            ) && continue
 
             apex = fit_at_center!(fallback_center)
-            apex.success && alkane_ladder_apex_is_centered(apex, 0.25) && break
+            apex.success &&
+                alkane_ladder_apex_is_centered(
+                    apex,
+                    settings.apexcenteredscantolerance
+                ) &&
+                break
         end
     end
 
-    final_index = alkane_ladder_best_apex_attempt_index(attempts)
+    final_index = alkane_ladder_best_apex_attempt_index(
+        attempts,
+        settings.apexcenteredscantolerance
+    )
     AlkaneLadderIonApexResult(
         attempts[final_index],
         first(attempts),
@@ -980,13 +1031,16 @@ end
 
 function alkane_ladder_annotate_apex_fit_quality(
     apexes::AbstractVector{<:AlkaneLadderApex},
-    apexfitqualityoutlierz::Union{Nothing, Real}
+    apexfitqualityoutlierz::Union{Nothing, Real},
+    apexfitqualityminsteps::Integer
 )
     if !isnothing(apexfitqualityoutlierz)
         isfinite(apexfitqualityoutlierz) && apexfitqualityoutlierz > 0 ||
             throw(ArgumentError(
                 "apexfitqualityoutlierz must be finite and positive, or nothing"))
     end
+    apexfitqualityminsteps ≥ 2 || throw(ArgumentError(
+        "apexfitqualityminsteps must be at least 2"))
 
     qualityindices = Int[]
     logscores = Float64[]
@@ -998,7 +1052,10 @@ function alkane_ladder_annotate_apex_fit_quality(
         end
     end
 
-    quality = alkane_ladder_apex_fit_quality_robust_zscores(logscores)
+    quality = alkane_ladder_apex_fit_quality_robust_zscores(
+        logscores,
+        apexfitqualityminsteps
+    )
     zbyindex = Dict{Int, Float64}()
     for (index, zscore) in zip(qualityindices, quality.zscores)
         zbyindex[index] = zscore
@@ -1084,11 +1141,13 @@ end
 alkane_ladder_apex_fit_quality_score(apex::AlkaneLadderApex) = apex.apex_fit_quality_score
 
 function alkane_ladder_apex_fit_quality_robust_zscores(
-    logscores::AbstractVector{Float64}
+    logscores::AbstractVector{Float64},
+    minsteps::Integer
 )
     nsteps = length(logscores)
     zscores = fill(NaN, nsteps)
-    nsteps ≥ 6 || return AlkaneLadderApexFitQualityStats(zscores, NaN, NaN, nsteps, false)
+    nsteps ≥ minsteps ||
+        return AlkaneLadderApexFitQualityStats(zscores, NaN, NaN, nsteps, false)
     values = logscores
     center = median(values)
     deviations = abs.(values .- center)
@@ -2848,11 +2907,13 @@ function alkane_ladder_max_center_passes(maxapexshiftfromguess::Real)
 end
 
 function alkane_ladder_best_apex_attempt_index(
-    attempts::AbstractVector{<:AlkaneLadderIonApexAttempt}
+    attempts::AbstractVector{<:AlkaneLadderIonApexAttempt},
+    centeredscantolerance::Real
 )
     isempty(attempts) && throw(ArgumentError("at least one apex attempt is required"))
     centered = findfirst(
-        apex -> apex.success && alkane_ladder_apex_is_centered(apex, 0.25),
+        apex -> apex.success &&
+            alkane_ladder_apex_is_centered(apex, centeredscantolerance),
         attempts
     )
     !isnothing(centered) && return centered
@@ -2868,9 +2929,14 @@ function alkane_ladder_best_apex_attempt_index(
 end
 
 function alkane_ladder_has_centered_success(
-    attempts::AbstractVector{<:AlkaneLadderIonApexAttempt}
+    attempts::AbstractVector{<:AlkaneLadderIonApexAttempt},
+    centeredscantolerance::Real
 )
-    any(apex -> apex.success && alkane_ladder_apex_is_centered(apex, 0.25), attempts)
+    any(
+        apex -> apex.success &&
+            alkane_ladder_apex_is_centered(apex, centeredscantolerance),
+        attempts
+    )
 end
 
 function alkane_ladder_center_already_attempted(
@@ -2900,7 +2966,8 @@ function alkane_ladder_next_center_retention(
     apex::AlkaneLadderIonApexAttempt,
     raw_scan_retentions::AbstractVector{<:Real},
     input_scanindex::Integer,
-    maxapexshiftfromguess::Real
+    maxapexshiftfromguess::Real,
+    centeredscantolerance::Real
 )
     isfinite(apex.apex_scan_index) || return nothing
     lower_scan = max(1, input_scanindex - maxapexshiftfromguess)
@@ -2909,7 +2976,7 @@ function alkane_ladder_next_center_retention(
         input_scanindex + maxapexshiftfromguess
     )
     target_scan = clamp(apex.apex_scan_index, lower_scan, upper_scan)
-    abs(target_scan - apex.fit_center_scan_index) < 0.25 &&
+    abs(target_scan - apex.fit_center_scan_index) < centeredscantolerance &&
         return nothing
 
     alkane_ladder_retention_at_fractional_scan_index(raw_scan_retentions, target_scan)
@@ -2918,7 +2985,8 @@ end
 function alkane_ladder_center_search_retentions(
     raw_scan_retentions::AbstractVector{<:Real},
     input_scanindex::Integer,
-    maxapexshiftfromguess::Real
+    maxapexshiftfromguess::Real,
+    centeredscantolerance::Real
 )
     maxshift = maxapexshiftfromguess
     maxshift == 0 && return Float64[]
@@ -2940,8 +3008,10 @@ function alkane_ladder_center_search_retentions(
             1,
             length(raw_scan_retentions)
         )
-        any(existing -> abs(existing - center_scan) ≤ 0.25, center_scan_indices) &&
-            continue
+        any(
+            existing -> abs(existing - center_scan) ≤ centeredscantolerance,
+            center_scan_indices
+        ) && continue
         push!(center_scan_indices, center_scan)
     end
 
