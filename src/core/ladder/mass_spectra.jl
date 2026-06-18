@@ -181,7 +181,7 @@ function alkane_ladder_mass_spectra(
         settings.edgeextended
     )
 
-    use_step_threads = settings.threaded && Threads.nthreads() > 1 && length(steps) > 1
+    use_step_threads = settings.threaded && length(steps) > 1
     ionthreaded = settings.threaded && !use_step_threads
     stepresults = Vector{AlkaneLadderMassSpectrumStepExtraction}(undef, length(steps))
 

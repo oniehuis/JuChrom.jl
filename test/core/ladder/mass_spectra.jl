@@ -300,57 +300,55 @@ end
 end
 
 @testset "alkane ladder mass spectrum extraction supports step-threaded fitting" begin
-    if Threads.nthreads() > 1
-        msm, _, result = test_ladder_mass_spectrum_inputs()
-        apex = only(result.apexinfo.apexes)
-        apexfields = fieldnames(typeof(apex))
-        secondapex = JuChrom.AlkaneLadderApex(
-            (
-                field ≡ :ladderstep ? 9 :
-                field ≡ :source ? :molecularion :
-                getfield(apex, field)
-                for field in apexfields
-            )...
-        )
-        apexinfo = JuChrom.AlkaneLadderApexInfo(
-            result.apexinfo.status,
-            result.apexinfo.reason,
-            [apex, secondapex],
-            Dict(8 => apex, 9 => secondapex),
-            result.apexinfo.settings,
-            result.apexinfo.scanorderinfo,
-            [false, false],
-            [true, true],
-            [apex.apex_fit_quality_score, secondapex.apex_fit_quality_score],
-            [apex.apex_fit_quality_zscore, secondapex.apex_fit_quality_zscore]
-        )
-        multiresult = AlkaneSeriesResult(
-            result.standard,
-            result.variances,
-            result.varianceinfo,
-            result.baselineinfo,
-            result.channelinfo,
-            result.abundanceinfo,
-            result.molecularioninfo,
-            result.pathinfo,
-            apexinfo,
-            result.additioninfo,
-            result.datainfo,
-            result.retentionunit
-        )
+    msm, _, result = test_ladder_mass_spectrum_inputs()
+    apex = only(result.apexinfo.apexes)
+    apexfields = fieldnames(typeof(apex))
+    secondapex = JuChrom.AlkaneLadderApex(
+        (
+            field ≡ :ladderstep ? 9 :
+            field ≡ :source ? :molecularion :
+            getfield(apex, field)
+            for field in apexfields
+        )...
+    )
+    apexinfo = JuChrom.AlkaneLadderApexInfo(
+        result.apexinfo.status,
+        result.apexinfo.reason,
+        [apex, secondapex],
+        Dict(8 => apex, 9 => secondapex),
+        result.apexinfo.settings,
+        result.apexinfo.scanorderinfo,
+        [false, false],
+        [true, true],
+        [apex.apex_fit_quality_score, secondapex.apex_fit_quality_score],
+        [apex.apex_fit_quality_zscore, secondapex.apex_fit_quality_zscore]
+    )
+    multiresult = AlkaneSeriesResult(
+        result.standard,
+        result.variances,
+        result.varianceinfo,
+        result.baselineinfo,
+        result.channelinfo,
+        result.abundanceinfo,
+        result.molecularioninfo,
+        result.pathinfo,
+        apexinfo,
+        result.additioninfo,
+        result.datainfo,
+        result.retentionunit
+    )
 
-        extraction = alkaneladdermassspectra(
-            msm,
-            multiresult;
-            threaded=true,
-            validatechecksum=false
-        )
+    extraction = alkaneladdermassspectra(
+        msm,
+        multiresult;
+        threaded=true,
+        validatechecksum=false
+    )
 
-        @test sort(collect(keys(extraction.spectra))) == [8, 9]
-        @test isempty(extraction.failures)
-    else
-        @test Threads.nthreads() == 1
-    end
+    @test sort(collect(keys(extraction.spectra))) == [8, 9]
+    @test isempty(extraction.failures)
+    @test !attrs(extraction.spectra[8]).ion_threaded
+    @test !attrs(extraction.spectra[9]).ion_threaded
 end
 
 @testset "alkaneladdermassspectra validates checksums and reconstructs baseline signal" begin
