@@ -19,9 +19,11 @@ Mapping points are typically collected from standards with known reference posit
 gas chromatography, a common example is an n-alkane ladder, which yields paired arrays of 
 retention times and 
 [Kováts retention indices](https://en.wikipedia.org/wiki/Kovats_retention_index) 
-(Kováts 1958). Another approach uses a curated set of internal standards (e.g., a few stable 
-compounds spiked into every run), producing matched retention pairs that anchor the mapping 
-across batches (Skoog et al. 2007).
+(Kováts 1958). JuChrom can infer these points from GC-MS alkane ladder data with
+[`findalkanes`](@ref) and expose the accepted mapper anchors with
+[`alkaneladdercalibrationpoints`](@ref). Another approach uses a curated set of internal
+standards (e.g., a few stable compounds spiked into every run), producing matched
+retention pairs that anchor the mapping across batches (Skoog et al. 2007).
 
 ## JuChrom retention mapping
 
@@ -32,14 +34,14 @@ fixed smoothing penalty `λ` and validates that the resulting curve is strictly 
 Concretely, the objective minimizes squared residuals plus a curvature penalty based on
 the spline’s second derivative: large changes in slope are penalized, which discourages
 wiggles and yields a smoother, more stable mapping between anchor points. In parallel,
-nonnegative first-derivative values are enforced at a dense grid of points. The final
-spline is then checked for strict monotonicity so that the stored
+nonnegative first-derivative values are enforced at the spline constraint points. The final
+spline is then checked for strict monotonicity on a dense validation grid so that the stored
 [`RetentionMapper`](@ref RetentionMapper) supports both forward mapping and reliable
 reverse mapping via the monotonic inverse.
 
 For most users, the primary tuning parameter when applying [`fitmap`](@ref JuChrom.fitmap) 
 is smoothing strength (λ). Larger values emphasize smoothness over exact fit to the anchor 
-points, while smaller values track the anchors more tightly. The default `λ=1e-7` is tuned
+points, while smaller values track the anchors more tightly. The default `λ=1e-8` is tuned
 for normalized RT -> RI calibration and is intended to avoid boundary-of-monotonicity
 wiggles.
 
@@ -73,12 +75,12 @@ mapper = fitmap(retention_times, kovats_indices)
 ```
 
 The printed [`RetentionMapper`](@ref RetentionMapper) summary provides a compact overview. 
-For a closer look, plot the forward and inverse maps (including derivatives) and the 
-residuals.
+For a closer look, plot the forward map, its derivative, and the residuals. Pass
+`reverse=true` to include the inverse map and inverse derivative.
 
 ```@example 1
-# Visual diagnostics (forward/inverse maps and residuals)
-fig = plot(mapper; reverse=true, size=(900, 600))
+# Visual diagnostics (forward map, derivative, and residuals)
+fig = plot(mapper; size=(900, 600))
 save("retention_mapper.svg", fig)
 nothing # hide
 ```
@@ -90,19 +92,14 @@ from those anchors. The inferred mapping is fully satisfactory, but you may want
 the smoothing strength if the anchor points are noisy or not fully trustworthy. In the 
 derivative plots, for example, visible oscillation indicates that a larger `λ` may be
 appropriate. Increasing `λ` reduces overfitting (less wiggle, more stability), while
-decreasing `λ` tracks the anchors more tightly. The mapper object stores the value of the
-λ tuning parameter used for the fit.
-
-```@example 1
-mapper.lambda
-```
+decreasing `λ` tracks the anchors more tightly.
 
 Let us fit a smoother mapper with `λ=1e-6` and examine the effect on the derivative plots.
 
 ```@example 1
 # Fit mapping function with stronger smoothing
 mapper_smooth = fitmap(retention_times, kovats_indices, λ=1e-6)
-fig = plot(mapper_smooth; reverse=true, size=(900, 600))
+fig = plot(mapper_smooth; size=(900, 600))
 save("retention_mapper_smooth.svg", fig)
 nothing # hide
 ```
@@ -115,16 +112,17 @@ structure that should be modeled or are noise that should be smoothed away is a 
 call for the analyst. If a fit fails monotonicity validation, use a larger `λ` or inspect
 the anchor points for false or noisy calibration steps.
 
-Let’s continue with the smoother mapper and use it to compute retention
-indices for a few retention times, including extrapolation beyond the domain.
+Let’s continue with the original mapper (inferred from using the default `λ=1e-8`) and use 
+it to compute retention indices for a few retention times, including extrapolation beyond 
+the domain.
 
 ```@example 1
-ri = applymap(mapper_smooth, 41.5u"minute")  # single value
+ri = applymap(mapper, 41.5u"minute")  # single value
 ```
 
 ```@example 1
 rts = [10, 29.3, 35.0]u"minute"
-ri = applymap.(mapper_smooth, rts)  # dot form broadcasts over the vector
+ri = applymap.(mapper, rts)  # dot form broadcasts over the vector
 ```
 
 !!! warning "Domain limits and extrapolation"
@@ -140,12 +138,11 @@ ri = applymap.(mapper_smooth, rts)  # dot form broadcasts over the vector
     or the `raw*` variants to surface extrapolation during
     analysis.
 
-To invert the mapping (e.g., from Kováts to retention time), use 
-[`invmap`](@ref).
+To invert the mapping (e.g., from Kováts to retention time), use [`invmap`](@ref).
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
-rts = invmap.(mapper_smooth, ris)  # dot form broadcasts over the vector
+rts = invmap.(mapper, ris)  # dot form broadcasts over the vector
 ```
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
@@ -164,7 +161,7 @@ intensities = [1000, 4000, 3500] / 0.5u"s"
 ```
 
 ```@example 1
-dridt = derivmap.(mapper_smooth, scantimes, rA_unit=u"s")
+dridt = derivmap.(mapper, scantimes, rA_unit=u"s")
 ```
 
 The derivative tells you how much the Kováts retention index changes per unit time. To
@@ -177,6 +174,30 @@ ints_transformed = intensities ./ dridt
 
 The transformed intensities are now expressed per unit of retention index rather than per
 unit time, reflecting the change of variables.
+
+!!! note "Use ion-specific retention times for sequential MS data"
+    The Jacobian must be evaluated at the retention coordinate of the measurement whose
+    intensity is transformed. For a chromatographic trace with one intensity per scan, the
+    scan retention time is the appropriate coordinate. For sequentially scanned MS data,
+    however, different m/z channels in the same scan are measured at slightly different
+    times. In that case, a single scan-level Jacobian applies the same correction to all
+    ions in a scan and is only an approximation.
+
+    For the most accurate RT -> RI transformation of ion traces or MS scan matrices, first
+    correct the scan retention time to the acquisition time of the specific m/z channel,
+    then evaluate the Jacobian at that ion-specific retention time:
+
+    ```julia
+    rt_ion = mzretention(scan_retention, mz; order=:descending, ...)
+    ri_ion = applymap(mapper, rt_ion)
+    jacobian = derivmap(mapper, rt_ion)
+    intensity_per_ri = intensity_per_rt / jacobian
+    ```
+
+    This distinction is mainly relevant for sequential quadrupole-like acquisition. For
+    simultaneous m/z acquisition, or when the m/z scan duration is negligible relative to
+    chromatographic peak widths and mapper curvature, the scan-level Jacobian can be a
+    reasonable approximation.
 
 ## Mapping tools at a glance
 

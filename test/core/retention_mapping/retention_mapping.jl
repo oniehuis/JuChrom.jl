@@ -1624,7 +1624,7 @@ end
     default_mapper = fitmap(rA, rB)
     custom_mapper = fitmap(rA, rB; λ=1e-6)
 
-    @test default_mapper.lambda == 1e-7
+    @test default_mapper.lambda == 1e-8
     @test custom_mapper.lambda == 1e-6
     @test_throws ArgumentError fitmap(rA, rB; λ=-1.0)
     @test_throws ArgumentError fitmap(rA, rB; λ=Inf)
