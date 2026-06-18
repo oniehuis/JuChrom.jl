@@ -160,6 +160,25 @@ struct AlkaneLadderStep{T<:AbstractAlkaneLadderApex}
 end
 
 """
+    AlkaneLadderCalibrationPoint
+
+Stable RT -> RI calibration point derived from an identified alkane ladder step or added
+manually before fitting a retention mapper.
+
+`retention` is the raw numeric retention value. `retentionunit` is the unit associated
+with that value, or `nothing` for unitless retentions. `retentionindex` is the Kováts
+retention index used as the mapper target.
+"""
+struct AlkaneLadderCalibrationPoint
+    ladderstep::Int
+    retention::Float64
+    retentionunit::Union{Nothing, Unitful.Units}
+    retentionindex::Float64
+    source::Symbol
+    goodforcalibration::Bool
+end
+
+"""
     alkaneladdersteps(result; molecularion=true, gapfilled=true, edgeextended=true)
 
 Return a sorted stable view of already-refined alkane ladder steps.
@@ -240,6 +259,161 @@ function alkane_ladder_step_from_apex(apex::AbstractAlkaneLadderApex, source::Sy
         apex.good_for_calibration,
         apex
     )
+end
+
+"""
+    alkaneladdercalibrationpoints(result;
+        molecularion=true,
+        gapfilled=true,
+        edgeextended=true,
+        goodforcalibration=true,
+        exclude=Int[],
+        include=Int[],
+        extra=AlkaneLadderCalibrationPoint[])
+
+Return RT -> RI calibration points from an [`AlkaneSeriesResult`](@ref).
+
+By default, only ladder steps that passed the calibration-quality gate are returned.
+`exclude` removes algorithm-derived ladder steps by carbon number. `include` keeps
+algorithm-derived steps with those carbon numbers even when `goodforcalibration=true` and
+the step failed the gate. It does not override `molecularion`, `gapfilled`, or
+`edgeextended` source filters.
+
+`extra` is appended after `exclude` is applied, so manual points can replace algorithmic
+points by excluding the algorithmic step and adding a manual point with the same
+`ladderstep`. The returned points are sorted by `ladderstep` and validated to contain no
+duplicate ladder steps.
+"""
+function alkaneladdercalibrationpoints(
+    result::AlkaneSeriesResult;
+    molecularion::Bool=true,
+    gapfilled::Bool=true,
+    edgeextended::Bool=true,
+    goodforcalibration::Bool=true,
+    exclude::AbstractVector{<:Integer}=Int[],
+    include::AbstractVector{<:Integer}=Int[],
+    extra::AbstractVector{<:AlkaneLadderCalibrationPoint}=AlkaneLadderCalibrationPoint[]
+)
+    retentionindices = alkane_ladder_retention_indices(result.standard)
+    excludedsteps = Set(exclude)
+    includedsteps = Set(include)
+    points = AlkaneLadderCalibrationPoint[]
+    for step in alkaneladdersteps(
+            result;
+            molecularion=molecularion,
+            gapfilled=gapfilled,
+            edgeextended=edgeextended
+        )
+        step.ladderstep in excludedsteps && continue
+        if goodforcalibration &&
+                !step.goodforcalibration &&
+                !(step.ladderstep in includedsteps)
+            continue
+        end
+        haskey(retentionindices, step.ladderstep) || throw(ArgumentError(
+            "alkane standard has no retention index for C$(step.ladderstep)"))
+        push!(points, AlkaneLadderCalibrationPoint(
+            step.ladderstep,
+            step.apexretention,
+            result.retentionunit,
+            retentionindices[step.ladderstep],
+            step.source,
+            step.goodforcalibration
+        ))
+    end
+
+    append!(points, extra)
+    sort!(points; by=point -> point.ladderstep)
+    validate_alkane_ladder_calibration_points(points)
+
+    points
+end
+
+function alkane_ladder_retention_indices(standard::AlkaneStandard)
+    spectra = alkane_standard_spectra(standard)
+    retentionindices = Dict{Int, Float64}()
+    for (carbon, spectrum) in alkane_spectra_by_carbon(spectra)
+        retentionindices[carbon] = attrs(spectrum).ri
+    end
+
+    retentionindices
+end
+
+function alkane_ladder_retention_indices(::Nothing)
+    throw(ArgumentError(
+        "alkane ladder calibration points require result.standard"))
+end
+
+function validate_alkane_ladder_calibration_points(
+    points::AbstractVector{<:AlkaneLadderCalibrationPoint}
+)
+    seen = Set{Int}()
+    for point in points
+        isfinite(point.retention) || throw(ArgumentError(
+            "alkane ladder calibration point C$(point.ladderstep) has nonfinite retention"))
+        isfinite(point.retentionindex) || throw(ArgumentError(
+            "alkane ladder calibration point C$(point.ladderstep) has nonfinite RI"))
+        point.ladderstep in seen && throw(ArgumentError(
+            "duplicate alkane ladder calibration point for C$(point.ladderstep); " *
+            "use exclude to replace an algorithmic point with an extra point"))
+        push!(seen, point.ladderstep)
+    end
+
+    nothing
+end
+
+function alkane_ladder_calibration_vectors(
+    points::AbstractVector{<:AlkaneLadderCalibrationPoint}
+)
+    validate_alkane_ladder_calibration_points(points)
+    sorted = sort(collect(points); by=point -> point.retention)
+    isempty(sorted) && return Float64[], Float64[]
+    retention_unit = first(sorted).retentionunit
+    for point in sorted
+        point.retentionunit == retention_unit || throw(ArgumentError(
+            "all alkane ladder calibration points must have the same retention unit"))
+    end
+
+    retentionvalues = [point.retention for point in sorted]
+    retentions = isnothing(retention_unit) ?
+        retentionvalues :
+        retentionvalues .* retention_unit
+    retentionindices = [point.retentionindex for point in sorted]
+
+    retentions, retentionindices
+end
+
+function fitmap(
+    points::AbstractVector{<:AlkaneLadderCalibrationPoint};
+    kwargs...
+)
+    retentions, retentionindices = alkane_ladder_calibration_vectors(points)
+    fitmap(retentions, retentionindices; kwargs...)
+end
+
+function fitmap(
+    result::AlkaneSeriesResult;
+    molecularion::Bool=true,
+    gapfilled::Bool=true,
+    edgeextended::Bool=true,
+    goodforcalibration::Bool=true,
+    exclude::AbstractVector{<:Integer}=Int[],
+    include::AbstractVector{<:Integer}=Int[],
+    extra::AbstractVector{<:AlkaneLadderCalibrationPoint}=AlkaneLadderCalibrationPoint[],
+    kwargs...
+)
+    points = alkaneladdercalibrationpoints(
+        result;
+        molecularion=molecularion,
+        gapfilled=gapfilled,
+        edgeextended=edgeextended,
+        goodforcalibration=goodforcalibration,
+        exclude=exclude,
+        include=include,
+        extra=extra
+    )
+
+    fitmap(points; kwargs...)
 end
 
 """

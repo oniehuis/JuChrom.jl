@@ -402,6 +402,27 @@ end
     @test apex.candidate == candidate
 end
 
+@testset "alkaneladderapex default-variance wrappers delegate to full methods" begin
+    msm, _, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()
+    pathinfo = test_apex_pathinfo(candidate)
+    settings = test_apex_settings(
+        scanwindow=2,
+        apexionmzvalues=[100.0, 101.0, 102.0],
+        minioncount=3,
+        mzretentionkwargs=test_mzretention_timing_kwargs(mzkwargs),
+        mzscanorder=:ascending,
+        logfloorfraction=1e-9
+    )
+
+    apexinfo = alkaneladderapexes(msm, abundanceinfo, pathinfo, settings)
+    apex = alkaneladderapex(msm, abundanceinfo, candidate, settings)
+
+    @test apexinfo.status ≡ :success
+    @test only(apexinfo.apexes).success
+    @test apex.success
+    @test apex.apexretention ≈ 3.25 atol = 1e-5
+end
+
 @testset "alkaneladderapexes returns empty result for failed path" begin
     msm, variances, abundanceinfo, _, _ = test_alkane_ion_apex_inputs()
     pathinfo = test_empty_apex_pathinfo()
@@ -420,6 +441,29 @@ end
     @test apexinfo.scanorderinfo.status ≡ :no_path
     @test apexinfo.scanorderinfo.selected_order ≡ :unknown
     @test isnothing(apexinfo.scanorderinfo.evidence_score)
+end
+
+@testset "alkaneladderapexes returns empty result when scan-order inference fails" begin
+    msm, variances, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()
+    pathinfo = test_apex_pathinfo(candidate)
+    standard = AlkaneStandard(
+        "missing C8",
+        [MassSpectrum([100.0, 114.0, 128.0], [100.0, 80.0, 60.0];
+            attrs=(order=9, label="C9", ri=900.0))],
+        NamedTuple()
+    )
+    settings = test_apex_settings(
+        standard=standard,
+        mzretentionkwargs=test_mzretention_timing_kwargs(mzkwargs),
+        mzscanorder=:inferdirection,
+        mzscanorderminpeaks=1
+    )
+
+    apexinfo = alkaneladderapexes(msm, variances, abundanceinfo, pathinfo, settings)
+
+    @test apexinfo.status ≡ :failed
+    @test apexinfo.reason ≡ :scan_order_inference_failed
+    @test apexinfo.scanorderinfo.selected_order ≡ :unknown
 end
 
 @testset "alkaneladderapex reports structured failure when too few ions are available" begin
@@ -463,6 +507,28 @@ end
         1.0,
         0.0
     )
+end
+
+@testset "alkane ladder apex fit-quality robust zscores" begin
+    too_short = JuChrom.alkane_ladder_apex_fit_quality_robust_zscores([1.0, 2.0], 3)
+    @test !too_short.applied
+    @test too_short.nsteps == 2
+    @test all(isnan, too_short.zscores)
+
+    zero_mad = JuChrom.alkane_ladder_apex_fit_quality_robust_zscores(
+        [1.0, 1.0, 1.0, 2.0],
+        3
+    )
+    @test !zero_mad.applied
+    @test zero_mad.median == 1.0
+    @test zero_mad.mad == 0.0
+
+    applied = JuChrom.alkane_ladder_apex_fit_quality_robust_zscores(
+        [1.0, 2.0, 3.0, 4.0, 5.0],
+        3
+    )
+    @test applied.applied
+    @test applied.zscores[3] ≈ 0.0
 end
 
 @testset "alkaneladderscanorder keeps explicit user order" begin
@@ -546,6 +612,130 @@ end
     )
 end
 
+@testset "alkane ladder scan-order low-level failure branches" begin
+    msm, variances, pathinfo, standard, timingkwargs =
+        test_scan_order_inputs(; trueorder=:ascending, carbons=8:8)
+    candidate = only(pathinfo.path)
+    candidateinfo = JuChrom.AlkaneLadderScanOrderCandidate(
+        candidate.ladderstep,
+        candidate.scanindex,
+        candidate
+    )
+    basekwargs = merge(timingkwargs, (order=:inferdirection,))
+    settings = test_apex_settings(;
+        standard=standard,
+        mzretentionkwargs=timingkwargs,
+        scanwindow=2,
+        logfloorfraction=1e-9,
+        mzscanorderminpeaks=1
+    )
+
+    bad_shape_candidate = (
+        ladderstep=candidate.ladderstep,
+        scanindex=1,
+        window=(leftindex=1, rightindex=3, apexabundance=1.0)
+    )
+    bad_shape_candidateinfo = JuChrom.AlkaneLadderScanOrderCandidate(
+        bad_shape_candidate.ladderstep,
+        bad_shape_candidate.scanindex,
+        bad_shape_candidate
+    )
+    shape_failure = JuChrom.alkane_ladder_scan_order_trial_candidate(
+        msm,
+        variances,
+        bad_shape_candidateinfo,
+        :ascending,
+        basekwargs,
+        test_apex_settings(;
+            standard=standard,
+            mzretentionkwargs=timingkwargs,
+            scanwindow=1,
+            maxapexshiftfromguess=0.0
+        ),
+        :extreme_reference_ions
+    )
+    @test !shape_failure.success
+    @test shape_failure.failure.ladderstep == candidate.ladderstep
+    @test occursin("shape fit failed", shape_failure.failure.reason)
+
+    missing_standard = AlkaneStandard(
+        "missing C8",
+        [MassSpectrum([43.0, 57.0, 71.0], [100.0, 80.0, 60.0];
+            attrs=(order=9, label="C9", ri=900.0))],
+        NamedTuple()
+    )
+    caught = JuChrom.alkane_ladder_scan_order_trial_candidate(
+        msm,
+        variances,
+        candidateinfo,
+        :ascending,
+        basekwargs,
+        test_apex_settings(; standard=missing_standard, mzretentionkwargs=timingkwargs),
+        :extreme_reference_ions
+    )
+    @test !caught.success
+    @test occursin("standard does not contain", caught.failure.reason)
+
+    _, _, info = JuChrom.alkane_ladder_scan_order_expanding_trials(
+        msm,
+        variances,
+        JuChrom.AlkaneLadderScanOrderCandidate[],
+        basekwargs,
+        0,
+        settings
+    )
+    @test info.selected_order ≡ :unknown
+
+    failure = JuChrom.AlkaneLadderScanOrderTrialFailure(
+        8,
+        3,
+        "failed",
+        0,
+        NaN,
+        NaN,
+        Float64[]
+    )
+    @test failure.ladderstep == 8
+
+    ascending = JuChrom.AlkaneLadderScanOrderTrialSummary(
+        :ascending,
+        Inf,
+        :fixed_shape_ion_apex_variance,
+        Inf,
+        Float64[],
+        Inf,
+        Float64[],
+        Float64[],
+        Int[],
+        Float64[],
+        0.0,
+        NaN,
+        0,
+        1,
+        [failure]
+    )
+    descending = JuChrom.AlkaneLadderScanOrderTrialSummary(
+        :descending,
+        Inf,
+        :fixed_shape_ion_apex_variance,
+        Inf,
+        Float64[],
+        Inf,
+        Float64[],
+        Float64[],
+        Int[],
+        Float64[],
+        0.0,
+        NaN,
+        0,
+        1,
+        [failure]
+    )
+    chosen = JuChrom.alkane_ladder_choose_scan_order(ascending, descending, 1, 1.25)
+    @test chosen.selected_order ≡ :unknown
+    @test chosen.status ≡ :failed
+end
+
 @testset "alkaneladderscanorder expands ambiguous subset to all peaks" begin
     msm, variances, pathinfo, standard, timingkwargs =
         test_scan_order_inputs(; trueorder=:ascending, carbons=8:15)
@@ -603,4 +793,70 @@ end
         @test scanorder.info.trials.ascending.n_tried ≥ 3
         @test scanorder.info.trials.descending.n_tried ≥ 3
     end
+end
+
+@testset "alkane ladder apex helper branches" begin
+    @test JuChrom.alkane_ladder_spread_index_order(5, 2) == [1, 5, 3, 2, 4]
+    @test JuChrom.alkane_ladder_spread_indices(5, 0) == Int[]
+    @test JuChrom.alkane_ladder_robust_variance([1.0, 1.0, 1.0, 2.0]) ≈ 0.25
+
+    msm, variances, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()
+    settings = test_apex_settings(
+        scanwindow=2,
+        apexionmzvalues=[100.0, 101.0, 102.0],
+        minioncount=3,
+        mzretentionkwargs=test_mzretention_timing_kwargs(mzkwargs),
+        mzscanorder=:ascending,
+        logfloorfraction=1e-9
+    )
+    apex = alkaneladderapex(msm, variances, abundanceinfo, candidate, settings)
+    attempt = apex.fit.fit
+    fields = fieldnames(typeof(attempt))
+    altered(; kwargs...) = typeof(attempt)(
+        (field in keys(kwargs) ? kwargs[field] : getfield(attempt, field)
+            for field in fields)...
+    )
+
+    @test JuChrom.alkane_ladder_apex_failure_reason(
+        altered(; success=false, apex_retention=NaN)
+    ) == "nonfinite apex retention"
+    @test JuChrom.alkane_ladder_apex_failure_reason(
+        altered(; success=false, apex_within_allowed_shift=false)
+    ) == "apex exceeds maxapexshiftfromguess from abundance-trace guess"
+    @test JuChrom.alkane_ladder_apex_failure_reason(
+        altered(; success=false, gamma=0.1)
+    ) == "log-quadratic fit is not concave"
+    @test JuChrom.alkane_ladder_apex_failure_reason(
+        altered(; success=false, apex_in_window=false)
+    ) == "continuous apex is outside scan window"
+
+    @test JuChrom.alkane_ladder_candidate_step((step=8, scanindex=3)) == 8
+    @test_throws ArgumentError JuChrom.alkane_ladder_candidate_step((scanindex=3,))
+    @test JuChrom.alkane_ladder_input_scan_index((apexindex=4, ladderstep=8)) == 4
+    @test JuChrom.alkane_ladder_input_scan_index((scan_index=5, ladderstep=8)) == 5
+    @test_throws ArgumentError JuChrom.alkane_ladder_input_scan_index((ladderstep=8,))
+
+    spectrum_without_order = MassSpectrum(
+        [43.0, 57.0],
+        [100.0, 80.0];
+        attrs=(label="first", ri=800.0)
+    )
+    standard = AlkaneStandard("indexed", [spectrum_without_order], NamedTuple())
+    key, spectrum = JuChrom.alkane_ladder_reference_spectrum(standard, 1)
+    @test key == 1
+    @test spectrum === spectrum_without_order
+    @test_throws ArgumentError JuChrom.alkane_ladder_reference_spectrum(standard, 2)
+
+    @test JuChrom.alkane_ladder_mzvalue_vector((), true) == Float64[]
+    @test_throws ArgumentError JuChrom.alkane_ladder_mzvalue_vector((), false)
+    @test JuChrom.alkane_ladder_local_scan_search_range(5, 1, 4, 0) == 1:4
+    @test JuChrom.alkane_ladder_local_scan_search_range(5, 5, 4, 0) == 2:5
+    @test JuChrom.alkane_ladder_center_search_retentions(
+        collect(1.0:5.0),
+        3,
+        1.5,
+        0.01
+    ) == [4.0, 2.0, 4.5, 1.5]
+    @test JuChrom.alkane_ladder_fractional_scan_index([5.0, 4.0, 3.0], 4.5) ≈ 1.5
+    @test JuChrom.alkane_fractional_scan_index([1.0, 2.0, 3.0], 2.5) ≈ 2.5
 end

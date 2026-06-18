@@ -67,10 +67,18 @@ end
 
 @testset "tictrace overlays ladder steps from AlkaneSeriesResult" begin
     msm, result = synthetic_ladder_result()
+    ext = Base.get_extension(JuChrom, :MakieExtension)
 
     fig = tictrace(msm, result)
     ax = only_axis(fig)
 
+    @test ext.argument_names(ext.TicTrace) == (
+        :retentions,
+        :intensities,
+        :baseline_intensities,
+        :step_retentions,
+        :step_numbers
+    )
     @test length(alkaneladdersteps(result)) == 1
     @test length(ax.scene.plots) == 1
     @test ax.xlabel[] == "Retention"
@@ -79,6 +87,7 @@ end
 
 @testset "tictrace supports retention unit conversion" begin
     msm, result = synthetic_ladder_result()
+    ext = Base.get_extension(JuChrom, :MakieExtension)
     unitful_msm = MassScanMatrix(
         rawretentions(msm),
         u"ms",
@@ -110,6 +119,12 @@ end
     @test limits.origin[1] ≈ minimum(rawretentions(unitful_msm; unit=u"minute"))
     @test limits.origin[1] + limits.widths[1] ≈
         maximum(rawretentions(unitful_msm; unit=u"minute"))
+
+    step = only(alkaneladdersteps(result))
+    @test_throws ArgumentError ext.tictrace_step_retention(step, nothing, u"minute")
+    @test ext.tictrace_step_retention(step, u"ms", nothing) == step.apexretention
+    font = ext.tictrace_measurement_font(:regular)
+    @test ext.tictrace_measurement_font(font) === Makie.to_font(font)
 end
 
 @testset "tictrace! overlays ladder steps on an existing axis" begin

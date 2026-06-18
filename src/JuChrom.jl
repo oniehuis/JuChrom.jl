@@ -85,6 +85,7 @@ export AbstractVarianceMassScanMatrix
 export AlkaneAbundanceInfo
 export AlkaneAbundanceWindow
 export AlkaneChannelInfo
+export AlkaneLadderCalibrationPoint
 export AlkaneLadderStep
 export AlkaneMolecularIonContrast
 export AlkaneMolecularIonInfo
@@ -123,6 +124,7 @@ export dwellnormalize
 export extras
 export findalkanes
 export findalkaneseries
+export alkaneladdercalibrationpoints
 export alkaneladdersteps
 export alkaneladderpath
 export alkaneladderapex

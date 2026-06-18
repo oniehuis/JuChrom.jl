@@ -1,5 +1,6 @@
 using Test
 using JuChrom
+using Unitful
 
 function test_findalkanes_msm()
     n = 25
@@ -233,7 +234,7 @@ function test_ladder_addition_info(gapfilled, leftextended, rightextended)
     )
 end
 
-function test_ladder_step_result()
+function test_ladder_step_result(; standard=defaultalkanestandard(), retentionunit=nothing)
     molecular_apexes = [
         test_ladder_apex(10, 30; source=:molecularion, good=true),
         test_ladder_apex(8, 10; source=:molecularion, good=false),
@@ -259,7 +260,7 @@ function test_ladder_step_result()
     ]
 
     AlkaneSeriesResult(
-        nothing,
+        standard,
         ones(1, 1),
         nothing,
         nothing,
@@ -268,7 +269,9 @@ function test_ladder_step_result()
         nothing,
         nothing,
         test_ladder_apex_info(molecular_apexes),
-        test_ladder_addition_info(gapfilled, [], rightextended)
+        test_ladder_addition_info(gapfilled, [], rightextended),
+        nothing,
+        retentionunit
     )
 end
 
@@ -297,6 +300,68 @@ end
     @test [step.ladderstep for step in mi] == [8, 10]
     @test [step.ladderstep for step in gap] == [9]
     @test [step.ladderstep for step in edge] == [11]
+end
+
+@testset "alkaneladdercalibrationpoints returns curated RT RI anchors" begin
+    result = test_ladder_step_result(; retentionunit=u"minute")
+
+    points = alkaneladdercalibrationpoints(result)
+
+    @test points isa Vector{AlkaneLadderCalibrationPoint}
+    @test [point.ladderstep for point in points] == [9, 10, 11]
+    @test [point.retention for point in points] == [200.0, 300.0, 400.0]
+    @test [point.retentionindex for point in points] == [900.0, 1000.0, 1100.0]
+    @test all(point.retentionunit == u"minute" for point in points)
+    @test [point.source for point in points] ==
+        [:gapfilled, :molecularion, :rightextended]
+
+    with_bad_step = alkaneladdercalibrationpoints(result; include=[8])
+    @test [point.ladderstep for point in with_bad_step] == [8, 9, 10, 11]
+
+    without_gap = alkaneladdercalibrationpoints(result; gapfilled=false)
+    @test [point.ladderstep for point in without_gap] == [10, 11]
+
+    excluded = alkaneladdercalibrationpoints(result; exclude=[10])
+    @test [point.ladderstep for point in excluded] == [9, 11]
+
+    replacement = AlkaneLadderCalibrationPoint(10, 305.0, u"minute", 1000.0, :manual, true)
+    replaced = alkaneladdercalibrationpoints(result; exclude=[10], extra=[replacement])
+    @test [point.ladderstep for point in replaced] == [9, 10, 11]
+    @test replaced[2].retention == 305.0
+    @test replaced[2].source ≡ :manual
+
+    @test_throws ArgumentError alkaneladdercalibrationpoints(result; extra=[replacement])
+    @test_throws ArgumentError alkaneladdercalibrationpoints(
+        test_ladder_step_result(; standard=nothing)
+    )
+end
+
+@testset "fitmap accepts alkane ladder calibration points and results" begin
+    result = test_ladder_step_result(; retentionunit=u"minute")
+
+    points = alkaneladdercalibrationpoints(result)
+    mapper_from_points = fitmap(points)
+    mapper_from_result = fitmap(result)
+    mapper_with_curation = fitmap(result; goodforcalibration=false, exclude=[8])
+
+    @test mapper_from_points isa RetentionMapper
+    @test mapper_from_result isa RetentionMapper
+    @test mapper_with_curation isa RetentionMapper
+    @test retentionunit_A(mapper_from_points) == u"minute"
+    @test rawretentions_A(mapper_from_points) ≈ [200.0, 300.0, 400.0]
+    @test rawretentions_B(mapper_from_points) ≈ [900.0, 1000.0, 1100.0]
+    @test rawretentions_A(mapper_from_result) ≈ rawretentions_A(mapper_from_points)
+end
+
+@testset "alkane m/z channel matching reports missing standard entries" begin
+    msm = test_findalkanes_msm()
+    standard = AlkaneStandard(
+        "missing C8",
+        [JuChrom.alkane_reference_spectrum(9, "nonane", 900.0, [128], [100.0])],
+        NamedTuple()
+    )
+
+    @test_throws ArgumentError JuChrom.alkane_mz_channels(msm, standard, 8:8, 0.0)
 end
 
 @testset "findalkanes preprocessing and variance wrappers" begin

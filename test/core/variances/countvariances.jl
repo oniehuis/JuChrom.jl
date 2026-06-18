@@ -115,6 +115,12 @@ end
             mintransitioncount=1,
             intensityfloor=25.0u"pA"
         )
+        @test_throws ArgumentError countvariances(
+            rawcounts .* u"pA";
+            windowsize=5,
+            mintransitioncount=1,
+            intensityfloor=25.0u"s"
+        )
     end
 
     @testset "count noise helpers" begin
