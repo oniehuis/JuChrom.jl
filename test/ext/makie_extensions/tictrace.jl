@@ -83,6 +83,7 @@ end
     @test length(ax.scene.plots) == 1
     @test ax.xlabel[] == "Retention"
     @test ax.ylabel[] == "TIC [unitless]"
+    @test only(ax.scene.plots).labels[] == true
 end
 
 @testset "tictrace supports retention unit conversion" begin

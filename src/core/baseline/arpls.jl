@@ -7,8 +7,8 @@
         nonnegative::Bool=false,
         variances=nothing,
         variancefloor::Real=1e-12,
-        peakthreshold::Real=4.0,
-        peakslope::Real=1.0,
+        peakthreshold::Real=10.0,
+        peakslope::Real=0.5,
         zerothreshold::Real=1e-8,
         zerofractionthreshold::Real=0.2,
         zeroweight::Real=0.01
@@ -89,8 +89,8 @@ function arpls(
     nonnegative::Bool=false,
     variances=nothing,
     variancefloor::Real=1e-12,
-    peakthreshold::Real=4.0,
-    peakslope::Real=1.0,
+    peakthreshold::Real=10.0,
+    peakslope::Real=0.5,
     zerothreshold::Real=1e-8,
     zerofractionthreshold::Real=0.2,
     zeroweight::Real=0.01
@@ -114,8 +114,8 @@ function arpls(
     nonnegative::Bool=false,
     variances=nothing,
     variancefloor::Real=1e-12,
-    peakthreshold::Real=4.0,
-    peakslope::Real=1.0,
+    peakthreshold::Real=10.0,
+    peakslope::Real=0.5,
     zerothreshold::Real=1e-8,
     zerofractionthreshold::Real=0.2,
     zeroweight::Real=0.01
