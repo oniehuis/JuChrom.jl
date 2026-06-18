@@ -12,7 +12,7 @@ using JuChrom: arpls
 function arplsreference(
     y; λ=1e5, ratio=1e-3, maxiter=10_000, variances=nothing,
     variancefloor=1e-12, peakthreshold=4.0, peakslope=1.0, zerothreshold=1e-8,
-    zeroweight=0.01
+    zerofractionthreshold=0.2, zeroweight=0.01
     )
 
     n = length(y)
@@ -38,6 +38,9 @@ function arplsreference(
     end
     residualscales = @. 1 / sqrt(precisionweights)
     zeromask = y .< zerothreshold
+    if count(zeromask) / n > zerofractionthreshold
+        fill!(zeromask, false)
+    end
     zerofactors = ones(Float64, n)
     zerofactors[zeromask] .= zeroweight
 
@@ -130,6 +133,15 @@ end
     bdrop_zero = arpls(ydrop; λ=1e5, ratio=1e-6, maxiter=500)
     @test mean(bdrop_zero[104:112]) > mean(bdrop[104:112])
 
+    ysparse = copy(y)
+    ysparse[1:45] .= 0.0
+    bsparse = arpls(ysparse; λ=1e5, ratio=1e-6, maxiter=500)
+    bsparse_ref = arplsreference(ysparse; λ=1e5, ratio=1e-6, maxiter=500)
+    bsparse_forcedropout = arpls(
+        ysparse; λ=1e5, ratio=1e-6, maxiter=500, zerofractionthreshold=1.0)
+    @test bsparse ≈ bsparse_ref
+    @test norm(bsparse - bsparse_forcedropout) > 1e-3
+
     @test_throws ArgumentError arpls(y[1:2])
     @test_throws ArgumentError arpls([1.0, Inf, 2.0])
     @test_throws ArgumentError arpls(y; λ=0.0)
@@ -143,6 +155,8 @@ end
     @test_throws ArgumentError arpls(y; peakthreshold=0.0)
     @test_throws ArgumentError arpls(y; peakslope=0.0)
     @test_throws ArgumentError arpls(y; zerothreshold=-1e-9)
+    @test_throws ArgumentError arpls(y; zerofractionthreshold=-1e-9)
+    @test_throws ArgumentError arpls(y; zerofractionthreshold=1.01)
     @test_throws ArgumentError arpls(y; zeroweight=0.0)
     @test_throws ArgumentError arpls(y; variancefloor=0.0)
     @test_throws ArgumentError arpls(y; variancefloor=-1e-12)

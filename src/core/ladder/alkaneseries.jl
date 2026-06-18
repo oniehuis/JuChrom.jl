@@ -522,12 +522,14 @@ needed for a usable noise window, the positive-count quantile used for the count
 the quantile used to define near-zero windows. `varianceintensityfloor` overrides the
 automatically chosen intensity floor when it is not `nothing`.
 
-`baselineλ`, `baselinenonnegative`, `baselinepeakthreshold`, `baselinepeakslope`, and
-`baselinezerothreshold` are passed to [`arpls`](@ref) when `subtractbaseline=true`.
+`baselineλ`, `baselinenonnegative`, `baselinepeakthreshold`, `baselinepeakslope`,
+`baselinezerothreshold`, and `baselinezerofractionthreshold` are passed to [`arpls`](@ref)
+when `subtractbaseline=true`.
 `baselineλ` controls baseline smoothness. `baselinenonnegative` constrains the fitted
 baseline to nonnegative intensities. `baselinepeakthreshold`, `baselinepeakslope`, and
 `baselinezerothreshold` control peak masking and zero-level handling during baseline
-estimation.
+estimation. `baselinezerofractionthreshold` controls when zeros are treated as real
+observations rather than sparse dropouts.
 
 All remaining keyword arguments are forwarded unchanged to [`findalkaneseries`](@ref).
 This includes the carbon range, abundance-window thresholds, molecular-ion gates, path
@@ -556,6 +558,7 @@ function findalkanes(
     baselinepeakthreshold=10.0,
     baselinepeakslope=0.5,
     baselinezerothreshold=1.0,
+    baselinezerofractionthreshold=0.2,
 
     kwargs...
 )
@@ -600,7 +603,8 @@ function findalkanes(
             variances=σ²,
             peakthreshold=baselinepeakthreshold,
             peakslope=baselinepeakslope,
-            zerothreshold=baselinezerothreshold
+            zerothreshold=baselinezerothreshold,
+            zerofractionthreshold=baselinezerofractionthreshold
         )
         validate_alkane_series_baselines(msm, baselines)
         (
@@ -610,7 +614,8 @@ function findalkanes(
             nonnegative=baselinenonnegative,
             peakthreshold=baselinepeakthreshold,
             peakslope=baselinepeakslope,
-            zerothreshold=baselinezerothreshold
+            zerothreshold=baselinezerothreshold,
+            zerofractionthreshold=baselinezerofractionthreshold
         )
     else
         nothing

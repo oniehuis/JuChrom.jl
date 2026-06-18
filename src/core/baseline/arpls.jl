@@ -10,6 +10,7 @@
         peakthreshold::Real=4.0,
         peakslope::Real=1.0,
         zerothreshold::Real=1e-8,
+        zerofractionthreshold::Real=0.2,
         zeroweight::Real=0.01
     ) -> Vector{Float64}
 
@@ -31,7 +32,8 @@ implementation:
   standardized, and precision weights are normalized so scaling all variances by
   the same factor does not change the result;
 - can give zero/dropout points selected by `zerothreshold` a reduced fit weight
-  using `zeroweight` and exclude them from the negative-residual noise estimate;
+  using `zeroweight` and exclude them from the negative-residual noise estimate
+  when they occur in at most `zerofractionthreshold` of the scans;
 - can clip fitted baseline values to be nonnegative after each smoothing solve;
 - exposes the logistic peak threshold and transition slope as keywords rather than
   fixing them in the weighting formula;
@@ -62,9 +64,11 @@ to zero after each smoothing solve.
 and `variancefloor` specifies the lower bound used to avoid infinite precision for zero
 or tiny variances.
 
-`zerothreshold` specifies the threshold below which intensities are treated as
-zero/dropout points. For points below this threshold, fit weights are multiplied by
-`zeroweight`, and the points are excluded from the negative-residual noise estimate.
+`zerothreshold` specifies the threshold below which intensities are considered zero.
+If the fraction of such points is at most `zerofractionthreshold`, they are treated
+as sparse dropouts: fit weights are multiplied by `zeroweight`, and the points are
+excluded from the negative-residual noise estimate. If the fraction is larger, zeros
+are treated as real observations and are not downweighted.
 
 
 # Examples
@@ -88,17 +92,18 @@ function arpls(
     peakthreshold::Real=4.0,
     peakslope::Real=1.0,
     zerothreshold::Real=1e-8,
+    zerofractionthreshold::Real=0.2,
     zeroweight::Real=0.01
     ) where {T1<:Real, T2<:Real, T3<:Integer}
 
     validatearplsargs(
         intensities, λ, ratio, maxiter, peakthreshold, peakslope,
-        zerothreshold, zeroweight, variancefloor)
+        zerothreshold, zerofractionthreshold, zeroweight, variancefloor)
     varianceweights = arplsvarianceweights(variances, length(intensities), variancefloor)
     arplsfit(
         intensities, λ * arplspenalty(length(intensities)), ratio, maxiter,
         nonnegative, varianceweights.residualscales, varianceweights.precisionweights,
-        peakthreshold, peakslope, zerothreshold, zeroweight)
+        peakthreshold, peakslope, zerothreshold, zerofractionthreshold, zeroweight)
 end
 
 function arpls(
@@ -112,6 +117,7 @@ function arpls(
     peakthreshold::Real=4.0,
     peakslope::Real=1.0,
     zerothreshold::Real=1e-8,
+    zerofractionthreshold::Real=0.2,
     zeroweight::Real=0.01
     ) where {T1<:Real, T2<:Real, T3<:Integer}
 
@@ -120,8 +126,8 @@ function arpls(
     scancount(msm) ≥ 3 || throw(ArgumentError("Need at least three data points"))
     all(isfinite, ints) || throw(ArgumentError("All intensities must be finite"))
     validatearplssettings(
-        λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold, zeroweight,
-        variancefloor)
+        λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold,
+        zerofractionthreshold, zeroweight, variancefloor)
     if !isnothing(variances)
         variances isa AbstractMatrix{<:Real} || throw(
             ArgumentError("variances must be a matrix matching intensities"))
@@ -138,7 +144,7 @@ function arpls(
         baselines[:, i] .= arplsfit(
             @view(ints[:, i]), penalty, ratio, maxiter, nonnegative,
             varianceweights.residualscales, varianceweights.precisionweights,
-            peakthreshold, peakslope, zerothreshold, zeroweight,
+            peakthreshold, peakslope, zerothreshold, zerofractionthreshold, zeroweight,
             "m/z channel $i (m/z=$(mzs[i]))")
     end
 
@@ -174,21 +180,21 @@ function arplspenalty(n::Integer)
 end
 
 function validatearplsargs(
-    intensities, λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold, zeroweight,
-    variancefloor
+    intensities, λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold,
+    zerofractionthreshold, zeroweight, variancefloor
     )
 
     length(intensities) ≥ 3 || throw(ArgumentError("Need at least three data points"))
     all(isfinite, intensities) || throw(ArgumentError("All intensities must be finite"))
     validatearplssettings(
-        λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold, zeroweight,
-        variancefloor)
+        λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold,
+        zerofractionthreshold, zeroweight, variancefloor)
     nothing
 end
 
 function validatearplssettings(
-    λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold, zeroweight,
-    variancefloor
+    λ, ratio, maxiter, peakthreshold, peakslope, zerothreshold,
+    zerofractionthreshold, zeroweight, variancefloor
     )
 
     λ > 0 || throw(ArgumentError("Smoothing parameter must be positive"))
@@ -200,6 +206,8 @@ function validatearplssettings(
         throw(ArgumentError("Peak slope must be finite and positive"))
     isfinite(zerothreshold) && zerothreshold ≥ 0 ||
         throw(ArgumentError("Zero threshold must be finite and non-negative"))
+    isfinite(zerofractionthreshold) && 0 ≤ zerofractionthreshold ≤ 1 ||
+        throw(ArgumentError("Zero fraction threshold must be finite and in [0, 1]"))
     isfinite(zeroweight) && zeroweight > 0 ||
         throw(ArgumentError("Zero weight must be finite and positive"))
     isfinite(variancefloor) && variancefloor > 0 ||
@@ -257,6 +265,7 @@ function arplsfit(
     peakthreshold::Real,
     peakslope::Real,
     zerothreshold::Real,
+    zerofractionthreshold::Real,
     zeroweight::Real,
     warncontext::Union{Nothing, String}=nothing
     )
@@ -270,6 +279,9 @@ function arplsfit(
     weightedresiduals = isnothing(residualscales) ? residuals : similar(y)
     fitweights = similar(weights)
     zeromask = y .< zerothreshold
+    if count(zeromask) / n > zerofractionthreshold
+        fill!(zeromask, false)
+    end
     zerofactors = ones(Float64, n)
     zerofactors[zeromask] .= zeroweight
     rhs = similar(y)
