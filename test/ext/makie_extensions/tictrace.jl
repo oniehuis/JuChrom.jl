@@ -65,32 +65,6 @@ function only_axis(fig)
     only([content for content in fig.content if content isa Makie.Axis])
 end
 
-@testset "tictrace plots TIC from a mass scan matrix" begin
-    msm, _ = synthetic_ladder_result()
-
-    fig = tictrace(msm)
-    @test fig isa Makie.Figure
-
-    ax = only_axis(fig)
-    @test ax.xlabel[] == "Retention"
-    @test ax.ylabel[] == "TIC [unitless]"
-    @test !isempty(ax.scene.plots)
-    limits = ax.finallimits[]
-    @test limits.origin[1] ≈ minimum(rawretentions(msm))
-    @test limits.origin[1] + limits.widths[1] ≈ maximum(rawretentions(msm))
-end
-
-@testset "tictrace! mutates an existing axis" begin
-    msm, _ = synthetic_ladder_result()
-    fig = Figure()
-    ax = Axis(fig[1, 1])
-
-    out = tictrace!(ax, msm)
-
-    @test out === ax
-    @test !isempty(ax.scene.plots)
-end
-
 @testset "tictrace overlays ladder steps from AlkaneSeriesResult" begin
     msm, result = synthetic_ladder_result()
 
@@ -98,7 +72,9 @@ end
     ax = only_axis(fig)
 
     @test length(alkaneladdersteps(result)) == 1
-    @test length(ax.scene.plots) ≥ 2
+    @test length(ax.scene.plots) == 1
+    @test ax.xlabel[] == "Retention"
+    @test ax.ylabel[] == "TIC [unitless]"
 end
 
 @testset "tictrace supports retention unit conversion" begin
@@ -144,25 +120,33 @@ end
     out = tictrace!(ax, msm, result)
 
     @test out === ax
-    @test length(ax.scene.plots) ≥ 2
+    @test length(ax.scene.plots) == 1
 end
 
 @testset "tictrace ladder labels are thinned when dense" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
     fig = Figure(size=(300, 300))
     ax = Axis(fig[1, 1])
+    xlims!(ax, 1, 20)
+    ylims!(ax, 0, 1)
 
-    indices = ext.tictrace_nonoverlapping_label_indices(
+    positions, labels = ext.tictrace_visible_label_data(
         ax,
         collect(1.0:20.0),
-        (1.0, 20.0),
+        collect(1:20),
+        true,
+        :bold,
         11,
-        4.0
+        1,
+        4.0,
+        0.99,
+        ax.scene.viewport[],
+        ax.finallimits[]
     )
 
-    @test issorted(indices)
-    @test !isempty(indices)
-    @test length(indices) < 20
+    @test !isempty(positions)
+    @test length(positions) == length(labels)
+    @test length(labels) < 20
 end
 
 @testset "tictrace accepts integer TIC with floating baseline" begin

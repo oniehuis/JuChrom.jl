@@ -1,5 +1,6 @@
 using Test
 using JuChrom
+using Unitful
 
 function abundance_test_inputs()
     X = [
@@ -80,6 +81,10 @@ end
     @test intchannelinfo.mzvalues == [29, 57]
     @test only(intchannelinfo.references) isa AlkaneReferenceChannels
     @test only(intchannelinfo.references).mzvalues == [29, 57]
+
+    @test JuChrom.validate_alkane_mz_unit(nothing) ≡ nothing
+    @test JuChrom.validate_alkane_mz_unit(u"Th") ≡ nothing
+    @test_throws ArgumentError JuChrom.validate_alkane_mz_unit(u"s")
 end
 
 @testset "alkane_abundance weighted least-squares estimate" begin
@@ -568,6 +573,7 @@ end
     @test JuChrom.alkane_neighboring_peak_across_minimum(maxima, 4, 3, :left) == 2
     @test JuChrom.alkane_neighboring_peak_across_minimum(maxima, 2, 3, :right) == 4
     @test JuChrom.alkane_neighboring_peak_across_minimum([4], 4, 3, :left) ≡ nothing
+    @test JuChrom.alkane_neighboring_peak_across_minimum([4], 4, 3, :right) ≡ nothing
     @test_throws ArgumentError JuChrom.alkane_neighboring_peak_across_minimum(
         maxima,
         4,

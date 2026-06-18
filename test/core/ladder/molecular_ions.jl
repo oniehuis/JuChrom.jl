@@ -190,6 +190,41 @@ end
     )
 end
 
+@testset "alkane_molecular_ion_window_contrasts records empty unannotatable steps" begin
+    msm, variances, abundanceinfo, window, _ = molecular_ion_test_inputs()
+    abundanceinfo.abundances[10] = abundanceinfo.abundances[8]
+    abundanceinfo.abundancevariances[10] = abundanceinfo.abundancevariances[8]
+    abundanceinfo.windows[10] = [
+        AlkaneAbundanceWindow(
+            10,
+            window.leftindex,
+            window.apexindex,
+            window.rightindex,
+            window.leftabundance,
+            window.apexabundance,
+            window.rightabundance,
+            window.threshold,
+            window.leftstop,
+            window.rightstop
+        )
+    ]
+
+    contrasts = JuChrom.alkane_molecular_ion_window_contrasts(
+        msm,
+        variances,
+        abundanceinfo.abundances,
+        abundanceinfo.windows,
+        1,
+        14,
+        1.0,
+        1.645,
+        1.645
+    )
+
+    @test haskey(contrasts, 10)
+    @test isempty(contrasts[10])
+end
+
 @testset "alkane_molecular_ion_zscore_vectors maps window z-scores to scans" begin
     abundances = Dict(8 => zeros(6))
     contrasts = Dict(8 => [

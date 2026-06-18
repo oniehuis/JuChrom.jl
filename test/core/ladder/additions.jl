@@ -207,6 +207,11 @@ end
     @test JuChrom.alkane_ladder_edge_extension_step_cap(anchors, :right, 8:40) == 25
     @test JuChrom.alkane_ladder_edge_extension_step_cap(anchors, :left, 12:15) == 0
     @test JuChrom.alkane_ladder_edge_extension_step_cap(anchors, :right, 12:15) == 0
+    @test_throws ArgumentError JuChrom.alkane_ladder_edge_extension_step_cap(
+        anchors,
+        :bad,
+        8:40
+    )
 end
 
 @testset "alkaneladderadditions proposes single-step gap fills" begin
@@ -425,6 +430,296 @@ end
     @test isempty(additions.gapfilled)
     @test isempty(additions.leftextended)
     @test isempty(additions.rightextended)
+end
+
+@testset "alkane ladder addition helper coverage" begin
+    window = AlkaneAbundanceWindow(
+        9, 5, 10, 15, 0.0, 10.0, 0.0, 0.0, :threshold, :threshold
+    )
+    candidate = JuChrom.AlkaneLadderAdditionCandidate(
+        9,
+        5,
+        10,
+        15,
+        collect(5:15),
+        ones(11),
+        :gapfilled,
+        10,
+        10.0,
+        0.0,
+        5.0,
+        1.0,
+        10.0,
+        10.0,
+        10.0,
+        NaN,
+        NaN,
+        0,
+        NaN,
+        window
+    )
+
+    @test JuChrom.alkane_ladder_fallback_scanindices(
+        collect(1.0:30.0),
+        10,
+        8,
+        candidate
+    ) == collect(5:15)
+
+    inferredkwargs = (order=:ascending,)
+    apexinfo = (settings=(mzretentionkwargs=inferredkwargs,),)
+    @test JuChrom.alkane_ladder_addition_apex_mzretentionkwargs(
+        apexinfo,
+        nothing
+    ) == inferredkwargs
+    @test JuChrom.alkane_ladder_addition_apex_mzretentionkwargs(
+        apexinfo,
+        (order=:descending,)
+    ) == (order=:descending,)
+
+    anchors = [
+        JuChrom.AlkaneLadderAdditionAnchor(8, 10.0, 10.0, :molecularion, 0.95, 0.9),
+        JuChrom.AlkaneLadderAdditionAnchor(9, 22.0, 22.0, :molecularion, 0.90, 0.9),
+        JuChrom.AlkaneLadderAdditionAnchor(10, 40.0, 40.0, :molecularion, 0.85, 0.9)
+    ]
+    @test JuChrom.alkane_ladder_edge_extension_anchor_results(
+        anchors,
+        :left,
+        2
+    ) == anchors[1:2]
+    @test JuChrom.alkane_ladder_edge_extension_anchor_results(
+        anchors,
+        :right,
+        2
+    ) == anchors[2:3]
+    @test_throws ArgumentError JuChrom.alkane_ladder_edge_extension_anchor_results(
+        anchors,
+        :bad,
+        2
+    )
+
+    @test isnan(JuChrom.alkane_ladder_anchor_mass_spectrum_cosine(nothing))
+    @test JuChrom.alkane_single_gap_required_cosine(
+        anchors[1],
+        anchors[2],
+        0.8,
+        0.03
+    ) ≈ 0.87
+    @test JuChrom.alkane_single_gap_required_cosine(
+        nothing,
+        nothing,
+        0.8,
+        0.03
+    ) == 0.8
+    @test JuChrom.alkane_edge_extension_required_cosine(
+        anchors,
+        :right,
+        0.8,
+        0.03,
+        2
+    ) ≈ 0.82
+
+    rightprediction = JuChrom.alkane_ladder_edge_extension_scan_prediction(
+        anchors,
+        11
+    )
+    @test rightprediction.expectedscan ≈ 67.0
+    @test rightprediction.localstepgap ≈ 27.0
+
+    leftprediction = JuChrom.alkane_ladder_edge_extension_scan_prediction(
+        anchors,
+        7
+    )
+    @test leftprediction.expectedscan ≈ 2.0
+    @test leftprediction.localstepgap ≈ 8.0
+
+    @test JuChrom.alkane_ladder_edge_extension_scan_prediction(anchors, 9) ≡
+        nothing
+
+    boundarywindow = AlkaneAbundanceWindow(
+        8, 1, 1, 3, 0.0, 10.0, 0.0, 0.0, :boundary, :threshold
+    )
+    @test JuChrom.alkane_ladder_edge_window_apex_is_boundary_truncated(
+        [10.0, 5.0, 1.0],
+        boundarywindow,
+        :left,
+        3,
+        3.0
+    )
+    @test_throws ArgumentError JuChrom.alkane_ladder_edge_window_apex_is_boundary_truncated(
+        [10.0, 5.0, 1.0],
+        boundarywindow,
+        :bad,
+        3,
+        3.0
+    )
+end
+
+@testset "alkane ladder edge addition diagnostics cover rejected windows" begin
+    msm, variances, abundanceinfo, pathinfo = ladder_addition_test_inputs()
+    apexinfo = (
+        apexes=[
+            (success=true, ladderstep=8, apexscanindex=10.0),
+            (success=true, ladderstep=10, apexscanindex=30.0)
+        ],
+    )
+    settings = ladder_addition_test_settings(
+        msm,
+        variances,
+        abundanceinfo,
+        apexinfo;
+        apexionmzvalues=[100.0],
+        apexminioncount=1,
+        apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
+    )
+    settings_with_one_edge_anchor = JuChrom.AlkaneLadderAdditionSettings(
+        settings.minradius,
+        settings.radiusfraction,
+        settings.positionsigmafraction,
+        settings.maxextensionsteps,
+        settings.massspectrummatch,
+        settings.gapmincosinefloor,
+        settings.gapcosinetolerance,
+        1,
+        settings.edgeminradius,
+        settings.edgeradiusfraction,
+        settings.edgemincosinefloor,
+        settings.edgecosinetolerance,
+        settings.edgecosineanchorcount,
+        settings.edgepositionsigmafraction,
+        settings.massspectrumvariancefloor,
+        settings.apexscanwindow,
+        settings.apexvariancefloor,
+        settings.apexlogfloorfraction,
+        settings.apexionexcludemzvalues,
+        settings.apexionmzvalues,
+        settings.apexionminrelativeintensity,
+        settings.apexminioncount,
+        settings.apexmzretentionkwargs,
+        settings.apexmaxshiftfromguess,
+        settings.apexcenteredscantolerance,
+        settings.apexfitqualityoutlierz,
+        settings.apexfitqualityminsteps,
+        settings.carbonrange
+    )
+    anchors = [
+        JuChrom.AlkaneLadderAdditionAnchor(8, 10.0, 10.0, :molecularion, NaN, NaN),
+        JuChrom.AlkaneLadderAdditionAnchor(10, 30.0, 30.0, :molecularion, NaN, NaN)
+    ]
+    leftadditions, leftdiagnostic = JuChrom.alkane_edge_addition(
+        msm,
+        variances,
+        abundanceinfo,
+        anchors,
+        :left,
+        scancount(msm),
+        settings_with_one_edge_anchor,
+        nothing,
+        defaultalkanestandard()
+    )
+    rightadditions, rightdiagnostic = JuChrom.alkane_edge_addition(
+        msm,
+        variances,
+        abundanceinfo,
+        anchors,
+        :right,
+        scancount(msm),
+        settings_with_one_edge_anchor,
+        nothing,
+        defaultalkanestandard()
+    )
+
+    @test isempty(leftadditions)
+    @test isempty(rightadditions)
+    @test leftdiagnostic.reason ≡ :insufficient_refined_anchors
+    @test leftdiagnostic.ladderstep == 7
+    @test rightdiagnostic.reason ≡ :insufficient_refined_anchors
+    @test rightdiagnostic.ladderstep == 11
+    @test_throws ArgumentError JuChrom.alkane_edge_addition(
+        msm,
+        variances,
+        abundanceinfo,
+        anchors,
+        :bad,
+        scancount(msm),
+        settings,
+        nothing,
+        defaultalkanestandard()
+    )
+
+    truncatedabundances = Dict(7 => [10.0, 5.0, 1.0, zeros(57)...])
+    truncatedwindow = AlkaneAbundanceWindow(
+        7, 1, 1, 3, 0.0, 10.0, 0.0, 0.0, :boundary, :threshold
+    )
+    truncatedinfo = AlkaneAbundanceInfo(
+        truncatedabundances,
+        Dict(7 => ones(60)),
+        Dict(7 => [truncatedwindow]),
+        NamedTuple()
+    )
+    truncatedevaluation = JuChrom.alkane_best_ladder_addition_window(
+        msm,
+        variances,
+        truncatedinfo,
+        7,
+        :leftextended,
+        1.0,
+        10.0,
+        60,
+        settings,
+        nothing,
+        defaultalkanestandard(),
+        :left,
+        nothing,
+        nothing,
+        anchors[1],
+        anchors
+    )
+    @test isnothing(truncatedevaluation.addition)
+    @test truncatedevaluation.diagnostic.reason ≡
+        :abundance_window_truncated_by_run_boundary
+
+    mismatchabundance = zeros(60)
+    mismatchabundance[6] = 1.0
+    mismatchabundance[7] = 10.0
+    mismatchabundance[8] = 1.0
+    mismatchwindow = AlkaneAbundanceWindow(
+        11, 6, 6, 8, 0.0, 1.0, 0.0, 0.0, :threshold, :threshold
+    )
+    mismatchanchor = JuChrom.AlkaneLadderAdditionAnchor(
+        10,
+        5.0,
+        5.0,
+        :molecularion,
+        NaN,
+        NaN
+    )
+    mismatchinfo = AlkaneAbundanceInfo(
+        Dict(11 => mismatchabundance),
+        Dict(11 => ones(60)),
+        Dict(11 => [mismatchwindow]),
+        NamedTuple()
+    )
+    mismatchevaluation = JuChrom.alkane_best_ladder_addition_window(
+        msm,
+        variances,
+        mismatchinfo,
+        11,
+        :rightextended,
+        6.0,
+        10.0,
+        60,
+        settings,
+        nothing,
+        defaultalkanestandard(),
+        :right,
+        nothing,
+        nothing,
+        mismatchanchor,
+        [mismatchanchor, anchors[2]]
+    )
+    @test isnothing(mismatchevaluation.addition)
+    @test mismatchevaluation.diagnostic.reason ≡ :abundance_window_apex_mismatch
 end
 
 @testset "alkane ladder addition validation" begin

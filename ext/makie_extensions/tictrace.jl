@@ -1,62 +1,152 @@
 import JuChrom: tictrace, tictrace!
 using Unitful
 
-const DEFAULT_TICTRACE_SIZE = (900, 450)
-const DEFAULT_TICTRACE_COLOR = :black
-const DEFAULT_TICTRACE_BASELINE_COLOR = :green
-const DEFAULT_TICTRACE_BASELINE_ALPHA = 0.8
-const DEFAULT_TICTRACE_STEP_COLOR = :orange
-const DEFAULT_TICTRACE_STEP_ALPHA = 0.8
-const DEFAULT_TICTRACE_LABEL_COLOR = :red
-const DEFAULT_TICTRACE_LINEWIDTH = 1.0
-const DEFAULT_TICTRACE_BASELINE_LINEWIDTH_FACTOR = 3.0
-const DEFAULT_TICTRACE_STEP_LINEWIDTH = 2.0
-const DEFAULT_TICTRACE_LABEL_FONTSIZE = 11
-const DEFAULT_TICTRACE_LABEL_SPACING_FACTOR = 1.15
-const DEFAULT_TICTRACE_Y_HEADROOM = 1.05
-const DEFAULT_TICTRACE_LABEL_Y_FRACTION = 0.99
-
-function tictrace(
-    msm::JuChrom.AbstractMassScanMatrix;
-    size=DEFAULT_TICTRACE_SIZE,
-    unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
-    color=DEFAULT_TICTRACE_COLOR,
-    linewidth::Real=DEFAULT_TICTRACE_LINEWIDTH
-)
-    fig = Figure(; size=size)
-    ax = Axis(
-        fig[1, 1],
-        xlabel="Retention" * tictrace_unit_suffix(unit),
-        ylabel="TIC" * tictrace_unit_suffix(JuChrom.intensityunit(msm); unitless=true),
-        xgridvisible=false,
-        ygridvisible=false
+@recipe(
+    TicTrace,
+    retentions,
+    intensities,
+    baseline_intensities,
+    step_retentions,
+    step_numbers
+) do scene
+    Theme(
+        linecolor=:black,
+        linewidth=1.0,
+        baselinecolor=:green,
+        baselinealpha=0.8,
+        baselinelinewidth=3.0,
+        stepcolor=:orange,
+        stepalpha=0.8,
+        steplinewidth=2.0,
+        labelcolor=:red,
+        labels=false,
+        labelfont=:bold,
+        labelfontsize=11,
+        labelpadding=1,
+        labelspacingfactor=1.15,
+        yheadroom=1.05,
+        labelyfraction=0.99
     )
-    tictrace!(ax, msm; unit=unit, color=color, linewidth=linewidth)
+end
 
-    fig
+argument_names(::Type{<:TicTrace}) = (
+    :retentions,
+    :intensities,
+    :baseline_intensities,
+    :step_retentions,
+    :step_numbers
+)
+
+function Makie.plot!(trace::TicTrace)
+    ax = current_axis()
+
+    Makie.add_input!(trace.attributes, :viewport_obs, ax.scene.viewport)
+    Makie.add_input!(trace.attributes, :limits_obs, ax.finallimits)
+
+    map!(
+        trace.attributes,
+        [:retentions, :intensities, :baseline_intensities, :yheadroom],
+        :limits_update
+    ) do retentions, intensities, baseline_intensities, yheadroom
+        tictrace_set_limits!(ax, retentions, yheadroom, intensities, baseline_intensities)
+        nothing
+    end
+
+    map!(
+        trace.attributes,
+        [
+            :step_retentions,
+            :step_numbers,
+            :labels,
+            :labelfont,
+            :labelfontsize,
+            :labelpadding,
+            :labelspacingfactor,
+            :labelyfraction,
+            :viewport_obs,
+            :limits_obs
+        ],
+        [:label_positions, :label_texts]
+    ) do step_retentions, step_numbers, labels, labelfont, labelfontsize,
+            labelpadding, labelspacingfactor, labelyfraction, viewport, limits
+        tictrace_visible_label_data(
+            ax,
+            step_retentions,
+            step_numbers,
+            labels,
+            labelfont,
+            labelfontsize,
+            labelpadding,
+            labelspacingfactor,
+            labelyfraction,
+            viewport,
+            limits
+        )
+    end
+
+    lines!(
+        trace,
+        trace.retentions,
+        trace.baseline_intensities;
+        color=lift((color, alpha) -> (color, alpha), trace.baselinecolor, trace.baselinealpha),
+        linewidth=trace.baselinelinewidth
+    )
+    vlines!(
+        trace,
+        trace.step_retentions;
+        color=lift((color, alpha) -> (color, alpha), trace.stepcolor, trace.stepalpha),
+        linewidth=trace.steplinewidth
+    )
+    lines!(
+        trace,
+        trace.retentions,
+        trace.intensities;
+        color=trace.linecolor,
+        linewidth=trace.linewidth
+    )
+    textlabel!(
+        trace,
+        trace.label_positions;
+        text=trace.label_texts,
+        text_rotation=pi / 2,
+        text_align=(:right, :center),
+        text_color=trace.labelcolor,
+        background_color=:white,
+        strokewidth=0,
+        padding=trace.labelpadding,
+        cornerradius=0,
+        font=trace.labelfont,
+        fontsize=trace.labelfontsize
+    )
+
+    trace
 end
 
 function tictrace(
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
-    size=DEFAULT_TICTRACE_SIZE,
+    size=(900, 450),
     unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
-    color=DEFAULT_TICTRACE_COLOR,
-    linewidth::Real=DEFAULT_TICTRACE_LINEWIDTH,
+    color=:black,
+    linewidth::Real=1.0,
     baseline::Bool=true,
-    baselinecolor=DEFAULT_TICTRACE_BASELINE_COLOR,
-    baselinealpha::Real=DEFAULT_TICTRACE_BASELINE_ALPHA,
-    baselinelinewidth::Real=DEFAULT_TICTRACE_BASELINE_LINEWIDTH_FACTOR * linewidth,
+    baselinecolor=:green,
+    baselinealpha::Real=0.8,
+    baselinelinewidth::Real=3.0 * linewidth,
     molecularion::Bool=true,
     gapfilled::Bool=true,
     edgeextended::Bool=true,
-    stepcolor=DEFAULT_TICTRACE_STEP_COLOR,
-    stepalpha::Real=DEFAULT_TICTRACE_STEP_ALPHA,
-    steplinewidth::Real=DEFAULT_TICTRACE_STEP_LINEWIDTH,
-    labelcolor=DEFAULT_TICTRACE_LABEL_COLOR,
+    stepcolor=:orange,
+    stepalpha::Real=0.8,
+    steplinewidth::Real=2.0,
+    labelcolor=:red,
     labels::Bool=false,
-    labelfontsize::Real=DEFAULT_TICTRACE_LABEL_FONTSIZE,
-    labelspacingfactor::Real=DEFAULT_TICTRACE_LABEL_SPACING_FACTOR
+    labelfont=:bold,
+    labelfontsize::Real=11,
+    labelpadding::Real=1,
+    labelspacingfactor::Real=1.15,
+    yheadroom::Real=1.05,
+    labelyfraction::Real=0.99
 )
     fig = Figure(; size=size)
     ax = Axis(
@@ -85,8 +175,12 @@ function tictrace(
         steplinewidth=steplinewidth,
         labelcolor=labelcolor,
         labels=labels,
+        labelfont=labelfont,
         labelfontsize=labelfontsize,
-        labelspacingfactor=labelspacingfactor
+        labelpadding=labelpadding,
+        labelspacingfactor=labelspacingfactor,
+        yheadroom=yheadroom,
+        labelyfraction=labelyfraction
     )
 
     fig
@@ -94,90 +188,83 @@ end
 
 function tictrace!(
     ax::Axis,
-    msm::JuChrom.AbstractMassScanMatrix;
-    unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
-    color=DEFAULT_TICTRACE_COLOR,
-    linewidth::Real=DEFAULT_TICTRACE_LINEWIDTH
-)
-    x = JuChrom.rawretentions(msm; unit=unit)
-    y = tictrace_values(msm)
-
-    lines!(ax, x, y; color=color, linewidth=linewidth)
-    tictrace_set_limits!(ax, x, y)
-
-    ax
-end
-
-function tictrace!(
-    ax::Axis,
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
     unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
-    color=DEFAULT_TICTRACE_COLOR,
-    linewidth::Real=DEFAULT_TICTRACE_LINEWIDTH,
+    color=:black,
+    linewidth::Real=1.0,
     baseline::Bool=true,
-    baselinecolor=DEFAULT_TICTRACE_BASELINE_COLOR,
-    baselinealpha::Real=DEFAULT_TICTRACE_BASELINE_ALPHA,
-    baselinelinewidth::Real=DEFAULT_TICTRACE_BASELINE_LINEWIDTH_FACTOR * linewidth,
+    baselinecolor=:green,
+    baselinealpha::Real=0.8,
+    baselinelinewidth::Real=3.0 * linewidth,
     molecularion::Bool=true,
     gapfilled::Bool=true,
     edgeextended::Bool=true,
-    stepcolor=DEFAULT_TICTRACE_STEP_COLOR,
-    stepalpha::Real=DEFAULT_TICTRACE_STEP_ALPHA,
-    steplinewidth::Real=DEFAULT_TICTRACE_STEP_LINEWIDTH,
-    labelcolor=DEFAULT_TICTRACE_LABEL_COLOR,
+    stepcolor=:orange,
+    stepalpha::Real=0.8,
+    steplinewidth::Real=2.0,
+    labelcolor=:red,
     labels::Bool=false,
-    labelfontsize::Real=DEFAULT_TICTRACE_LABEL_FONTSIZE,
-    labelspacingfactor::Real=DEFAULT_TICTRACE_LABEL_SPACING_FACTOR
+    labelfont=:bold,
+    labelfontsize::Real=11,
+    labelpadding::Real=1,
+    labelspacingfactor::Real=1.15,
+    yheadroom::Real=1.05,
+    labelyfraction::Real=0.99
 )
     x = JuChrom.rawretentions(msm; unit=unit)
     y = tictrace_values(msm)
-
-    yseries = if baseline && !isnothing(result.baselineinfo)
-        baseline_y = tictrace_values(result.baselineinfo.baselines)
-        (y, baseline_y)
-    else
-        (y,)
-    end
-
-    ymax = tictrace_ymax(yseries)
-    ylimit = DEFAULT_TICTRACE_Y_HEADROOM * ymax
-    tictrace_add_ladder_steps!(
-        ax,
+    baseline_y = tictrace_baseline_values(result, baseline, length(x))
+    step_retentions, step_numbers = tictrace_ladder_step_data(
         result,
-        ylimit;
-        unit=unit,
-        molecularion=molecularion,
-        gapfilled=gapfilled,
-        edgeextended=edgeextended,
+        unit,
+        molecularion,
+        gapfilled,
+        edgeextended
+    )
+    tictrace_set_limits!(ax, x, yheadroom, y, baseline_y)
+
+    tictrace!(
+        ax,
+        x,
+        y,
+        baseline_y,
+        step_retentions,
+        step_numbers;
+        linecolor=color,
+        linewidth=linewidth,
+        baselinecolor=baselinecolor,
+        baselinealpha=baselinealpha,
+        baselinelinewidth=baselinelinewidth,
         stepcolor=stepcolor,
         stepalpha=stepalpha,
         steplinewidth=steplinewidth,
         labelcolor=labelcolor,
         labels=labels,
+        labelfont=labelfont,
         labelfontsize=labelfontsize,
+        labelpadding=labelpadding,
         labelspacingfactor=labelspacingfactor,
-        xrange=(minimum(x), maximum(x))
+        yheadroom=yheadroom,
+        labelyfraction=labelyfraction
     )
-
-    if length(yseries) == 2
-        lines!(
-            ax,
-            x,
-            yseries[2];
-            color=(baselinecolor, baselinealpha),
-            linewidth=baselinelinewidth
-        )
-    end
-
-    lines!(ax, x, y; color=color, linewidth=linewidth)
-    tictrace_set_limits!(ax, x, yseries...)
 
     ax
 end
 
 function tictrace_values(msm::JuChrom.AbstractMassScanMatrix)
     vec(sum(JuChrom.rawintensities(msm); dims=2))
+end
+
+function tictrace_baseline_values(
+    result::JuChrom.AlkaneSeriesResult,
+    baseline::Bool,
+    nscans::Integer
+)
+    baseline && !isnothing(result.baselineinfo) ||
+        return fill(NaN, nscans)
+
+    tictrace_values(result.baselineinfo.baselines)
 end
 
 function tictrace_unit_suffix(unit; unitless::Bool=false)
@@ -189,36 +276,31 @@ function tictrace_ymax(yseries)
     for y in yseries
         isempty(y) && continue
         localmax = maximum(y)
-        isfinite(localmax) && (ymax = max(ymax, Float64(localmax)))
+        isfinite(localmax) && (ymax = max(ymax, localmax))
     end
 
     ymax > 0 ? ymax : 1.0
 end
 
-function tictrace_set_limits!(ax::Axis, x::AbstractVector, yseries::AbstractVector...)
+function tictrace_set_limits!(
+    ax::Axis,
+    x::AbstractVector,
+    yheadroom::Real,
+    yseries::AbstractVector...
+)
     ymax = tictrace_ymax(yseries)
-    ylims!(ax, 0, DEFAULT_TICTRACE_Y_HEADROOM * ymax)
+    ylims!(ax, 0, yheadroom * ymax)
     isempty(x) || xlims!(ax, minimum(x), maximum(x))
 
     ax
 end
 
-function tictrace_add_ladder_steps!(
-    ax::Axis,
+function tictrace_ladder_step_data(
     result::JuChrom.AlkaneSeriesResult,
-    ylimit::Real;
     unit::Union{Nothing, Unitful.Units},
     molecularion::Bool,
     gapfilled::Bool,
-    edgeextended::Bool,
-    stepcolor,
-    stepalpha::Real,
-    steplinewidth::Real,
-    labelcolor,
-    labels::Bool,
-    labelfontsize::Real,
-    labelspacingfactor::Real,
-    xrange
+    edgeextended::Bool
 )
     steps = JuChrom.alkaneladdersteps(
         result;
@@ -226,85 +308,97 @@ function tictrace_add_ladder_steps!(
         gapfilled=gapfilled,
         edgeextended=edgeextended
     )
-    isempty(steps) && return ax
 
-    xpositions = [
+    step_retentions = [
         tictrace_step_retention(step, result.retentionunit, unit) for step in steps
     ]
-    vlines!(ax, xpositions; color=(stepcolor, stepalpha), linewidth=steplinewidth)
+    step_numbers = [step.ladderstep for step in steps]
 
-    if labels
-        labelindices = tictrace_nonoverlapping_label_indices(
+    step_retentions, step_numbers
+end
+
+function tictrace_visible_label_data(
+    ax::Axis,
+    step_retentions::AbstractVector{<:Real},
+    step_numbers::AbstractVector{<:Integer},
+    labels::Bool,
+    labelfont,
+    labelfontsize::Real,
+    labelpadding::Real,
+    labelspacingfactor::Real,
+    labelyfraction::Real,
+    viewport,
+    limits
+)
+    labels || return Point2f[], String[]
+    isempty(step_retentions) && return Point2f[], String[]
+    tictrace_limits_are_usable(limits) || return Point2f[], String[]
+
+    y = limits.origin[2] + labelyfraction * limits.widths[2]
+    positions = Point2f[]
+    labeltexts = String[]
+    occupied = Tuple{Float64, Float64}[]
+
+    for index in sortperm(step_retentions)
+        x = step_retentions[index]
+        limits.origin[1] ≤ x ≤ limits.origin[1] + limits.widths[1] || continue
+        text = string(step_numbers[index])
+        x0, x1 = tictrace_label_pixel_xspan(
             ax,
-            xpositions,
-            xrange,
+            viewport,
+            limits,
+            text,
+            x,
+            y,
+            labelfont,
             labelfontsize,
+            labelpadding,
             labelspacingfactor
         )
-        isempty(labelindices) && return ax
-        labelpositions = xpositions[labelindices]
-        labelsteps = steps[labelindices]
+        any(region -> tictrace_xspans_overlap(x0, x1, region...), occupied) &&
+            continue
 
-        textlabel!(
-            ax,
-            labelpositions,
-            fill(
-                DEFAULT_TICTRACE_LABEL_Y_FRACTION * Float64(ylimit),
-                length(labelpositions)
-            );
-            text=[string(step.ladderstep) for step in labelsteps],
-            text_rotation=pi / 2,
-            text_align=(:right, :center),
-            text_color=labelcolor,
-            background_color=:white,
-            strokewidth=0,
-            padding=1,
-            cornerradius=0,
-            font=:bold,
-            fontsize=labelfontsize
-        )
+        push!(positions, Point2f(x, y))
+        push!(labeltexts, text)
+        push!(occupied, (x0, x1))
     end
 
-    ax
+    positions, labeltexts
 end
 
-function tictrace_nonoverlapping_label_indices(
+function tictrace_limits_are_usable(limits)
+    all(isfinite, limits.origin) && all(isfinite, limits.widths) &&
+        all(>(0), limits.widths)
+end
+
+function tictrace_label_pixel_xspan(
     ax::Axis,
-    xpositions::AbstractVector{<:Real},
-    xrange,
+    viewport,
+    limits,
+    text::AbstractString,
+    x::Real,
+    y::Real,
+    labelfont,
     labelfontsize::Real,
+    labelpadding::Real,
     labelspacingfactor::Real
 )
-    xmin, xmax = Float64(xrange[1]), Float64(xrange[2])
-    isfinite(xmin) && isfinite(xmax) && xmax > xmin || return collect(eachindex(xpositions))
-
-    axiswidth = tictrace_axis_pixel_width(ax)
-    minpixels = max(1.0, Float64(labelfontsize) * Float64(labelspacingfactor))
-    mindata = minpixels / axiswidth * (xmax - xmin)
-
-    indices = Int[]
-    lastx = -Inf
-    for index in sortperm(xpositions)
-        x = Float64(xpositions[index])
-        isfinite(x) || continue
-        if isempty(indices) || x - lastx ≥ mindata
-            push!(indices, index)
-            lastx = x
-        end
-    end
-
-    sort!(indices)
-    indices
+    xpixel, _ = data2pixel(ax, viewport, limits, x, y)
+    box = Makie.text_bb(text, tictrace_measurement_font(labelfont), labelfontsize)
+    labelwidth = labelspacingfactor * (box.widths[2] + 2 * labelpadding)
+    xpixel - labelwidth / 2, xpixel + labelwidth / 2
 end
 
-function tictrace_axis_pixel_width(ax::Axis)
-    try
-        width = Float64(ax.scene.viewport[].widths[1])
-        isfinite(width) && width > 0 && return width
-    catch
-    end
+function tictrace_measurement_font(font::Symbol)
+    Makie.to_font(Makie.MAKIE_DEFAULT_THEME.fonts, font)
+end
 
-    Float64(DEFAULT_TICTRACE_SIZE[1])
+function tictrace_measurement_font(font)
+    Makie.to_font(font)
+end
+
+function tictrace_xspans_overlap(x0::Real, x1::Real, other0::Real, other1::Real)
+    max(x0, other0) ≤ min(x1, other1)
 end
 
 function tictrace_step_retention(
@@ -336,5 +430,5 @@ function tictrace_step_retention(
     resultunit::Unitful.Units,
     unit::Unitful.Units
 )
-    Float64(ustrip(unit, step.apexretention * resultunit))
+    ustrip(unit, step.apexretention * resultunit)
 end

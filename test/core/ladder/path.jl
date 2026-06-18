@@ -44,6 +44,31 @@ function path_contrast(scan, score; z=score, centerz=2.0, isolationz=2.0)
     )
 end
 
+function path_candidate(step, scan, score)
+    contrast = path_contrast(scan, score)
+    JuChrom.AlkaneLadderPathCandidate(
+        step,
+        scan,
+        score,
+        score,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        score,
+        NaN,
+        NaN,
+        0,
+        :molecularion,
+        false,
+        false,
+        Float64(scan),
+        0.0,
+        NaN,
+        contrast
+    )
+end
+
 path_test_settings() = (
     centerzmin=1.645,
     isolationzmin=1.645,
@@ -182,6 +207,50 @@ end
     @test pathinfo.status ≡ :failed
     @test pathinfo.reason ≡ :no_candidates
     @test isempty(pathinfo.path)
+end
+
+@testset "alkane ladder path helper coverage" begin
+    candidates = [
+        path_candidate(8, 30, 3.0),
+        path_candidate(8, 10, 1.0),
+        path_candidate(8, 20, 5.0)
+    ]
+
+    limited = JuChrom.alkane_limit_ladder_path_candidates(candidates, 2)
+
+    @test [candidate.scanindex for candidate in limited] == [20, 30]
+    @test [candidate.score for candidate in limited] == [5.0, 3.0]
+
+    states = JuChrom.LadderWindowPathState[]
+    statemap = Dict{Tuple{Int, Int, Int, Int}, Int}()
+    firstid = JuChrom.alkane_push_ladder_path_state!(
+        states,
+        statemap,
+        1,
+        0,
+        0,
+        1,
+        10.0,
+        1,
+        3,
+        nothing
+    )
+    secondid = JuChrom.alkane_push_ladder_path_state!(
+        states,
+        statemap,
+        1,
+        0,
+        0,
+        1,
+        5.0,
+        1,
+        3,
+        nothing
+    )
+
+    @test secondid == firstid
+    @test length(states) == 1
+    @test states[firstid].objective == 10.0
 end
 
 @testset "alkane ladder path validation" begin

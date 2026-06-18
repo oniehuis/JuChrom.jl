@@ -1,6 +1,43 @@
 using Test
 using JuChrom
 
+function test_findalkanes_msm()
+    n = 25
+    retentions = collect(1.0:n)
+    peak = exp.(-0.5 .* abs2.((retentions .- 13) ./ 2))
+    noise = mod.(collect(1:n), 4)
+    X = zeros(n, 5)
+    X[:, 1] .= 5 .+ noise
+    X[:, 2] .= 20 .+ noise .+ 100 .* peak
+    X[:, 3] .= 10 .+ noise .+ 20 .* peak
+    X[:, 4] .= 5 .+ noise .+ 5 .* peak
+    X[:, 5] .= 3 .+ noise
+
+    MassScanMatrix(
+        retentions,
+        [100.0, 114.0, 115.0, 128.0, 129.0],
+        X
+    )
+end
+
+function test_findalkanes_standard()
+    AlkaneStandard(
+        "test C8",
+        [JuChrom.alkane_reference_spectrum(8, "octane", 800.0, [114], [100.0])],
+        NamedTuple()
+    )
+end
+
+function test_findalkanes_mzretentionkwargs(msm)
+    (
+        retentionref=:middle,
+        scaninterval=1e-9,
+        mzcount=mzcount(msm),
+        dwellref=:middle,
+        dwell=:homogeneous
+    )
+end
+
 function test_ladder_apex_settings()
     JuChrom.AlkaneLadderApexSettings(
         defaultalkanestandard(),
@@ -260,4 +297,50 @@ end
     @test [step.ladderstep for step in mi] == [8, 10]
     @test [step.ladderstep for step in gap] == [9]
     @test [step.ladderstep for step in edge] == [11]
+end
+
+@testset "findalkanes preprocessing and variance wrappers" begin
+    msm = test_findalkanes_msm()
+    standard = test_findalkanes_standard()
+    mzretentionkwargs = test_findalkanes_mzretentionkwargs(msm)
+
+    @test_throws ArgumentError findalkanes(
+        msm;
+        standard=standard,
+        subtractbaseline=false
+    )
+
+    result = findalkanes(
+        msm;
+        standard=standard,
+        carbonrange=8:8,
+        pathminsteps=1,
+        thresholdfraction=0.05,
+        variancewindowsize=5,
+        variancemintransitioncount=1,
+        baselineλ=1e3,
+        apexminioncount=1,
+        apexmzscanorder=:ascending,
+        apexmzretentionkwargs=mzretentionkwargs
+    )
+
+    @test result.varianceinfo isa CountVarianceEstimate
+    @test result.baselineinfo isa JuChrom.AlkaneBaselineInfo
+    @test result.baselineinfo.estimator ≡ :arpls
+    @test result.pathinfo.status ≡ :success
+
+    vmsm = VarianceMassScanMatrix(msm, ones(size(rawintensities(msm))))
+    direct = findalkaneseries(
+        vmsm;
+        standard=standard,
+        carbonrange=8:8,
+        pathminsteps=1,
+        thresholdfraction=0.05,
+        apexminioncount=1,
+        apexmzscanorder=:ascending,
+        apexmzretentionkwargs=mzretentionkwargs
+    )
+
+    @test direct.varianceinfo === vmsm
+    @test direct.pathinfo.status ≡ :success
 end

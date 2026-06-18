@@ -145,3 +145,12 @@ end
         0.0
     )
 end
+
+@testset "alkane standard spectra dispatch validates accepted standard forms" begin
+    spectra = [alkanereferencespectrum(8)]
+    standard = AlkaneStandard("test", spectra, NamedTuple())
+
+    @test JuChrom.alkane_standard_spectra(spectra) === spectra
+    @test JuChrom.alkane_standard_spectra(standard) === spectra
+    @test_throws ArgumentError JuChrom.alkane_standard_spectra("not a standard")
+end
