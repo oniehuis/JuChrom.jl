@@ -1,25 +1,64 @@
 const ALKANE_SERIES_CHECKSUM_VERSION = 1
 
+struct AlkaneSeriesDataInfo
+    checksumalgorithm::Symbol
+    checksumversion::Int
+    rawmsmchecksum::String
+    signalmsmchecksum::String
+    variancechecksum::String
+    rawscancount::Int
+    rawmzcount::Int
+    signalscancount::Int
+    signalmzcount::Int
+end
+
+struct AlkaneLadderMassSpectrumSettings{T<:Real}
+    nonnegative::Bool
+    variancefloor::T
+    threaded::Bool
+    acceptedonly::Bool
+    validatechecksum::Bool
+    molecularion::Bool
+    gapfilled::Bool
+    edgeextended::Bool
+end
+
+struct AlkaneLadderMassSpectrumExtraction{
+    T1<:AbstractDict{Int, <:AbstractMassSpectrum},
+    T2<:AbstractDict{Int, <:AbstractString},
+    T3<:AlkaneLadderMassSpectrumSettings
+}
+    spectra::T1
+    failures::T2
+    settings::T3
+end
+
+struct AlkaneLadderMassSpectrumStepExtraction
+    ladderstep::Int
+    spectrum::Union{Nothing, AbstractMassSpectrum}
+    failure::Union{Nothing, String}
+end
+
 function alkane_series_datainfo(
     rawmsm::MassScanMatrix,
     signalmsm::MassScanMatrix,
     variances::AbstractMatrix{<:Real}
 )
     validate_alkane_series_variances(signalmsm, variances)
-    (
-        checksumalgorithm=:sha256,
-        checksumversion=ALKANE_SERIES_CHECKSUM_VERSION,
-        rawmsmchecksum=alkane_msm_checksum(rawmsm),
-        signalmsmchecksum=alkane_msm_checksum(signalmsm),
-        variancechecksum=alkane_variance_checksum(variances),
-        rawscancount=scancount(rawmsm),
-        rawmzcount=mzcount(rawmsm),
-        signalscancount=scancount(signalmsm),
-        signalmzcount=mzcount(signalmsm)
+    AlkaneSeriesDataInfo(
+        :sha256,
+        ALKANE_SERIES_CHECKSUM_VERSION,
+        alkane_msm_checksum(rawmsm),
+        alkane_msm_checksum(signalmsm),
+        alkane_variance_checksum(variances),
+        scancount(rawmsm),
+        mzcount(rawmsm),
+        scancount(signalmsm),
+        mzcount(signalmsm)
     )
 end
 
-function alkane_msm_checksum(msm::MassScanMatrix)
+function alkane_msm_checksum(msm::MassScanMatrix)::String
     ctx = SHA256_CTX()
     alkane_checksum_update_string!(ctx, "JuChrom.AlkaneSeries.MassScanMatrix")
     alkane_checksum_update_string!(ctx, string(ALKANE_SERIES_CHECKSUM_VERSION))
@@ -34,7 +73,7 @@ function alkane_msm_checksum(msm::MassScanMatrix)
     bytes2hex(digest!(ctx))
 end
 
-function alkane_variance_checksum(variances::AbstractMatrix{<:Real})
+function alkane_variance_checksum(variances::AbstractMatrix{<:Real})::String
     ctx = SHA256_CTX()
     alkane_checksum_update_string!(ctx, "JuChrom.AlkaneSeries.Variances")
     alkane_checksum_update_string!(ctx, string(ALKANE_SERIES_CHECKSUM_VERSION))
@@ -43,19 +82,23 @@ function alkane_variance_checksum(variances::AbstractMatrix{<:Real})
     bytes2hex(digest!(ctx))
 end
 
-function alkane_checksum_update_string!(ctx, value::AbstractString)
+function alkane_checksum_update_string!(ctx::SHA256_CTX, value::AbstractString)
     bytes = collect(codeunits(value))
     alkane_checksum_update_length!(ctx, length(bytes))
     update!(ctx, bytes)
     nothing
 end
 
-function alkane_checksum_update_length!(ctx, lengthvalue::Integer)
+function alkane_checksum_update_length!(ctx::SHA256_CTX, lengthvalue::Integer)
     update!(ctx, reinterpret(UInt8, [hton(UInt64(lengthvalue))]))
     nothing
 end
 
-function alkane_checksum_update_real_array!(ctx, label::AbstractString, values)
+function alkane_checksum_update_real_array!(
+    ctx::SHA256_CTX,
+    label::AbstractString,
+    values::AbstractArray{<:Real}
+)
     alkane_checksum_update_string!(ctx, label)
     alkane_checksum_update_string!(ctx, string(ndims(values)))
     for dim in size(values)
@@ -65,6 +108,29 @@ function alkane_checksum_update_real_array!(ctx, label::AbstractString, values)
     canonical_bits = hton.(reinterpret(UInt64, numeric_values))
     update!(ctx, reinterpret(UInt8, canonical_bits))
     nothing
+end
+
+function alkane_ladder_mass_spectrum_settings(
+    nonnegative::Bool,
+    variancefloor::Real,
+    threaded::Bool,
+    acceptedonly::Bool,
+    validatechecksum::Bool,
+    molecularion::Bool,
+    gapfilled::Bool,
+    edgeextended::Bool
+)
+    validate_alkane_abundance_variancefloor(variancefloor)
+    AlkaneLadderMassSpectrumSettings(
+        nonnegative,
+        variancefloor,
+        threaded,
+        acceptedonly,
+        validatechecksum,
+        molecularion,
+        gapfilled,
+        edgeextended
+    )
 end
 
 """
@@ -88,53 +154,148 @@ function alkaneladdermassspectra(
     gapfilled::Bool=true,
     edgeextended::Bool=true
 )
-    signal = alkane_ladder_extraction_signal(
-        msm,
-        result;
-        validatechecksum=validatechecksum
-    )
-    validate_alkane_abundance_variancefloor(variancefloor)
-
-    spectra = Dict{Int, AbstractMassSpectrum}()
-    failures = Dict{Int, String}()
-    steps = alkaneladdersteps(
-        result;
-        molecularion=molecularion,
-        gapfilled=gapfilled,
-        edgeextended=edgeextended
+    settings = alkane_ladder_mass_spectrum_settings(
+        nonnegative,
+        variancefloor,
+        threaded,
+        acceptedonly,
+        validatechecksum,
+        molecularion,
+        gapfilled,
+        edgeextended
     )
 
-    for step in steps
-        if acceptedonly && !step.goodforcalibration
-            failures[step.ladderstep] = "ladder step did not pass apex fit quality gate"
-            continue
-        end
+    alkane_ladder_mass_spectra(msm, result, settings)
+end
 
-        try
-            spectra[step.ladderstep] = alkane_ladder_step_mass_spectrum(
+function alkane_ladder_mass_spectra(
+    msm::MassScanMatrix,
+    result::AlkaneSeriesResult,
+    settings::AlkaneLadderMassSpectrumSettings
+)
+    signal = alkane_ladder_extraction_signal(msm, result, settings.validatechecksum)
+    steps = alkane_ladder_mass_spectrum_steps(
+        result,
+        settings.molecularion,
+        settings.gapfilled,
+        settings.edgeextended
+    )
+
+    use_step_threads = settings.threaded && Threads.nthreads() > 1 && length(steps) > 1
+    ionthreaded = settings.threaded && !use_step_threads
+    stepresults = Vector{AlkaneLadderMassSpectrumStepExtraction}(undef, length(steps))
+
+    if use_step_threads
+        Base.Threads.@threads for index in eachindex(steps)
+            stepresults[index] = alkane_ladder_extract_step_mass_spectrum(
                 signal,
-                step,
-                result.variances;
-                variancefloor=variancefloor,
-                nonnegative=nonnegative,
-                threaded=threaded
+                steps[index],
+                result.variances,
+                settings,
+                ionthreaded
             )
-        catch err
-            failures[step.ladderstep] = sprint(showerror, err)
+        end
+    else
+        for index in eachindex(steps)
+            stepresults[index] = alkane_ladder_extract_step_mass_spectrum(
+                signal,
+                steps[index],
+                result.variances,
+                settings,
+                ionthreaded
+            )
         end
     end
 
-    (
-        spectra=spectra,
-        failures=failures,
-        settings=(
-            nonnegative=nonnegative,
-            variancefloor=Float64(variancefloor),
-            threaded=threaded,
-            acceptedonly=acceptedonly,
-            validatechecksum=validatechecksum
-        )
+    spectra = Dict{Int, AbstractMassSpectrum}()
+    failures = Dict{Int, String}()
+    for stepresult in stepresults
+        if isnothing(stepresult.failure)
+            spectra[stepresult.ladderstep] = stepresult.spectrum
+        else
+            failures[stepresult.ladderstep] = stepresult.failure
+        end
+    end
+
+    AlkaneLadderMassSpectrumExtraction(
+        spectra,
+        failures,
+        settings
     )
+end
+
+function alkane_ladder_mass_spectrum_steps(
+    result::AlkaneSeriesResult,
+    molecularion::Bool,
+    gapfilled::Bool,
+    edgeextended::Bool
+)
+    steps = AlkaneLadderStep[]
+    if molecularion
+        append!(steps, alkane_ladder_steps_from_apexes(
+            result.apexinfo.apexes,
+            :molecularion
+        ))
+    end
+
+    if gapfilled
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.gapfilled,
+            :gapfilled
+        ))
+    end
+
+    if edgeextended
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.leftextended,
+            :leftextended
+        ))
+        append!(steps, alkane_ladder_steps_from_additions(
+            result.additioninfo.rightextended,
+            :rightextended
+        ))
+    end
+
+    sort!(steps; by=step -> step.ladderstep)
+
+    steps
+end
+
+function alkane_ladder_extract_step_mass_spectrum(
+    msm::MassScanMatrix,
+    step::AlkaneLadderStep,
+    variances::AbstractMatrix{<:Real},
+    settings::AlkaneLadderMassSpectrumSettings,
+    ionthreaded::Bool
+)
+    if settings.acceptedonly && !step.goodforcalibration
+        return AlkaneLadderMassSpectrumStepExtraction(
+            step.ladderstep,
+            nothing,
+            "ladder step did not pass apex fit quality gate"
+        )
+    end
+
+    try
+        spectrum = alkane_ladder_step_mass_spectrum(
+            msm,
+            step,
+            variances,
+            settings,
+            ionthreaded
+        )
+        return AlkaneLadderMassSpectrumStepExtraction(
+            step.ladderstep,
+            spectrum,
+            nothing
+        )
+    catch err
+        return AlkaneLadderMassSpectrumStepExtraction(
+            step.ladderstep,
+            nothing,
+            sprint(showerror, err)
+        )
+    end
 end
 
 function alkaneladdermassspectrum(
@@ -147,30 +308,34 @@ function alkaneladdermassspectrum(
     acceptedonly::Bool=true,
     validatechecksum::Bool=true
 )
-    signal = alkane_ladder_extraction_signal(
-        msm,
-        result;
-        validatechecksum=validatechecksum
+    settings = alkane_ladder_mass_spectrum_settings(
+        nonnegative,
+        variancefloor,
+        threaded,
+        acceptedonly,
+        validatechecksum,
+        true,
+        true,
+        true
     )
-    validate_alkane_abundance_variancefloor(variancefloor)
+    signal = alkane_ladder_extraction_signal(msm, result, settings.validatechecksum)
 
     step = alkane_ladder_step_by_carbon(result, ladderstep)
-    acceptedonly && !step.goodforcalibration && throw(ArgumentError(
-        "ladder step $(Int(ladderstep)) did not pass apex fit quality gate"))
+    settings.acceptedonly && !step.goodforcalibration && throw(ArgumentError(
+        "ladder step $(ladderstep) did not pass apex fit quality gate"))
 
     alkane_ladder_step_mass_spectrum(
         signal,
         step,
-        result.variances;
-        variancefloor=variancefloor,
-        nonnegative=nonnegative,
-        threaded=threaded
+        result.variances,
+        settings,
+        settings.threaded
     )
 end
 
 function alkane_ladder_extraction_signal(
     msm::MassScanMatrix,
-    result::AlkaneSeriesResult;
+    result::AlkaneSeriesResult,
     validatechecksum::Bool
 )
     validatechecksum && alkane_validate_raw_msm_checksum(msm, result)
@@ -178,8 +343,6 @@ function alkane_ladder_extraction_signal(
     signal = if isnothing(result.baselineinfo)
         msm
     else
-        hasproperty(result.baselineinfo, :baselines) || throw(ArgumentError(
-            "result.baselineinfo does not contain fitted baselines"))
         validate_alkane_series_baselines(msm, result.baselineinfo.baselines)
         msm - result.baselineinfo.baselines
     end
@@ -214,21 +377,29 @@ function alkane_validate_signal_and_variance_checksums(
     nothing
 end
 
-function alkane_ladder_result_datainfo(result::AlkaneSeriesResult)
+function alkane_ladder_result_datainfo(result::AlkaneSeriesResult)::AlkaneSeriesDataInfo
     isnothing(result.datainfo) && throw(ArgumentError(
         "alkane series result does not contain SHA-256 data checksums"))
+    result.datainfo isa AlkaneSeriesDataInfo || throw(ArgumentError(
+        "alkane series result datainfo must be an AlkaneSeriesDataInfo"))
+    result.datainfo.checksumalgorithm ≡ :sha256 || throw(ArgumentError(
+        "alkane series result datainfo checksum algorithm must be :sha256"))
+    result.datainfo.checksumversion == ALKANE_SERIES_CHECKSUM_VERSION || throw(
+        ArgumentError(
+            "alkane series result datainfo checksum version is not supported"))
+
     result.datainfo
 end
 
 function alkane_ladder_step_by_carbon(result::AlkaneSeriesResult, ladderstep::Integer)
     matches = [
-        step for step in alkaneladdersteps(result)
-        if step.ladderstep == Int(ladderstep)
+        step for step in alkane_ladder_mass_spectrum_steps(result, true, true, true)
+        if step.ladderstep == ladderstep
     ]
     isempty(matches) && throw(ArgumentError(
-        "alkane ladder result contains no refined step C$(Int(ladderstep))"))
+        "alkane ladder result contains no refined step C$(ladderstep)"))
     length(matches) == 1 || throw(ArgumentError(
-        "alkane ladder result contains multiple refined steps for C$(Int(ladderstep))"))
+        "alkane ladder result contains multiple refined steps for C$(ladderstep)"))
 
     only(matches)
 end
@@ -236,10 +407,9 @@ end
 function alkane_ladder_step_mass_spectrum(
     msm::MassScanMatrix,
     step::AlkaneLadderStep,
-    variances::AbstractMatrix{<:Real};
-    variancefloor::Real,
-    nonnegative::Bool,
-    threaded::Bool
+    variances::AbstractMatrix{<:Real},
+    settings::AlkaneLadderMassSpectrumSettings,
+    ionthreaded::Bool
 )
     validate_alkane_series_variances(msm, variances)
     apex = step.apex
@@ -252,8 +422,8 @@ function alkane_ladder_step_mass_spectrum(
         "at least three scans are needed for peak-model spectrum extraction"))
 
     X = rawintensities(msm)
-    scan_retentions = retentions(msm)
-    target_retention = alkane_ladder_spectrum_fit_center_retention(apex)
+    scan_retentions = rawretentions(msm)
+    target_retention = fit.fit_center_retention
     mzkwargs = fit.mzretentionkwargs
     n_mz = mzcount(msm)
 
@@ -263,8 +433,8 @@ function alkane_ladder_step_mass_spectrum(
     fitsuccess = falses(n_mz)
     nobservations = zeros(Int, n_mz)
 
-    if threaded
-        @threads for mzindex in 1:n_mz
+    if ionthreaded
+        Base.Threads.@threads for mzindex in 1:n_mz
             alkane_ladder_fit_spectrum_ion!(
                 spectrum_intensities,
                 standarderrors,
@@ -274,14 +444,14 @@ function alkane_ladder_step_mass_spectrum(
                 X,
                 variances,
                 msm,
-                apex,
+                fit,
                 scan_retentions,
                 target_retention,
                 mzkwargs,
                 mzindex,
                 nscans,
-                variancefloor,
-                nonnegative
+                settings.variancefloor,
+                settings.nonnegative
             )
         end
     else
@@ -295,20 +465,20 @@ function alkane_ladder_step_mass_spectrum(
                 X,
                 variances,
                 msm,
-                apex,
+                fit,
                 scan_retentions,
                 target_retention,
                 mzkwargs,
                 mzindex,
                 nscans,
-                variancefloor,
-                nonnegative
+                settings.variancefloor,
+                settings.nonnegative
             )
         end
     end
 
     MassSpectrum(
-        collect(rawmzvalues(msm)),
+        rawmzvalues(msm),
         mzunit(msm),
         spectrum_intensities,
         intensityunit(msm);
@@ -321,17 +491,18 @@ function alkane_ladder_step_mass_spectrum(
             apex_scan_index=apex.apexscanindex,
             input_scan_index=fit.input_scan_index,
             input_retention=fit.input_retention,
-            fit_center_scan_index=alkane_ladder_spectrum_fit_center_scan_index(apex),
+            fit_center_scan_index=fit.fit_center_scan_index,
             fit_center_retention=target_retention,
-            scan_indices=collect(fit.scan_indices),
+            scan_indices=fit.scan_indices,
             scanwindow=(nscans - 1) / 2,
             variance_weighted=true,
-            variancefloor=Float64(variancefloor),
-            nonnegative=nonnegative,
-            allownegative=!nonnegative,
-            threaded=threaded,
+            variancefloor=settings.variancefloor,
+            nonnegative=settings.nonnegative,
+            allownegative=!settings.nonnegative,
+            threaded=settings.threaded,
+            ion_threaded=ionthreaded,
             mzretentionkwargs=mzkwargs,
-            peak_model=collect(fit.peak_model),
+            peak_model=fit.peak_model,
             standard_errors=standarderrors,
             z_scores=zscores,
             fit_success=fitsuccess,
@@ -352,8 +523,8 @@ function alkane_ladder_fit_spectrum_ion!(
     X::AbstractMatrix{<:Real},
     variances::AbstractMatrix{<:Real},
     msm::MassScanMatrix,
-    apex,
-    scan_retentions,
+    fit::AlkaneLadderIonApexAttempt,
+    scan_retentions::AbstractVector{<:Real},
     target_retention::Real,
     mzretentionkwargs::NamedTuple,
     mzindex::Integer,
@@ -368,8 +539,8 @@ function alkane_ladder_fit_spectrum_ion!(
         nscans,
         mzindex,
         mzretentionkwargs,
-        alkane_ladder_spectrum_fit_center_scan_index(apex),
-        max(3, fld(Int(nscans), 2) + 2)
+        fit.fit_center_scan_index,
+        max(3, fld(nscans, 2) + 2)
     )
 
     numerator = 0.0
@@ -383,11 +554,12 @@ function alkane_ladder_fit_spectrum_ion!(
             mzretentionkwargs
         )
         model_value = alkane_ladder_spectrum_shape_at_retention(
-            apex,
+            fit,
+            target_retention,
             observation_retention
         )
-        y = Float64(X[selected_scanindex, mzindex])
-        variance = max(Float64(variances[selected_scanindex, mzindex]), variancefloor)
+        y = X[selected_scanindex, mzindex]
+        variance = max(variances[selected_scanindex, mzindex], variancefloor)
         isfinite(model_value) && isfinite(y) && isfinite(variance) && variance > 0 ||
             continue
 
@@ -411,7 +583,7 @@ function alkane_ladder_fit_spectrum_ion!(
     nothing
 end
 
-function alkane_ladder_apex_is_usable_for_spectrum(apex)
+function alkane_ladder_apex_is_usable_for_spectrum(apex::AlkaneLadderApex)::Bool
     apex.success || return false
     fitresult = apex.fit
     fitresult isa AlkaneLadderIonApexResult || return false
@@ -428,15 +600,9 @@ function alkane_ladder_apex_is_usable_for_spectrum(apex)
         all(isfinite, fit.peak_model)
 end
 
-function alkane_ladder_spectrum_fit_center_retention(apex)
-    alkane_ladder_spectrum_apex_fit(apex).fit_center_retention
-end
-
-function alkane_ladder_spectrum_fit_center_scan_index(apex)
-    alkane_ladder_spectrum_apex_fit(apex).fit_center_scan_index
-end
-
-function alkane_ladder_spectrum_apex_fit(apex)
+function alkane_ladder_spectrum_apex_fit(
+    apex::AlkaneLadderApex
+)::AlkaneLadderIonApexAttempt
     fitresult = apex.fit
     fitresult isa AlkaneLadderIonApexResult || throw(ArgumentError(
         "ladder apex does not contain an ion apex fit result"))
@@ -444,13 +610,12 @@ function alkane_ladder_spectrum_apex_fit(apex)
     fitresult.fit
 end
 
-function alkane_ladder_spectrum_shape_at_retention(apex, observation_retention::Real)
-    fit = alkane_ladder_spectrum_apex_fit(apex)
-    x = (Float64(observation_retention) - alkane_ladder_spectrum_fit_center_retention(apex)) /
-        fit.x_scale
-
-    exp(
-        fit.beta * (x - fit.apex_x) +
-        fit.gamma * (abs2(x) - abs2(fit.apex_x))
-    )
+function alkane_ladder_spectrum_shape_at_retention(
+    fit::AlkaneLadderIonApexAttempt,
+    fit_center_retention::Real,
+    observation_retention::Real
+)
+    x = (observation_retention - fit_center_retention) / fit.x_scale
+    
+    exp(fit.beta * (x - fit.apex_x) + fit.gamma * (abs2(x) - abs2(fit.apex_x)))
 end

@@ -118,12 +118,15 @@ end
 
 @testset "alkaneladdermassspectra validates checksums and reconstructs baseline signal" begin
     msm, signal, result = test_ladder_mass_spectrum_inputs(; baseline=true)
+    @test result.datainfo isa JuChrom.AlkaneSeriesDataInfo
 
     extracted = alkaneladdermassspectra(
         msm,
         result;
         threaded=false
     )
+    @test extracted isa JuChrom.AlkaneLadderMassSpectrumExtraction
+    @test extracted.settings.threaded == false
     @test isempty(extracted.failures)
     @test haskey(extracted.spectra, 8)
     @test intensities(extracted.spectra[8])[1] ≈ 100.0 rtol = 1e-3
