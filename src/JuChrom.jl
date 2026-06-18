@@ -8,8 +8,8 @@ using Unitful: @unit, AbstractQuantity, uconvert, ustrip
 @reexport using Unitful
 
 # Additional package dependencies
-using BSplineKit: AbstractBSplineBasis, BSplineBasis, BSplineOrder, Derivative, Natural,
-    RecombinedBSplineBasis, Spline, collocation_matrix
+using BSplineKit: BSplineBasis, BSplineOrder, Derivative, Natural, RecombinedBSplineBasis,
+    Spline, collocation_matrix
 import HiGHS
 using JuMP: Model, MOI, optimize!, set_silent, termination_status, value, @constraint,
     @objective, @variable

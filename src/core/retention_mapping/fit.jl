@@ -7,10 +7,7 @@ const DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT = 1.0
            retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
            smoothness_penalty_n::Integer=100,
            monotonicity_grid_size::Integer=10^5,
-           λ_max::Real=1e2,
-           λ_min::Real=1e-12,
-           logλ_tolerance::Real=1e-4,
-           max_lambda_iters::Integer=100,
+           λ::Real=1e-7,
            solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
            extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
            optimizer_factory=HiGHS.Optimizer)
@@ -23,20 +20,19 @@ The fitted spline minimizes a regularized least-squares objective: data fidelity
 (squared residuals) and a smoothness penalty (second derivative norm), subject to
 non-negativity of the first derivative.
 
-The smoothing parameter `λ` is automatically determined via binary search: it selects the 
-smallest value that yields a monotonic spline while fitting the data as closely as possible, 
-thus ensuring both stability and high fidelity without introducing spurious oscillations.
+The smoothing parameter `λ` controls the tradeoff between exact anchor fit and curvature.
+The default `λ=1e-7` is chosen for normalized RT -> RI calibration data and favors a stable
+inverse mapping over boundary-of-monotonicity interpolation.
 
 Inputs are monotonic `retentions_A`/`retentions_B` vectors (unitful or unitless), optional
-controls for smoothness (`smoothness_penalty_n`, `λ_min`, `λ_max`, `max_lambda_iters`) and
-monotonicity enforcement (`monotonicity_grid_size`), optional metadata (`extras`), and an
+controls for smoothness (`smoothness_penalty_n`, `λ`) and monotonicity validation
+(`monotonicity_grid_size`), optional metadata (`extras`), and an
 optimizer constructor (`optimizer_factory`, e.g. `HiGHS.Optimizer`) used to build the
 JuMP model. `solver_time_limit` sets a per-solve time limit in seconds (if supported by
 the optimizer). It defaults to `$(DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT)` seconds;
 pass `solver_time_limit=nothing` to disable the time limit or another positive number to
-override it. `logλ_tolerance` is the stopping tolerance on `log10(λ)` used by the binary
-search that tunes the smoothing parameter: when the log-range width falls below this
-value, the search stops (smaller values mean tighter λ tuning at higher cost).
+override it. If the fitted spline is not strictly monotonic on the validation grid, the
+function throws an `ArgumentError`; use a larger `λ` or curate the calibration points.
 
 Returns a `RetentionMapper` containing the fitted spline, the chosen `λ`, and metadata.
 
@@ -76,10 +72,12 @@ julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute";
 julia> mapper = fitmap(retention_times, retention_indices, 
                        extras=Dict("instrument" => "GC-MS", "column" => "DB-5"));
 
-julia> applymap(mapper, 5.0u"minute") ≈ 339.9115893714841
+julia> mapped = applymap(mapper, 5.0u"minute");
+       invmap(mapper, mapped) ≈ 5.0u"minute"
 true
 
-julia> invmap(mapper, 150) ≈ 1.8372745099240861u"minute"
+julia> retention = invmap(mapper, 150);
+       applymap(mapper, retention) ≈ 150
 true
 ```
 """
@@ -88,13 +86,10 @@ function fitmap(
     retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
     smoothness_penalty_n::Integer=100,
     monotonicity_grid_size::Integer=10^5,
-    λ_max::Real=1e2,
-    λ_min::Real=1e-12,
-    logλ_tolerance::Real=1e-4,
-    max_lambda_iters::Integer=100,
+    λ::Real=1e-7,
     solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
     extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
-    optimizer_factory=HiGHS.Optimizer,
+    optimizer_factory=HiGHS.Optimizer
     )
     
     converted_extras = Dict{String, Any}(string(k) => v for (k, v) in extras)
@@ -114,6 +109,10 @@ function fitmap(
         isfinite(solver_time_limit) && solver_time_limit > 0 || throw(ArgumentError(
             "solver_time_limit must be nothing or a finite positive number"))
     end
+    isfinite(λ) && λ ≥ 0 || throw(ArgumentError(
+        "λ must be finite and nonnegative"))
+    monotonicity_grid_size ≥ 2 || throw(ArgumentError(
+        "monotonicity_grid_size must be at least 2"))
 
     # Strip units for numerical processing
     if eltype(retentions_A) <: AbstractQuantity
@@ -227,16 +226,17 @@ function fitmap(
         value.(coefs), status
     end
 
-    # Find the smallest λ that yields a strictly monotonic spline
-    λ, coefs, status = tune_lambda_for_monotonic_spline(
-        fit_spline_with_penalty, B, rA_norm_min, rA_norm_max,
-        λ_min, λ_max, logλ_tolerance, max_lambda_iters, monotonicity_grid_size)
+    coefs, status = fit_spline_with_penalty(λ)
 
     # Abort if solver did not return an optimal solution
     status == MOI.OPTIMAL || throw(OptimizationError(λ, status))
 
     # Construct the final fitted spline
     spline = Spline(B, coefs)
+    check_grid = LinRange(rA_norm_min, rA_norm_max, monotonicity_grid_size)
+    is_strictly_monotonic(spline, check_grid) || throw(ArgumentError(
+        "fixed λ = $(λ) does not produce a strictly monotonic spline; " *
+        "increase λ or curate the calibration points"))
 
     # Convert predicted y-range back to original scale
     rB_pred_norm_min = spline(rA_norm_min)
@@ -258,164 +258,4 @@ end
 function is_strictly_monotonic(spline::Spline, x::AbstractVector{<:Real}; tol=1e-8)
     y = spline.(x)
     all(diff(y) .> tol)
-end
-
-function try_fit_and_check_monotonicity(
-    λ::Real, 
-    fit_spline_with_penalty::F, 
-    B::AbstractBSplineBasis, 
-    check_grid::AbstractVector{<:Real}
-    ) where {F}
-
-    # Fit the spline coefficients using the provided fitting function with penalty λ
-    coefs, status = fit_spline_with_penalty(λ)
-
-    # Construct a spline object from the basis and the fitted coefficients
-    spline = Spline(B, coefs)
-
-    # Check if the optimization was successful (status == MOI.OPTIMAL)
-    # and if the resulting spline is strictly monotonic over the check_grid points
-    is_monotonic = (status == MOI.OPTIMAL || status == MOI.TIME_LIMIT) &&
-                   is_strictly_monotonic(spline, check_grid)
-
-    # Return whether the spline is monotonic, the coefficients, and the solver status
-    is_monotonic, coefs, status
-end
-
-function tune_lambda_for_monotonic_spline(
-    fit_spline_with_penalty::F, 
-    B::AbstractBSplineBasis, 
-    rA_norm_min::Real, 
-    rA_norm_max::Real, 
-    λ_min::Real, 
-    λ_max::Real, 
-    logλ_tolerance::Real, 
-    max_lambda_iters::Integer,
-    monotonicity_grid_size::Integer
-    ) where {F}
-
-    # Create a dense grid of points over the normalized retention time domain
-    # where monotonicity will be checked.
-    check_grid = LinRange(rA_norm_min, rA_norm_max, monotonicity_grid_size)
-
-    # Helper: capture solver OptimizationError during tuning
-    safe_try = function (λ)
-        try
-            is_feasible, coefs, status = try_fit_and_check_monotonicity(
-                λ, fit_spline_with_penalty, B, check_grid)
-            return is_feasible, coefs, status, nothing
-        catch e
-            if e isa OptimizationError
-                return false, nothing, nothing, e
-            else
-                rethrow()
-            end
-        end
-    end
-
-    last_opt_error = nothing
-
-    # Step 1: Check if the spline fitted with the highest smoothing penalty (λ_max) produces
-    # a monotonic spline. This confirms that monotonicity is achievable at the upper bound.
-    λ = λ_max
-    is_feasible, _, _, opt_err = safe_try(λ)
-    if opt_err ≢ nothing
-        last_opt_error = opt_err
-        is_feasible = false
-    end
-    if !is_feasible
-        # grow λ_max until a feasible monotone spline is found (bounded expansions)
-        for _ in 1:6
-            λ *= 10
-            is_feasible, _, _, opt_err = safe_try(λ)
-            if opt_err ≢ nothing
-                last_opt_error = opt_err
-                is_feasible = false
-            end
-            is_feasible && break
-        end
-        if !is_feasible
-            if last_opt_error ≢ nothing
-                throw(last_opt_error)
-            else
-                throw(ArgumentError(
-                    "λ_max = $(λ_max) does not produce a feasible monotonic spline. Increase λ_max."))
-            end
-        end
-        λ_max = λ
-    end
-
-    # Step 2: Check if the spline fitted with the lowest smoothing penalty (λ_min) is non-
-    # monotonic. This confirms the lower bound is meaningful for the search.
-    λ = λ_min
-    is_feasible, _, _, opt_err = safe_try(λ)
-    if opt_err ≢ nothing
-        last_opt_error = opt_err
-        is_feasible = false
-    end
-    # if is_feasible
-    #     throw(ArgumentError(
-    #         "λ_min = $(λ) already yields a feasible monotonic spline. Decrease λ_min."))
-    # end
-
-    # Initialize variables for storing best spline coefficients and optimization status
-    coefs, status = nothing, nothing
-
-    # Convert λ_min and λ_max to logarithmic scale for numerical stability and efficient 
-    # searching
-    logλ_max = log10(λ_max)
-    logλ_min = log10(λ_min)
-    converged = false
-
-    # Binary search loop to find the minimal λ that yields a monotonic spline
-    for i in 1:max_lambda_iters
-        # Midpoint of the current search interval in log space
-        logλ_mid = (logλ_min + logλ_max) / 2
-        # Convert midpoint back to original scale
-        λ_mid = 10.0^logλ_mid
-
-        # Fit spline with current λ_mid and check monotonicity
-        is_feasible, coefs_tmp, status_tmp, opt_err = safe_try(λ_mid)
-        if opt_err ≢ nothing
-            last_opt_error = opt_err
-            is_feasible = false
-        end
-
-        # If monotonic, narrow the upper bound to λ_mid to find a smaller λ
-        if is_feasible
-            logλ_max = logλ_mid
-            coefs, status = coefs_tmp, status_tmp
-
-        # If monotonic, narrow the upper bound to λ_mid to find a smaller λ
-        else
-            logλ_min = logλ_mid
-        end
-
-        if abs(logλ_max - logλ_min) < logλ_tolerance
-            converged = true
-            break
-        end
-    end
-
-    # Issue a warning if binary search did not converge within max iterations
-    if !converged
-        @warn ("Reached maximum iterations ($max_lambda_iters) without satisfying " * "
-            logλ_tolerance = $logλ_tolerance")
-    end
-
-    # Convert best found λ back to original scale
-    best_λ = 10.0^logλ_max
-
-    # Return the best found λ along with corresponding spline coefficients and optimization 
-    # status
-    if coefs ≡ nothing
-        if last_opt_error ≢ nothing
-            throw(last_opt_error)
-        else
-            throw(ArgumentError(
-                "λ_max = $(λ_max) does not produce a feasible monotonic spline. Increase λ_max."))
-        end
-    end
-
-    best_λ, coefs, status
 end

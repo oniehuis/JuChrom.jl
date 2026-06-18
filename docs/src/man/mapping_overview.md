@@ -25,22 +25,23 @@ across batches (Skoog et al. 2007).
 
 ## JuChrom retention mapping
 
-JuChrom provides [`fitmap`](@ref JuChrom.fitmap) to infer an empirical, smooth mapping 
-function from paired retention values in domain A (e.g., retention times) and reference 
-values in domain B (e.g., Kováts indices). The fit constructs a cubic B-spline and chooses 
-the smallest smoothing penalty that still enforces a strictly increasing curve. Concretely, 
-the objective minimizes squared residuals plus a curvature penalty based on the spline’s 
-second derivative: large changes in slope are penalized, which discourages wiggles and 
-yields a smoother, more stable mapping between anchor points. In parallel, nonnegative 
-first-derivative values are enforced at a dense grid of points to guarantee monotonicity. 
-This yields a continuous, differentiable, and invertible function (stored in a 
-[`RetentionMapper`](@ref RetentionMapper)) that supports both forward mapping and 
-reliable reverse mapping via the monotonic inverse.
+JuChrom provides [`fitmap`](@ref JuChrom.fitmap) to infer an empirical, smooth mapping
+function from paired retention values in domain A (e.g., retention times) and reference
+values in domain B (e.g., Kováts indices). The fit constructs a cubic B-spline with a
+fixed smoothing penalty `λ` and validates that the resulting curve is strictly increasing.
+Concretely, the objective minimizes squared residuals plus a curvature penalty based on
+the spline’s second derivative: large changes in slope are penalized, which discourages
+wiggles and yields a smoother, more stable mapping between anchor points. In parallel,
+nonnegative first-derivative values are enforced at a dense grid of points. The final
+spline is then checked for strict monotonicity so that the stored
+[`RetentionMapper`](@ref RetentionMapper) supports both forward mapping and reliable
+reverse mapping via the monotonic inverse.
 
 For most users, the primary tuning parameter when applying [`fitmap`](@ref JuChrom.fitmap) 
 is smoothing strength (λ). Larger values emphasize smoothness over exact fit to the anchor 
-points, while smaller values track the anchors more tightly. The default automatically 
-searches for the smallest λ that still yields a strictly monotonic fit.
+points, while smaller values track the anchors more tightly. The default `λ=1e-7` is tuned
+for normalized RT -> RI calibration and is intended to avoid boundary-of-monotonicity
+wiggles.
 
 JuChrom includes visual diagnostics for a fitted mapper, letting you inspect the forward 
 and inverse fits side by side. The plotting helpers load automatically once a 
@@ -87,43 +88,43 @@ nothing # hide
 The black and red numbers at some anchor points show how much the fitted mapping departs 
 from those anchors. The inferred mapping is fully satisfactory, but you may want to tune 
 the smoothing strength if the anchor points are noisy or not fully trustworthy. In the 
-derivative plots, for example, we see noticeable oscillation on the left side. Increasing 
-`λ_min` reduces overfitting (less wiggle, more stability), while increasing `λ_max` can 
-help recover monotonicity when a fit would otherwise fail. The mapper object stores the 
-value of the λ tuning parameter that was selected.
+derivative plots, for example, visible oscillation indicates that a larger `λ` may be
+appropriate. Increasing `λ` reduces overfitting (less wiggle, more stability), while
+decreasing `λ` tracks the anchors more tightly. The mapper object stores the value of the
+λ tuning parameter used for the fit.
 
 ```@example 1
 mapper.lambda
 ```
 
-We see that the optimized value is close to its default minimum. Let us increase `λ_min` 
-from its default (`1e-12`) to `1e-8` and examine the effect on the derivative plots.
+Let us fit a smoother mapper with `λ=1e-6` and examine the effect on the derivative plots.
 
 ```@example 1
-# Fit mapping function with λ_min set to 1e-8
-mapper_λ_min_set = fitmap(retention_times, kovats_indices, λ_min=1e-8)
-fig = plot(mapper_λ_min_set; reverse=true, size=(900, 600))
-save("retention_mapper_λ_min_set.svg", fig)
+# Fit mapping function with stronger smoothing
+mapper_smooth = fitmap(retention_times, kovats_indices, λ=1e-6)
+fig = plot(mapper_smooth; reverse=true, size=(900, 600))
+save("retention_mapper_smooth.svg", fig)
 nothing # hide
 ```
 
-![](retention_mapper_λ_min_set.svg)
+![](retention_mapper_smooth.svg)
 
 In the derivative plots the mapping is noticeably smoother, but it now deviates more from 
 the anchor points, as shown by the residuals. Whether the suppressed wiggles reflect real 
 structure that should be modeled or are noise that should be smoothed away is a judgment 
-call for the analyst.
+call for the analyst. If a fit fails monotonicity validation, use a larger `λ` or inspect
+the anchor points for false or noisy calibration steps.
 
-Let’s continue with the mapper inferred using `λ_min=1e-8` and use it to compute retention 
+Let’s continue with the smoother mapper and use it to compute retention
 indices for a few retention times, including extrapolation beyond the domain.
 
 ```@example 1
-ri = applymap(mapper_λ_min_set, 41.5u"minute")  # single value
+ri = applymap(mapper_smooth, 41.5u"minute")  # single value
 ```
 
 ```@example 1
 rts = [10, 29.3, 35.0]u"minute"
-ri = applymap.(mapper_λ_min_set, rts)  # dot form broadcasts over the vector
+ri = applymap.(mapper_smooth, rts)  # dot form broadcasts over the vector
 ```
 
 !!! warning "Domain limits and extrapolation"
@@ -144,7 +145,7 @@ To invert the mapping (e.g., from Kováts to retention time), use
 
 ```@example 1
 ris = [1853.2, 3137.3, 3501.0]
-rts = invmap.(mapper_λ_min_set, ris)  # dot form broadcasts over the vector
+rts = invmap.(mapper_smooth, ris)  # dot form broadcasts over the vector
 ```
 
 To transform intensities with the Jacobian, use the derivative of the mapping. If
@@ -163,7 +164,7 @@ intensities = [1000, 4000, 3500] / 0.5u"s"
 ```
 
 ```@example 1
-dridt = derivmap.(mapper_λ_min_set, scantimes, rA_unit=u"s")
+dridt = derivmap.(mapper_smooth, scantimes, rA_unit=u"s")
 ```
 
 The derivative tells you how much the Kováts retention index changes per unit time. To
@@ -215,11 +216,11 @@ save_object("retention_mapper.jld2", mapper)
 mapper_loaded = load_object("retention_mapper.jld2")
 
 # Save multiple mappers under their own names and load them back
-jldsave("retention_mappers.jld2"; mapper, mapper_λ_min_set)
+jldsave("retention_mappers.jld2"; mapper, mapper_smooth)
 mapper_reloaded = JLD2.load("retention_mappers.jld2", "mapper")
 ```
 ```@example 1
-mapper_λ_min_set_loaded = JLD2.load("retention_mappers.jld2", "mapper_λ_min_set")
+mapper_smooth_loaded = JLD2.load("retention_mappers.jld2", "mapper_smooth")
 ```
 
 ## References

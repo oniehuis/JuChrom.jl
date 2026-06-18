@@ -9,4 +9,4 @@ Base.show(io::IO, e::OptimizationError) =
 
 Base.showerror(io::IO, e::OptimizationError) = 
     print(io, "Spline optimization failed for λ = $(e.λ). Solver status: $(e.status). " *
-              "Try increasing λ_max (more smoothing) or verifying that anchor points are strictly increasing.")
+              "Try increasing λ or verifying that anchor points are strictly increasing.")

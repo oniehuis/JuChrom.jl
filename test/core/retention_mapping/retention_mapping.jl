@@ -17,7 +17,6 @@ using SparseArrays
 using Statistics
 using Unitful
 using Unitful: AbstractQuantity
-using JuChrom: tune_lambda_for_monotonic_spline
 
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
@@ -556,7 +555,7 @@ end
     @test yA isa AbstractQuantity
     @test Unitful.unit(yA) == u"minute"
     @test isfinite(ustrip(yA))
-    @test yA ≈ 5.265825286030818u"minute" atol=1e-10u"minute"  # regression target from docs
+    @test applymap(rm, yA) ≈ xB atol=1e-8u"Th"
 
     # Unit conversion
     yA_s = invmap(rm, xB; unit=u"s")
@@ -569,7 +568,8 @@ end
     ysA = invmap.(rm, xsB)
     @test all(yi -> yi isa AbstractQuantity && Unitful.unit(yi) == u"minute", ysA)
     @test isfinite(sum(ustrip, ysA))
-    @test ysA ≈ [3.2261000929188315, 8.238213271274404]u"minute" atol=1e-10u"minute"
+    @test issorted(ustrip.(ysA))
+    @test applymap.(rm, ysA) ≈ xsB atol=1e-8u"Th"
 
     # Extrapolation below/above domain with warn=true (just exercise the branch)
     with_logger(SimpleLogger(devnull, Logging.Warn)) do
@@ -1615,156 +1615,23 @@ end
     @test occursin("minute→Th", su)
 end
 
-# ── tune_lambda_for_monotonic_spline ────────────────────────────────────────
+# ── fitmap fixed λ ──────────────────────────────────────────────────────────
 
-@testset "tune_lambda_for_monotonic_spline" begin
-    order = BSplineOrder(4)
-    knots = collect(LinRange(0.0, 1.0, 8))
-    B = BSplineBasis(order, knots)
-    rA_norm_min, rA_norm_max = 0.0, 1.0
+@testset "fitmap fixed λ" begin
+    rA = [1.0, 2.0, 3.0, 4.0]
+    rB = [100.0, 200.0, 300.0, 400.0]
 
-    function fit_spline_with_penalty(::Real)
-        coefs = zeros(length(B))
-        return coefs, JuChrom.MOI.OPTIMAL
-    end
+    default_mapper = fitmap(rA, rB)
+    custom_mapper = fitmap(rA, rB; λ=1e-6)
 
-    @test_throws ArgumentError tune_lambda_for_monotonic_spline(
-        fit_spline_with_penalty,
-        B,
-        rA_norm_min,
-        rA_norm_max,
-        1e-3,
-        1e-1,
-        1e-6,
-        5,
-        10,
-    )
+    @test default_mapper.lambda == 1e-7
+    @test custom_mapper.lambda == 1e-6
+    @test_throws ArgumentError fitmap(rA, rB; λ=-1.0)
+    @test_throws ArgumentError fitmap(rA, rB; λ=Inf)
+    @test_throws ArgumentError fitmap(rA, rB; monotonicity_grid_size=1)
 
-    order2 = BSplineOrder(2)
-    knots2 = collect(0.0:0.25:1.0)
-    B2 = BSplineBasis(order2, knots2)
-
-    function fit_spline_with_penalty_monotonic(::Real)
-        coefs = collect(0.0:(length(B2)-1))
-        return coefs, JuChrom.MOI.OPTIMAL
-    end
-
-    @test_logs (:warn, r"Reached maximum iterations") begin
-        tune_lambda_for_monotonic_spline(
-            fit_spline_with_penalty_monotonic,
-            B2,
-            rA_norm_min,
-            rA_norm_max,
-            1e-6,
-            1.0,
-            1e-12,
-            1,
-            10,
-        )
-    end
-
-    function fit_spline_with_penalty_threshold(λ::Real)
-        if λ < 1.0
-            coefs = reverse(collect(0.0:(length(B2)-1)))
-        else
-            coefs = collect(0.0:(length(B2)-1))
-        end
-        return coefs, JuChrom.MOI.OPTIMAL
-    end
-
-    best_λ, coefs_threshold, status_threshold = @test_logs (:warn, r"Reached maximum iterations") begin
-        tune_lambda_for_monotonic_spline(
-            fit_spline_with_penalty_threshold,
-            B2,
-            rA_norm_min,
-            rA_norm_max,
-            1e-6,
-            1e-3,
-            1e-6,
-            6,
-            10,
-        )
-    end
-    @test best_λ ≥ 1.0
-    @test status_threshold == JuChrom.MOI.OPTIMAL
-    @test length(coefs_threshold) == length(B2)
-
-    function fit_spline_with_penalty_error(::Real)
-        throw(ArgumentError("unexpected failure"))
-    end
-
-    @test_throws ArgumentError tune_lambda_for_monotonic_spline(
-        fit_spline_with_penalty_error,
-        B,
-        rA_norm_min,
-        rA_norm_max,
-        1e-3,
-        1e-1,
-        1e-6,
-        5,
-        10,
-    )
-
-    function fit_spline_with_penalty_opt_error(λ::Real)
-        throw(JuChrom.OptimizationError(λ, :INFEASIBLE))
-    end
-
-    @test_throws JuChrom.OptimizationError tune_lambda_for_monotonic_spline(
-        fit_spline_with_penalty_opt_error,
-        B,
-        rA_norm_min,
-        rA_norm_max,
-        1e-3,
-        1e-1,
-        1e-6,
-        5,
-        10,
-    )
-
-    function fit_spline_with_penalty_max_only(λ::Real)
-        if λ == 1.0
-            coefs = collect(0.0:(length(B2)-1))
-        else
-            coefs = zeros(length(B2))  # flat spline → not strictly monotonic
-        end
-        return coefs, JuChrom.MOI.OPTIMAL
-    end
-
-    @test_logs (:warn, r"Reached maximum iterations") begin
-        @test_throws ArgumentError tune_lambda_for_monotonic_spline(
-            fit_spline_with_penalty_max_only,
-            B2,
-            rA_norm_min,
-            rA_norm_max,
-            1e-6,
-            1.0,
-            1e-6,
-            0,
-            2,
-        )
-    end
-
-    function fit_spline_with_penalty_opt_error_tail(λ::Real)
-        if λ == 1.0
-            coefs = collect(0.0:(length(B2)-1))
-            return coefs, JuChrom.MOI.OPTIMAL
-        end
-        throw(JuChrom.OptimizationError(λ, :INFEASIBLE))
-    end
-
-    @test_logs (:warn, r"Reached maximum iterations") begin
-        @test_throws JuChrom.OptimizationError tune_lambda_for_monotonic_spline(
-            fit_spline_with_penalty_opt_error_tail,
-            B2,
-            rA_norm_min,
-            rA_norm_max,
-            1e-6,
-            1.0,
-            1e-6,
-            4,
-            2,
-        )
-    end
+    nonmonotone_rB = [100.0, 300.0, 200.0, 400.0]
+    @test_throws ArgumentError fitmap(rA, nonmonotone_rB; λ=0.0)
 end
 
 # ── Base.show(::OptimizationError) ───────────────────────────────────────────
@@ -1816,7 +1683,7 @@ end
     rA = [1.0, 2.0, 3.0]
     rB = [10.0, 20.0, 30.0]
     err = try
-        fitmap(rA, rB; optimizer_factory=failing_optimizer, max_lambda_iters=1)
+        fitmap(rA, rB; optimizer_factory=failing_optimizer)
         nothing
     catch e
         e
