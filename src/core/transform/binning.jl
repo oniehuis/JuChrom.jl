@@ -267,7 +267,7 @@ function binretentions(
     n_scans, n_mz = size(ints)
 
     intensity_unit = intensityunit(msm)
-    has_intensity_unit = intensity_unit !== nothing
+    has_intensity_unit = intensity_unit ≢ nothing
     intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
     variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
     variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
@@ -329,7 +329,7 @@ function binretentions(
         "rho_lag1 length $(length(rhos)) ≠ n_mz $n_mz"))
 
     # Build the Jacobian scaling factor J^{-2} once (vector or callable input).
-    if jacobian_scale === nothing
+    if jacobian_scale ≡ nothing
         Jinv² = fill(1.0, n_scans)
     elseif jacobian_scale isa AbstractVector
         length(jacobian_scale) == n_scans || throw(ArgumentError(
@@ -483,7 +483,7 @@ function binretentions(
         "variances size $(size(variances)) ≠ ($(n_scans), $(n_mz))"))
 
     intensity_unit = intensityunit(msm)
-    has_intensity_unit = intensity_unit !== nothing
+    has_intensity_unit = intensity_unit ≢ nothing
     intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
     variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
     variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
@@ -528,7 +528,7 @@ function binretentions(
 
     # Build the Jacobian scaling factor J^{-2} once (vector or callable input).
     Jinv² = nothing
-    if jacobian_scale === nothing
+    if jacobian_scale ≡ nothing
         Jinv² = nothing
     elseif jacobian_scale isa AbstractVector
         length(jacobian_scale) == n_scans || throw(ArgumentError(
@@ -569,7 +569,7 @@ function binretentions(
             col_view
         end
 
-        if Jinv² === nothing
+        if Jinv² ≡ nothing
             return col
         end
 
@@ -714,7 +714,7 @@ function binmzvalues(
     reference_scan = first(scans(series))
     reference_mz = first(rawmzvalues(reference_scan))
     binned_mz_type = typeof(mzbin_fn(reference_mz))
-    accepted_mzs = validmzvalues === nothing ? nothing : Set(validmzvalues)
+    accepted_mzs = validmzvalues ≡ nothing ? nothing : Set(validmzvalues)
 
     # Infer types from the reference scan
     intensity_type        = eltype(rawintensities(reference_scan))

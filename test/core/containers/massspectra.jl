@@ -22,9 +22,9 @@ const ATTRS_TUPLE = (instrument="Test",)
 
     ms = MassSpectrum{Vector{Float64}, typeof(u"Th"), Vector{Float64}, typeof(pA), NamedTuple}(
         mz, u"Th", ints, pA, NamedTuple())
-    @test ms.mzvalues === mz
+    @test ms.mzvalues ≡ mz
     @test ms.mzunit == u"Th"
-    @test ms.intensities === ints
+    @test ms.intensities ≡ ints
     @test ms.intensityunit == pA
     @test ms.attrs == NamedTuple()
     @test ms isa AbstractMassSpectrum{typeof(u"Th"), typeof(pA)}
@@ -69,17 +69,17 @@ end
     # Unitful m/z, unitless intensities
     ms2 = MassSpectrum([100.0, 150.0]u"Th", [10.0, 20.0])
     @test ms2.mzunit == u"Th"
-    @test ms2.intensityunit === nothing
+    @test ms2.intensityunit ≡ nothing
 
     # Unitless m/z, unitful intensities
     ms3 = MassSpectrum([100.0, 150.0], [10.0, 20.0]u"pA")
-    @test ms3.mzunit === nothing
+    @test ms3.mzunit ≡ nothing
     @test ms3.intensityunit == pA
 
     # Unitless m/z and intensity
     ms4 = MassSpectrum([100.0, 150.0], [10.0, 20.0])
-    @test ms4.mzunit === nothing
-    @test ms4.intensityunit === nothing
+    @test ms4.mzunit ≡ nothing
+    @test ms4.intensityunit ≡ nothing
 
     # Explicit unit metadata constructor
     ms5 = MassSpectrum([100.0, 150.0], u"Th", [10.0, 20.0], pA; attrs=(scan_id=7,))

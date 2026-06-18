@@ -21,11 +21,11 @@ using JuChrom
     @test eltype(intensities(spectrum)) == Float64
 
     spectrum_attrs = attrs(spectrum)
-    @test spectrum_attrs.ri === 1500.0
-    @test spectrum_attrs.order === 15
+    @test spectrum_attrs.ri ≡ 1500.0
+    @test spectrum_attrs.order ≡ 15
     @test spectrum_attrs.label == "pentadecane"
     @test spectrum_attrs.label isa String
-    @test spectrum_attrs.normalization == :base_peak
+    @test spectrum_attrs.normalization ≡ :base_peak
     @test spectrum_attrs.minrelativeintensity == 0.0
 
     mzs[1] = 41
@@ -55,7 +55,7 @@ end
     for spectrum in spectra
         spectrum_attrs = attrs(spectrum)
 
-        @test spectrum_attrs.normalization == :base_peak
+        @test spectrum_attrs.normalization ≡ :base_peak
         @test spectrum_attrs.minrelativeintensity == 0.0
         @test eltype(mzvalues(spectrum)) == Int
         @test eltype(intensities(spectrum)) == Float64
@@ -64,7 +64,7 @@ end
         @test all(isfinite, mzvalues(spectrum))
         @test all(isfinite, intensities(spectrum))
         @test all(>(0), mzvalues(spectrum))
-        @test all(>=(0), intensities(spectrum))
+        @test all(≥(0), intensities(spectrum))
         @test all(>(0), diff(mzvalues(spectrum)))
         @test maximum(intensities(spectrum)) ≈ 100.0
         @test all(x -> x == round(x; sigdigits=4), intensities(spectrum))
@@ -107,7 +107,7 @@ end
     @test standard isa AlkaneStandard
     @test standard.name == "n-alkane C8-C40 reference spectra"
     @test standard.metadata.carbon_range == 8:40
-    @test standard.metadata.normalization == :base_peak
+    @test standard.metadata.normalization ≡ :base_peak
     @test standard.metadata.minrelativeintensity == 0.0
     @test length(standard.spectra) == 33
     @test [attrs(spectrum).order for spectrum in standard.spectra] == collect(8:40)

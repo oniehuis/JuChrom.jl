@@ -73,16 +73,16 @@ end
     fig = Makie.plot(rm; size=(300, 200), reverse=false)
     @test fig isa Makie.Figure
     axes = [c for c in fig.content if c isa Makie.Axis]
-    @test length(axes) >= 2
+    @test length(axes) ≥ 2
 end
 
 @testset "RetentionMapper residual annotation colors" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     fig = Makie.Figure()
     ax = Makie.Axis(fig[1, 1])
@@ -102,11 +102,11 @@ end
 
 @testset "RetentionMapper text positioning helper" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     align_low, offset_low = ext.determine_text_position(0.0, 1.0, 10.0)
     @test align_low == (:left, :center)
@@ -119,11 +119,11 @@ end
 
 @testset "RetentionMapper inverse derivative unit string" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     @test ext.format_inverse_derivative_unit_string(u"s", nothing) == " [s]"
     norm_unit = s -> replace(s, "⁻¹" => "^-1")
@@ -133,11 +133,11 @@ end
 
 @testset "RetentionMapper derivative unit string" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     @test ext.format_derivative_unit_string(nothing, u"s") == " [s]"
     norm_unit = s -> replace(s, "⁻¹" => "^-1")
@@ -146,11 +146,11 @@ end
 
 @testset "RetentionMapper validation" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     rm_empty = DummyRetentionMapper(Float64[], nothing)
     @test_throws ArgumentError ext.validate_retention_mapper(rm_empty)
@@ -161,11 +161,11 @@ end
 
 @testset "RetentionMapper residual annotation loop" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 
     rm = fitmap([1.0, 2.0, 3.0], [1.0, 2.0, 4.0])
     ret_pred = retentions_B(rm) .+ [0.0, 0.1, -0.2]

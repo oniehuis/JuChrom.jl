@@ -287,7 +287,7 @@ struct AlkaneLadderIonApexResult{
 end
 
 struct AlkaneLadderApex{
-    T1<:Union{AlkaneLadderPathCandidate, NamedTuple},
+    T1<:Union{AbstractAlkaneLadderCandidate, NamedTuple},
     T2<:Union{Nothing, AlkaneLadderIonApexResult},
     T3<:Real
 }
@@ -570,7 +570,7 @@ function alkaneladderapex(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
     abundanceinfo::AlkaneAbundanceInfo,
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     settings::AlkaneLadderApexSettings
 )
     validate_alkane_ladder_apex_settings(
@@ -614,7 +614,7 @@ end
 function alkaneladderapex(
     msm::MassScanMatrix,
     abundanceinfo::AlkaneAbundanceInfo,
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     settings::AlkaneLadderApexSettings
 )
     alkaneladderapex(
@@ -629,7 +629,7 @@ end
 function alkane_ladder_ion_apex(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     ladderstep::Integer,
     settings::AlkaneLadderApexSettings
 )
@@ -706,7 +706,7 @@ end
 function alkane_ladder_ion_apex_once(
     msm::MassScanMatrix,
     variances::AbstractMatrix{<:Real},
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     ladderstep::Integer,
     fitcenterretention::Real,
     attemptindex::Integer,
@@ -920,7 +920,7 @@ end
 
 function alkane_ladder_apex_public_result(
     apex::AlkaneLadderIonApexResult,
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     abundance::AbstractVector{Float64},
     retentions::AbstractVector{<:Real}
 )
@@ -2121,7 +2121,7 @@ function alkane_ladder_apex_failure_reason(apex::AlkaneLadderIonApexResult)
 end
 
 function alkane_ladder_discrete_apex(
-    candidate::Union{AlkaneLadderPathCandidate, NamedTuple},
+    candidate::Union{AbstractAlkaneLadderCandidate, NamedTuple},
     retentions::AbstractVector{<:Real},
     abundance::AbstractVector{Float64},
     scanindices::AbstractVector{<:Integer},

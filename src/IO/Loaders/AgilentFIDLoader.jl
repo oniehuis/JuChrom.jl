@@ -146,7 +146,7 @@ function readfile(file::AbstractString, unit::Union{Nothing, Unitful.Units})
                 scalingfactor = read_scalar_ntoh_at(f, 4732, Float64)
                 scalingfactor < 0 && 
                     throw(FileDecodingError("Negative scaling factor found in file: $file"))
-            elseif unit === nothing
+            elseif unit ≡ nothing
                 scalingfactor = 1
             else
                 throw(ArgumentError("Unsupported signal unit: $unit. Supported units: $(SUPPORTED_UNITS)"))

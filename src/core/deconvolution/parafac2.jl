@@ -104,9 +104,9 @@ function parafac2compression(compression::Symbol)
 end
 
 function parafac2nonnegative(nonnegative)
-    requested = if nonnegative === true
+    requested = if nonnegative ≡ true
         (:spectra, :abundances)
-    elseif nonnegative === false || isnothing(nonnegative)
+    elseif nonnegative ≡ false || isnothing(nonnegative)
         ()
     elseif nonnegative isa Symbol
         (nonnegative,)
@@ -121,7 +121,7 @@ function parafac2nonnegative(nonnegative)
     canonical = Symbol[]
     for item in requested
         item isa Symbol || throw(ArgumentError("nonnegative entries must be symbols."))
-        constraint = if item == :weights
+        constraint = if item ≡ :weights
             :abundances
         else
             item
@@ -147,7 +147,7 @@ function parafac2compressionmatrices(
 ) where {T<:AbstractFloat}
     method = parafac2compression(compression)
     compressed = falses(length(X))
-    method == :none && return X, compressed
+    method ≡ :none && return X, compressed
 
     matrices = Vector{Matrix{T}}(undef, length(X))
     for sampleindex in eachindex(X)
@@ -279,7 +279,7 @@ function nonnegativeleastsquares(
 
             alpha = one(T)
             for index in active
-                if z[index] <= T(tolerance)
+                if z[index] ≤ T(tolerance)
                     denominator = x[index] - z[index]
                     if denominator > eps(T)
                         alpha = min(alpha, x[index] / denominator)
@@ -291,14 +291,14 @@ function nonnegativeleastsquares(
 
             x .+= alpha .* (z .- x)
             for index in active
-                if x[index] <= T(tolerance)
+                if x[index] ≤ T(tolerance)
                     passive[index] = false
                     x[index] = zero(T)
                 end
             end
 
             iteration += 1
-            iteration >= maxiters && break
+            iteration ≥ maxiters && break
         end
 
         x .= max.(z, zero(T))
@@ -464,7 +464,7 @@ function parafac2requirefitted(fit::Parafac2Fit)
 end
 
 function parafac2checksampleindex(fit::Parafac2Fit, sampleindex::Integer)
-    1 <= sampleindex <= length(fit.retentioncounts) || throw(BoundsError(
+    1 ≤ sampleindex ≤ length(fit.retentioncounts) || throw(BoundsError(
         fit.retentioncounts,
         sampleindex
     ))
@@ -864,7 +864,7 @@ function parafac2fitstart(
 
         improvement = previousloss - currentloss
         threshold = T(tol) * max(previousloss, eps(T))
-        if improvement <= threshold
+        if improvement ≤ threshold
             converged = true
             stopreason = :tol
             break
@@ -892,7 +892,7 @@ function parafac2fit(
     rng::Random.AbstractRNG,
     nonnegative::Tuple{Vararg{Symbol}}
 ) where {T<:AbstractFloat}
-    nstarts >= 1 || throw(ArgumentError("nstarts must be at least 1."))
+    nstarts ≥ 1 || throw(ArgumentError("nstarts must be at least 1."))
 
     loadings, core, weights = parafac2rationalstart(X, ncomponents, nonnegative)
     bestfit = parafac2fitstart(
@@ -1178,7 +1178,7 @@ function parafac2dimensions(
     ncomponents::Integer
 )
     isempty(X) && throw(ArgumentError("X must contain at least one sample matrix."))
-    ncomponents >= 1 || throw(ArgumentError("ncomponents must be at least 1."))
+    ncomponents ≥ 1 || throw(ArgumentError("ncomponents must be at least 1."))
 
     mzcount = size(first(X), 2)
     retentioncounts = Vector{Int}(undef, length(X))
@@ -1269,7 +1269,7 @@ nonnegative. Pass `nonnegative=()` or `nonnegative=false` to run the paper's ori
 unconstrained direct ALS update. `nonnegative` may also be `:spectra`, `:abundances`,
 `:weights`, or a tuple/vector containing those symbols.
 
-`ncomponents` must satisfy `1 <= ncomponents <= min(size(X[k])...)` across all sample
+`ncomponents` must satisfy `1 ≤ ncomponents ≤ min(size(X[k])...)` across all sample
 matrices. `maxiters` controls the number of ALS cycles and may be zero to return the
 rational initialization for `nstarts=1`. `tol` is the relative objective-decrease
 threshold used for convergence. `nstarts` must be at least one; pass `rng` to make random
@@ -1293,9 +1293,9 @@ function parafac2(
     nonnegative=(:spectra, :abundances)
 )
     retentioncounts, mzcount = parafac2dimensions(X, ncomponents)
-    maxiters >= 0 || throw(ArgumentError("maxiters must be nonnegative."))
-    isfinite(tol) && tol >= 0 || throw(ArgumentError("tol must be finite and nonnegative."))
-    nstarts >= 1 || throw(ArgumentError("nstarts must be at least 1."))
+    maxiters ≥ 0 || throw(ArgumentError("maxiters must be nonnegative."))
+    isfinite(tol) && tol ≥ 0 || throw(ArgumentError("tol must be finite and nonnegative."))
+    nstarts ≥ 1 || throw(ArgumentError("nstarts must be at least 1."))
     compression = parafac2compression(compression)
     nonnegative = parafac2nonnegative(nonnegative)
     retentionmetadata, retentionunit = parafac2retentionmetadata(retentions, retentioncounts)

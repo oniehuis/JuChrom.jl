@@ -8,7 +8,8 @@ struct LadderWindowPathState
     parent::Union{Nothing, Int}
 end
 
-struct AlkaneLadderPathCandidate{T<:AlkaneMolecularIonContrast}
+struct AlkaneLadderPathCandidate{T<:AlkaneMolecularIonContrast}<:
+        AbstractAlkaneLadderCandidate
     ladderstep::Int
     scanindex::Int
     score::Float64
@@ -441,7 +442,7 @@ function alkane_best_ladder_path_in_run(
                     curr = candidates[pos][curridx]
 
                     penalty = missingsteppenalty * missingsteps
-                    if state.pathlength >= 2
+                    if state.pathlength ≥ 2
                         parentid = state.parent
                         isnothing(parentid) && continue
                         parent = states[parentid]

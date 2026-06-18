@@ -36,7 +36,7 @@ function Makie.plot!(ms::MassSpectrum)
         # Auto-adjust y-axis limits when data changes
         if !isempty(intensities)
             max_intensity = maximum(intensities)
-            if !isfinite(max_intensity) || max_intensity <= 0
+            if !isfinite(max_intensity) || max_intensity ≤ 0
                 ylims!(ax, 0, 1)
             else
                 ylims!(ax, 0, max_intensity * 1.1)  # Add 10% padding
@@ -96,7 +96,7 @@ function calculate_visible_labels(ax, ms, mzvalues, intensities, viewport, limit
                 x0, x1, y0, y1, type = region
                 x_overlap = (x0p ≤ x0 ≤ x1p || x0p ≤ x1 ≤ x1p)
                 
-                if type == :line
+                if type ≡ :line
                     x_overlap && (y0 ≤ y0p ≤ y1)  # For lines: label must be within line's Y range
                 else
                     x_overlap && (y0p ≤ y0 ≤ y1p || y0p ≤ y1 ≤ y1p)  # For labels: normal overlap

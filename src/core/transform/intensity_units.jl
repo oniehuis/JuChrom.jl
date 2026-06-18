@@ -165,7 +165,7 @@ Return a copy of `msm` with the supplied intensity unit attached without changin
 stored intensity values.
 
 This function is intended for cases where the numeric intensity values already have a known
-physical unit, but the matrix currently stores `intensityunit(msm) === nothing`. It only
+physical unit, but the matrix currently stores `intensityunit(msm) ≡ nothing`. It only
 changes the intensity unit metadata. Retention coordinates, m/z values, intensity values,
 MS level, and metadata are preserved.
 

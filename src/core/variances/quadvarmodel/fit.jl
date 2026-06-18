@@ -80,7 +80,7 @@ function fitquadvarmodel(
             iu == intensity_unit || throw(ArgumentError("Intensity unit mismatch at batch $b, rep $r."))
 
             n_scans = size(M, 1)
-            if n_scans_ref === nothing
+            if n_scans_ref ≡ nothing
                 n_scans_ref = n_scans
             elseif n_scans != n_scans_ref
                 throw(ArgumentError("Batch $b has inconsistent scan counts: rep $r has $n_scans, expected $n_scans_ref."))
@@ -95,7 +95,7 @@ function fitquadvarmodel(
     mz_idx = Int[]
     sel_mz_vals = nothing
 
-    if mzsel === nothing
+    if mzsel ≡ nothing
         mz_idx = collect(1:n_mz)
     elseif mzsel isa AbstractRange{<:Integer} || mzsel isa AbstractVector{<:Integer}
         mz_idx = collect(mzsel)
@@ -768,11 +768,11 @@ function fitquadvar(
     # collect z and per-row variances
     z_all = Float64[]; v_all = Float64[]
     @inbounds for (s, R) in zip(s_list, R_list)
-        v = if var_stat === :mad2
+        v = if var_stat ≡ :mad2
             med = vec(median(R, dims=2))
             mad = vec(median(abs.(R .- med), dims=2))
             (1.4826 .* mad) .^ 2
-        elseif var_stat === :var
+        elseif var_stat ≡ :var
             vec(var(R; dims=2))
         else
             error("var_stat must be :mad2 or :var")
@@ -962,8 +962,8 @@ function pooledfitstats(Ms::Vector{<:AbstractMatrix{<:Real}},
                 nfin += n
                 sumsq += sum(abs2, zv)
                 az = abs.(zv)
-                n68 += Base.count(<=(1.0), az)
-                n95 += Base.count(<=(1.96), az)
+                n68 += Base.count(≤(1.0), az)
+                n95 += Base.count(≤(1.96), az)
             end
         end
 
@@ -1029,7 +1029,7 @@ function pooledresidacf(
 
     # ----- Build pooled scale c′ only if needed (low-intensity modes)
     cprime = 1.0
-    if restrict === :low || restrict === :lowflat
+    if restrict ≡ :low || restrict ≡ :lowflat
         sall = vcat(s...)
         cprime = max(quantile(sall, z_quant), eps(Float64))
     end
@@ -1039,15 +1039,15 @@ function pooledresidacf(
 
         # ----- Optional per-batch mask from s[b]
         mask_b = nothing
-        if restrict != :none
+        if restrict ≢ :none
             sb = s[b]
             keep = trues(length(sb))
 
-            if restrict == :low || restrict == :lowflat
+            if restrict ≡ :low || restrict ≡ :lowflat
                 z = sb ./ cprime
                 keep .&= (z .≤ z_max_keep)
             end
-            if restrict == :flat || restrict == :lowflat
+            if restrict ≡ :flat || restrict ≡ :lowflat
                 ds  = abs.(diff(sb))
                 thr = quantile(ds, flat_q)
                 flat = trues(length(sb))

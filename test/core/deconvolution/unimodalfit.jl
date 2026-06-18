@@ -30,7 +30,7 @@ using JuChrom: nnlspenalized
     μ = [0.5, 0.5]
     λ = [1.0, 2.0]
     a_prior = nnlspenalized(F, y; μ=μ, λ=λ)
-    @test all(a_prior .>= 0.0)
+    @test all(a_prior .≥ 0.0)
 
     @test_throws DimensionMismatch nnlspenalized(F, y; μ=[0.1], λ=[1.0, 2.0])
     @test_throws DimensionMismatch nnlspenalized(F, y; μ=[0.1, 0.2], λ=[1.0])
@@ -98,7 +98,7 @@ end
     )
 
     @test A_hat[1, 2] == 0.0
-    @test all(A_hat .>= 0.0)
+    @test all(A_hat .≥ 0.0)
     @test all(isfinite.(Ifit))
 end
 
@@ -123,7 +123,7 @@ end
         iters=1
     )
 
-    @test all(A_hat .>= 0.0)
+    @test all(A_hat .≥ 0.0)
     @test all(isfinite.(A_hat))
     @test all(isfinite.(Ifit))
 end
@@ -306,12 +306,12 @@ function peak_edges_test(
     if K ≤ 1
         return edges
     end
-    if graph == :neighbors
+    if graph ≡ :neighbors
         for k in 1:(K-1)
             push!(edges, (k, k+1))
         end
         return edges
-    elseif graph == :window
+    elseif graph ≡ :window
         t0 = Float64.(peakretentions)
         for k in 1:K
             for ℓ in (k+1):K
@@ -539,8 +539,8 @@ end
     wfun = JuChrom.sigma2weights
     @test_throws ArgumentError wfun([1.0, NaN])
     @test_throws ArgumentError wfun([1.0, 0.0])
-    @test wfun([1e308, 1e308]) === nothing
-    @test wfun([1.0, 2.0]; w_cap=NaN) === nothing
+    @test wfun([1e308, 1e308]) ≡ nothing
+    @test wfun([1.0, 2.0]; w_cap=NaN) ≡ nothing
 
     I_nan = copy(I)
     I_nan[1, 1] = NaN

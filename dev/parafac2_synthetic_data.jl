@@ -18,7 +18,7 @@ function normalizecolumns(matrix::AbstractMatrix)
 end
 
 function defaultparafac2abundances(nsamples::Integer)
-    nsamples >= 2 || throw(ArgumentError("nsamples must be at least 2."))
+    nsamples ≥ 2 || throw(ArgumentError("nsamples must be at least 2."))
     phase = range(0, 2π; length=nsamples)
     abundances = Matrix{Float64}(undef, nsamples, 2)
     abundances[:, 1] .= 1.0 .+ 0.45 .* sin.(phase .+ 0.25)
@@ -87,16 +87,16 @@ function simulateparafac2overlap(;
     size(abundances) == (nsamples, 2) || throw(DimensionMismatch(
         "abundances must have size (nsamples, 2)."
     ))
-    nretentions >= 3 || throw(ArgumentError("nretentions must be at least 3."))
+    nretentions ≥ 3 || throw(ArgumentError("nretentions must be at least 3."))
     first(retentionrange) < last(retentionrange) || throw(ArgumentError(
         "retentionrange must be increasing."
     ))
-    noiselevel >= 0 || throw(ArgumentError("noiselevel must be nonnegative."))
-    sampleshiftwidth >= 0 || throw(ArgumentError("sampleshiftwidth must be nonnegative."))
-    componentshiftwidth >= 0 || throw(ArgumentError(
+    noiselevel ≥ 0 || throw(ArgumentError("noiselevel must be nonnegative."))
+    sampleshiftwidth ≥ 0 || throw(ArgumentError("sampleshiftwidth must be nonnegative."))
+    componentshiftwidth ≥ 0 || throw(ArgumentError(
         "componentshiftwidth must be nonnegative."
     ))
-    retentionjitter >= 0 || throw(ArgumentError("retentionjitter must be nonnegative."))
+    retentionjitter ≥ 0 || throw(ArgumentError("retentionjitter must be nonnegative."))
 
     spectra = normalizecolumns(spectra)
     basegrid = collect(range(first(retentionrange), last(retentionrange); length=nretentions))

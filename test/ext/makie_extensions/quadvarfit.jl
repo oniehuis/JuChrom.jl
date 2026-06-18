@@ -12,11 +12,11 @@ using JuChrom: QuadVarFit, QuadVarParams
 using Unitful
 # Force-load the Makie extension so QuadVarFit recipes are available
 let ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
         ext = Base.get_extension(JuChrom, :MakieExtension)
     end
-    ext === nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
+    ext ≡ nothing && error("JuChrom MakieExtension could not be loaded; ensure Makie is available.")
 end
 
 CairoMakie.activate!()  # headless backend for tests
@@ -79,12 +79,12 @@ end
     @test fig isa Makie.Figure
     axes = [c for c in fig.content if c isa Makie.Axis]
     @test length(axes) == 1
-    @test length([p for p in axes[1].scene.plots if p isa Makie.Lines]) >= 1
+    @test length([p for p in axes[1].scene.plots if p isa Makie.Lines]) ≥ 1
 
     fig_offsets = Makie.plot(qvf; mzi=1, batch=1, mode=:offsets, figsize=(300, 200), legend=false)
     axes_off = [c for c in fig_offsets.content if c isa Makie.Axis]
     @test length(axes_off) == 1
-    @test length([p for p in axes_off[1].scene.plots if p isa Makie.Lines]) >= 1
+    @test length([p for p in axes_off[1].scene.plots if p isa Makie.Lines]) ≥ 1
 
     fig_range = Makie.plot(qvf; mzi=1, batch=1, mode=:align, scan_range=2:10, figsize=(300, 200), legend=false)
     ax_range = only([c for c in fig_range.content if c isa Makie.Axis])

@@ -153,7 +153,7 @@ end
     # Expected mapped retentions (vectorized scalar path)
     new_rets = applymap.(rmap, ret)
     @test retentions(out) ≈ new_rets
-    @test retentionunit(out) === nothing
+    @test retentionunit(out) ≡ nothing
 
     # Jacobians: one per scan/row
     J = rawderivmap.(rmap, ret; rB_unit=nothing)
@@ -168,8 +168,8 @@ end
 
     # m/z values and units propagated unchanged
     @test rawmzvalues(out) == rawmzvalues(msm)
-    @test mzunit(out) === mzunit(msm)
-    @test intensityunit(out) === intensityunit(msm)
+    @test mzunit(out) ≡ mzunit(msm)
+    @test intensityunit(out) ≡ intensityunit(msm)
 end
 
 # ── applymap(::RetentionMapper, ::MassScanSeries) ────────────────────────────
@@ -233,8 +233,8 @@ end
     @test intensities(out[2]) ≈ (ints2 ./ j2)
 
     # Units of new retentions: still unitless for unitless mapper
-    @test retentionunit(out[1]) === nothing
-    @test retentionunit(out[2]) === nothing
+    @test retentionunit(out[1]) ≡ nothing
+    @test retentionunit(out[2]) ≡ nothing
 end
 
 # ── Base.broadcastable(::RetentionMapper) ─────────────────────────────────────
@@ -275,13 +275,13 @@ end
     # Broadcastable wraps as Ref ⇒ scalar-like broadcasting
     b = broadcastable(rm)
     @test b isa Ref
-    @test b[] === rm
+    @test b[] ≡ rm
 
     # Broadcasting with identity uses scalar semantics and returns the object itself
-    @test identity.(rm) === rm
+    @test identity.(rm) ≡ rm
 
-    # Broadcasting with `===` stays scalar (not an array)
-    @test (rm .=== rm) === true
+    # Broadcasting with `≡` stays scalar (not an array)
+    @test (rm .≡ rm) ≡ true
 end
 
 # ── derivinvmap(rm::RetentionMapper, retention::Union{<:Real, <:AbstractQuantity}) ───
@@ -1456,7 +1456,7 @@ end
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
-    @test retentionunit_A(rmA0) === nothing
+    @test retentionunit_A(rmA0) ≡ nothing
 end
 
 # ── retentionunit_B(rm) ──────────────────────────────────────────────────────
@@ -1498,7 +1498,7 @@ end
         rB_pred_norm_min, rB_pred_norm_max,
         knots, coefs, spline, TEST_LAMBDA, Dict{String,Any}(),
     )
-    @test retentionunit_B(rmB0) === nothing
+    @test retentionunit_B(rmB0) ≡ nothing
 end
 
 # ── Base.show(::MIME"text/plain", ::RetentionMapper) ─────────────────────────
@@ -1685,7 +1685,7 @@ end
             10,
         )
     end
-    @test best_λ >= 1.0
+    @test best_λ ≥ 1.0
     @test status_threshold == JuChrom.MOI.OPTIMAL
     @test length(coefs_threshold) == length(B2)
 

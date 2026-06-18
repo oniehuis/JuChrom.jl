@@ -157,17 +157,17 @@ function Base.show(io::IO, rm::RetentionMapper)
     fmt_rB_max = @sprintf("%.*f", decimals_rB, rm.rB_pred_max)
     
     # Extract units for display
-    rA_unit_str = rm.rA_unit === nothing ? "unitless" : string(rm.rA_unit)
-    rB_unit_str = rm.rB_unit === nothing ? "unitless" : string(rm.rB_unit)
+    rA_unit_str = rm.rA_unit ≡ nothing ? "unitless" : string(rm.rA_unit)
+    rB_unit_str = rm.rB_unit ≡ nothing ? "unitless" : string(rm.rB_unit)
     
     # Calculate residuals with proper unit handling
-    if rm.rA_unit !== nothing
+    if rm.rA_unit ≢ nothing
         rA_with_units = rm.rA * rm.rA_unit
     else
         rA_with_units = rm.rA
     end
     vals_pred = applymap.(rm, rA_with_units)
-    if rm.rB_unit !== nothing
+    if rm.rB_unit ≢ nothing
         vals_true = rm.rB * rm.rB_unit
     else
         vals_true = rm.rB
@@ -246,17 +246,17 @@ function Base.show(io::IO, ::MIME"text/plain", mappers::Vector{<:RetentionMapper
     for (i, mapper) in enumerate(mappers)
         # Extract key info
         n_points = length(mapper.rA)
-        rA_unit_str = mapper.rA_unit === nothing ? "unitless" : string(mapper.rA_unit)
-        rB_unit_str = mapper.rB_unit === nothing ? "unitless" : string(mapper.rB_unit)
+        rA_unit_str = mapper.rA_unit ≡ nothing ? "unitless" : string(mapper.rA_unit)
+        rB_unit_str = mapper.rB_unit ≡ nothing ? "unitless" : string(mapper.rB_unit)
         
         # Calculate average residual quickly
-        if mapper.rA_unit !== nothing
+        if mapper.rA_unit ≢ nothing
             rA_with_units = mapper.rA * mapper.rA_unit
         else
             rA_with_units = mapper.rA
         end
         vals_pred = applymap.(mapper, rA_with_units)
-        vals_true = mapper.rB_unit !== nothing ? mapper.rB * mapper.rB_unit : mapper.rB
+        vals_true = mapper.rB_unit ≢ nothing ? mapper.rB * mapper.rB_unit : mapper.rB
         avg_residual = mean(abs.(vals_pred .- vals_true))
         
         # Format output
@@ -596,7 +596,7 @@ julia> inputs = [1.2, 2.5, 4.1, 6.8, 9.3]
        outputs = [100.0, 200.0, 300.0, 400.0, 500.0]
        mapper_unitless = fitmap(inputs, outputs);
 
-julia> retentionunit_A(mapper_unitless) === nothing
+julia> retentionunit_A(mapper_unitless) ≡ nothing
 true
 ```
 """
@@ -636,7 +636,7 @@ julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
        retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
        mapper = fitmap(retention_times, retention_indices);
 
-julia> retentionunit_B(mapper) === nothing
+julia> retentionunit_B(mapper) ≡ nothing
 true
 ```
 """

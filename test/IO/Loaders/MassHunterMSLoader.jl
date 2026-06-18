@@ -40,14 +40,14 @@ const TEST_TMPDIR = mkpath(joinpath(@__DIR__, "tmp"))
 @testset "MassHunterMSOptions" begin
     options = MassHunterMSOptions(:ms, nothing, Nothing, Nothing, Nothing)
     @test isa(options, MassHunterMSOptions)
-    @test options.mode == :ms
-    @test options.level === nothing
-    @test options.scantimetype === Nothing
-    @test options.iontype === Nothing
-    @test options.intensitytype === Nothing
+    @test options.mode ≡ :ms
+    @test options.level ≡ nothing
+    @test options.scantimetype ≡ Nothing
+    @test options.iontype ≡ Nothing
+    @test options.intensitytype ≡ Nothing
 
     custom = MassHunterMSOptions(:tic, 2, Float32, Float32, Float64)
-    @test custom.mode == :tic
+    @test custom.mode ≡ :tic
     @test custom.level == 2
     @test custom.scantimetype == Float32
     @test custom.iontype == Float32
@@ -60,13 +60,13 @@ end
         Val(MassHunterMSv1))
     @test isa(direct, MassHunterMSLoaderSpec)
     @test direct.path == "dummy_path"
-    @test direct.options === options
+    @test direct.options ≡ options
 
     kw = MassHunterMSLoaderSpec{MassHunterMSv1}("kw_path"; mode=:ms, level=1, 
         scantimetype=Float32, iontype=Float32, intensitytype=Float64)
     @test isa(kw, MassHunterMSLoaderSpec)
     @test kw.path == "kw_path"
-    @test kw.options.mode == :ms
+    @test kw.options.mode ≡ :ms
     @test kw.options.level == 1
     @test kw.options.scantimetype == Float32
     @test kw.options.iontype == Float32
@@ -79,7 +79,7 @@ end
     spec = MassHunterMS(TESTPATH; mode=:tic, level=1)
     @test isa(spec, MassHunterMSLoaderSpec)
     @test spec.path == TESTPATH
-    @test spec.options.mode == :tic
+    @test spec.options.mode ≡ :tic
     @test spec.options.level == 1
 
     @test_throws ArgumentError MassHunterMS(TESTPATH; mode=:unknown)

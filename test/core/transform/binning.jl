@@ -162,7 +162,7 @@ end
         0.0;
         jacobian_scale=_ -> 2.0,
     )
-    @test intensityunit(msm_binned_unitless) === nothing
+    @test intensityunit(msm_binned_unitless) ≡ nothing
     @test all(!JuChrom.isunitful, vars_unitless[:, 1])
 
     @test_throws ArgumentError binretentions(msm, edges, params, rho;

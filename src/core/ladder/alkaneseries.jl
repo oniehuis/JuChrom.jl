@@ -70,6 +70,8 @@ function AlkaneSeriesResult(
     )
 end
 
+abstract type AbstractAlkaneLadderCandidate end
+
 struct AlkaneLadderStep{T}
     ladderstep::Int
     apexscanindex::Float64
@@ -308,7 +310,18 @@ function findalkaneseries(
     additionminradius=5.0,
     additionradiusfraction=0.15,
     additionpositionsigmafraction=0.05,
-    additionmaxextensionsteps=100
+    additionmaxextensionsteps=100,
+    additionmassspectrummatch=true,
+    additiongapmincosinefloor=0.85,
+    additiongapcosinetolerance=0.03,
+    additionedgemaxanchors=6,
+    additionedgeminradius=5.0,
+    additionedgeradiusfraction=0.2,
+    additionedgemincosinefloor=0.9,
+    additionedgecosinetolerance=0.03,
+    additionedgecosineanchorcount=3,
+    additionedgepositionsigmafraction=0.1,
+    additionmassspectrumvariancefloor=1.0
 
 )
 
@@ -398,22 +411,45 @@ function findalkaneseries(
         pathinfo,
         apexsettings
     )
+    additionsettings = alkane_ladder_addition_settings(
+        msm,
+        variances,
+        abundanceinfo,
+        apexinfo,
+        additionminradius,
+        additionradiusfraction,
+        additionpositionsigmafraction,
+        additionmaxextensionsteps,
+        additionmassspectrummatch,
+        additiongapmincosinefloor,
+        additiongapcosinetolerance,
+        additionedgemaxanchors,
+        additionedgeminradius,
+        additionedgeradiusfraction,
+        additionedgemincosinefloor,
+        additionedgecosinetolerance,
+        additionedgecosineanchorcount,
+        additionedgepositionsigmafraction,
+        additionmassspectrumvariancefloor,
+        apexscanwindow,
+        variancefloor,
+        apexlogfloorfraction,
+        apexionexcludemzvalues,
+        apexionmzvalues,
+        apexionminrelativeintensity,
+        apexminioncount,
+        apexinfo.settings.mzretentionkwargs,
+        apexmaxshiftfromguess,
+        channelinfo.carbonrange
+    )
     additioninfo = alkaneladderadditions(
         msm,
         variances,
         abundanceinfo,
         pathinfo,
-        apexinfo;
-        minradius=additionminradius,
-        radiusfraction=additionradiusfraction,
-        positionsigmafraction=additionpositionsigmafraction,
-        maxextensionsteps=additionmaxextensionsteps,
-        standard=standard,
-        apexscanwindow=apexscanwindow,
-        apexvariancefloor=variancefloor,
-        apexlogfloorfraction=apexlogfloorfraction,
-        apexmzretentionkwargs=apexinfo.settings.mzretentionkwargs,
-        carbonrange=channelinfo.carbonrange
+        apexinfo,
+        additionsettings,
+        standard
     )
 
     result_datainfo = isnothing(datainfo) ?
@@ -509,7 +545,7 @@ variance model, or nonstandard preprocessing that should not be repeated by this
 
 `standard` supplies the reference alkane spectra and is passed through to
 `findalkaneseries`. `variances` may be an already prepared variance matrix with the same
-shape as `rawintensities(msm)`. When `variances === nothing`, variances are estimated from
+shape as `rawintensities(msm)`. When `variances ≡ nothing`, variances are estimated from
 the raw counts with [`countvariances`](@ref). `subtractbaseline` controls whether an ARPLS
 baseline is fitted and subtracted before ladder detection. If `subtractbaseline=false`,
 `variances` must be provided, because count-based variances are intended for uncorrected

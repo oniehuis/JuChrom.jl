@@ -392,7 +392,7 @@ end
 end
 
 @testset "mzunit(ms::AbstractMassSpectrum)" begin
-    @test mzunit(MASS_SPECTRUM) === nothing
+    @test mzunit(MASS_SPECTRUM) ≡ nothing
     @test mzunit(MASS_SPECTRUM_UNITFUL) == u"Th"
 
     @test_throws MethodError mzunit("invalid type")
@@ -402,7 +402,7 @@ end
 end
 
 @testset "intensityunit(ms::AbstractMassSpectrum)" begin
-    @test intensityunit(MASS_SPECTRUM) === nothing
+    @test intensityunit(MASS_SPECTRUM) ≡ nothing
     @test intensityunit(MASS_SPECTRUM_UNITFUL) == u"pA"
 
     @test_throws MethodError intensityunit("invalid type")
@@ -462,13 +462,13 @@ end
 @testset "mzindex(scanmatrix::AbstractMassScanMatrix)" begin
     @test mzindex(SM, 200.0) == 1
     @test mzindex(SM, 202.0) == 3
-    @test mzindex(SM, 999.0) === nothing
+    @test mzindex(SM, 999.0) ≡ nothing
     @test mzindex.(Ref(SM), [200.0, 201.0]) == [1, 2]
 
     msm_unitful_mz = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0]u"Th", [1.0 2.0; 3.0 4.0])
     @test mzindex(msm_unitful_mz, 100.0u"Th") == 1
     @test mzindex(msm_unitful_mz, 0.2u"kTh") == 2
-    @test mzindex(msm_unitful_mz, 999.0u"Th") === nothing
+    @test mzindex(msm_unitful_mz, 999.0u"Th") ≡ nothing
     @test mzindex.(Ref(msm_unitful_mz), [100.0, 200.0]u"Th") == [1, 2]
 
     @test_throws MethodError mzindex(SM, 100.0u"Th")

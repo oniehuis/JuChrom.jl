@@ -53,7 +53,7 @@ Base.show(io::IO, ::Type{ShortMassScan}) = print(io, "ShortMassScan")
                           T1, T2, T3, T4, T5, T6}(
         scans, (vendor="Acme",), (method="M1",), (user="U",), (sample="S",),
         Dict{String,Any}("x"=>1))
-    @test css.scans === scans
+    @test css.scans ≡ scans
     @test css.instrument == (vendor="Acme",)
     @test css.acquisition == (method="M1",)
     @test css.user == (user="U",)
@@ -79,14 +79,14 @@ end
 
     # Defaults & type-parameter inference (R=minute, I=pA)
     css = ChromScanSeries(scans)
-    @test css.scans === scans
+    @test css.scans ≡ scans
     @test css.instrument == NamedTuple()
     @test css.acquisition == NamedTuple()
     @test css.user == NamedTuple()
     @test css.sample == NamedTuple()
     @test css.extras isa Dict{String,Any}
-    @test typeof(css).parameters[2] === typeof(first(scans).retentionunit)
-    @test typeof(css).parameters[3] === typeof(first(scans).intensityunit)
+    @test typeof(css).parameters[2] ≡ typeof(first(scans).retentionunit)
+    @test typeof(css).parameters[3] ≡ typeof(first(scans).intensityunit)
 
     # extras: AbstractString keys are converted to String; values widened to Any
     s = "ab"; k = SubString(s, 1, 1)
@@ -134,7 +134,7 @@ end
                          T1, T2, T3, T4, T5, T6}(
         scans, (instr="MS",), (mode="FullScan",), (user="U",), (sample="S",),
         Dict{String,Any}("y"=>2))
-    @test mss.scans === scans
+    @test mss.scans ≡ scans
     @test mss.instrument == (instr="MS",)
     @test mss.acquisition == (mode="FullScan",)
     @test mss.user == (user="U",)
@@ -161,15 +161,15 @@ end
 
     # Defaults & type-parameter inference (R, M, I)
     mss = MassScanSeries(scans)
-    @test mss.scans === scans
+    @test mss.scans ≡ scans
     @test mss.instrument == NamedTuple()
     @test mss.acquisition == NamedTuple()
     @test mss.user == NamedTuple()
     @test mss.sample == NamedTuple()
     @test mss.extras isa Dict{String,Any}
-    @test typeof(mss).parameters[2] === typeof(first(scans).retentionunit)
-    @test typeof(mss).parameters[3] === typeof(first(scans).mzunit)
-    @test typeof(mss).parameters[4] === typeof(first(scans).intensityunit)
+    @test typeof(mss).parameters[2] ≡ typeof(first(scans).retentionunit)
+    @test typeof(mss).parameters[3] ≡ typeof(first(scans).mzunit)
+    @test typeof(mss).parameters[4] ≡ typeof(first(scans).intensityunit)
 
     # extras: AbstractString keys conversion; Any value type
     s = "xyz"; k = SubString(s, 2, 3)

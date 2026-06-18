@@ -142,13 +142,13 @@ end
     # Broadcastable wraps the object into a Ref (so it behaves like a scalar)
     b = broadcastable(q)
     @test b isa Ref
-    @test b[] === q
+    @test b[] ≡ q
 
     # Identity broadcasting should return the object itself (scalar-like behavior)
-    @test identity.(q) === q
+    @test identity.(q) ≡ q
 
-    # Scalar broadcasting with === should yield a scalar Bool
-    @test (q .=== q) === true
+    # Scalar broadcasting with ≡ should yield a scalar Bool
+    @test (q .≡ q) ≡ true
 end
 
 # ── cholridge ────────────────────────────────────────────────────────────────
@@ -202,8 +202,8 @@ end
 # ── _strip_mz_value ──────────────────────────────────────────────────────────
 
 @testset "_strip_mz_value" begin
-    @test JuChrom._strip_mz_value(100.0, nothing) === 100.0
-    @test JuChrom._strip_mz_value(100.0, u"Th") === 100.0
+    @test JuChrom._strip_mz_value(100.0, nothing) ≡ 100.0
+    @test JuChrom._strip_mz_value(100.0, u"Th") ≡ 100.0
     @test JuChrom._strip_mz_value(100.0u"Th", u"Th") == 100.0
     @test_throws ArgumentError JuChrom._strip_mz_value(100.0u"Th", nothing)
 end
@@ -789,7 +789,7 @@ end
     # Basic success path (default mzsel = all)
     q = fitquadvarmodel(series_batches; show_progress=false)
     @test q isa QuadVarFit
-    @test q.mzunit === nothing
+    @test q.mzunit ≡ nothing
     @test length(q.mz_ref) == n_mz
     @test q.mzvalues == mz_ref
     @test q.batchcount == 2
@@ -1400,7 +1400,7 @@ end
     @test o_keep == o
     @test g_keep == g
     @test w_keep == w
-    @test s_mut !== s  # different object
+    @test s_mut ≢ s  # different object
 end
 
 # ── residautocorr ────────────────────────────────────────────────────────────
@@ -1568,11 +1568,11 @@ end
 
     # Basic shape/consistency
     @test f.batchcount == batchcount
-    @test f.mzunit === mzunit
+    @test f.mzunit ≡ mzunit
     @test f.mzvalues == f.mz_ref[f.mz_idx]
     @test length(f.mz_idx) == length(f.mzvalues) == n_sel
     @test allunique(f.mz_idx)
-    @test f.intensityunit === intensityunit
+    @test f.intensityunit ≡ intensityunit
 
     # params element type is concrete subtype
     @test f.params isa Vector{<:QuadVarParams}

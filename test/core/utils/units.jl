@@ -8,13 +8,13 @@ using JuChrom
 # consistentunits
 # ─────────────────────────────────────────────────────────────────────────────
 @testset "consistentunits" begin
-    @test JuChrom.consistentunits(Int[]) === true
-    @test JuChrom.consistentunits([1.0, 2.0, 3.0]) === true
-    @test JuChrom.consistentunits([1, 2, 3] * u"s") === true
-    @test JuChrom.consistentunits([1 * u"s", 2 * u"minute", 3 * u"s"]) === true
-    @test JuChrom.consistentunits([1 * u"m", 2.0 * u"minute", 3.0 * u"kg"]) === false
-    @test JuChrom.consistentunits([1 * u"s", 2.0, 3.0]) === false
-    @test JuChrom.consistentunits(Union{Real, Unitful.AbstractQuantity{<:Real}}[1.0, 2u"s"]) === false
+    @test JuChrom.consistentunits(Int[]) ≡ true
+    @test JuChrom.consistentunits([1.0, 2.0, 3.0]) ≡ true
+    @test JuChrom.consistentunits([1, 2, 3] * u"s") ≡ true
+    @test JuChrom.consistentunits([1 * u"s", 2 * u"minute", 3 * u"s"]) ≡ true
+    @test JuChrom.consistentunits([1 * u"m", 2.0 * u"minute", 3.0 * u"kg"]) ≡ false
+    @test JuChrom.consistentunits([1 * u"s", 2.0, 3.0]) ≡ false
+    @test JuChrom.consistentunits(Union{Real, Unitful.AbstractQuantity{<:Real}}[1.0, 2u"s"]) ≡ false
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -27,11 +27,11 @@ end
 
     vals2, u2 = JuChrom.strip_units_checked([1.0, 2.0], "values")
     @test vals2 == [1.0, 2.0]
-    @test u2 === nothing
+    @test u2 ≡ nothing
 
     empty_vals, u3 = JuChrom.strip_units_checked(Int[], "empty")
     @test empty_vals == Int[]    # equality, not identity
-    @test u3 === nothing
+    @test u3 ≡ nothing
 
     @test_throws ArgumentError JuChrom.strip_units_checked([1u"s", 2u"m"], "mixed")
 end
@@ -50,7 +50,7 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 @testset "_handle_unitless" begin
     v = [1.0, 2.0]
-    @test JuChrom._handle_unitless(v, nothing, "retentions") === v
+    @test JuChrom._handle_unitless(v, nothing, "retentions") ≡ v
     @test_throws ArgumentError JuChrom._handle_unitless(v, u"s", "retentions")
 end
 

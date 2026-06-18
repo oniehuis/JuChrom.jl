@@ -109,8 +109,8 @@ end
     @test rawintensities(trimmed) == ints[2:4, :]
     @test retentionunit(trimmed) == u"s"
     @test mzvalues(trimmed) == mz
-    @test mzunit(trimmed) === nothing
-    @test intensityunit(trimmed) === nothing
+    @test mzunit(trimmed) ≡ nothing
+    @test intensityunit(trimmed) ≡ nothing
     @test level(trimmed) == 2
     @test extras(trimmed) == Dict("note" => "ok")
     @test retentions(msm) == ret
@@ -135,10 +135,10 @@ end =#
     trimmed = retentiontrim(msm; start=1.0, stop=2.0)
     @test retentions(trimmed) == [1.0, 1.5, 2.0]
     @test rawintensities(trimmed) == ints[2:4, :]
-    @test retentionunit(trimmed) === nothing
+    @test retentionunit(trimmed) ≡ nothing
     @test mzvalues(trimmed) == mz
-    @test mzunit(trimmed) === nothing
-    @test intensityunit(trimmed) === nothing
+    @test mzunit(trimmed) ≡ nothing
+    @test intensityunit(trimmed) ≡ nothing
     @test level(trimmed) == 1
     @test extras(trimmed) == Dict("note" => "ok")
     @test retentions(msm) == ret

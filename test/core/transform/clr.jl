@@ -72,7 +72,7 @@ end
         v_exp = @. σ2_log * (1 - 2/N) + Σσ2 / N^2
 
         @test v_clr ≈ v_exp
-        @test all(>=(0), v_clr)  # non-negative
+        @test all(≥(0), v_clr)  # non-negative
         @test size(v_clr) == size(x)
     end
 
@@ -95,7 +95,7 @@ end
 
         @test size(Vc) == size(X)
         @test Vc ≈ Vexp
-        @test all(>=(0), Vc)
+        @test all(≥(0), Vc)
     end
 end
 

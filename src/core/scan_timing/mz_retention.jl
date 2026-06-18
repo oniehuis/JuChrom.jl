@@ -58,8 +58,8 @@ and the dwell reference is controlled by `dwellref` (`:start`, `:middle`, or `:e
 corresponding to the start, midpoint, or end of the target dwell interval.
 
 The scan start is computed from the scan-level reference as `scan_start=retention` for
-`retentionref==:start`, `scan_start=retention - scan_span / 2` for 
-`retentionref==:middle`, and `scan_start=retention - scan_span` for `retentionref==:end`.
+`retentionref ≡ :start`, `scan_start=retention - scan_span / 2` for 
+`retentionref ≡ :middle`, and `scan_start=retention - scan_span` for `retentionref ≡ :end`.
 
 The returned value is
 ```math
@@ -153,7 +153,7 @@ function mzretention(
     order ∈ (:ascending, :descending, :simultaneous) || throw(ArgumentError(
         "order must be :ascending, :descending, or :simultaneous"))
 
-    order == :simultaneous && return retention
+    order ≡ :simultaneous && return retention
 
     # Resolve imzvalue index
     if isnothing(mzindex)
@@ -167,7 +167,7 @@ function mzretention(
 
     # Determine mzcount
     if isnothing(mzcount)
-        if dwell == :heterogeneous && !isnothing(dwellretentions)
+        if dwell ≡ :heterogeneous && !isnothing(dwellretentions)
             mzcount = length(dwellretentions)
         elseif !isnothing(mzvalues)
             mzcount = length(mzvalues)
@@ -177,7 +177,7 @@ function mzretention(
     end
     mzindex ≤ mzcount || throw(ArgumentError("mzindex exceeds mzcount"))
 
-    if dwell == :homogeneous
+    if dwell ≡ :homogeneous
         if isnothing(dwellretention)
             isnothing(scaninterval) && throw(ArgumentError(
                 "Provide dwellretention or scaninterval"))
@@ -198,7 +198,7 @@ function mzretention(
         end
         scan_span = dwellretention * mzcount
         this_dwell = dwellretention
-        offset_before = order == :ascending ?
+        offset_before = order ≡ :ascending ?
             dwellretention * (mzindex - 1) :
             dwellretention * (mzcount - mzindex)
     else
@@ -218,7 +218,7 @@ function mzretention(
         end
         scan_span = sum(dwellretentions)
         this_dwell = dwellretentions[mzindex]
-        offset_before = if order == :ascending
+        offset_before = if order ≡ :ascending
             mzindex == 1 ? zero(scan_span) : sum(@view dwellretentions[1:mzindex-1])
         else
             mzindex == mzcount ? zero(scan_span) :
@@ -228,15 +228,15 @@ function mzretention(
 
     # Scan start from retention reference
     scan_start =
-        retentionref == :start  ? retention :
-        retentionref == :middle ? (retention - scan_span / 2) :
+        retentionref ≡ :start  ? retention :
+        retentionref ≡ :middle ? (retention - scan_span / 2) :
                                   (retention - scan_span)
 
     # Offset within scan
     z = zero(scan_span)
     dwell_offset =
-        dwellref == :start  ? z :
-        dwellref == :middle ? this_dwell/2 :
+        dwellref ≡ :start  ? z :
+        dwellref ≡ :middle ? this_dwell/2 :
                               this_dwell
 
     result = scan_start + offset_before + dwell_offset

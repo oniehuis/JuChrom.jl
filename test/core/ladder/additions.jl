@@ -75,10 +75,126 @@ function ladder_addition_test_mzretentionkwargs(msm)
     )
 end
 
+function ladder_addition_test_settings(
+    msm,
+    variances,
+    abundanceinfo,
+    apexinfo;
+    minradius=5.0,
+    radiusfraction=0.15,
+    positionsigmafraction=0.05,
+    maxextensionsteps=100,
+    massspectrummatch=false,
+    gapmincosinefloor=0.85,
+    gapcosinetolerance=0.03,
+    edgemaxanchors=6,
+    edgeminradius=5.0,
+    edgeradiusfraction=0.2,
+    edgemincosinefloor=0.9,
+    edgecosinetolerance=0.03,
+    edgecosineanchorcount=3,
+    edgepositionsigmafraction=0.1,
+    massspectrumvariancefloor=1.0,
+    apexscanwindow=2,
+    apexvariancefloor=1.0,
+    apexlogfloorfraction=1e-3,
+    apexionexcludemzvalues=JuChrom.DEFAULT_ALKANE_APEX_EXCLUDED_MZVALUES,
+    apexionmzvalues=[100.0],
+    apexionminrelativeintensity=0.1,
+    apexminioncount=1,
+    apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm),
+    apexmaxshiftfromguess=3.0,
+    carbonrange=nothing
+)
+    JuChrom.alkane_ladder_addition_settings(
+        msm,
+        variances,
+        abundanceinfo,
+        apexinfo,
+        minradius,
+        radiusfraction,
+        positionsigmafraction,
+        maxextensionsteps,
+        massspectrummatch,
+        gapmincosinefloor,
+        gapcosinetolerance,
+        edgemaxanchors,
+        edgeminradius,
+        edgeradiusfraction,
+        edgemincosinefloor,
+        edgecosinetolerance,
+        edgecosineanchorcount,
+        edgepositionsigmafraction,
+        massspectrumvariancefloor,
+        apexscanwindow,
+        apexvariancefloor,
+        apexlogfloorfraction,
+        apexionexcludemzvalues,
+        apexionmzvalues,
+        apexionminrelativeintensity,
+        apexminioncount,
+        apexmzretentionkwargs,
+        apexmaxshiftfromguess,
+        carbonrange
+    )
+end
+
+function ladder_additions(
+    msm,
+    variances,
+    abundanceinfo,
+    pathinfo,
+    apexinfo;
+    standard=defaultalkanestandard(),
+    kwargs...
+)
+    settings = ladder_addition_test_settings(
+        msm,
+        variances,
+        abundanceinfo,
+        apexinfo;
+        kwargs...
+    )
+
+    alkaneladderadditions(
+        msm,
+        variances,
+        abundanceinfo,
+        pathinfo,
+        apexinfo,
+        settings,
+        standard
+    )
+end
+
+function validate_ladder_addition_settings(
+    minradius,
+    radiusfraction,
+    positionsigmafraction,
+    maxextensionsteps=100
+)
+    JuChrom.validate_alkane_ladder_addition_settings(
+        minradius,
+        radiusfraction,
+        positionsigmafraction,
+        maxextensionsteps,
+        0.85,
+        0.03,
+        6,
+        5.0,
+        0.2,
+        0.9,
+        0.03,
+        3,
+        0.1,
+        1.0
+    )
+end
+
 @testset "alkane ladder edge extension cap follows current anchors and carbon range" begin
     anchors = [
-        (ladderstep=12,),
-        (ladderstep=15,)
+        JuChrom.AlkaneLadderAdditionAnchor(12, 10.0, NaN, :molecularion, NaN, NaN),
+        JuChrom.AlkaneLadderAdditionAnchor(15, 20.0, NaN, :molecularion, NaN, NaN)
     ]
 
     @test JuChrom.alkane_ladder_edge_extension_step_cap(anchors, :left, 8:40) == 4
@@ -96,7 +212,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -112,9 +228,9 @@ end
     )
     fill = only(additions.gapfilled)
 
-    @test additions.status == :success
+    @test additions.status ≡ :success
     @test fill.ladderstep == 9
-    @test fill.source == :gapfilled
+    @test fill.source ≡ :gapfilled
     @test fill.scanindex == 20
     @test fill.expectedscan == 20.0
     @test fill.scanerror == 0.0
@@ -140,7 +256,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -172,7 +288,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -190,11 +306,11 @@ end
     right = only(additions.rightextended)
 
     @test left.ladderstep == 8
-    @test left.source == :leftextended
+    @test left.source ≡ :leftextended
     @test left.scanindex == 10
     @test left.expectedscan == 10.0
     @test right.ladderstep == 11
-    @test right.source == :rightextended
+    @test right.source ≡ :rightextended
     @test right.scanindex == 40
     @test right.expectedscan == 40.0
     @test [a.ladderstep for a in additions.additions] == [8, 11]
@@ -216,7 +332,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -237,8 +353,8 @@ end
     @test all(!hasproperty(a, :edgeanchor) for a in additions.rightextended)
     @test all(!hasproperty(a, :edgeanchors) for a in additions.rightextended)
     @test length(additions.diagnostics.rightextended) == 2
-    @test additions.diagnostics.rightextended[1].status == :accepted
-    @test additions.diagnostics.rightextended[2].status == :accepted
+    @test additions.diagnostics.rightextended[1].status ≡ :accepted
+    @test additions.diagnostics.rightextended[2].status ≡ :accepted
 end
 
 @testset "alkaneladderadditions stops extension when added apex fails" begin
@@ -256,7 +372,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -273,8 +389,8 @@ end
 
     @test [a.ladderstep for a in additions.rightextended] == [11]
     @test length(additions.diagnostics.rightextended) == 2
-    @test additions.diagnostics.rightextended[1].status == :accepted
-    @test additions.diagnostics.rightextended[2].status == :failed
+    @test additions.diagnostics.rightextended[1].status ≡ :accepted
+    @test additions.diagnostics.rightextended[2].status ≡ :failed
 end
 
 @testset "alkaneladderadditions returns empty result without two refined anchors" begin
@@ -286,7 +402,7 @@ end
         ],
     )
 
-    additions = alkaneladderadditions(
+    additions = ladder_additions(
         msm,
         variances,
         abundanceinfo,
@@ -298,7 +414,7 @@ end
         apexmzretentionkwargs=ladder_addition_test_mzretentionkwargs(msm)
     )
 
-    @test additions.status == :empty
+    @test additions.status ≡ :empty
     @test isempty(additions.additions)
     @test isempty(additions.gapfilled)
     @test isempty(additions.leftextended)
@@ -306,23 +422,23 @@ end
 end
 
 @testset "alkane ladder addition validation" begin
-    @test JuChrom.validate_alkane_ladder_addition_settings(2.0, 0.5, 0.5) === nothing
-    @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
+    @test validate_ladder_addition_settings(2.0, 0.5, 0.5) ≡ nothing
+    @test_throws ArgumentError validate_ladder_addition_settings(
         -1.0,
         0.5,
         0.5
     )
-    @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
+    @test_throws ArgumentError validate_ladder_addition_settings(
         2.0,
         -0.5,
         0.5
     )
-    @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
+    @test_throws ArgumentError validate_ladder_addition_settings(
         2.0,
         0.5,
         0.0
     )
-    @test_throws ArgumentError JuChrom.validate_alkane_ladder_addition_settings(
+    @test_throws ArgumentError validate_ladder_addition_settings(
         2.0,
         0.5,
         0.5,

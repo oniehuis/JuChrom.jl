@@ -12,7 +12,7 @@ using Unitful
 
 # Force-load the Makie extension so the recipe is available
 let ext = Base.get_extension(JuChrom, :MakieExtension)
-    if ext === nothing
+    if ext ≡ nothing
         Base.require_extension(JuChrom, :MakieExtension)
     end
 end
@@ -21,7 +21,7 @@ CairoMakie.activate!()  # headless backend for tests
 
 @testset "massspectrum argument names" begin
     ext = Base.get_extension(JuChrom, :MakieExtension)
-    @test ext !== nothing
+    @test ext ≢ nothing
     @test ext.argument_names(ext.MassSpectrum) == (:mzvalues, :intensities)
 end
 

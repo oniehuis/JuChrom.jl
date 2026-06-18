@@ -273,11 +273,11 @@ end
 end
 
 @testset "abundance input validation helpers" begin
-    @test JuChrom.validate_alkane_abundance_variancefloor(1.0) === nothing
+    @test JuChrom.validate_alkane_abundance_variancefloor(1.0) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variancefloor(0.0)
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variancefloor(Inf)
 
-    @test JuChrom.validate_alkane_abundance_variances_matrix([1.0 2.0]) === nothing
+    @test JuChrom.validate_alkane_abundance_variances_matrix([1.0 2.0]) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variances_matrix([1.0 Inf])
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_variances_matrix([1.0 -1.0])
     @test_throws MethodError JuChrom.validate_alkane_abundance_variances_matrix([1.0, 2.0])
@@ -287,7 +287,7 @@ end
         [1.0, 0.5],
         2,
         8
-    ) === nothing
+    ) ≡ nothing
     @test_throws DimensionMismatch JuChrom.validate_alkane_reference_abundance_channels(
         [1],
         [1.0, 0.5],
@@ -344,7 +344,7 @@ end
 end
 
 @testset "alkane abundance window validation helpers" begin
-    @test JuChrom.validate_alkane_abundance_window_settings(0.5, 10.0) === nothing
+    @test JuChrom.validate_alkane_abundance_window_settings(0.5, 10.0) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_window_settings(-0.1, 10.0)
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_window_settings(1.0, 10.0)
     @test_throws ArgumentError JuChrom.validate_alkane_abundance_window_settings(0.5, -1.0)
@@ -404,8 +404,8 @@ end
     @test windows[8][1].apexabundance == 2.0
     @test windows[8][1].rightabundance == 0.2
     @test windows[8][1].threshold == 0.5
-    @test windows[8][1].leftstop == :localminimum
-    @test windows[8][1].rightstop == :threshold
+    @test windows[8][1].leftstop ≡ :localminimum
+    @test windows[8][1].rightstop ≡ :threshold
     @test windows[8][2].apexindex == 2
     @test windows[8][2].leftindex == 1
     @test windows[8][2].rightindex == 3
@@ -445,8 +445,8 @@ end
     @test peakwindow isa AlkaneAbundanceWindow
     @test peakwindow.leftindex == 3
     @test peakwindow.rightindex == 5
-    @test peakwindow.leftstop == :localminimum
-    @test peakwindow.rightstop == :threshold
+    @test peakwindow.leftstop ≡ :localminimum
+    @test peakwindow.rightstop ≡ :threshold
 
     leftindex, leftstop = JuChrom.alkane_abundance_peak_window_side(
         abundance,
@@ -565,7 +565,7 @@ end
 
     @test JuChrom.alkane_neighboring_peak_across_minimum(maxima, 4, 3, :left) == 2
     @test JuChrom.alkane_neighboring_peak_across_minimum(maxima, 2, 3, :right) == 4
-    @test JuChrom.alkane_neighboring_peak_across_minimum([4], 4, 3, :left) === nothing
+    @test JuChrom.alkane_neighboring_peak_across_minimum([4], 4, 3, :left) ≡ nothing
     @test_throws ArgumentError JuChrom.alkane_neighboring_peak_across_minimum(
         maxima,
         4,

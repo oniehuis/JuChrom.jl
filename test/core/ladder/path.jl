@@ -87,7 +87,7 @@ path_test_settings() = (
         settings...
     )
 
-    @test pathinfo.status == :success
+    @test pathinfo.status ≡ :success
     @test pathinfo.laddersteps == [8, 9, 10]
     @test pathinfo.scanindices == [10, 20, 30]
     @test pathinfo.score ≈ 3.0 + 1.0 + 5.0 + 3 * 0.05
@@ -115,17 +115,17 @@ end
 
     pathinfo = alkaneladderpath(contrasts; settings...)
 
-    @test pathinfo.settings.centerzmin === settings.centerzmin
-    @test pathinfo.settings.isolationzmin === settings.isolationzmin
-    @test pathinfo.settings.minsteps === settings.minsteps
-    @test pathinfo.settings.stepreward === settings.stepreward
-    @test pathinfo.settings.maxcandidatesperstep === settings.maxcandidatesperstep
-    @test pathinfo.settings.spacingweight === settings.spacingweight
-    @test pathinfo.settings.gapincreaseweight === settings.gapincreaseweight
-    @test pathinfo.settings.maxgapratio === settings.maxgapratio
-    @test pathinfo.settings.maxmissingsteps === settings.maxmissingsteps
-    @test pathinfo.settings.missingsteppenalty === settings.missingsteppenalty
-    @test pathinfo.settings.massspectrummatchdistanceweight ===
+    @test pathinfo.settings.centerzmin ≡ settings.centerzmin
+    @test pathinfo.settings.isolationzmin ≡ settings.isolationzmin
+    @test pathinfo.settings.minsteps ≡ settings.minsteps
+    @test pathinfo.settings.stepreward ≡ settings.stepreward
+    @test pathinfo.settings.maxcandidatesperstep ≡ settings.maxcandidatesperstep
+    @test pathinfo.settings.spacingweight ≡ settings.spacingweight
+    @test pathinfo.settings.gapincreaseweight ≡ settings.gapincreaseweight
+    @test pathinfo.settings.maxgapratio ≡ settings.maxgapratio
+    @test pathinfo.settings.maxmissingsteps ≡ settings.maxmissingsteps
+    @test pathinfo.settings.missingsteppenalty ≡ settings.missingsteppenalty
+    @test pathinfo.settings.massspectrummatchdistanceweight ≡
         settings.massspectrummatchdistanceweight
 end
 
@@ -149,7 +149,7 @@ end
         settings...
     )
 
-    @test pathinfo.status == :success
+    @test pathinfo.status ≡ :success
     @test pathinfo.laddersteps == [8, 10]
     @test pathinfo.score ≈ 3.0 + 5.0 + 2 * 0.05 - 2.0
 
@@ -161,8 +161,8 @@ end
         )
     )
     failed = alkaneladderpath(contrasts; failedsettings...)
-    @test failed.status == :failed
-    @test failed.reason == :no_valid_path
+    @test failed.status ≡ :failed
+    @test failed.reason ≡ :no_valid_path
 end
 
 @testset "alkaneladderpath ignores nonpositive molecular-ion scores" begin
@@ -175,8 +175,8 @@ end
 
     pathinfo = alkaneladderpath(contrasts; settings...)
 
-    @test pathinfo.status == :failed
-    @test pathinfo.reason == :no_candidates
+    @test pathinfo.status ≡ :failed
+    @test pathinfo.reason ≡ :no_candidates
     @test isempty(pathinfo.path)
 end
 
@@ -193,7 +193,7 @@ end
         1,
         2.0,
         5.0
-    ) === nothing
+    ) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_path_settings(
         1.645,
         1.645,

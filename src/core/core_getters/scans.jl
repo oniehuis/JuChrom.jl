@@ -120,7 +120,7 @@ pA
 
 julia> csc = ChromScan(1.0u"minute", 42.0);
 
-julia> intensityunit(csc) === nothing
+julia> intensityunit(csc) ≡ nothing
 true
 ```
 """
@@ -255,7 +255,7 @@ See also
 ```jldoctest
 julia> msc = MassScan(1.0u"s", [100.0, 200.0], [10.0, 20.0]);
 
-julia> mzunit(msc) === nothing
+julia> mzunit(msc) ≡ nothing
 true
 ```
 """

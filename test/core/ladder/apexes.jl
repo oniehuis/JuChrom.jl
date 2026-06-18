@@ -326,7 +326,7 @@ end
         5
     )
 
-    @test selection.selection == :reference_alkane_series_extreme_grid_ions
+    @test selection.selection ≡ :reference_alkane_series_extreme_grid_ions
     @test selection.mzvalues == [43.0, 57.0, 71.0, 85.0, 99.0,
         169.0, 183.0, 197.0, 225.0, 226.0]
     @test 211.0 in selection.excluded_mzvalues
@@ -355,14 +355,14 @@ end
     )
     apex = only(apexinfo.apexes)
 
-    @test apexinfo.status == :success
+    @test apexinfo.status ≡ :success
     @test apex.success
     @test apex.ladderstep == 8
     @test apex.scanindex == 3
     @test apex.apexretention ≈ 3.25 atol = 1e-5
     @test apex.apexscanindex ≈ 3.25 atol = 1e-5
     @test apex.apexoffsetscans ≈ 0.25 atol = 1e-5
-    @test apex.fit.fit.apex_ion_selection == :explicit_mzvalues
+    @test apex.fit.fit.apex_ion_selection ≡ :explicit_mzvalues
     @test apex.fit.fit.mz_indices == [1, 2, 3]
     @test apex.fit.recenter_attempts == 0
     @test apexinfo.bycarbon[8].apexretention ≈ apex.apexretention
@@ -393,7 +393,7 @@ end
     @test apex.apexretention ≈ 4.2 atol = 1e-5
     @test apex.fit.recenter_attempts > 0
     @test apex.fit.recenter_used
-    @test any(a -> a.success && abs(a.apex_offset_from_fit_center_scans) <= 0.25,
+    @test any(a -> a.success && abs(a.apex_offset_from_fit_center_scans) ≤ 0.25,
         apex.fit.all_apex_attempts)
     @test apex.candidate == candidate
 end
@@ -410,11 +410,11 @@ end
         test_apex_settings()
     )
 
-    @test apexinfo.status == :failed
-    @test apexinfo.reason == :no_path
+    @test apexinfo.status ≡ :failed
+    @test apexinfo.reason ≡ :no_path
     @test isempty(apexinfo.apexes)
-    @test apexinfo.scanorderinfo.status == :no_path
-    @test apexinfo.scanorderinfo.selected_order == :unknown
+    @test apexinfo.scanorderinfo.status ≡ :no_path
+    @test apexinfo.scanorderinfo.selected_order ≡ :unknown
     @test isnothing(apexinfo.scanorderinfo.evidence_score)
 end
 
@@ -436,14 +436,14 @@ end
     )
 
     @test !apex.success
-    @test apex.reason == :apex_fit_failed
+    @test apex.reason ≡ :apex_fit_failed
     @test occursin("fewer than 3 apex ion", apex.failurereason)
     @test apex.apexscanindex == 3.0
     @test apex.apexretention == 3.0
 end
 
 @testset "alkane ladder apex validation" begin
-    @test JuChrom.validate_alkane_ladder_apex_settings(2, 1.0, 1e-3) === nothing
+    @test JuChrom.validate_alkane_ladder_apex_settings(2, 1.0, 1e-3) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_ladder_apex_settings(
         0,
         1.0,
@@ -472,9 +472,9 @@ end
         test_apex_settings(; standard=standard, mzretentionkwargs=provided)
     )
 
-    @test scanorder.mzretentionkwargs.order == :ascending
-    @test scanorder.info.status == :provided
-    @test scanorder.info.selected_order == :ascending
+    @test scanorder.mzretentionkwargs.order ≡ :ascending
+    @test scanorder.info.status ≡ :provided
+    @test scanorder.info.selected_order ≡ :ascending
     @test isnothing(scanorder.info.evidence_score)
 
     simultaneous = merge(timingkwargs, (order=:simultaneous,))
@@ -485,9 +485,9 @@ end
         test_apex_settings(; standard=standard, mzretentionkwargs=simultaneous)
     )
 
-    @test scanorder.mzretentionkwargs.order == :simultaneous
-    @test scanorder.info.status == :provided
-    @test scanorder.info.selected_order == :simultaneous
+    @test scanorder.mzretentionkwargs.order ≡ :simultaneous
+    @test scanorder.info.status ≡ :provided
+    @test scanorder.info.selected_order ≡ :simultaneous
 
     @test_throws ArgumentError alkaneladderscanorder(
         msm,
@@ -561,7 +561,7 @@ end
         )
     )
 
-    @test scanorder.info.status == :ambiguous
+    @test scanorder.info.status ≡ :ambiguous
     @test scanorder.info.expanded_for_ambiguity
     @test scanorder.info.expanded_ions
     @test scanorder.info.initial_n_peaks_tried == 3
@@ -593,10 +593,10 @@ end
 
         @test scanorder.mzretentionkwargs.order == trueorder
         @test scanorder.info.selected_order == trueorder
-        @test scanorder.info.requested_order == :inferdirection
-        @test scanorder.info.status == :accepted
+        @test scanorder.info.requested_order ≡ :inferdirection
+        @test scanorder.info.status ≡ :accepted
         @test scanorder.info.n_peaks_used == 3
-        @test scanorder.info.trials.ascending.n_tried >= 3
-        @test scanorder.info.trials.descending.n_tried >= 3
+        @test scanorder.info.trials.ascending.n_tried ≥ 3
+        @test scanorder.info.trials.descending.n_tried ≥ 3
     end
 end

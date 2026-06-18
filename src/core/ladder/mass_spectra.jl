@@ -248,7 +248,7 @@ function alkane_ladder_step_mass_spectrum(
 
     fit = alkane_ladder_spectrum_apex_fit(apex)
     nscans = length(fit.scan_indices)
-    nscans >= 3 || throw(ArgumentError(
+    nscans ≥ 3 || throw(ArgumentError(
         "at least three scans are needed for peak-model spectrum extraction"))
 
     X = rawintensities(msm)

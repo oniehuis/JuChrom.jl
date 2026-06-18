@@ -484,7 +484,7 @@ module ScanSeriesDisplay
 
 # Helper functions for value formatting and wrapping
 function format_value_with_wrap(value_str::String, max_width::Int)
-    if length(value_str) <= max_width
+    if length(value_str) ≤ max_width
         return value_str
     else
         # Split long values at reasonable breakpoints
@@ -554,7 +554,7 @@ function print_complex_value(io::IO, value, base_prefix::String, continuation_pr
             end
         end
     elseif value isa AbstractVector
-        if length(value) <= 3
+        if length(value) ≤ 3
             # Short arrays: display inline
             println(io, "$(base_prefix)└─ [$(join(value, ", "))]")
         else
@@ -565,7 +565,7 @@ function print_complex_value(io::IO, value, base_prefix::String, continuation_pr
         end
     elseif value isa AbstractMatrix
         println(io, "$(base_prefix)├─ $(size(value, 1))×$(size(value, 2)) $(typeof(value).name.name)")
-        if size(value, 1) <= 2 && size(value, 2) <= 3
+        if size(value, 1) ≤ 2 && size(value, 2) ≤ 3
             # Small matrices: show content
             nrows = size(value, 1)
             for (i, row_idx) in enumerate(axes(value, 1))
@@ -687,8 +687,8 @@ function Base.show(io::IO, css::ChromScanSeries)
     intensity_range = (minimum(intensities), maximum(intensities))
     
     # Format units for display
-    ret_unit_str = retention_unit === nothing ? "unitless" : string(retention_unit)
-    int_unit_str = intensity_unit === nothing ? "unitless" : string(intensity_unit)
+    ret_unit_str = retention_unit ≡ nothing ? "unitless" : string(retention_unit)
+    int_unit_str = intensity_unit ≡ nothing ? "unitless" : string(intensity_unit)
     
     # Check what metadata sections have content
     metadata_sections = [
@@ -757,9 +757,9 @@ function Base.show(io::IO, mss::MassScanSeries)
     unique_levels = sort(unique(levels))
     
     # Format units for display
-    ret_unit_str = retention_unit === nothing ? "unitless" : string(retention_unit)
-    mz_unit_str = mz_unit === nothing ? "unitless" : string(mz_unit)
-    int_unit_str = intensity_unit === nothing ? "unitless" : string(intensity_unit)
+    ret_unit_str = retention_unit ≡ nothing ? "unitless" : string(retention_unit)
+    mz_unit_str = mz_unit ≡ nothing ? "unitless" : string(mz_unit)
+    int_unit_str = intensity_unit ≡ nothing ? "unitless" : string(intensity_unit)
     
     # Check what metadata sections have content
     metadata_sections = [

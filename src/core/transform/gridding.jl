@@ -238,7 +238,7 @@ function densestgrid(
             end
             w_fail = w
         end
-        w_succ === nothing && throw(
+        w_succ ≡ nothing && throw(
             ArgumentError("Could not find occupancy width up to maxwidth"))
         w_fail, w_succ, edges_found
     end
@@ -250,16 +250,16 @@ function densestgrid(
     w_high = w_succ
     # Stage 2: binary search with the basic anchor set.
     w_low, w_high, edgesB = refine_stage(w_low, w_high, primary_refine_iters; enriched=false)
-    if edgesB !== nothing
+    if edgesB ≢ nothing
         edges_found = edgesB
     end
     # Stage 3: binary search with the enriched anchor set for a final tightening.
     w_low, w_high, edgesC = refine_stage(w_low, w_high, secondary_refine_iters; enriched=true)
-    if edgesC !== nothing
+    if edgesC ≢ nothing
         edges_found = edgesC
     end
 
-    if edges_found === nothing
+    if edges_found ≡ nothing
         ok, edges_final = edges_for_width(w_high; enriched=true)
         ok || throw(ArgumentError("Failed to recover grid edges at final width"))
         edges_found = edges_final
@@ -294,7 +294,7 @@ Requirements:
   physical dimension** (units themselves may differ).
 * `minwidth`, `maxwidth`, `tolerance` when provided must be quantities of that
   dimension (`nothing` allowed).
-* If `tolerance === nothing`, it defaults to `1e-8 * ref_unit`.
+* If `tolerance ≡ nothing`, it defaults to `1e-8 * ref_unit`.
 
 Keyword arguments (forwarded to numeric core):
 `coarse_inflation`, `primary_refine_iters`, `secondary_refine_iters`,
@@ -338,11 +338,11 @@ function densestgrid(
 
     # Helper that strips keyword quantities (if provided) to the reference unit.
     to_num(q, default) =
-        q === nothing ? default : Unitful.ustrip(uconvert(ref_unit, q))
+        q ≡ nothing ? default : Unitful.ustrip(uconvert(ref_unit, q))
 
     min_num = to_num(minwidth, nothing)
     max_num = to_num(maxwidth, nothing)
-    tol_num = tolerance === nothing ? 1e-8 :
+    tol_num = tolerance ≡ nothing ? 1e-8 :
               Unitful.ustrip(uconvert(ref_unit, tolerance))
 
     edges_num, width_num = densestgrid(
@@ -401,7 +401,7 @@ function densestgrid(
     sample = nothing
     for v in retention_vectors
         isempty(v) && throw(ArgumentError("at least one MassScanMatrix has no data"))
-        sample === nothing && (sample = first(v))
+        sample ≡ nothing && (sample = first(v))
     end
 
     if isa(sample, Unitful.AbstractQuantity)
@@ -414,10 +414,10 @@ function densestgrid(
             Unitful.dimension(unit(x)) == ref_dim ||
                 throw(ArgumentError("mixed physical dimensions in retention data"))
         end
-        kw_ok(q) = q === nothing || isa(q, Unitful.AbstractQuantity) ||
+        kw_ok(q) = q ≡ nothing || isa(q, Unitful.AbstractQuantity) ||
                    throw(ArgumentError("keyword must be AbstractQuantity or nothing for unitful data"))
         kw_ok(minwidth); kw_ok(maxwidth)
-        tol_qty = tolerance === nothing ? 1e-8 * ref_unit :
+        tol_qty = tolerance ≡ nothing ? 1e-8 * ref_unit :
                   isa(tolerance, Unitful.AbstractQuantity) ? tolerance :
                   throw(ArgumentError("tolerance must be AbstractQuantity or nothing for unitful data"))
 
@@ -440,11 +440,11 @@ function densestgrid(
         (isa(x, Real) && !isa(x, Unitful.AbstractQuantity)) ||
             throw(ArgumentError("mixture of unitful and unitless retention data"))
     end
-    kw_real(q) = q === nothing || (isa(q, Real) && !isa(q, Unitful.AbstractQuantity)) ||
+    kw_real(q) = q ≡ nothing || (isa(q, Real) && !isa(q, Unitful.AbstractQuantity)) ||
                  throw(ArgumentError("keyword must be Real or nothing for unitless data"))
     kw_real(minwidth)
     kw_real(maxwidth)
-    tol_num = tolerance === nothing ? 1e-8 :
+    tol_num = tolerance ≡ nothing ? 1e-8 :
               (isa(tolerance, Real) && !isa(tolerance, Unitful.AbstractQuantity)) ?
                   tolerance :
                   throw(ArgumentError("tolerance must be Real or nothing for unitless data"))
@@ -527,11 +527,11 @@ function densestgrid(
             Unitful.dimension(unit(x)) == ref_dim ||
                 throw(ArgumentError("mixed physical dimensions in retention data"))
         end
-        kw = q -> q === nothing || isa(q, Unitful.AbstractQuantity) ||
+        kw = q -> q ≡ nothing || isa(q, Unitful.AbstractQuantity) ||
                   throw(ArgumentError("keyword must be AbstractQuantity or nothing"))
         kw(minwidth)
         kw(maxwidth)
-        tol_qty = tolerance === nothing ? 1e-8 * ref_unit :
+        tol_qty = tolerance ≡ nothing ? 1e-8 * ref_unit :
                   isa(tolerance, Unitful.AbstractQuantity) ? tolerance :
                   throw(ArgumentError("tolerance must be AbstractQuantity or nothing"))
         # Send everything to the unit-aware vector overload, reusing the extracted datasets.
@@ -553,11 +553,11 @@ function densestgrid(
         (isa(x, Real) && !isa(x, Unitful.AbstractQuantity)) ||
             throw(ArgumentError("mixture of unitful and unitless retention data"))
     end
-    kw = q -> q === nothing || (isa(q, Real) && !isa(q, Unitful.AbstractQuantity)) ||
+    kw = q -> q ≡ nothing || (isa(q, Real) && !isa(q, Unitful.AbstractQuantity)) ||
                  throw(ArgumentError("keyword must be Real or nothing"))
     kw(minwidth)
     kw(maxwidth)
-    tol_num = tolerance === nothing ? 1e-8 :
+    tol_num = tolerance ≡ nothing ? 1e-8 :
               (isa(tolerance, Real) && !isa(tolerance, Unitful.AbstractQuantity)) ?
                   tolerance :
                   throw(ArgumentError("tolerance must be Real or nothing"))

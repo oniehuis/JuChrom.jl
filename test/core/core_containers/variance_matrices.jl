@@ -24,8 +24,8 @@ using JuChrom
     @test vmsm isa AbstractMassScanMatrix{typeof(u"s"), Nothing, typeof(u"pA")}
     @test vmsm isa AbstractVarianceMassScanMatrix{
         typeof(u"s"), Nothing, typeof(u"pA"), typeof(u"pA"^2)}
-    @test parent(vmsm) === msm
-    @test Base.broadcastable(vmsm)[] === vmsm
+    @test parent(vmsm) ≡ msm
+    @test Base.broadcastable(vmsm)[] ≡ vmsm
     @test varianceunit(vmsm) == u"pA"^2
     @test rawvariances(vmsm) == vars
     @test variances(vmsm) == vars .* (u"pA"^2)
@@ -61,8 +61,8 @@ end
     vmsm_unitless = VarianceMassScanMatrix(msm_unitless, vars)
 
     @test isnothing(varianceunit(vmsm_unitless))
-    @test variances(vmsm_unitless) === vars
-    @test rawvariances(vmsm_unitless) === vars
+    @test variances(vmsm_unitless) ≡ vars
+    @test rawvariances(vmsm_unitless) ≡ vars
     @test_throws ArgumentError variances(vmsm_unitless; unit=u"pA"^2)
 
     @test_throws DimensionMismatch VarianceMassScanMatrix(msm_unitless, vars[1:1, :])

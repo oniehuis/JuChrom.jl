@@ -63,9 +63,9 @@ Base.float(x::DummyVal) = x.val
     @test retentions(msmA_dense) == [1.0, 2.0]u"s"
     @test retentionunit(msmA_dense) == u"s"
     @test mzvalues(msmA_dense) ≈ [100.9, 101.2, 101.6, 102.1, 102.6]
-    @test mzunit(msmA_dense) === nothing
+    @test mzunit(msmA_dense) ≡ nothing
     @test intensities(msmA_dense) ≈ [0 10 20 30 0; 20 5 0 0 30]
-    @test intensityunit(msmA_dense) === intensityunit(seriesA)
+    @test intensityunit(msmA_dense) ≡ intensityunit(seriesA)
 
     msmA_sparse = mscanmatrix(seriesA, SPARSE)
     @test intensities(msmA_sparse) isa SparseMatrixCSC

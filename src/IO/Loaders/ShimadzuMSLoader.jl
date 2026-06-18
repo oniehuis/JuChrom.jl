@@ -210,11 +210,11 @@ end
 # ─── File Reader Interface ───────────────────────────────────────────────────
 
 function readfile(file::AbstractString, mode::Symbol)
-    if mode == :ms
+    if mode ≡ :ms
         # All supported Shimadzu formats are stored as OLE compound documents
         olefile.isOleFile(file) || throw(FileFormatError("not an OLE file: $file"))
         return load_mass_spectra(file)
-    elseif mode == :tic
+    elseif mode ≡ :tic
         # All supported Shimadzu formats are stored as OLE compound documents
         olefile.isOleFile(file) || throw(FileFormatError("not an OLE file: $file"))
         return load_tic(file)

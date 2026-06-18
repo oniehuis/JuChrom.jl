@@ -60,7 +60,7 @@ s
 julia> mzvalues(matrix_dense) ≈ [100.9, 101.2, 101.6, 102.1, 102.6]
 true
 
-julia> mzunit(matrix_dense) === nothing
+julia> mzunit(matrix_dense) ≡ nothing
 true
 
 julia> matrix_filtered = mscanmatrix(series, threshold=7.5);  # Apply intensity threshold

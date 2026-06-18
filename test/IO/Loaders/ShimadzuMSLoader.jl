@@ -17,11 +17,11 @@ using JuChrom
 using JuChrom.InputOutput
 # Ensure the PyCall extension is loaded so ShimadzuMSLoader is available.
 let ext = Base.get_extension(JuChrom, :PyCallExtension)
-    if ext === nothing && isdefined(Base, :retry_load_extensions)
+    if ext ≡ nothing && isdefined(Base, :retry_load_extensions)
         Base.retry_load_extensions()
         ext = Base.get_extension(JuChrom, :PyCallExtension)
     end
-    if ext === nothing && !isdefined(JuChrom, :ShimadzuMSLoader)
+    if ext ≡ nothing && !isdefined(JuChrom, :ShimadzuMSLoader)
         @eval JuChrom include(joinpath(dirname(pathof(JuChrom)), "IO", "Loaders", "ShimadzuMSLoader.jl"))
     end
     isdefined(JuChrom, :ShimadzuMSLoader) ||
@@ -73,9 +73,9 @@ Base.String(s::ShimadzuBadStream) = string(s.tag)
 Base.show(io::IO, s::ShimadzuBadStream) = print(io, string(s.tag))
 
 function readbytestring(file::ShimadzuBadStream, streamname::Vector{String})
-    if file.tag == :bad_rt && streamname[end] == "Retention Time"
+    if file.tag ≡ :bad_rt && streamname[end] == "Retention Time"
         return zeros(UInt8, 5)
-    elseif file.tag == :bad_tic && streamname[end] == "TIC Data"
+    elseif file.tag ≡ :bad_tic && streamname[end] == "TIC Data"
         return zeros(UInt8, 10)
     end
     return zeros(UInt8, 8)
@@ -87,17 +87,17 @@ end
 
 @testset "ShimadzuMSOptions" begin
     opts = ShimadzuMSOptions(:ms)
-    @test opts.mode == :ms
+    @test opts.mode ≡ :ms
 end
 
 @testset "ShimadzuMSLoaderSpec" begin
     spec1 = ShimadzuMSLoaderSpec{ShimadzuMSv1}(TESTFILE, ShimadzuMSOptions(:ms), 
         Val(ShimadzuMSv1))
     @test spec1.path == TESTFILE
-    @test spec1.options.mode == :ms
+    @test spec1.options.mode ≡ :ms
 
     spec2 = ShimadzuMSLoaderSpec{ShimadzuMSv1}(TESTFILE; mode=:tic)
-    @test spec2.options.mode == :tic
+    @test spec2.options.mode ≡ :tic
 
     @test_throws ArgumentError ShimadzuMSLoaderSpec{ShimadzuMSv1}(TESTFILE; mode=:foo)
 end
@@ -105,7 +105,7 @@ end
 @testset "ShimadzuMS constructor" begin
     spec = ShimadzuMS(TESTFILE; mode=:ms)
     @test isa(spec, ShimadzuMSLoaderSpec)
-    @test spec.options.mode == :ms
+    @test spec.options.mode ≡ :ms
     @test_throws ArgumentError ShimadzuMS(TESTFILE; mode=:unknown)
 end
 
@@ -177,7 +177,7 @@ end
 
     @test length(scans) == SCAN_COUNT
     @test retentionunit(first(scans)) == u"ms"
-    @test intensityunit(first(scans)) === nothing
+    @test intensityunit(first(scans)) ≡ nothing
     @test sha1hex(mzvalues(first(scans))) == SHA_FIRST_MZ
     @test sha1hex(intensities(first(scans))) == SHA_FIRST_INT
     @test sha1hex(mzvalues(last(scans))) == SHA_LAST_MZ

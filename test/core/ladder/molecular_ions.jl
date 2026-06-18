@@ -224,7 +224,7 @@ end
         1.0,
         1.645,
         1.645
-    ) === nothing
+    ) ≡ nothing
     @test_throws ArgumentError JuChrom.validate_alkane_molecular_ion_settings(
         -1,
         14,
@@ -429,11 +429,11 @@ end
     @test result.molecularioninfo.settings.centerzmin == 1.645
     @test result.molecularioninfo.settings.isolationzmin == 1.645
     @test hasproperty(result, :pathinfo)
-    @test result.pathinfo.status == :success
+    @test result.pathinfo.status ≡ :success
     @test result.pathinfo.laddersteps == [8]
     @test hasproperty(result, :apexinfo)
-    @test result.apexinfo.status == :success
+    @test result.apexinfo.status ≡ :success
     @test only(result.apexinfo.apexes).ladderstep == 8
     @test hasproperty(result, :additioninfo)
-    @test result.additioninfo.status == :empty
+    @test result.additioninfo.status ≡ :empty
 end

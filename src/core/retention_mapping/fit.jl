@@ -176,7 +176,7 @@ function fitmap(
         Derivative(2), SparseMatrixCSC{Float64})
 
     # Build optimizer (optionally set time limit)
-    optimizer = if solver_time_limit === nothing
+    optimizer = if solver_time_limit ≡ nothing
         optimizer_factory
     else
         () -> begin
@@ -319,7 +319,7 @@ function tune_lambda_for_monotonic_spline(
     # a monotonic spline. This confirms that monotonicity is achievable at the upper bound.
     λ = λ_max
     is_feasible, _, _, opt_err = safe_try(λ)
-    if opt_err !== nothing
+    if opt_err ≢ nothing
         last_opt_error = opt_err
         is_feasible = false
     end
@@ -328,14 +328,14 @@ function tune_lambda_for_monotonic_spline(
         for _ in 1:6
             λ *= 10
             is_feasible, _, _, opt_err = safe_try(λ)
-            if opt_err !== nothing
+            if opt_err ≢ nothing
                 last_opt_error = opt_err
                 is_feasible = false
             end
             is_feasible && break
         end
         if !is_feasible
-            if last_opt_error !== nothing
+            if last_opt_error ≢ nothing
                 throw(last_opt_error)
             else
                 throw(ArgumentError(
@@ -349,7 +349,7 @@ function tune_lambda_for_monotonic_spline(
     # monotonic. This confirms the lower bound is meaningful for the search.
     λ = λ_min
     is_feasible, _, _, opt_err = safe_try(λ)
-    if opt_err !== nothing
+    if opt_err ≢ nothing
         last_opt_error = opt_err
         is_feasible = false
     end
@@ -376,7 +376,7 @@ function tune_lambda_for_monotonic_spline(
 
         # Fit spline with current λ_mid and check monotonicity
         is_feasible, coefs_tmp, status_tmp, opt_err = safe_try(λ_mid)
-        if opt_err !== nothing
+        if opt_err ≢ nothing
             last_opt_error = opt_err
             is_feasible = false
         end
@@ -408,8 +408,8 @@ function tune_lambda_for_monotonic_spline(
 
     # Return the best found λ along with corresponding spline coefficients and optimization 
     # status
-    if coefs === nothing
-        if last_opt_error !== nothing
+    if coefs ≡ nothing
+        if last_opt_error ≢ nothing
             throw(last_opt_error)
         else
             throw(ArgumentError(

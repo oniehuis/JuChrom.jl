@@ -212,7 +212,7 @@ pA
 
 julia> msm2 = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [1.0 2.0; 3.0 4.0]);
 
-julia> intensityunit(msm2) === nothing
+julia> intensityunit(msm2) ≡ nothing
 true
 ```
 """

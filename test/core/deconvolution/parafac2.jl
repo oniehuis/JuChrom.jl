@@ -42,11 +42,11 @@ end
     @test fit.ncomponents == 2
     @test fit.retentioncounts == [5, 7]
     @test fit.mzcount == 3
-    @test fit.retentions === nothing
-    @test fit.retentionunit === nothing
-    @test fit.mzvalues === nothing
-    @test fit.mzunit === nothing
-    @test fit.samplelabels === nothing
+    @test fit.retentions ≡ nothing
+    @test fit.retentionunit ≡ nothing
+    @test fit.mzvalues ≡ nothing
+    @test fit.mzunit ≡ nothing
+    @test fit.samplelabels ≡ nothing
     @test size(fit.loadings) == (3, 2)
     @test size(fit.core) == (2, 2)
     @test size(fit.weights) == (2, 2)
@@ -56,14 +56,14 @@ end
     @test length(fit.loss) == 1
     @test isfinite(only(fit.loss))
     @test fit.converged == false
-    @test fit.stopreason == :maxiters
+    @test fit.stopreason ≡ :maxiters
     @test fit.iterations == 0
     @test fit.nstarts == 1
     @test fit.beststart == 1
-    @test fit.compression == :none
+    @test fit.compression ≡ :none
     @test fit.nonnegative == (:spectra, :abundances)
-    @test all(fit.loadings .>= 0)
-    @test all(fit.weights .>= 0)
+    @test all(fit.loadings .≥ 0)
+    @test all(fit.weights .≥ 0)
     @test fit.bases[1]' * fit.bases[1] ≈ I(2) atol=1e-6
     @test fit.bases[2]' * fit.bases[2] ≈ I(2) atol=1e-6
 end
@@ -78,7 +78,7 @@ end
     @test fit.mzcount == 4
     @test fit.nstarts == 1
     @test fit.beststart == 1
-    @test fit.compression == :none
+    @test fit.compression ≡ :none
     @test fit.nonnegative == (:spectra, :abundances)
 end
 
@@ -99,10 +99,10 @@ end
     @test rawretentions(fit) == [[100.0, 110.0, 120.0, 130.0],
                                  [100.0, 110.0, 120.0, 130.0]]
     @test retentions(fit) == rawretentions(fit)
-    @test retentionunit(fit) === nothing
+    @test retentionunit(fit) ≡ nothing
     @test rawmzvalues(fit) == [50.0, 75.0, 100.0]
     @test mzvalues(fit) == rawmzvalues(fit)
-    @test mzunit(fit) === nothing
+    @test mzunit(fit) ≡ nothing
     @test fit.samplelabels == ["blank", "sample"]
 end
 
@@ -207,12 +207,12 @@ end
     residual = sum(sum(abs2, X[k] .- reconstructed[k]) for k in eachindex(X))
     total = sum(sum(abs2, Xk) for Xk in X)
 
-    @test fit.iterations <= 100
+    @test fit.iterations ≤ 100
     @test fit.nonnegative == ()
     @test length(fit.loss) == fit.iterations + 1
     @test all(isfinite, fit.loss)
-    @test fit.loss[end] <= fit.loss[1] + 1e-8
-    @test all(diff(fit.loss) .<= 1e-6)
+    @test fit.loss[end] ≤ fit.loss[1] + 1e-8
+    @test all(diff(fit.loss) .≤ 1e-6)
     @test residual / total < 1e-6
     @test fit.bases[1]' * fit.bases[1] ≈ I(ncomponents) atol=1e-7
     @test fit.bases[2]' * fit.bases[2] ≈ I(ncomponents) atol=1e-7
@@ -245,7 +245,7 @@ end
     total = sum(sum(abs2, Xk) for Xk in X)
 
     @test fit.converged
-    @test fit.stopreason == :tol
+    @test fit.stopreason ≡ :tol
     @test residual / total < 1e-20
 end
 
@@ -258,19 +258,19 @@ end
 
     fit = parafac2(X, 2; maxiters=5, tol=0.0)
     @test fit.nonnegative == (:spectra, :abundances)
-    @test all(parafac2spectra(fit) .>= 0)
-    @test all(parafac2abundances(fit) .>= 0)
+    @test all(parafac2spectra(fit) .≥ 0)
+    @test all(parafac2abundances(fit) .≥ 0)
 
     fitbool = parafac2(X, 2; maxiters=0, nonnegative=true)
     @test fitbool.nonnegative == (:spectra, :abundances)
 
     fitspectra = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:spectra)
     @test fitspectra.nonnegative == (:spectra,)
-    @test all(parafac2spectra(fitspectra) .>= 0)
+    @test all(parafac2spectra(fitspectra) .≥ 0)
 
     fitweights = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:weights)
     @test fitweights.nonnegative == (:abundances,)
-    @test all(parafac2abundances(fitweights) .>= 0)
+    @test all(parafac2abundances(fitweights) .≥ 0)
 
     fitunconstrained = parafac2(X, 2; maxiters=0, nonnegative=false)
     @test fitunconstrained.nonnegative == ()
@@ -287,8 +287,8 @@ end
     fitnone = parafac2(X, 2; maxiters=0, compression=:none)
     fitchol = parafac2(X, 2; maxiters=0, compression=:cholesky)
 
-    @test fitnone.compression == :none
-    @test fitchol.compression == :cholesky
+    @test fitnone.compression ≡ :none
+    @test fitchol.compression ≡ :cholesky
     @test fitchol.retentioncounts == [8, 7]
     @test size(fitchol.bases[1]) == (8, 2)
     @test size(fitchol.bases[2]) == (7, 2)
@@ -300,7 +300,7 @@ end
     @test parafac2loss(fitchol, X) ≈ last(fitchol.loss) rtol=1e-10 atol=1e-10
 
     fititer = parafac2(X, 2; maxiters=5, tol=0.0, compression=:cholesky)
-    @test fititer.compression == :cholesky
+    @test fititer.compression ≡ :cholesky
     @test fititer.bases[1]' * fititer.bases[1] ≈ I(2) atol=1e-6
     @test fititer.bases[2]' * fititer.bases[2] ≈ I(2) atol=1e-6
     @test parafac2loss(fititer, X) ≈ last(fititer.loss) rtol=1e-8 atol=1e-8
@@ -310,7 +310,7 @@ end
     tensor[2, 1:7, :] .= X[2]
     tensor[2, 8, :] .= [1.0, 1.1, 1.2]
     tensorfit = parafac2(tensor, 2; maxiters=1, tol=0.0, compression=:cholesky)
-    @test tensorfit.compression == :cholesky
+    @test tensorfit.compression ≡ :cholesky
     @test tensorfit.retentioncounts == [8, 8]
     @test size(tensorfit.bases[1]) == (8, 2)
     @test size(tensorfit.bases[2]) == (8, 2)
@@ -321,7 +321,7 @@ end
     ]
     fitwide = parafac2(Xwide, 2; maxiters=0, compression=:cholesky)
     fitwidenone = parafac2(Xwide, 2; maxiters=0, compression=:none)
-    @test fitwide.compression == :cholesky
+    @test fitwide.compression ≡ :cholesky
     @test fitwide.retentioncounts == [2, 2]
     @test size(fitwide.bases[1]) == (2, 2)
     @test fitwide.loss ≈ fitwidenone.loss
@@ -348,7 +348,7 @@ end
     ]
     solution = JuChrom.nonnegativeleastsquares(design_zero_alpha, response_zero_alpha)
     @test solution ≈ [9.880553004028577e-8, 0.8772628742396302] rtol=1e-10
-    @test all(value -> value >= 0, solution)
+    @test all(value -> value ≥ 0, solution)
 
     design = Matrix{Float64}(I, 2, 2)
     response = [-1.0, 2.0]
@@ -373,9 +373,9 @@ end
     @test single.nstarts == 1
     @test single.beststart == 1
     @test multi.nstarts == 4
-    @test 1 <= multi.beststart <= 4
+    @test 1 ≤ multi.beststart ≤ 4
     @test length(multi.loss) == multi.iterations + 1
-    @test last(multi.loss) <= last(single.loss) + 1e-8
+    @test last(multi.loss) ≤ last(single.loss) + 1e-8
     @test parafac2loss(multi, X) ≈ last(multi.loss) rtol=1e-10 atol=1e-10
 
     fit1 = parafac2(X, 2; maxiters=5, tol=0.0, nstarts=3,
@@ -392,7 +392,7 @@ end
     tensorfit = parafac2(tensor, 2; maxiters=2, tol=0.0, nstarts=2,
         rng=Random.MersenneTwister(789))
     @test tensorfit.nstarts == 2
-    @test 1 <= tensorfit.beststart <= 2
+    @test 1 ≤ tensorfit.beststart ≤ 2
 end
 
 @testset "parafac2 public reconstruction helpers" begin
@@ -464,12 +464,12 @@ end
     abundances = parafac2abundances(fit)
 
     @test spectra == fit.loadings
-    @test spectra !== fit.loadings
+    @test spectra ≢ fit.loadings
     @test spectrametadata.values == fit.loadings
-    @test spectrametadata.values !== fit.loadings
+    @test spectrametadata.values ≢ fit.loadings
     @test spectrametadata.mzvalues == [50.0, 75.0, 100.0]
     @test abundances == fit.weights
-    @test abundances !== fit.weights
+    @test abundances ≢ fit.weights
 
     apexes = parafac2apexes(fit)
     scores = parafac2scores(fit)
@@ -488,10 +488,10 @@ end
     end
 
     fitwithoutmetadata = parafac2(X, 2; maxiters=0)
-    @test rawretentions(fitwithoutmetadata) === nothing
-    @test rawmzvalues(fitwithoutmetadata) === nothing
-    @test parafac2spectra(fitwithoutmetadata; metadata=true).mzvalues === nothing
-    @test parafac2apexes(fitwithoutmetadata).retentions === nothing
+    @test rawretentions(fitwithoutmetadata) ≡ nothing
+    @test rawmzvalues(fitwithoutmetadata) ≡ nothing
+    @test parafac2spectra(fitwithoutmetadata; metadata=true).mzvalues ≡ nothing
+    @test parafac2apexes(fitwithoutmetadata).retentions ≡ nothing
 
     Xunit = [
         reshape(collect(1.0:6.0), 3, 2),
@@ -539,7 +539,7 @@ end
     @test parafac2loss(fit, X) ≈ fit.loss[end] rtol=1e-10 atol=1e-10
     @test parafac2loss(fit, tensor) ≈ parafac2loss(fit, X)
     @test parafac2residuals(fit, tensor)[1] ≈ residuals[1]
-    @test 0 <= parafac2fitpercent(fit, X) <= 1
+    @test 0 ≤ parafac2fitpercent(fit, X) ≤ 1
     @test parafac2fitpercent(fit, tensor) ≈ parafac2fitpercent(fit, X)
     profileminima = parafac2profileminima(fit)
     profilediagnostics = parafac2profilediagnostics(fit)
@@ -629,12 +629,12 @@ end
     fitstart = JuChrom.parafac2fitstart(X, loadings, core, weights, 1, 0.0, ())
 
     @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
-    @test fitstart.stopreason == :nonfinite
+    @test fitstart.stopreason ≡ :nonfinite
     @test fitstart.iterations == 0
     @test fitstart.losses == [1.0]
-    @test fitstart.loadings === loadings
-    @test fitstart.core === core
-    @test fitstart.weights === weights
+    @test fitstart.loadings ≡ loadings
+    @test fitstart.core ≡ core
+    @test fitstart.weights ≡ weights
 
     PARAFAC2_LOSS_PROBE_CALLS[] = 0
     PARAFAC2_LOSS_PROBE_VALUES[] = [1.0, 1.0 + eps(Float64)]
@@ -642,12 +642,12 @@ end
 
     @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
     @test tolfit.converged
-    @test tolfit.stopreason == :tol
+    @test tolfit.stopreason ≡ :tol
     @test tolfit.iterations == 0
     @test tolfit.losses == [1.0]
-    @test tolfit.loadings === loadings
-    @test tolfit.core === core
-    @test tolfit.weights === weights
+    @test tolfit.loadings ≡ loadings
+    @test tolfit.core ≡ core
+    @test tolfit.weights ≡ weights
 end
 
 @testset "parafac2 display and broadcasting" begin
@@ -659,8 +659,8 @@ end
     @test occursin("fitted", pretty)
     @test occursin("sample labels", pretty)
     @test occursin("stop reason", pretty)
-    @test identity.(fit) === fit
-    @test (fit .=== fit) === true
+    @test identity.(fit) ≡ fit
+    @test (fit .≡ fit) ≡ true
 end
 
 end

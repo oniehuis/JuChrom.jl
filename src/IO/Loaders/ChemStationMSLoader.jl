@@ -143,7 +143,7 @@ function readfile(file::AbstractString, mode::Symbol)
             scan_offset = 2 * read_scalar_ntoh_at(f, 266, UInt16) - 2
             seek(f, scan_offset)
 
-            if mode == :ms
+            if mode ≡ :ms
                 retentions_unitfree, counts, mzs, intensities_unitfree = 
                     read_scan_data_ms(f, scancount)
                 scans = build_mass_scans(retentions_unitfree, counts, mzs, 
@@ -156,7 +156,7 @@ function readfile(file::AbstractString, mode::Symbol)
                     sample=metadata.sample
                 )
 
-            elseif mode == :tic
+            elseif mode ≡ :tic
                 retentions_unitfree, intensities_unitfree = read_scan_data_tic(f, scancount)
                 retentionunit = u"ms"
                 intensityunit = nothing

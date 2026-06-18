@@ -12,7 +12,7 @@ Return the optimal nonnegative coefficient vector `a` (length `Kpeaks`) from sol
 a small nonnegative least squares problem (NNLS) using OSQP, a quadratic programming solver:
 
     minimize_a  ||F*a - y||^2  +  sum_k λ[k]*(a[k] - μ[k])^2
-    subject to  a >= 0.
+    subject to  a ≥ 0.
 
 The optional quadratic prior is controlled by `μ` and `λ`. When provided, it softly
 pulls the solution toward `μ` with per-component strength `λ`. Set `λ[k]=0` to
@@ -304,8 +304,8 @@ function unimodalfit(
     if !(shape_couple_graph in (:neighbors, :window))
         throw(ArgumentError("shape_couple_graph must be :neighbors or :window."))
     end
-    if shape_couple_graph == :window && shape_couple > 0 && shape_couple_window ≤ 0
-        throw(ArgumentError("shape_couple_window must be > 0 when shape_couple_graph == :window and shape_couple > 0."))
+    if shape_couple_graph ≡ :window && shape_couple > 0 && shape_couple_window ≤ 0
+        throw(ArgumentError("shape_couple_window must be > 0 when shape_couple_graph ≡ :window and shape_couple > 0."))
     end
     if shape_couple > 0 && shape_couple_mode in (:d1, :d2)
         if shape_couple_tau_halfwidth ≤ 0
@@ -385,9 +385,9 @@ function unimodalfit(
         right = rgrid .≥ t0
 
         Acon_k = vcat(
-            sparse(Bgrid),                 # f(t) >= 0
-            sparse(Bprime[left, :]),       # f'(t) >= 0 on left
-            sparse(-Bprime[right, :])      # f'(t) <= 0 on right
+            sparse(Bgrid),                 # f(t) ≥ 0
+            sparse(Bprime[left, :]),       # f'(t) ≥ 0 on left
+            sparse(-Bprime[right, :])      # f'(t) ≤ 0 on right
         )
         Acon_blocks[k] = Acon_k
         l_blocks[k] = zeros(size(Acon_k, 1))
@@ -424,12 +424,12 @@ function unimodalfit(
         if K ≤ 1
             return edges
         end
-        if graph == :neighbors
+        if graph ≡ :neighbors
             for k in 1:(K-1)
                 push!(edges, (k, k+1))
             end
             return edges
-        elseif graph == :window
+        elseif graph ≡ :window
             t0 = Float64.(peakretentions)
             for k in 1:K
                 for ℓ in (k+1):K
@@ -450,7 +450,7 @@ function unimodalfit(
     P_couple = zeros(Float64, p*Kpeaks, p*Kpeaks)
 
     if shape_couple > 0 && !isempty(edges)
-        d = (shape_couple_mode == :d1) ? 1 : 2
+        d = (shape_couple_mode ≡ :d1) ? 1 : 2
 
         τ = collect(range(-shape_couple_tau_halfwidth, shape_couple_tau_halfwidth; length=shape_couple_tau_n))
 
@@ -459,7 +459,7 @@ function unimodalfit(
         for k in 1:Kpeaks
             rk = Float64.(peakretentions[k] .+ τ)
             rshift[k] = rk
-            inrng[k] = (rk .>= tmin) .& (rk .<= tmax)
+            inrng[k] = (rk .≥ tmin) .& (rk .≤ tmax)
         end
 
         for (k, ℓ) in edges
@@ -735,9 +735,9 @@ function unimodalfit_apexsearch(
         throw(ArgumentError("tol_sse must be positive."))
     end
 
-    plan = if strategy == :single
+    plan = if strategy ≡ :single
         [(half_width=half_width, ngrid=ngrid)]
-    elseif strategy == :iterative
+    elseif strategy ≡ :iterative
         if isnothing(stages)
             hw1 = half_width
             hw2 = max(min_half_width, 0.35 * hw1)

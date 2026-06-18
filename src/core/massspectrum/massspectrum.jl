@@ -215,7 +215,7 @@ See also
 ```jldoctest
 julia> ms = MassSpectrum([100.0, 150.0], [10.0, 20.0]);
 
-julia> intensityunit(ms) === nothing
+julia> intensityunit(ms) ≡ nothing
 true
 ```
 """
@@ -291,7 +291,7 @@ See also
 ```jldoctest
 julia> ms = MassSpectrum([100.0, 150.0], [10.0, 20.0]);
 
-julia> mzunit(ms) === nothing
+julia> mzunit(ms) ≡ nothing
 true
 ```
 """

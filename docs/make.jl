@@ -16,7 +16,7 @@ using PyCall
 using JuChrom
 Base.retry_load_extensions()
 let ext = Base.get_extension(JuChrom, :PyCallExtension)
-    if ext === nothing
+    if ext ≡ nothing
         @info "PyCallExtension not loaded; forcing load for docs"
         include(joinpath(@__DIR__, "..", "ext", "PyCallExtension.jl"))
         ext = PyCallExtension

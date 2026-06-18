@@ -12,7 +12,7 @@ const DEFAULT_FONT_SIZE = 16
 
 # Helper functions
 function format_unit_string(unit)
-    unit === nothing ? "" : " [$unit]"
+    unit ≡ nothing ? "" : " [$unit]"
 end
 
 function create_fine_range(min_val, max_val, extension_factor=RANGE_EXTENSION_FACTOR, points=FINE_GRID_POINTS)
@@ -21,11 +21,11 @@ function create_fine_range(min_val, max_val, extension_factor=RANGE_EXTENSION_FA
 end
 
 function format_derivative_unit_string(rA_unit, rB_unit)
-    if rA_unit === nothing && rB_unit === nothing
+    if rA_unit ≡ nothing && rB_unit ≡ nothing
         return ""
-    elseif rA_unit === nothing
+    elseif rA_unit ≡ nothing
         return " [$rB_unit]"
-    elseif rB_unit === nothing
+    elseif rB_unit ≡ nothing
         return " [$(JuChrom.inverse(rA_unit))]"
     else
         return " [$rB_unit × $(JuChrom.inverse(rA_unit))]"
@@ -33,11 +33,11 @@ function format_derivative_unit_string(rA_unit, rB_unit)
 end
 
 function format_inverse_derivative_unit_string(rA_unit, rB_unit)
-    if rA_unit === nothing && rB_unit === nothing
+    if rA_unit ≡ nothing && rB_unit ≡ nothing
         return ""
-    elseif rB_unit === nothing
+    elseif rB_unit ≡ nothing
         return " [$rA_unit]"
-    elseif rA_unit === nothing
+    elseif rA_unit ≡ nothing
         return " [$(JuChrom.inverse(rB_unit))]"
     else
         return " [$rA_unit × $(JuChrom.inverse(rB_unit))]"

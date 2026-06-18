@@ -60,7 +60,7 @@ struct VarianceMassScanMatrix{
         size(variances) == size(rawintensities(msm)) || throw(DimensionMismatch(
             "Variance matrix shape must match the intensity matrix shape."))
         all(isfinite, variances) || throw(ArgumentError("All variances must be finite."))
-        all(v -> v >= zero(v), variances) || throw(ArgumentError(
+        all(v -> v ≥ zero(v), variances) || throw(ArgumentError(
             "All variances must be nonnegative."))
         validate_varianceunit(msm, varianceunit)
 

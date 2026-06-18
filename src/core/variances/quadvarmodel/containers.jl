@@ -126,8 +126,8 @@ Base.Broadcast.broadcastable(f::QuadVarFit) = Base.RefValue(f)
     isnothing(mzunit) ? val : val * mzunit
 
 function Base.summary(q::QuadVarFit)
-    n_batches = let x = q.n_reps_per_batch; x === nothing ? 0 : length(x) end
-    n_sel     = let x = q.mz_idx; x === nothing ? 0 : length(x) end
+    n_batches = let x = q.n_reps_per_batch; x ≡ nothing ? 0 : length(x) end
+    n_sel     = let x = q.mz_idx; x ≡ nothing ? 0 : length(x) end
     "QuadVarFit (batches=$(n_batches), ions=$(n_sel))"
 end
 

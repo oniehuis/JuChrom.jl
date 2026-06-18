@@ -432,9 +432,9 @@ function Base.show(io::IO, msm::MassScanMatrix)
     intensity_unit = intensityunit(msm)
     intensity_range = (minimum(intensities_unitfree), maximum(intensities_unitfree))
 
-    ret_unit_str = retention_unit === nothing ? "unitless" : string(retention_unit)
-    mz_unit_str = mz_unit === nothing ? "unitless" : string(mz_unit)
-    int_unit_str = intensity_unit === nothing ? "unitless" : string(intensity_unit)
+    ret_unit_str = retention_unit ≡ nothing ? "unitless" : string(retention_unit)
+    mz_unit_str = mz_unit ≡ nothing ? "unitless" : string(mz_unit)
+    int_unit_str = intensity_unit ≡ nothing ? "unitless" : string(intensity_unit)
 
     metadata_sections = [
         ("Instrument", msm.instrument),

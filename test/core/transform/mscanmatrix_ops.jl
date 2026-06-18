@@ -41,10 +41,10 @@ make_msm(; ret, mz, ints, level=1, instrument=NamedTuple(), acquisition=NamedTup
 
     out = JuChrom.subtract(msm_a, msm_b, 0.5)
     @test retentions(out) == ret
-    @test retentionunit(out) === nothing
+    @test retentionunit(out) ≡ nothing
     @test mzvalues(out) == mz
-    @test mzunit(out) === nothing
-    @test intensityunit(out) === nothing
+    @test mzunit(out) ≡ nothing
+    @test intensityunit(out) ≡ nothing
     @test level(out) == 2
     @test instrument(out) == meta.instrument
     @test acquisition(out) == meta.acquisition

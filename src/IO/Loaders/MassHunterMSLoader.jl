@@ -304,7 +304,7 @@ function read_scan_data_tic(
     intensities_unitfree = Vector{Float64}()
     attrs = NamedTuple[]
     for scandatum in scandata
-        (options.level === nothing || scandatum.MSLevel == options.level) || continue
+        (options.level ≡ nothing || scandatum.MSLevel == options.level) || continue
         push!(retentions_unitfree, scandatum.ScanTime)
         push!(intensities_unitfree, scandatum.TIC)
         push!(attrs, scandatum_attrs(scandatum; include_tic=false))
@@ -312,9 +312,9 @@ function read_scan_data_tic(
 
     tretention = options.scantimetype
     tintensity = options.intensitytype
-    retentions_converted = tretention === Nothing ? retentions_unitfree :
+    retentions_converted = tretention ≡ Nothing ? retentions_unitfree :
         convert(Vector{tretention}, retentions_unitfree)
-    intensities_converted = tintensity === Nothing ? intensities_unitfree :
+    intensities_converted = tintensity ≡ Nothing ? intensities_unitfree :
         convert(Vector{tintensity}, intensities_unitfree)
 
     retentions_converted .* 60, intensities_converted, attrs
@@ -358,7 +358,7 @@ function mspeakdata(
     tmz = options.iontype
     tintensity = options.intensitytype
 
-    retentions = tretention === Nothing ? scantimes(scandata) :
+    retentions = tretention ≡ Nothing ? scantimes(scandata) :
         convert(Vector{tretention}, scantimes(scandata))
     retentions_sec = retentions .* 60
     retentionunit = u"s"
@@ -368,7 +368,7 @@ function mspeakdata(
     open(file, "r") do f
         for (i, scandatum) in enumerate(scandata)
 
-            (options.level === nothing || scandatum.MSLevel == options.level) || continue
+            (options.level ≡ nothing || scandatum.MSLevel == options.level) || continue
 
             seek(f, scandatum.SpectrumOffset)
             storagetype = Float32
@@ -380,8 +380,8 @@ function mspeakdata(
             end
             mzs = ltoh.(read!(f, Vector{storagetype}(undef, scandatum.PointCount)))
             ints = ltoh.(read!(f, Vector{storagetype}(undef, scandatum.PointCount)))
-            mzs_converted = tmz === Nothing ? mzs : convert(Vector{tmz}, mzs)
-            ints_converted = tintensity === Nothing ? ints : convert(Vector{tintensity}, ints)
+            mzs_converted = tmz ≡ Nothing ? mzs : convert(Vector{tmz}, mzs)
+            ints_converted = tintensity ≡ Nothing ? ints : convert(Vector{tintensity}, ints)
             attrs = scandatum_attrs(scandatum; include_tic=true)
             scan = MassScan(
                 retentions_sec[i], retentionunit,
@@ -392,7 +392,7 @@ function mspeakdata(
             push!(scans, scan)
         end
     end
-    level_desc = options.level === nothing ? "any level" :
+    level_desc = options.level ≡ nothing ? "any level" :
         "level $(options.level)"
     isempty(scans) && throw(
         FileCorruptionError("MSPeak.bin did not contain any scans at $level_desc"))
@@ -417,9 +417,9 @@ function readfile(
         signature == 257 || throw(
             FileFormatError("\"$msscan_file\" has unexpected file signature: \"$signature\""))
         scandata = msscandata(MSScanBinV1(), msscan_file)
-        if mode == :ms
+        if mode ≡ :ms
             return read_scan_data_ms(T, path, scandata, options)
-        elseif mode == :tic
+        elseif mode ≡ :tic
             retentions_unitfree, intensities_unitfree, scan_attrs = 
                 read_scan_data_tic(T, scandata, options)
             retentionunit = u"s"

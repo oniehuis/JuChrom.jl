@@ -16,7 +16,7 @@ function resolve_mz_index(mzvalues::AbstractVector,
 
     # normalize grid to Float64
     v = if first(mzvalues) isa Unitful.AbstractQuantity
-        mzunit === nothing && throw(ArgumentError("m/z grid has units but `mzunit` was not provided."))
+        mzunit ≡ nothing && throw(ArgumentError("m/z grid has units but `mzunit` was not provided."))
         @. float(ustrip(uconvert(mzunit, mzvalues)))
     else
         @. float(mzvalues)
@@ -24,7 +24,7 @@ function resolve_mz_index(mzvalues::AbstractVector,
 
     # normalize selection to Float64 in same unit system
     sel_val = if sel isa Unitful.AbstractQuantity
-        mzunit === nothing && throw(ArgumentError("unitful selection requires a unitful m/z grid"))
+        mzunit ≡ nothing && throw(ArgumentError("unitful selection requires a unitful m/z grid"))
         try
             float(ustrip(uconvert(mzunit, sel)))
         catch e
@@ -40,7 +40,7 @@ function resolve_mz_index(mzvalues::AbstractVector,
 
     # normalize tol to Float64 in same unit system
     tol_val = if tol isa Unitful.AbstractQuantity
-        mzunit === nothing && throw(
+        mzunit ≡ nothing && throw(
             ArgumentError("unitful tolerance requires a unitful m/z grid"))
         try
             float(ustrip(uconvert(mzunit, tol)))
@@ -61,7 +61,7 @@ function resolve_mz_index(mzvalues::AbstractVector,
         return i
     else
         warning && @warn ("No m/z match for $(sel) within tolerance $(tol) " 
-                          * "$(mzunit === nothing ? "" : string(mzunit)); returning 0.")
+                          * "$(mzunit ≡ nothing ? "" : string(mzunit)); returning 0.")
         return 0
     end
 end
@@ -92,7 +92,7 @@ function extract_value_by_mz(scan::MassScan, sel::Number, tol::Number, warning::
     mz_u  = mzunit(scan)  # may be `nothing`
 
     # If m/z are unitless but tol is unitful, fail *here* (so tests see ArgumentError)
-    if mz_u === nothing && tol isa Unitful.AbstractQuantity
+    if mz_u ≡ nothing && tol isa Unitful.AbstractQuantity
         throw(ArgumentError("unitless series: `tol` must be unitless"))
     end
 
@@ -137,7 +137,7 @@ function mzchrom(series::MassScanSeries, selection=nothing; tol=3e-4, warning::B
     N = length(scans(series))
     N > 0 || throw(ArgumentError("Series has no scans"))
 
-    compute_value = if selection === nothing
+    compute_value = if selection ≡ nothing
         scan -> tic_value(scan)
     else
         if selection isa AbstractVector
@@ -199,11 +199,11 @@ function mzchrom(msm::MassScanMatrix,
     nrows = scancount(msm)
     nrows > 0 || throw(ArgumentError("Matrix has no rows (scans)"))
 
-    if by === :index && selection isa Real && !(selection isa Integer)
+    if by ≡ :index && selection isa Real && !(selection isa Integer)
         throw(ArgumentError(
             "`selection` must be an Integer or a collection of Integers when `by = :index`"))
     end
-    if (by === :index && selection isa AbstractVector{<:Number} 
+    if (by ≡ :index && selection isa AbstractVector{<:Number} 
         && !(eltype(selection) <: Integer))
 
         throw(ArgumentError(
@@ -212,8 +212,8 @@ function mzchrom(msm::MassScanMatrix,
 
     # Pre-resolve scalar selection to a single column index for speed
     scalar_j = nothing
-    if selection !== nothing && !(selection isa AbstractVector)
-        if by === :mz
+    if selection ≢ nothing && !(selection isa AbstractVector)
+        if by ≡ :mz
             scalar_j = resolve_mz_index(mzvalues(msm), selection, tol; mzunit=mzunit(msm), 
                                         warning=warning)
         else
@@ -224,14 +224,14 @@ function mzchrom(msm::MassScanMatrix,
     # Resolve vector selections to column indices (dedup + sort)
     resolved_sel = selection
     if selection isa AbstractVector
-        if by === :mz
+        if by ≡ :mz
             resolve = sel -> resolve_mz_index(mzvalues(msm), sel, tol; mzunit=mzunit(msm), 
                                               warning=warning)
             idx = [resolve(sel) for sel in selection]
             filter!(!=(0), idx)
             unique!(idx); sort!(idx)
             resolved_sel = idx
-        elseif by === :index
+        elseif by ≡ :index
             idx = [resolve_index(length(mzvalues(msm)), Int(k); warning=warning) 
                    for k in selection]
             filter!(!=(0), idx)
@@ -246,15 +246,15 @@ function mzchrom(msm::MassScanMatrix,
     rts = retentions(msm)
 
     # Precompute TIC row sums when building a TIC
-    row_sums = resolved_sel === nothing ? vec(sum(I, dims=2)) : nothing
+    row_sums = resolved_sel ≡ nothing ? vec(sum(I, dims=2)) : nothing
 
-    y1 = if resolved_sel === nothing
+    y1 = if resolved_sel ≡ nothing
         row_sums[1]
     else
         if resolved_sel isa AbstractVector
             sum(@view I[1, resolved_sel])
         else
-            j = scalar_j === nothing ? 0 : scalar_j
+            j = scalar_j ≡ nothing ? 0 : scalar_j
             j == 0 ? zero(eltype(I)) : I[1, j]
         end
     end
@@ -264,13 +264,13 @@ function mzchrom(msm::MassScanMatrix,
     chroms[1] = cs1
 
     @inbounds for r in 2:nrows
-        y = if resolved_sel === nothing
+        y = if resolved_sel ≡ nothing
             row_sums[r]
         else
             if resolved_sel isa AbstractVector
                 sum(@view I[r, resolved_sel])
             else
-                j = scalar_j === nothing ? 0 : scalar_j
+                j = scalar_j ≡ nothing ? 0 : scalar_j
                 j == 0 ? zero(eltype(I)) : I[r, j]
             end
         end

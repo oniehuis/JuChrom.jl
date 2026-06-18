@@ -56,7 +56,7 @@ end
     css_tic = mzchrom(seriesA, warning=false)
     @test css_tic isa ChromScanSeries
     @test retentions(css_tic) == retentions(seriesA)  # retention preserved
-    @test intensityunit(css_tic) === intensityunit(seriesA)  # intensity unit preserved
+    @test intensityunit(css_tic) ≡ intensityunit(seriesA)  # intensity unit preserved
     @test intensities(css_tic) == [sum(intensities(s1)), sum(intensities(s2))]
 
     # XIC scalar exact match: 101.2 → [10, 5]
@@ -155,7 +155,7 @@ end
     css_tic = mzchrom(msmA; warning=false)
     @test css_tic isa ChromScanSeries
     @test retentions(css_tic) == rts
-    @test intensityunit(css_tic) === intensityunit(msmA)
+    @test intensityunit(css_tic) ≡ intensityunit(msmA)
     @test intensities(css_tic) == vec(sum(I, dims=2))
 
     # XIC by m/z (scalar, exact)

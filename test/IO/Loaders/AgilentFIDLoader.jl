@@ -78,7 +78,7 @@ JuChrom.AgilentFIDLoader.read_bytes_ltoh(::BadDecodeBuffer, ::Integer) = BadByte
     spec = AgilentFIDLoaderSpec{AgilentFIDv179}("dummy_path"; unit=nothing)
     @test isa(spec, AgilentFIDLoaderSpec)
     @test spec.path == "dummy_path"
-    @test spec.options.unit === nothing
+    @test spec.options.unit ≡ nothing
 
     spec2 = AgilentFID("dummy_path"; unit=u"pA")
     @test isa(spec2, AgilentFIDLoaderSpec)

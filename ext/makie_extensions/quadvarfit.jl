@@ -73,7 +73,7 @@ function Makie.plot(q::JuChrom.QuadVarFit;
     g_b = q.gains[mzi][batch]    # n_reps_b
 
     fig = Makie.Figure(; size=figsize)
-    ylabel = mode === :offsets ? "offset" : "aligned intensity ((Y−o)/g)"
+    ylabel = mode ≡ :offsets ? "offset" : "aligned intensity ((Y−o)/g)"
     mzunit_str = isnothing(mzunit) ? "" : " " * string(mzunit)
     title  = @sprintf("m/z %.3f%s — batch %d; σ₀²=%g  ϕ=%g  κ=%.4f  acf=%+.2f",
                       mzval, mzunit_str, batch,
@@ -89,7 +89,7 @@ function Makie.plot(q::JuChrom.QuadVarFit;
 
     palette = Makie.wong_colors()
 
-    if mode === :align
+    if mode ≡ :align
         # One CI band around the shared signal + the shared signal + aligned replicates
         x     = 1:n_scans_b
         sd_b  = sqrt.(JuChrom.varpred(s_b, p; varfloor = varpred_floor))
@@ -116,7 +116,7 @@ function Makie.plot(q::JuChrom.QuadVarFit;
 
     legend && Makie.axislegend(ax; position=:rt, framevisible=false)
 
-    if scan_range !== nothing
+    if scan_range ≢ nothing
         lo = clamp(first(scan_range), 1, n_scans_b)
         hi = clamp(last(scan_range),  1, n_scans_b)
         Makie.xlims!(ax, lo, hi)

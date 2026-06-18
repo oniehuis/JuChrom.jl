@@ -137,7 +137,7 @@ end
 @safetestset "IO/Loaders/MassHunterMSLoader" begin
     include("IO/Loaders/MassHunterMSLoader.jl")
 end
-if Base.find_package("PyCall") !== nothing
+if Base.find_package("PyCall") ≢ nothing
     @safetestset "IO/Loaders/ShimadzuMSLoader" begin
         include("IO/Loaders/ShimadzuMSLoader.jl")
     end

@@ -33,13 +33,13 @@ mkints(r, c) = reshape(collect(1.0:(r*c)), r, c)
         Dict{String,Any}("k"=>"v"))
 
     # Stored fields
-    @test msm.retentions === ret
+    @test msm.retentions ≡ ret
     @test msm.retentionunit == u"s"
-    @test msm.mzvalues === mzs
-    @test msm.mzunit === nothing
-    @test msm.intensities === im
+    @test msm.mzvalues ≡ mzs
+    @test msm.mzunit ≡ nothing
+    @test msm.intensities ≡ im
     @test msm.intensityunit == pA
-    @test msm.level === 2
+    @test msm.level ≡ 2
     @test msm.instrument == (vendor="Acme",)
     @test msm.acquisition == (mode="DIA",)
     @test msm.user == (user="U",)
@@ -145,13 +145,13 @@ end
                          sample=(s="y",),
                          extras=Dict(SubString("k",1,1)=>1))
 
-    @test msm.retentions === ret
+    @test msm.retentions ≡ ret
     @test msm.retentionunit == u"s"
-    @test msm.mzvalues === mzs
-    @test msm.mzunit === nothing
-    @test msm.intensities === im
+    @test msm.mzvalues ≡ mzs
+    @test msm.mzunit ≡ nothing
+    @test msm.intensities ≡ im
     @test msm.intensityunit == pA
-    @test msm.level === 3
+    @test msm.level ≡ 3
     @test msm.instrument == (vendor="A",)
     @test msm.acquisition == (mode="DDA",)
     @test msm.user == (u="x",)
@@ -172,10 +172,10 @@ end
     @test msm.retentions == [1.0, 2.0]       # stripped
     @test msm.retentionunit == u"s"
     @test msm.mzvalues == [100.0, 200.0, 300.0]
-    @test msm.mzunit === nothing
+    @test msm.mzunit ≡ nothing
     @test msm.intensities == [1.0 2.0 3.0; 4.0 5.0 6.0]
     @test msm.intensityunit == pA
-    @test msm.level === 1
+    @test msm.level ≡ 1
     @test msm.instrument == (id=1,)
     @test msm.acquisition == NamedTuple()
     @test msm.user == NamedTuple()
@@ -199,7 +199,7 @@ end
     msm = MassScanMatrix([1.0, 2.0], [100.0, 200.0], [1.0 2.0; 3.0 4.0])
     b = Base.broadcastable(msm)
     @test b isa Base.RefValue
-    @test b[] === msm
+    @test b[] ≡ msm
 end
 
 @testset "MassScanMatrix – subtraction" begin
@@ -227,10 +227,10 @@ end
     @test intensities(msm_diff) == im1 .- im2
     @test retentions(msm_diff) == ret
     @test mzvalues(msm_diff) == mzs
-    @test retentions(msm_diff) !== ret
-    @test mzvalues(msm_diff) !== mzs
+    @test retentions(msm_diff) ≢ ret
+    @test mzvalues(msm_diff) ≢ mzs
     @test extras(msm_diff) == extras(msm1)
-    @test extras(msm_diff) !== extras(msm1)
+    @test extras(msm_diff) ≢ extras(msm1)
 
     msm_ret_mismatch = MassScanMatrix(ret .+ 1, mzs, im1;
                                       level=2,

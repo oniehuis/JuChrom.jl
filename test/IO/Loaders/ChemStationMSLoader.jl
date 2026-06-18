@@ -108,7 +108,7 @@ const TEST_TMPDIR = mkpath(joinpath(@__DIR__, "tmp"))
 @testset "ChemStationMSOptions" begin
     options = ChemStationMSOptions(:ms)
     @test isa(options, ChemStationMSOptions)
-    @test options.mode == :ms
+    @test options.mode ≡ :ms
 end
 
 @testset "ChemStationMSLoaderSpec" begin
@@ -118,14 +118,14 @@ end
     @test isa(spec1, ChemStationMSLoaderSpec)
     @test spec1.path == "dummy_path"
     @test isa(spec1.options, ChemStationMSOptions)
-    @test spec1.options.mode == :ms
+    @test spec1.options.mode ≡ :ms
 
     # Keyword constructor
     spec2 = ChemStationMSLoaderSpec{ChemStationMSv2}("dummy_path"; mode=:ms)
     @test isa(spec2, ChemStationMSLoaderSpec)
     @test spec2.path == "dummy_path"
     @test isa(spec2.options, ChemStationMSOptions)
-    @test spec2.options.mode == :ms
+    @test spec2.options.mode ≡ :ms
 end
 
 @testset "ChemStationMS" begin
@@ -133,7 +133,7 @@ end
     @test isa(spec, ChemStationMSLoaderSpec)
     @test spec.path == "dummy_path"
     @test isa(spec.options, ChemStationMSOptions)
-    @test spec.options.mode == :ms
+    @test spec.options.mode ≡ :ms
 end
 
 # ── Data Loading Interface ───────────────────────────────────────────────────
@@ -374,7 +374,7 @@ end
 @testset "ensure_bytes_available" begin
     buf = IOBuffer(rand(UInt8, 10))
     seek(buf, 0)
-    @test ensure_bytes_available(buf, 5) === nothing
+    @test ensure_bytes_available(buf, 5) ≡ nothing
     seek(buf, 8)
     @test_throws UnexpectedEOFError ensure_bytes_available(buf, 4)
 end

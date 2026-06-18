@@ -57,7 +57,7 @@ end
 
 @testset "RetentionMapper JLD2 rconvert V1" begin
     ext = Base.get_extension(JuChrom, :JLD2Extension)
-    @test ext !== nothing
+    @test ext ≢ nothing
 
     rmapper = fitmap([1.0, 2.0, 4.0], [10.0, 20.0, 40.0])
     T1 = typeof(rmapper.rA)
@@ -106,7 +106,7 @@ end
     @test rawmapmax(rmapper2) ≈ rawmapmax(rmapper)
     @test rmapper2.knots == rmapper.knots
     @test rmapper2.coefs == rmapper.coefs
-    @test rmapper2.lambda === nothing
+    @test rmapper2.lambda ≡ nothing
     @test rmapper2.extras == rmapper.extras
 end
 

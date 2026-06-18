@@ -221,8 +221,8 @@ end
     @test JuChrom.rawintensities(bmsm_tuned) ≈ expected_tuned
     @test bmsm.sample == msm.sample
     @test bmsm.extras == msm.extras
-    @test JuChrom.rawretentions(bmsm) !== JuChrom.rawretentions(msm)
-    @test JuChrom.rawmzvalues(bmsm) !== JuChrom.rawmzvalues(msm)
+    @test JuChrom.rawretentions(bmsm) ≢ JuChrom.rawretentions(msm)
+    @test JuChrom.rawmzvalues(bmsm) ≢ JuChrom.rawmzvalues(msm)
 
     msmneg = MassScanMatrix(ret[1:6], mzs[1:2], -ones(6, 2))
     bmsmneg = arpls(msmneg; nonnegative=true, maxiter=20)
