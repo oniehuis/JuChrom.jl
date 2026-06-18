@@ -734,6 +734,44 @@ end
     chosen = JuChrom.alkane_ladder_choose_scan_order(ascending, descending, 1, 1.25)
     @test chosen.selected_order ≡ :unknown
     @test chosen.status ≡ :failed
+
+    shape_selection = JuChrom.alkane_ladder_scan_order_shape_ion_selection(
+        msm,
+        standard,
+        candidate.ladderstep,
+        settings.mzscanordershapeioncount,
+        settings.mzscanordershapemzspacing
+    )
+    shape_settings = JuChrom.alkane_ladder_apex_settings_with_ion_selection(
+        settings,
+        merge(timingkwargs, (order=:ascending,)),
+        shape_selection.mzvalues,
+        length(shape_selection.mzvalues)
+    )
+    shape = JuChrom.alkane_ladder_ion_apex(
+        msm,
+        variances,
+        candidate,
+        candidate.ladderstep,
+        shape_settings
+    )
+    zero_msm = MassScanMatrix(
+        rawretentions(msm),
+        rawmzvalues(msm),
+        zeros(size(rawintensities(msm)))
+    )
+    ion_count_failure = JuChrom.alkane_ladder_scan_order_step_apex_variance(
+        zero_msm,
+        variances,
+        candidateinfo,
+        shape,
+        merge(timingkwargs, (order=:ascending,)),
+        settings,
+        :extreme_reference_ions
+    )
+    @test !ion_count_failure.success
+    @test occursin("fewer than", ion_count_failure.reason)
+    @test ion_count_failure.ion_count < settings.mzscanorderminioncount
 end
 
 @testset "alkaneladderscanorder expands ambiguous subset to all peaks" begin
@@ -798,6 +836,7 @@ end
 @testset "alkane ladder apex helper branches" begin
     @test JuChrom.alkane_ladder_spread_index_order(5, 2) == [1, 5, 3, 2, 4]
     @test JuChrom.alkane_ladder_spread_indices(5, 0) == Int[]
+    @test JuChrom.alkane_ladder_spread_indices(5, 4) == [1, 2, 4, 5]
     @test JuChrom.alkane_ladder_robust_variance([1.0, 1.0, 1.0, 2.0]) ≈ 0.25
 
     msm, variances, abundanceinfo, candidate, mzkwargs = test_alkane_ion_apex_inputs()

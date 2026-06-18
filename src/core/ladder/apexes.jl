@@ -1384,25 +1384,8 @@ function alkane_ladder_spread_indices(n::Integer, count::Integer)
     count = min(count, n)
     count ≤ 0 && return Int[]
     count == 1 && return [ceil(Int, n / 2)]
-    indices = [clamp(round(Int, value), 1, n) for value in range(1, n; length=count)]
-    seen = Set{Int}()
-    output = Int[]
-    for index in indices
-        index in seen && continue
-        push!(output, index)
-        push!(seen, index)
-    end
 
-    candidate = 1
-    while length(output) < count && candidate ≤ n
-        if !(candidate in seen)
-            push!(output, candidate)
-            push!(seen, candidate)
-        end
-        candidate += 1
-    end
-
-    output
+    unique([clamp(round(Int, value), 1, n) for value in range(1, n; length=count)])
 end
 
 function alkane_ladder_scan_order_expanding_trials(
@@ -2868,10 +2851,8 @@ function alkane_ladder_local_scan_search_range(
     while right - left + 1 < needed
         if left > 1
             left -= 1
-        elseif right < totalscans
-            right += 1
         else
-            break
+            right += 1
         end
     end
 

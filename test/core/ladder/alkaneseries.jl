@@ -277,9 +277,23 @@ end
 
 @testset "alkaneladdersteps returns merged refined ladder step view" begin
     result = test_ladder_step_result()
+    compact = AlkaneSeriesResult(
+        result.standard,
+        result.variances,
+        result.varianceinfo,
+        result.baselineinfo,
+        result.channelinfo,
+        result.abundanceinfo,
+        result.molecularioninfo,
+        result.pathinfo,
+        result.apexinfo,
+        result.additioninfo
+    )
 
     steps = alkaneladdersteps(result)
 
+    @test compact.datainfo === nothing
+    @test retentionunit(compact) === nothing
     @test steps isa Vector{AlkaneLadderStep}
     @test [step.ladderstep for step in steps] == [8, 9, 10, 11]
     @test [step.source for step in steps] ==
