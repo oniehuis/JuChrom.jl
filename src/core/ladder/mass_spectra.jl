@@ -377,7 +377,6 @@ function alkane_ladder_fit_spectrum_ion!(
     observations = 0
     for selected_scanindex in selected_scanindices
         observation_retention = alkane_ladder_observation_retention(
-            msm,
             scan_retentions,
             selected_scanindex,
             mzindex,

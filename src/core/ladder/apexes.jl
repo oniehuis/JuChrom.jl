@@ -1411,13 +1411,13 @@ function alkane_ladder_scan_order_expanding_trials(
         last = (ascending, descending, info)
 
         if expanded_for_ambiguity
-            length(tested) == length(candidates) && return last
+            length(tested) == length(candidates) && break
             continue
         end
 
         info.status ≡ :accepted && return last
         if info.status ≡ :ambiguous
-            length(tested) == length(candidates) && return last
+            length(tested) == length(candidates) && break
             expanded_for_ambiguity = true
         end
     end
