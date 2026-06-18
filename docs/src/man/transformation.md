@@ -43,7 +43,8 @@ intensityunit(msm)
 Use [`dwellnormalize`](@ref) to divide intensities by m/z-specific dwell intervals. The
 function accepts inputs whose intensity unit is absent and returns a rate-like signal with
 the reciprocal dwell unit. For explicit dwell intervals, their sum must not exceed the
-shortest scan interval in the retention axis.
+shortest scan interval in the retention axis; this explicit-vector form is therefore a
+sequential-acquisition model.
 
 ```@example 2
 normalized = dwellnormalize(msm, [0.2, 0.3, 0.5], u"s")
@@ -55,7 +56,9 @@ rawintensities(normalized)
 ```
 
 When the scan interval is uniformly divided among all m/z values, `dwellnormalize(msm)`
-infers a single dwell interval from the mean scan interval and the number of m/z values.
+infers a single dwell interval from the shortest scan interval and the number of m/z
+values. For simultaneous acquisition, use `dwellnormalize(msm; acquisition=:simultaneous)`
+to infer the full shortest scan interval as the dwell time for every m/z value.
 
 ## Transformation tools
 

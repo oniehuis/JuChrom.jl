@@ -108,7 +108,7 @@ end
         result.pathinfo,
         result.apexinfo,
         result.additioninfo,
-        result.datainfo,
+        JuChrom.alkane_series_datainfo(unitful_msm, unitful_msm, result.variances),
         u"ms"
     )
 
@@ -137,6 +137,23 @@ end
 
     @test out === ax
     @test length(ax.scene.plots) == 1
+end
+
+@testset "tictrace validates AlkaneSeriesResult checksum against plotted matrix" begin
+    msm, result = synthetic_ladder_result()
+    mismatched_msm = MassScanMatrix(
+        rawretentions(msm),
+        rawmzvalues(msm),
+        rawintensities(msm) .+ 1.0
+    )
+
+    @test tictrace(msm, result) isa Makie.Figure
+    @test tictrace(VarianceMassScanMatrix(msm, result.variances), result) isa Makie.Figure
+    @test_throws ArgumentError tictrace(mismatched_msm, result)
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    @test_throws ArgumentError tictrace!(ax, mismatched_msm, result)
 end
 
 @testset "tictrace ladder labels are thinned when dense" begin
@@ -197,7 +214,7 @@ end
         result.pathinfo,
         result.apexinfo,
         result.additioninfo,
-        result.datainfo,
+        JuChrom.alkane_series_datainfo(int_msm, int_msm, result.variances),
         result.retentionunit
     )
 

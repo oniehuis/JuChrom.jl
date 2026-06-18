@@ -40,8 +40,8 @@ struct AlkaneLadderMassSpectrumStepExtraction
 end
 
 function alkane_series_datainfo(
-    rawmsm::MassScanMatrix,
-    signalmsm::MassScanMatrix,
+    rawmsm::AbstractMassScanMatrix,
+    signalmsm::AbstractMassScanMatrix,
     variances::AbstractMatrix{<:Real}
 )
     validate_alkane_series_variances(signalmsm, variances)
@@ -58,7 +58,7 @@ function alkane_series_datainfo(
     )
 end
 
-function alkane_msm_checksum(msm::MassScanMatrix)::String
+function alkane_msm_checksum(msm::AbstractMassScanMatrix)::String
     ctx = SHA256_CTX()
     alkane_checksum_update_string!(ctx, "JuChrom.AlkaneSeries.MassScanMatrix")
     alkane_checksum_update_string!(ctx, string(ALKANE_SERIES_CHECKSUM_VERSION))
@@ -353,7 +353,10 @@ function alkane_ladder_extraction_signal(
     signal
 end
 
-function alkane_validate_raw_msm_checksum(msm::MassScanMatrix, result::AlkaneSeriesResult)
+function alkane_validate_raw_msm_checksum(
+    msm::AbstractMassScanMatrix,
+    result::AlkaneSeriesResult
+)
     datainfo = alkane_ladder_result_datainfo(result)
     checksum = alkane_msm_checksum(msm)
     checksum == datainfo.rawmsmchecksum || throw(ArgumentError(

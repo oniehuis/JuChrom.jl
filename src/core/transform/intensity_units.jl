@@ -55,6 +55,14 @@ function dwellnormalize(
 
     validate_dwell_fits_scan_interval(msm, dwell, unit)
 
+    dwell_normalize_unchecked(msm, dwell, unit)
+end
+
+function dwell_normalize_unchecked(
+    msm::MassScanMatrix,
+    dwell::AbstractVector{<:Real},
+    unit::Unitful.Units
+)
     normalized = rawintensities(msm) * Diagonal(inv.(dwell))
     normalizedunit = inverse(unit)
 
@@ -92,13 +100,16 @@ function validate_dwell_fits_scan_interval(
         throw(ArgumentError("all scan intervals must be positive."))
 
     totaldwell = try
-        ustrip(rtunit, sum(dwell) * unit)
+        ustrip(rtunit, sum(Float64, dwell) * unit)
     catch
         throw(ArgumentError(
             "dwell unit must be compatible with retentionunit(msm)."))
     end
-    shortestinterval = minimum(scanintervals)
-    tolerance = sqrt(eps(Float64)) * max(abs(totaldwell), abs(shortestinterval), 1.0)
+    shortestinterval = Float64(minimum(scanintervals))
+    tolerance = max(
+        sqrt(eps(Float64)),
+        length(dwell) * eps(typeof(shortestinterval))
+    ) * max(abs(totaldwell), abs(shortestinterval), 1.0)
     totaldwell ≤ shortestinterval + tolerance ||
         throw(ArgumentError(
             "sum(dwell) must not exceed the shortest scan interval."))
@@ -147,22 +158,20 @@ function dwellnormalize(
 end
 
 """
-    dwellnormalize(msm::MassScanMatrix)
+    dwellnormalize(msm::MassScanMatrix; acquisition=:sequential)
 
 Return a copy of `msm` whose intensity values are normalized by an inferred uniform dwell
 interval.
 
-This convenience method assumes that each scan interval is divided evenly among all m/z
-values in the matrix. The scan interval is estimated as the mean spacing between adjacent
-retention coordinates, and the dwell interval is computed as that mean scan interval
-divided by `mzcount(msm)`. This method is intended for data where the stored intensities
-represent signal accumulated over dwell intervals and the scan schedule is known to be
-uniform across m/z values. If the input intensity unit is absent, the returned matrix uses
-the reciprocal retention unit as its intensity unit.
+This convenience method infers a uniform dwell interval from the shortest adjacent
+retention spacing. For `acquisition=:sequential`, that shortest scan interval is divided
+by `mzcount(msm)`. For `acquisition=:simultaneous`, the full shortest scan interval is
+used for every m/z value. The returned matrix uses the reciprocal retention unit as its
+intensity unit.
 
 Throws `ArgumentError` if `msm` has no retention unit, if it has fewer than two scans, if
 `intensityunit(msm)` is not `nothing`, or if the inferred scan intervals are non-finite or
-non-positive.
+non-positive. `acquisition` must be `:sequential` or `:simultaneous`.
 
 # Examples
 ```jldoctest
@@ -179,7 +188,16 @@ julia> intensityunit(normalized)
 s^-1
 ```
 """
-function dwellnormalize(msm::MassScanMatrix)
+function dwellnormalize(msm::MassScanMatrix; acquisition::Symbol=:sequential)
+    dwell = infer_uniform_dwell_intervals(msm, acquisition)
+    dwell_normalize_unchecked(msm, dwell, retentionunit(msm))
+end
+
+function infer_uniform_dwell_intervals(
+    msm::Union{MassScanMatrix, VarianceMassScanMatrix},
+    acquisition::Symbol
+)
+    validate_dwell_acquisition(acquisition)
     !isnothing(retentionunit(msm)) ||
         throw(ArgumentError("retentionunit is required to infer dwell intervals."))
     scancount(msm) > 1 ||
@@ -191,9 +209,18 @@ function dwellnormalize(msm::MassScanMatrix)
     all(t -> t > zero(t), scanintervals) ||
         throw(ArgumentError("all inferred scan intervals must be positive."))
 
-    mean_scaninterval = mean(scanintervals)
-    dwell = fill(mean_scaninterval / mzcount(msm), mzcount(msm))
-    dwellnormalize(msm, dwell, retentionunit(msm))
+    shortestscaninterval = Float64(minimum(scanintervals))
+    dwell = acquisition ≡ :sequential ?
+        shortestscaninterval / mzcount(msm) :
+        shortestscaninterval
+    fill(dwell, mzcount(msm))
+end
+
+function validate_dwell_acquisition(acquisition::Symbol)
+    acquisition in (:sequential, :simultaneous) || throw(ArgumentError(
+        "acquisition must be :sequential or :simultaneous"))
+
+    nothing
 end
 
 """
@@ -214,6 +241,14 @@ function dwellnormalize(
     unit::Unitful.Units
 )
     normalizedmsm = dwellnormalize(parent(vmsm), dwell, unit)
+    dwell_normalize_variances(vmsm, normalizedmsm, dwell)
+end
+
+function dwell_normalize_variances(
+    vmsm::VarianceMassScanMatrix,
+    normalizedmsm::MassScanMatrix,
+    dwell::AbstractVector{<:Real}
+)
     normalizedvariances = rawvariances(vmsm) * Diagonal(abs2.(inv.(dwell)))
     VarianceMassScanMatrix(normalizedmsm, normalizedvariances)
 end
@@ -233,26 +268,18 @@ function dwellnormalize(
 end
 
 """
-    dwellnormalize(vmsm::VarianceMassScanMatrix)
+    dwellnormalize(vmsm::VarianceMassScanMatrix; acquisition=:sequential)
 
 Return a copy of `vmsm` whose intensity values and variances are normalized by an inferred
 uniform dwell interval.
 """
-function dwellnormalize(vmsm::VarianceMassScanMatrix)
-    !isnothing(retentionunit(vmsm)) ||
-        throw(ArgumentError("retentionunit is required to infer dwell intervals."))
-    scancount(vmsm) > 1 ||
-        throw(ArgumentError("at least two scans are required to infer dwell intervals."))
-
-    scanintervals = diff(rawretentions(vmsm))
-    all(isfinite, scanintervals) ||
-        throw(ArgumentError("all inferred scan intervals must be finite."))
-    all(t -> t > zero(t), scanintervals) ||
-        throw(ArgumentError("all inferred scan intervals must be positive."))
-
-    mean_scaninterval = mean(scanintervals)
-    dwell = fill(mean_scaninterval / mzcount(vmsm), mzcount(vmsm))
-    dwellnormalize(vmsm, dwell, retentionunit(vmsm))
+function dwellnormalize(
+    vmsm::VarianceMassScanMatrix;
+    acquisition::Symbol=:sequential
+)
+    dwell = infer_uniform_dwell_intervals(vmsm, acquisition)
+    normalizedmsm = dwell_normalize_unchecked(parent(vmsm), dwell, retentionunit(vmsm))
+    dwell_normalize_variances(vmsm, normalizedmsm, dwell)
 end
 
 # ── withintensityunit ─────────────────────────────────────────────────────────────────────

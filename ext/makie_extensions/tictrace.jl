@@ -212,6 +212,7 @@ function tictrace!(
     yheadroom::Real=1.05,
     labelyfraction::Real=0.99
 )
+    tictrace_validate_checksum(msm, result)
     x = JuChrom.rawretentions(msm; unit=unit)
     y = tictrace_values(msm)
     baseline_y = tictrace_baseline_values(result, baseline, length(x))
@@ -250,6 +251,13 @@ function tictrace!(
     )
 
     ax
+end
+
+function tictrace_validate_checksum(
+    msm::JuChrom.AbstractMassScanMatrix,
+    result::JuChrom.AlkaneSeriesResult
+)
+    JuChrom.alkane_validate_raw_msm_checksum(msm, result)
 end
 
 function tictrace_values(msm::JuChrom.AbstractMassScanMatrix)

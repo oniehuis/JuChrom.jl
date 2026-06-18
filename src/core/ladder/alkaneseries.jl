@@ -1266,7 +1266,7 @@ function integer_mz_values(mzs::AbstractVector{<:Real}, label::AbstractString)
 end
 
 function validate_alkane_series_variances(
-    msm::MassScanMatrix,
+    msm::AbstractMassScanMatrix,
     variances::AbstractMatrix{<:Real}
 )
     expectedsize = size(rawintensities(msm))

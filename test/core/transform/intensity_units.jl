@@ -46,10 +46,33 @@ using JuChrom
     @test rawintensities(inferred) == ints .* 3.0
     @test intensityunit(inferred) == JuChrom.inverse(u"s")
 
+    simultaneous = dwellnormalize(msm; acquisition=:simultaneous)
+    @test rawintensities(simultaneous) == ints
+    @test intensityunit(simultaneous) == JuChrom.inverse(u"s")
+
+    nonuniform = MassScanMatrix(
+        [1.0, 2.1, 3.1]u"s",
+        mz,
+        [10.0 20.0 30.0; 40.0 50.0 60.0; 70.0 80.0 90.0]
+    )
+    nonuniforminferred = dwellnormalize(nonuniform)
+    @test rawintensities(nonuniforminferred) ≈
+        [10.0 20.0 30.0; 40.0 50.0 60.0; 70.0 80.0 90.0] .* 3.0
+
+    many_mz = collect(50.0:1049.0)
+    float32retention = MassScanMatrix(
+        Float32[0.0, 100.0, 200.0]u"ms",
+        many_mz,
+        ones(Float32, 3, length(many_mz))
+    )
+    float32inferred = dwellnormalize(float32retention)
+    @test rawintensities(float32inferred) ≈ fill(10.0, 3, length(many_mz))
+
     @test_throws DimensionMismatch dwellnormalize(msm, [1.0, 2.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [1.0, Inf, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [1.0, 0.0, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [0.5, 0.5, 0.1], u"s")
+    @test_throws ArgumentError dwellnormalize(msm; acquisition=:unknown)
 
     unitful_msm = MassScanMatrix(ret, mz, ints .* u"pA")
     @test_throws ArgumentError dwellnormalize(unitful_msm, [1.0, 2.0, 5.0], u"s")
@@ -116,7 +139,29 @@ end
     @test intensityunit(inferred) == JuChrom.inverse(u"s")
     @test varianceunit(inferred) == JuChrom.inverse(u"s")^2
 
+    simultaneous = dwellnormalize(vmsm; acquisition=:simultaneous)
+    @test rawintensities(simultaneous) == ints
+    @test rawvariances(simultaneous) == vars
+    @test intensityunit(simultaneous) == JuChrom.inverse(u"s")
+    @test varianceunit(simultaneous) == JuChrom.inverse(u"s")^2
+
+    nonuniform = MassScanMatrix(
+        [1.0, 2.1, 3.1]u"s",
+        mz,
+        [10.0 20.0 30.0; 40.0 50.0 60.0; 70.0 80.0 90.0]
+    )
+    nonuniformvmsm = VarianceMassScanMatrix(
+        nonuniform,
+        [1.0 4.0 9.0; 16.0 25.0 36.0; 49.0 64.0 81.0]
+    )
+    nonuniforminferred = dwellnormalize(nonuniformvmsm)
+    @test rawintensities(nonuniforminferred) ≈
+        [10.0 20.0 30.0; 40.0 50.0 60.0; 70.0 80.0 90.0] .* 3.0
+    @test rawvariances(nonuniforminferred) ≈
+        [1.0 4.0 9.0; 16.0 25.0 36.0; 49.0 64.0 81.0] .* 9.0
+
     @test_throws ArgumentError dwellnormalize(vmsm, [0.5, 0.5, 0.1], u"s")
+    @test_throws ArgumentError dwellnormalize(vmsm; acquisition=:unknown)
 end
 
 @testset "withintensityunit MassScanMatrix" begin
