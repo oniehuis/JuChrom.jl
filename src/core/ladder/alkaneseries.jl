@@ -385,10 +385,11 @@ end
 
 function fitmap(
     points::AbstractVector{<:AlkaneLadderCalibrationPoint};
+    λ::Real=3e-9,
     kwargs...
 )
     retentions, retentionindices = alkane_ladder_calibration_vectors(points)
-    fitmap(retentions, retentionindices; kwargs...)
+    fitmap(retentions, retentionindices; λ=λ, kwargs...)
 end
 
 function fitmap(
@@ -400,6 +401,7 @@ function fitmap(
     exclude::AbstractVector{<:Integer}=Int[],
     include::AbstractVector{<:Integer}=Int[],
     extra::AbstractVector{<:AlkaneLadderCalibrationPoint}=AlkaneLadderCalibrationPoint[],
+    λ::Real=3e-9,
     kwargs...
 )
     points = alkaneladdercalibrationpoints(
@@ -413,7 +415,7 @@ function fitmap(
         extra=extra
     )
 
-    fitmap(points; kwargs...)
+    fitmap(points; λ=λ, kwargs...)
 end
 
 """

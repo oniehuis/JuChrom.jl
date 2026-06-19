@@ -10,6 +10,9 @@ asr = findalkanes(msm)
 mapper = fitmap(asr)
 ```
 
+The alkane-ladder wrapper uses its own default smoothing strength (`λ=3e-9`), based on
+leave-one-out prediction across ladder runs. Pass `λ=...` explicitly to override it.
+
 To curate the calibration anchors without mutating the result, extract calibration points:
 
 ```julia

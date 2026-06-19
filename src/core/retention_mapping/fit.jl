@@ -7,7 +7,7 @@ const DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT = 1.0
            retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
            smoothness_penalty_n::Integer=100,
            monotonicity_grid_size::Integer=10^5,
-           λ::Real=1e-8,
+           λ::Real=3e-9,
            solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
            extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
            optimizer_factory=HiGHS.Optimizer)
@@ -21,7 +21,7 @@ The fitted spline minimizes a regularized least-squares objective: data fidelity
 non-negativity of the first derivative.
 
 The smoothing parameter `λ` controls the tradeoff between exact anchor fit and curvature.
-The default `λ=1e-8` is chosen for normalized RT -> RI calibration data and favors a stable
+The default `λ=3e-9` is chosen for normalized RT -> RI calibration data and favors a stable
 inverse mapping over boundary-of-monotonicity interpolation.
 
 Inputs are monotonic `retentions_A`/`retentions_B` vectors (unitful or unitless), optional
@@ -86,7 +86,7 @@ function fitmap(
     retentions_B::AbstractVector{<:Union{<:Real, <:AbstractQuantity{<:Real}}};
     smoothness_penalty_n::Integer=100,
     monotonicity_grid_size::Integer=10^5,
-    λ::Real=1e-8,
+    λ::Real=3e-9,
     solver_time_limit::Union{Nothing, Real}=DEFAULT_RETENTION_MAPPING_SOLVER_TIME_LIMIT,
     extras::AbstractDict{<:AbstractString, <:Any}=Dict{String, Any}(),
     optimizer_factory=HiGHS.Optimizer

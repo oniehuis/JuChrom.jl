@@ -361,6 +361,9 @@ end
     @test mapper_from_points isa RetentionMapper
     @test mapper_from_result isa RetentionMapper
     @test mapper_with_curation isa RetentionMapper
+    @test mapper_from_points.lambda == 3e-9
+    @test mapper_from_result.lambda == 3e-9
+    @test fitmap(points; λ=1e-8).lambda == 1e-8
     @test retentionunit_A(mapper_from_points) == u"minute"
     @test rawretentions_A(mapper_from_points) ≈ [200.0, 300.0, 400.0]
     @test rawretentions_B(mapper_from_points) ≈ [900.0, 1000.0, 1100.0]

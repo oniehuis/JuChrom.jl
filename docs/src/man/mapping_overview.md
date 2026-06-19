@@ -41,7 +41,7 @@ reverse mapping via the monotonic inverse.
 
 For most users, the primary tuning parameter when applying [`fitmap`](@ref JuChrom.fitmap) 
 is smoothing strength (λ). Larger values emphasize smoothness over exact fit to the anchor 
-points, while smaller values track the anchors more tightly. The default `λ=1e-8` is tuned
+points, while smaller values track the anchors more tightly. The default `λ=3e-9` is tuned
 for normalized RT -> RI calibration and is intended to avoid boundary-of-monotonicity
 wiggles.
 
@@ -112,7 +112,7 @@ structure that should be modeled or are noise that should be smoothed away is a 
 call for the analyst. If a fit fails monotonicity validation, use a larger `λ` or inspect
 the anchor points for false or noisy calibration steps.
 
-Let’s continue with the original mapper (inferred from using the default `λ=1e-8`) and use 
+Let’s continue with the original mapper (inferred from using the default `λ=3e-9`) and use
 it to compute retention indices for a few retention times, including extrapolation beyond 
 the domain.
 
