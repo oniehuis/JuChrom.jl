@@ -194,6 +194,66 @@ function add_reverse_derivative_plot!(fig, rm, r2_fine, rA_unit, rB_unit, lineco
     return ax
 end
 
+"""
+    plot(
+        rm::RetentionMapper;
+        size=(1600, 800),
+        linecolor=:blue,
+        linewidth=1.0,
+        markersize=10.0,
+        markercolor=:orange,
+        rA_unit=retentionunit_A(rm),
+        rB_unit=retentionunit_B(rm),
+        reverse::Bool=false,
+        digits::Int=1
+    ) -> Makie.Figure
+
+Plot diagnostic views of a fitted `RetentionMapper`.
+
+The figure always contains the forward mapping from retention domain A to domain B and
+the forward derivative `dB/dA`. Calibration anchors are shown as markers on the forward
+mapping plot, and nonzero anchor residuals are annotated next to the corresponding
+anchors. Set `reverse=true` to add the inverse mapping from domain B to domain A and the
+inverse derivative `dA/dB`.
+
+Keyword arguments control figure layout, styling, unit conversion, and residual labels:
+
+- `size`: figure size passed to `Makie.Figure`.
+- `linecolor`, `linewidth`: style for fitted mapping and derivative curves.
+- `markersize`, `markercolor`: style for calibration anchor markers.
+- `rA_unit`: unit used for domain-A axes and raw domain-A values. Defaults to
+  `retentionunit_A(rm)`.
+- `rB_unit`: unit used for domain-B axes and raw domain-B values. Defaults to
+  `retentionunit_B(rm)`.
+- `reverse`: include inverse mapping and inverse derivative panels when `true`.
+- `digits`: number of decimal digits used for residual annotations.
+
+`rA_unit` and `rB_unit` must be `nothing` for unitless mapper domains or compatible
+`Unitful.Units` values for unitful domains. The plotted ranges extend slightly beyond the
+mapper calibration range to show boundary behavior.
+
+See also
+[`RetentionMapper`](@ref JuChrom.RetentionMapper),
+[`fitmap`](@ref JuChrom.fitmap),
+[`applymap`](@ref JuChrom.applymap),
+[`invmap`](@ref JuChrom.invmap),
+[`derivmap`](@ref JuChrom.derivmap),
+[`derivinvmap`](@ref JuChrom.derivinvmap),
+[`retentionunit_A`](@ref JuChrom.retentionunit_A),
+[`retentionunit_B`](@ref JuChrom.retentionunit_B).
+
+# Examples
+```julia
+using JuChrom
+using CairoMakie
+
+retention_times = [1.2, 2.5, 4.1, 6.8, 9.3]u"minute"
+retention_indices = [100.0, 200.0, 300.0, 400.0, 500.0]
+
+mapper = fitmap(retention_times, retention_indices)
+fig = plot(mapper; rA_unit=u"minute", reverse=true, size=(1200, 600))
+```
+"""
 function Makie.plot(rm::RetentionMapper;
     size=DEFAULT_PLOT_SIZE,
     linecolor=DEFAULT_LINE_COLOR,
