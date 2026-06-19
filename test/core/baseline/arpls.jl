@@ -11,7 +11,7 @@ using JuChrom: arpls
 
 function arplsreference(
     y; λ=1e5, ratio=1e-3, maxiter=10_000, variances=nothing,
-    variancefloor=1e-12, peakthreshold=4.0, peakslope=1.0, zerothreshold=1e-8,
+    variancefloor=1e-12, peakthreshold=10.0, peakslope=0.5, zerothreshold=1e-8,
     zerofractionthreshold=0.2, zeroweight=0.01
     )
 
@@ -90,17 +90,21 @@ end
                       peakthreshold=2.0, peakslope=2.0)
     breforiginal = arplsreference(y; λ=1e5, ratio=1e-6, maxiter=500,
                                   peakthreshold=2.0, peakslope=2.0)
+    bpreviousdefault = arpls(y; λ=1e5, ratio=1e-6, maxiter=500,
+                             peakthreshold=4.0, peakslope=1.0)
+    brefpreviousdefault = arplsreference(y; λ=1e5, ratio=1e-6, maxiter=500,
+                                         peakthreshold=4.0, peakslope=1.0)
 
     @test length(b) == n
     @test all(isfinite, b)
     @test b ≈ bref
     @test bdefault ≈ brefdefault
-    @test arpls(y; λ=1e5, ratio=1e-6, maxiter=500,
-                peakthreshold=4.0, peakslope=1.0) ≈ b
+    @test bpreviousdefault ≈ brefpreviousdefault
     @test boriginal ≈ breforiginal
+    @test norm(bpreviousdefault - b) > 1e-3
     @test norm(boriginal - b) > 1e-3
     @test norm(arpls(y; λ=1e5, ratio=1e-6, maxiter=500,
-                     peakslope=0.5) - b) > 1e-3
+                     peakslope=1.0) - b) > 1e-3
 
     @test all(≥(0), arpls(-ones(12); nonnegative=true))
     @test any(<(0), arpls(-ones(12); nonnegative=false))

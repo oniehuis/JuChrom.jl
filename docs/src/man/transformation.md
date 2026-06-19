@@ -55,6 +55,14 @@ intensityunit(normalized)
 rawintensities(normalized)
 ```
 
+For simultaneous acquisition with a known effective dwell time, pass a scalar dwell
+interval. The scalar dwell must not exceed the shortest scan interval.
+
+```@example 2
+simultaneous = dwellnormalize(msm, 0.5, u"s")
+rawintensities(simultaneous)
+```
+
 When the scan interval is uniformly divided among all m/z values, `dwellnormalize(msm)`
 infers a single dwell interval from the shortest scan interval and the number of m/z
 values. For simultaneous acquisition, use `dwellnormalize(msm; acquisition=:simultaneous)`

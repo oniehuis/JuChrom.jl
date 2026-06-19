@@ -42,6 +42,14 @@ using JuChrom
     @test rawintensities(unitful) ≈ [0.05 0.06666666666666667 0.06; 0.2 0.16666666666666666 0.12]
     @test intensityunit(unitful) == JuChrom.inverse(u"ms")
 
+    scalar = dwellnormalize(msm, 0.5, u"s")
+    @test rawintensities(scalar) == ints .* 2.0
+    @test intensityunit(scalar) == JuChrom.inverse(u"s")
+
+    unitful_scalar = dwellnormalize(msm, 500u"ms")
+    @test rawintensities(unitful_scalar) ≈ ints ./ 500.0
+    @test intensityunit(unitful_scalar) == JuChrom.inverse(u"ms")
+
     inferred = dwellnormalize(msm)
     @test rawintensities(inferred) == ints .* 3.0
     @test intensityunit(inferred) == JuChrom.inverse(u"s")
@@ -72,10 +80,14 @@ using JuChrom
     @test_throws ArgumentError dwellnormalize(msm, [1.0, Inf, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [1.0, 0.0, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [0.5, 0.5, 0.1], u"s")
+    @test_throws ArgumentError dwellnormalize(msm, 1.1, u"s")
+    @test_throws ArgumentError dwellnormalize(msm, 0.0, u"s")
+    @test_throws ArgumentError dwellnormalize(msm, 0.5, u"kg")
     @test_throws ArgumentError dwellnormalize(msm; acquisition=:unknown)
 
     unitful_msm = MassScanMatrix(ret, mz, ints .* u"pA")
     @test_throws ArgumentError dwellnormalize(unitful_msm, [1.0, 2.0, 5.0], u"s")
+    @test_throws ArgumentError dwellnormalize(unitful_msm, 0.5, u"s")
 
     annotated_msm = withintensityunit(msm, u"pA")
     @test_throws ArgumentError dwellnormalize(annotated_msm, [1.0, 2.0, 5.0], u"s")
@@ -133,6 +145,18 @@ end
     @test intensityunit(unitful) == JuChrom.inverse(u"ms")
     @test varianceunit(unitful) == JuChrom.inverse(u"ms")^2
 
+    scalar = dwellnormalize(vmsm, 0.5, u"s")
+    @test rawintensities(scalar) == ints .* 2.0
+    @test rawvariances(scalar) == vars .* 4.0
+    @test intensityunit(scalar) == JuChrom.inverse(u"s")
+    @test varianceunit(scalar) == JuChrom.inverse(u"s")^2
+
+    unitful_scalar = dwellnormalize(vmsm, 500u"ms")
+    @test rawintensities(unitful_scalar) ≈ ints ./ 500.0
+    @test rawvariances(unitful_scalar) ≈ vars ./ 250000.0
+    @test intensityunit(unitful_scalar) == JuChrom.inverse(u"ms")
+    @test varianceunit(unitful_scalar) == JuChrom.inverse(u"ms")^2
+
     inferred = dwellnormalize(vmsm)
     @test rawintensities(inferred) == ints .* 3.0
     @test rawvariances(inferred) == vars .* 9.0
@@ -161,6 +185,9 @@ end
         [1.0 4.0 9.0; 16.0 25.0 36.0; 49.0 64.0 81.0] .* 9.0
 
     @test_throws ArgumentError dwellnormalize(vmsm, [0.5, 0.5, 0.1], u"s")
+    @test_throws ArgumentError dwellnormalize(vmsm, 1.1, u"s")
+    @test_throws ArgumentError dwellnormalize(vmsm, 0.0, u"s")
+    @test_throws ArgumentError dwellnormalize(vmsm, 0.5, u"kg")
     @test_throws ArgumentError dwellnormalize(vmsm; acquisition=:unknown)
 end
 
@@ -200,6 +227,49 @@ end
 
     unitful_msm = MassScanMatrix(ret, mz, ints .* u"pA")
     @test_throws ArgumentError withintensityunit(unitful_msm, u"nA")
+end
+
+@testset "withintensityunit VarianceMassScanMatrix" begin
+    ret = [1.0, 2.0]u"s"
+    mz = [100.0, 200.0, 300.0]
+    ints = [10.0 20.0 30.0; 40.0 50.0 60.0]
+    vars = [1.0 4.0 9.0; 16.0 25.0 36.0]
+    msm = MassScanMatrix(
+        ret,
+        mz,
+        ints;
+        level=2,
+        instrument=(model="MS",),
+        acquisition=(mode="scan",),
+        user=(name="tester",),
+        sample=(id="S1",),
+        extras=Dict("note" => "raw counts")
+    )
+    vmsm = VarianceMassScanMatrix(msm, vars)
+
+    annotated = withintensityunit(vmsm, u"pA")
+
+    @test annotated isa VarianceMassScanMatrix
+    @test rawintensities(annotated) == rawintensities(vmsm)
+    @test rawvariances(annotated) == rawvariances(vmsm)
+    @test intensityunit(annotated) == u"pA"
+    @test varianceunit(annotated) == u"pA"^2
+    @test rawretentions(annotated) == rawretentions(vmsm)
+    @test retentionunit(annotated) == retentionunit(vmsm)
+    @test rawmzvalues(annotated) == rawmzvalues(vmsm)
+    @test mzunit(annotated) == mzunit(vmsm)
+    @test level(annotated) == level(vmsm)
+    @test instrument(annotated) == instrument(vmsm)
+    @test acquisition(annotated) == acquisition(vmsm)
+    @test user(annotated) == user(vmsm)
+    @test sample(annotated) == sample(vmsm)
+    @test extras(annotated) == extras(vmsm)
+
+    extras(msm)["note"] = "changed"
+    @test extras(annotated)["note"] == "raw counts"
+
+    unitful_vmsm = VarianceMassScanMatrix(withintensityunit(msm, u"pA"), vars)
+    @test_throws ArgumentError withintensityunit(unitful_vmsm, u"nA")
 end
 
 end

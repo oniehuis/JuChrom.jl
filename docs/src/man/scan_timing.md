@@ -15,8 +15,9 @@ scanning instrument, ions are acquired in a defined order (e.g., ascending or de
 m/z), and each ion is assigned a dwell interval whose duration may be constant across ions
 or vary with instrument settings. As a result, different ions are sampled at systematically
 different retention coordinates within the same scan. In simultaneous full-spectrum
-acquisition, such as TOF-like acquisition, all m/z values are instead treated as observed at
-the scan-level retention.
+acquisition, such as TOF-like acquisition, all m/z values share one within-scan observation
+time, but the reported scan-level retention may still refer to the start, midpoint, or end
+of the scan interval.
 
 For many downstream analyses—such as accurate peak-shape reconstruction and deconvolution—
 treating all ions in a scan as if they were measured at the same retention coordinate
@@ -49,8 +50,11 @@ combining a small set of explicit inputs:
 - the dwell allocation across ions and the acquisition order within the scan, and
 - the desired reference point within each ion’s dwell interval (typically :middle).
 
-For simultaneous acquisition, use `order=:simultaneous`; [`mzretention`](@ref) then returns
-the scan-level retention unchanged.
+For simultaneous acquisition, use `order=:simultaneous`; [`mzretention`](@ref) then ignores
+m/z-specific ordering but still uses `retentionref`, `dwellref`, and `scaninterval` to
+translate the reported scan-level retention to the requested within-scan reference. If
+`retentionref` and `dwellref` are identical, no scan interval is needed and the retention is
+returned unchanged.
 
 The JuChrom function [`mzretention`](@ref) formalizes this mapping. Given a scan-level
 retention coordinate and a description of the within-scan sampling scheme, it computes the

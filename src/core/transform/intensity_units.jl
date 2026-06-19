@@ -158,6 +158,42 @@ function dwellnormalize(
 end
 
 """
+    dwellnormalize(msm::MassScanMatrix, dwell::Real, unit::Unitful.Units)
+
+Return a copy of `msm` whose intensity values are divided by a single dwell interval
+shared by all m/z channels.
+
+This scalar form represents simultaneous acquisition with a known effective dwell time.
+The dwell interval must be finite, positive, and no larger than the shortest scan interval
+on the retention axis. The returned matrix uses `inverse(unit)` as its intensity unit.
+"""
+function dwellnormalize(
+    msm::MassScanMatrix,
+    dwell::Real,
+    unit::Unitful.Units
+)
+    inputunit = intensityunit(msm)
+    isnothing(inputunit) ||
+        throw(ArgumentError("MassScanMatrix intensityunit must be nothing."))
+    validate_scalar_dwell(msm, dwell, unit)
+
+    dwell_normalize_unchecked(msm, fill(Float64(dwell), mzcount(msm)), unit)
+end
+
+"""
+    dwellnormalize(msm::MassScanMatrix, dwell::Unitful.Quantity)
+
+Return a copy of `msm` whose intensity values are divided by a single unitful dwell
+interval shared by all m/z channels.
+"""
+function dwellnormalize(
+    msm::MassScanMatrix,
+    dwell::AbstractQuantity{<:Real}
+)
+    dwellnormalize(msm, Unitful.ustrip(dwell), Unitful.unit(dwell))
+end
+
+"""
     dwellnormalize(msm::MassScanMatrix; acquisition=:sequential)
 
 Return a copy of `msm` whose intensity values are normalized by an inferred uniform dwell
@@ -223,6 +259,40 @@ function validate_dwell_acquisition(acquisition::Symbol)
     nothing
 end
 
+function validate_scalar_dwell(
+    msm::MassScanMatrix,
+    dwell::Real,
+    unit::Unitful.Units
+)
+    isfinite(dwell) || throw(ArgumentError("dwell must be finite."))
+    dwell > zero(dwell) || throw(ArgumentError("dwell must be positive."))
+
+    rtunit = retentionunit(msm)
+    !isnothing(rtunit) ||
+        throw(ArgumentError("retentionunit is required to validate dwell interval."))
+    scancount(msm) > 1 ||
+        throw(ArgumentError("at least two scans are required to validate dwell interval."))
+
+    scanintervals = diff(rawretentions(msm))
+    all(isfinite, scanintervals) ||
+        throw(ArgumentError("all scan intervals must be finite."))
+    all(interval -> interval > zero(interval), scanintervals) ||
+        throw(ArgumentError("all scan intervals must be positive."))
+
+    dwellretention = try
+        ustrip(rtunit, Float64(dwell) * unit)
+    catch
+        throw(ArgumentError(
+            "dwell unit must be compatible with retentionunit(msm)."))
+    end
+    shortestinterval = Float64(minimum(scanintervals))
+    tolerance = sqrt(eps(Float64)) * max(abs(dwellretention), abs(shortestinterval), 1.0)
+    dwellretention ≤ shortestinterval + tolerance ||
+        throw(ArgumentError("dwell must not exceed the shortest scan interval."))
+
+    nothing
+end
+
 """
     dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::AbstractVector{<:Real}, unit::Unitful.Units)
 
@@ -265,6 +335,38 @@ function dwellnormalize(
 )
     dwellvalues, dwellunit = strip_units_checked(dwell, "dwell")
     dwellnormalize(vmsm, dwellvalues, dwellunit)
+end
+
+"""
+    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::Real, unit::Unitful.Units)
+
+Return a copy of `vmsm` whose intensity values and variances are normalized by a single
+dwell interval shared by all m/z channels.
+"""
+function dwellnormalize(
+    vmsm::VarianceMassScanMatrix,
+    dwell::Real,
+    unit::Unitful.Units
+)
+    normalizedmsm = dwellnormalize(parent(vmsm), dwell, unit)
+    dwell_normalize_variances(
+        vmsm,
+        normalizedmsm,
+        fill(Float64(dwell), mzcount(vmsm))
+    )
+end
+
+"""
+    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::Unitful.Quantity)
+
+Return a copy of `vmsm` whose intensity values and variances are normalized by a single
+unitful dwell interval shared by all m/z channels.
+"""
+function dwellnormalize(
+    vmsm::VarianceMassScanMatrix,
+    dwell::AbstractQuantity{<:Real}
+)
+    dwellnormalize(vmsm, Unitful.ustrip(dwell), Unitful.unit(dwell))
 end
 
 """
@@ -328,4 +430,25 @@ function withintensityunit(msm::MassScanMatrix, unit::Unitful.Units)
         sample=deepcopy(sample(msm)),
         extras=deepcopy(extras(msm)),
     )
+end
+
+"""
+    withintensityunit(vmsm::VarianceMassScanMatrix, unit::Unitful.Units)
+
+Return a copy of `vmsm` with the supplied intensity unit attached without changing the
+stored intensity or variance values.
+
+The parent mass-scan matrix is annotated with `unit`. The variance matrix is copied
+unchanged and its unit is set to `unit^2`, matching the annotated intensity unit.
+
+Throws `ArgumentError` if `vmsm` already has an intensity unit or variance unit.
+"""
+function withintensityunit(vmsm::VarianceMassScanMatrix, unit::Unitful.Units)
+    isnothing(intensityunit(vmsm)) ||
+        throw(ArgumentError("VarianceMassScanMatrix intensityunit must be nothing."))
+    isnothing(varianceunit(vmsm)) ||
+        throw(ArgumentError("VarianceMassScanMatrix varianceunit must be nothing."))
+
+    annotatedmsm = withintensityunit(parent(vmsm), unit)
+    VarianceMassScanMatrix(annotatedmsm, copy(rawvariances(vmsm)), unit^2)
 end

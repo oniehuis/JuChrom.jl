@@ -30,9 +30,11 @@ the dwell allocation model (`dwell`, `dwellretention`/`scaninterval` or
 `dwellretentions`), the m/z acquisition order (`order`), and which point within the dwell
 interval to return (`dwellref`).
 
-For simultaneous acquisition, use `order=:simultaneous`. In that mode all m/z values are
-treated as observed at the scan-level `retention`, and the function returns `retention`
-unchanged without requiring `mzindex`, `mzcount`, dwell, or scan-interval information.
+For simultaneous acquisition, use `order=:simultaneous`. In that mode all m/z values share
+the same within-scan observation time, so `mzindex`, `mzcount`, and dwell allocation are
+not used. `retentionref`, `dwellref`, and `scaninterval` are still used to translate the
+reported scan-level retention to the requested observation reference. If `retentionref`
+and `dwellref` are identical, the result is unchanged and `scaninterval` is not required.
 
 `retention` and all dwell/interval inputs may be unitless (`Real`) or unitful 
 (`Unitful.Quantity`), as long as they are mutually compatible for addition and subtraction. 
@@ -153,7 +155,12 @@ function mzretention(
     order ∈ (:ascending, :descending, :simultaneous) || throw(ArgumentError(
         "order must be :ascending, :descending, or :simultaneous"))
 
-    order ≡ :simultaneous && return retention
+    order ≡ :simultaneous && return simultaneous_mzretention(
+        retention,
+        retentionref,
+        dwellref,
+        scaninterval
+    )
 
     # Resolve imzvalue index
     if isnothing(mzindex)
@@ -241,5 +248,33 @@ function mzretention(
 
     result = scan_start + offset_before + dwell_offset
     retention isa Unitful.Quantity ? 
+        Unitful.uconvert(Unitful.unit(retention), result) : result
+end
+
+function simultaneous_mzretention(
+    retention::Union{Real, Unitful.Quantity},
+    retentionref::Symbol,
+    dwellref::Symbol,
+    scaninterval::Union{Real, Unitful.Quantity, Nothing}
+)
+    retentionref ≡ dwellref && return retention
+    isnothing(scaninterval) && throw(ArgumentError(
+        "scaninterval is required for simultaneous acquisition when retentionref and dwellref differ"))
+    scaninterval > zero(scaninterval) || throw(ArgumentError(
+        "scaninterval must be > 0"))
+
+    scan_start =
+        retentionref ≡ :start  ? retention :
+        retentionref ≡ :middle ? (retention - scaninterval / 2) :
+                                  (retention - scaninterval)
+
+    z = zero(scaninterval)
+    dwell_offset =
+        dwellref ≡ :start  ? z :
+        dwellref ≡ :middle ? scaninterval / 2 :
+                              scaninterval
+
+    result = scan_start + dwell_offset
+    retention isa Unitful.Quantity ?
         Unitful.uconvert(Unitful.unit(retention), result) : result
 end
