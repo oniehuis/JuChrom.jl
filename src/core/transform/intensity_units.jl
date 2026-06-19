@@ -107,9 +107,10 @@ function validate_dwell_fits_scan_interval(
     end
     shortestinterval = Float64(minimum(scanintervals))
     tolerance = max(
-        sqrt(eps(Float64)),
-        length(dwell) * eps(typeof(shortestinterval))
-    ) * max(abs(totaldwell), abs(shortestinterval), 1.0)
+        length(dwell) * eps(Float64) * max(abs(totaldwell), 
+        abs(shortestinterval)),
+        eps(Float64)
+    )
     totaldwell ≤ shortestinterval + tolerance ||
         throw(ArgumentError(
             "sum(dwell) must not exceed the shortest scan interval."))
@@ -286,7 +287,11 @@ function validate_scalar_dwell(
             "dwell unit must be compatible with retentionunit(msm)."))
     end
     shortestinterval = Float64(minimum(scanintervals))
-    tolerance = sqrt(eps(Float64)) * max(abs(dwellretention), abs(shortestinterval), 1.0)
+    tolerance = max(
+        eps(Float64) * max(abs(dwellretention), 
+        abs(shortestinterval)),
+        eps(Float64)
+    )
     dwellretention ≤ shortestinterval + tolerance ||
         throw(ArgumentError("dwell must not exceed the shortest scan interval."))
 

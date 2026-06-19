@@ -597,6 +597,37 @@ end
     yA_max = invmap(rm, rm.rB_pred_max * rm.rB_unit)
     @test yA_max ≈ rm.rA_max * rm.rA_unit atol=1e-12u"minute"
 
+    rA_boundary = [0.0, 0.5, 1.0]
+    rB_boundary = [10.0, 20.0, 30.0]
+    boundary_order = BSplineOrder(4)
+    boundary_knots = collect(LinRange(0.0, 1.0, 10))
+    boundary_basis = BSplineBasis(boundary_order, boundary_knots)
+    boundary_coefs = collect(range(0.0, 1.0, length(boundary_basis)))
+    boundary_spline = Spline(boundary_basis, boundary_coefs)
+    boundary_rm = JuChrom.RetentionMapper(
+        rA_boundary, nothing,
+        0.0, 1.0,
+        0.0, 1.0,
+        rB_boundary, nothing,
+        10.0, 30.0,
+        10.0, 30.0,
+        0.0, 1.0,
+        boundary_knots, boundary_coefs, boundary_spline,
+        TEST_LAMBDA,
+        Dict{String, Any}()
+    )
+    boundary_delta = 0.5e-8 * (boundary_rm.rB_max - boundary_rm.rB_min)
+    @test invmap(
+        boundary_rm,
+        boundary_rm.rB_pred_min - boundary_delta;
+        domain_boundary_threshold=1e-8
+    ) ≈ boundary_rm.rA_min atol=1e-12
+    @test invmap(
+        boundary_rm,
+        boundary_rm.rB_pred_max + boundary_delta;
+        domain_boundary_threshold=1e-8
+    ) ≈ boundary_rm.rA_max atol=1e-12
+
     # Unitless mapper rejects unitful input and returns raw value otherwise
     rA0 = ustrip.(rA)
     rB0 = ustrip.(rB)

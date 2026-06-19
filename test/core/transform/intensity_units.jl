@@ -80,6 +80,7 @@ using JuChrom
     @test_throws ArgumentError dwellnormalize(msm, [1.0, Inf, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [1.0, 0.0, 5.0], u"s")
     @test_throws ArgumentError dwellnormalize(msm, [0.5, 0.5, 0.1], u"s")
+    @test_throws ArgumentError dwellnormalize(msm, [0.2, 0.3, 0.5], u"kg")
     @test_throws ArgumentError dwellnormalize(msm, 1.1, u"s")
     @test_throws ArgumentError dwellnormalize(msm, 0.0, u"s")
     @test_throws ArgumentError dwellnormalize(msm, 0.5, u"kg")
