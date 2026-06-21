@@ -10,14 +10,11 @@ CountVarianceEstimate
 countvariances
 ```
 
-## Quadratic variance model
+## Alkane-ladder variance model
 
 ```@docs
-fitquadvarmodel
-QuadVarParams
-QuadVarFit
-residautocorr
+LinearObservedIntensityVarianceModel
+fitalkanevariancemodel
 varpred
-varpredbias
 vif
 ```

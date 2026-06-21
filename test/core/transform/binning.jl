@@ -126,16 +126,16 @@ _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
     end
 end
 
-@testset "binretentions(msm::MassScanMatrix, bin_edges, quadvar_params, rho_lag1)" begin
+@testset "binretentions(msm::MassScanMatrix, bin_edges, variance_model)" begin
     rets = [0.0, 0.5, 1.0] .* u"s"
     mzs = [100.0, 101.0]
     ints = [2 4; 6 8; 10 12] .* u"pA"
     msm = MassScanMatrix(rets, mzs, ints)
     edges = [0.0, 1.0, 2.0] .* u"s"
-    params = fill(QuadVarParams(0.1, 0.0, 0.0), length(mzs))
-    rho = fill(0.0, length(mzs))
+    models = fill(LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 12.0, 0.0),
+        length(mzs))
 
-    msm_binned, vars = binretentions(msm, edges, params, rho)
+    msm_binned, vars = binretentions(msm, edges, models)
     @test intensityunit(msm_binned) == u"pA"
     @test JuChrom.rawintensities(msm_binned) ≈ [4 6; 10 12]
     @test all(JuChrom.isunitful, vars[:, 1])
@@ -143,41 +143,56 @@ end
     @test vars[1, 1] ≈ 0.05u"pA"^2
     @test vars[2, 2] ≈ 0.1u"pA"^2
 
-    # Keep the linear term explicit in the intensity units to avoid DimensionError.
-    params_unitful = fill(QuadVarParams(0.2u"pA^2", 0.0u"pA", 0.0), length(mzs))
-    msm_binned_u, vars_u = binretentions(msm, edges, params_unitful, rho)
+    models_unitful = fill(LinearObservedIntensityVarianceModel(
+        0.2u"pA^2",
+        0.0u"pA",
+        0.0u"pA",
+        0.0,
+        12.0,
+        0.0,
+    ), length(mzs))
+    msm_binned_u, vars_u = binretentions(msm, edges, models_unitful)
     @test JuChrom.rawintensities(msm_binned_u) ≈ JuChrom.rawintensities(msm_binned)
     @test all(Unitful.unit.(vars_u[:, 1]) .== u"pA"^2)
     @test vars_u[1, 1] ≈ 0.1u"pA"^2
 
     msm_unitless = MassScanMatrix([0.0, 0.5], [100.0], reshape([1.0, 2.0], 2, 1))
     @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], 
-        QuadVarParams(0.1, 0.0, 0.0), 0.0; zero_threshold=1e-6u"pA"^2)
+        LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 2.0, 0.0);
+        zero_threshold=1e-6u"pA"^2)
     msm_unitless_ok = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
         reshape([1.0, 2.0, 3.0], 3, 1))
     msm_binned_unitless, vars_unitless = binretentions(
         msm_unitless_ok,
         [0.0, 0.5, 1.0],
-        QuadVarParams(0.1, 0.0, 0.0),
-        0.0;
+        LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 3.0, 0.0);
         jacobian_scale=_ -> 2.0,
     )
     @test intensityunit(msm_binned_unitless) ≡ nothing
     @test all(!JuChrom.isunitful, vars_unitless[:, 1])
 
-    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+    @test_throws ArgumentError binretentions(msm, edges, models;
         jacobian_scale=[1.0, 2.0])
-    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+    @test_throws ArgumentError binretentions(msm, edges, models;
         jacobian_scale=[1.0, 0.0, 2.0])
-    @test_throws ArgumentError binretentions(msm, edges, params, rho;
+    @test_throws ArgumentError binretentions(msm, edges, models;
         jacobian_scale=t -> (t == 0.5u"s" ? 0.0 : 1.0))
 
-    @test_throws Unitful.DimensionError QuadVarParams(0.1u"pA^2", 0.0, 0.0)
+    @test_throws Unitful.DimensionError LinearObservedIntensityVarianceModel(
+        0.1u"pA^2",
+        0.0,
+        0.0,
+        0.0,
+        12.0,
+        0.0,
+    )
 
-    @test_throws Unitful.DimensionError binretentions(msm, edges, params, rho;
+    @test_throws Unitful.DimensionError binretentions(msm, edges, models;
         zero_threshold=1e-6u"s")
 
-    msm_binned_ok, vars_ok = binretentions(msm, edges, params, rho;
+    @test_throws ArgumentError binretentions(msm, edges, models[1:1])
+
+    msm_binned_ok, vars_ok = binretentions(msm, edges, models;
         zero_threshold=1e-6u"pA"^2)
     @test intensityunit(msm_binned_ok) == u"pA"
     @test all(Unitful.unit.(vars_ok[:, 1]) .== u"pA"^2)

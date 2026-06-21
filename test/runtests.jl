@@ -114,8 +114,8 @@ end
 @safetestset "core/variances/countvariances.jl" begin
     include("./core/variances/countvariances.jl")
 end
-@safetestset "core/quadvar_model/quadvar_model.jl" begin
-    include("./core/quadvar_model/quadvar_model.jl")
+@safetestset "core/variances/alkaneladder/fit.jl" begin
+    include("./core/variances/alkaneladder/fit.jl")
 end
 @safetestset "core/deconvolution/unimodalfit.jl" begin
     include("./core/deconvolution/unimodalfit.jl")
@@ -151,9 +151,6 @@ end
 end
 @safetestset "ext/makie_extensions/retentionmapper" begin
     include("ext/makie_extensions/retentionmapper.jl")
-end
-@safetestset "ext/makie_extensions/quadvarfit" begin
-    include("ext/makie_extensions/quadvarfit.jl")
 end
 @safetestset "ext/makie_extensions/massspectrum" begin
     include("ext/makie_extensions/massspectrum.jl")

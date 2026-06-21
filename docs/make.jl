@@ -77,7 +77,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "Scan Timing" => "man/scan_timing.md",
                     "Transformation" => "man/transformation.md",
                     "Trimming and Filtering" => "man/transform.md",
-                    "Variance Estimation and Modeling" => "man/quadvar_model.md",
+                    "Variance Estimation and Modeling" => "man/variance_model.md",
                 ]
 			    ],
             "Internals" => Any[

@@ -48,8 +48,9 @@ include("core/baseline/arpls.jl")
 include("core/convert/mscanmatrix.jl")
 include("core/convert/mzchrom.jl")
 include("core/variances/countvariances.jl")
-include("core/variances/quadvarmodel/containers.jl")
-include("core/variances/quadvarmodel/fit.jl")
+include("core/variances/serialcorrelation.jl")
+include("core/variances/alkaneladder/containers.jl")
+include("core/variances/alkaneladder/apply.jl")
 include("core/scan_timing/mz_retention.jl")
 include("core/transform/binning.jl")
 include("core/transform/clr.jl")
@@ -72,6 +73,7 @@ include("core/ladder/path.jl")
 include("core/ladder/apexes.jl")
 include("core/ladder/additions.jl")
 include("core/ladder/mass_spectra.jl")
+include("core/variances/alkaneladder/fit.jl")
 
 export AbstractChromScan
 export AbstractChromScanSeries
@@ -101,8 +103,6 @@ export MassScanSeries
 export MassSpectrum
 export OptimizationError
 export Parafac2Fit
-export QuadVarParams
-export QuadVarFit
 export RetentionMapper
 export VarianceMassScanMatrix
 
@@ -138,7 +138,8 @@ export alkanereferencespectrum
 export defaultalkanestandard
 export findclosest
 export fitmap
-export fitquadvarmodel
+export fitalkanevariancemodel
+export LinearObservedIntensityVarianceModel
 export gapalign
 export indextrim
 export indextrim!
@@ -164,7 +165,6 @@ export mzindex
 export mzretention
 export mzunit
 export mzvalues
-export residautocorr
 export sample
 export scan
 export scancount
@@ -200,7 +200,6 @@ export unimodalfit_apexsearch
 export uniquemzvalues
 export user
 export varpred
-export varpredbias
 export varianceunit
 export variances
 export vif

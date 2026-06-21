@@ -6,8 +6,6 @@ authors = ["Oliver Niehuis <oliver.niehuis@biologie.uni-freiburg.de> and contrib
 [deps]
 BSplineKit = "093aae92-e908-43d7-9660-e50ee39d5a0a"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
-DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 HiGHS = "87dc4568-4c63-4d18-b0c0-bb2238e4078b"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
@@ -39,8 +37,6 @@ PyCallExtension = "PyCall"
 [compat]
 BSplineKit = "0.19"
 CairoMakie = "0.15"
-DataStructures = "0.19"
-Distributions = "0.25"
 FileIO = "1.18"
 HiGHS = "1.21"
 JLD2 = "0.6"

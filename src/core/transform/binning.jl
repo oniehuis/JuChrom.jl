@@ -28,9 +28,7 @@ inputs, mismatched lengths, negative variances, or invalid bin edges, and
 `Unitful.DimensionError` for incompatible units.
 
 See also
-[`vif`](@ref JuChrom.vif),
-[`varpredbias`](@ref JuChrom.varpredbias(::Number, ::QuadVarParams)),
-[`QuadVarParams`](@ref JuChrom.QuadVarParams).
+[`vif`](@ref JuChrom.vif).
 
 # Examples
 ```jldoctest
@@ -212,11 +210,14 @@ end
     binretentions(
         msm::MassScanMatrix, 
         bin_edges::AbstractVector{<:Number}, 
-        quadvar_params::Union{AbstractVector{<:QuadVarParams}, QuadVarParams}, 
-        rho_lag1::Union{AbstractVector{<:Real}, Real};          
+        variance_model::Union{
+            AbstractVector{<:LinearObservedIntensityVarianceModel},
+            LinearObservedIntensityVarianceModel
+        };
         jacobian_scale=nothing::Union{Nothing, AbstractVector{<:Real}, Function}, 
         zero_threshold::Number=1e-8, 
-        rho_max::Real=0.8
+        rho_max::Real=0.8,
+        extrapolation::Symbol=:allow
     ) -> (msm_binned::MassScanMatrix, var_matrix::Matrix)
 
 Return a binned `MassScanMatrix` and per-bin variances by applying
@@ -224,29 +225,29 @@ Return a binned `MassScanMatrix` and per-bin variances by applying
 to each m/z trace in `msm`.
 
 This method differs from the scalar `binretentions` in that it predicts per-scan variances 
-via `QuadVarParams`, optionally applies a Jacobian scale `(f'(t))⁻²`, and processes all 
-m/z columns in a matrix. If the matrix stores unitful intensities, per-scan and binned 
-variances retain squared intensity units, while `msm_binned` stores stripped numeric 
-intensities and carries the original metadata. Scalar `quadvar_params` and `rho_lag1` 
-inputs are broadcast across m/z columns, and `zero_threshold` is promoted to squared 
-intensity units when needed.
+via `LinearObservedIntensityVarianceModel`, uses each model's `rho_lag1` for serial
+variance inflation, optionally applies a Jacobian scale `(f'(t))⁻²`, and processes all
+m/z columns in a matrix. If the matrix stores unitful intensities, per-scan and binned
+variances retain squared intensity units, while `msm_binned` stores stripped numeric
+intensities and carries the original metadata. A scalar `variance_model` is broadcast
+across m/z columns, and `zero_threshold` is promoted to squared intensity units when
+needed.
 
 See also
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`QuadVarParams`](@ref JuChrom.QuadVarParams),
+[`LinearObservedIntensityVarianceModel`](@ref JuChrom.LinearObservedIntensityVarianceModel),
 [`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
-[`varpredbias`](@ref JuChrom.varpredbias(::Number, ::QuadVarParams)),
+[`varpred`](@ref JuChrom.varpred),
 [`vif`](@ref JuChrom.vif).
 
 # Example
 ```jldoctest
 julia> msm = MassScanMatrix(collect(0.0:0.5:2.0), nothing, [100.0, 101.0], nothing,
                             [10 12; 9 11; 8 10; 7 9; 6 8], nothing);
-       quad_params = fill(QuadVarParams(0.1, 0.01, 0.0), 2);
-       lag1 = fill(0.2, 2);
+       model = LinearObservedIntensityVarianceModel(0.1, 0.01, 0.0, 12.0, 0.2);
        edges = 0:1:3.0;
 
-julia> msm_binned, vars = binretentions(msm, edges, quad_params, lag1);
+julia> msm_binned, vars = binretentions(msm, edges, model);
 
 julia> size(msm_binned.intensities)
 (3, 2)
@@ -255,14 +256,42 @@ julia> size(msm_binned.intensities)
 function binretentions(
     msm::MassScanMatrix,
     bin_edges::AbstractVector{<:Number},
-    quadvar_params::Union{AbstractVector{<:QuadVarParams}, QuadVarParams},
-    rho_lag1::Union{AbstractVector{<:Real}, Real};
+    variance_model::Union{
+        AbstractVector{<:LinearObservedIntensityVarianceModel},
+        LinearObservedIntensityVarianceModel
+    };
     jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
     zero_threshold::Number=1e-8,
-    rho_max::Real=0.8)
-    
-    # Extract shared views to avoid recomputing getters in loops.
-    rets = retentions(msm)  # RT values (unitful or unitless)
+    rho_max::Real=0.8,
+    extrapolation::Symbol=:allow)
+
+    ints = rawintensities(msm)
+    _, n_mz = size(ints)
+
+    models = variance_model isa AbstractVector ? variance_model :
+        fill(variance_model, n_mz)
+    length(models) == n_mz || throw(ArgumentError(
+        "variance_model length $(length(models)) ≠ n_mz $n_mz"))
+
+    variances = linear_observed_intensity_variances(msm, models; extrapolation=extrapolation)
+    rhos = [model.rho_lag1 for model in models]
+
+    binretentions(
+        msm,
+        bin_edges,
+        variances,
+        rhos;
+        jacobian_scale=jacobian_scale,
+        zero_threshold=zero_threshold,
+        rho_max=rho_max,
+    )
+end
+
+function linear_observed_intensity_variances(
+    msm::MassScanMatrix,
+    models::AbstractVector{<:LinearObservedIntensityVarianceModel};
+    extrapolation::Symbol=:allow,
+)
     ints = rawintensities(msm)
     n_scans, n_mz = size(ints)
 
@@ -270,171 +299,62 @@ function binretentions(
     has_intensity_unit = intensity_unit ≢ nothing
     intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
     variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
+    variance_unit = has_intensity_unit ? Unitful.unit(variance_quantity) : nothing
     variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
 
-    function attach_variance_units(val)
-        if has_intensity_unit
-            if isunitful(val)
-                Unitful.dimension(val) == variance_dimension || throw(
-                    Unitful.DimensionError(val, variance_quantity))
-                val
-            else
-                val * variance_quantity
-            end
-        else
-            isunitful(val) && throw(ArgumentError(
-                "msm intensities are unitless but derived variances have units"))
-            val
-        end
+    function model_has_units(model)
+        isunitful(model.intercept) ||
+            isunitful(model.slope) ||
+            isunitful(model.intensity_offset)
     end
 
-    attach_intensity_units(vec) = has_intensity_unit ? (vec .* intensity_quantity) : vec
-    strip_intensity_units(vec) = has_intensity_unit ?
-        Unitful.ustrip.(Base.RefValue(intensity_unit), vec) : vec
-
-    param_requires_units(p) = isunitful(p.σ₀²) || isunitful(p.ϕ)
-
-    function promote_for_varpred(val, p)
-        if param_requires_units(p)
+    function intensities_for_model(col, model)
+        if model_has_units(model)
             has_intensity_unit || throw(ArgumentError(
-                "QuadVarParams carry units but msm intensities are unitless"))
-            val * intensity_quantity
-        else
-            val
+                "variance model carries units but msm intensities are unitless"))
+            return col .* intensity_quantity
         end
+
+        col
     end
 
-    zero_threshold_eff = zero_threshold
-    if has_intensity_unit
-        if isunitful(zero_threshold)
-            Unitful.dimension(zero_threshold) == variance_dimension || throw(
-                Unitful.DimensionError(zero_threshold, variance_quantity))
-        else
-            zero_threshold_eff = zero_threshold * variance_quantity
+    function normalize_predicted_variances(predicted)
+        first_predicted = first(predicted)
+        if has_intensity_unit
+            if isunitful(first_predicted)
+                Unitful.dimension(first_predicted) == variance_dimension || throw(
+                    Unitful.DimensionError(first_predicted, variance_quantity))
+                return Unitful.ustrip.(Base.RefValue(variance_unit), predicted)
+            end
+
+            return predicted
         end
-    else
-        isunitful(zero_threshold) && throw(ArgumentError(
-            "zero_threshold has units but msm intensities are unitless"))
+
+        isunitful(first_predicted) && throw(ArgumentError(
+            "msm intensities are unitless but predicted variances have units"))
+        predicted
     end
 
-    # Normalize parameter inputs so downstream code can assume one entry per m/z.
-    params_vec = quadvar_params isa AbstractVector ? quadvar_params :
-                 fill(quadvar_params, n_mz)
-    length(params_vec) == n_mz || throw(ArgumentError(
-        "quadvar_params length $(length(params_vec)) ≠ n_mz $n_mz"))
+    first_col = @view ints[:, 1]
+    first_predicted = normalize_predicted_variances(varpred(
+        intensities_for_model(first_col, models[1]),
+        models[1];
+        extrapolation=extrapolation,
+    ))
+    variances = Matrix{eltype(first_predicted)}(undef, n_scans, n_mz)
+    variances[:, 1] .= first_predicted
 
-    # Broadcast scalar lag-1 correlations across columns if needed.
-    rhos = rho_lag1 isa AbstractVector ? rho_lag1 : fill(rho_lag1, n_mz)
-    length(rhos) == n_mz || throw(ArgumentError(
-        "rho_lag1 length $(length(rhos)) ≠ n_mz $n_mz"))
-
-    # Build the Jacobian scaling factor J^{-2} once (vector or callable input).
-    if jacobian_scale ≡ nothing
-        Jinv² = fill(1.0, n_scans)
-    elseif jacobian_scale isa AbstractVector
-        length(jacobian_scale) == n_scans || throw(ArgumentError(
-            "jacobian_scale vector must match number of scans"))
-        Tj = typeof(inv(jacobian_scale[1])^2)
-        Jinv² = Vector{Tj}(undef, n_scans)
-        @inbounds for k in 1:n_scans
-            J = jacobian_scale[k]
-            abs(J) > 0 || throw(ArgumentError("jacobian_scale contains zero at scan $k"))
-            Jinv²[k] = inv(J)^2
-        end
-    else
-        J₁ = jacobian_scale(rets[1])
-        abs(J₁) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan 1"))
-        Tj = typeof(inv(J₁)^2)
-        Jinv² = Vector{Tj}(undef, n_scans)
-        Jinv²[1] = inv(J₁)^2
-        @inbounds for k in 2:n_scans
-            J = jacobian_scale(rets[k])
-            abs(J) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan $k"))
-            Jinv²[k] = inv(J)^2
-        end
-    end
-
-    # First column: compute per-scan variances from model, then bin with serial inflation.
-    first_ints_view = @view ints[:, 1]
-    params₁ = params_vec[1]
-    ρ₁ = rhos[1]
-    first_var_base = varpredbias(promote_for_varpred(first_ints_view[1], params₁), params₁) * Jinv²[1]
-    first_var = attach_variance_units(first_var_base)
-
-    # Allocate vars₁ with correct type
-    Tvar₁ = typeof(first_var)
-    vars₁ = Vector{Tvar₁}(undef, n_scans)
-    vars₁[1] = first_var
-    @inbounds for k in 2:n_scans
-        Y = promote_for_varpred(first_ints_view[k], params₁)
-        vars₁[k] = attach_variance_units(varpredbias(Y, params₁) * Jinv²[k])
-    end
-
-    first_ints_for_scalar = attach_intensity_units(first_ints_view)
-    bin_centers, first_bin_ints, first_bin_vars = binretentions(retentions(msm), 
-        first_ints_for_scalar, bin_edges, vars₁; zero_threshold=zero_threshold_eff,
-        rho_lag1=ρ₁, rho_max=rho_max)
-
-    n_bins = length(bin_centers)
-    raw_first_bin_ints = strip_intensity_units(first_bin_ints)
-    im = Matrix{eltype(raw_first_bin_ints)}(undef, n_bins, n_mz)
-    vars = similar(first_bin_vars, n_bins, n_mz)
-    @inbounds begin
-        im[:, 1] .= raw_first_bin_ints  # seed matrices with first m/z results
-        vars[:, 1] .= first_bin_vars
-    end
-
-    # Remaining m/z columns
     @inbounds for col in 2:n_mz
         mzints = @view ints[:, col]
-        p = params_vec[col]
-        ρ = rhos[col]
-
-        # Allocate mzvars with correct type
-        first_Y = promote_for_varpred(mzints[1], p)
-        first_var_mz = attach_variance_units(varpredbias(first_Y, p) * Jinv²[1])
-        Tvar = typeof(first_var_mz)
-        mzvars = Vector{Tvar}(undef, n_scans)
-        mzvars[1] = first_var_mz
-        for k in 2:n_scans
-            Y = promote_for_varpred(mzints[k], p)
-            # Variance propagation mirrors the first-column logic.
-            mzvars[k] = attach_variance_units(varpredbias(Y, p) * Jinv²[k])
-        end
-
-        # Reuse scalar helper to bin this column with its own variance model + ρ.
-        mzints_for_scalar = attach_intensity_units(mzints)
-        _, bin_ints, bin_vars = binretentions(retentions(msm), mzints_for_scalar, bin_edges, mzvars;
-            zero_threshold=zero_threshold_eff, rho_lag1=ρ, rho_max=rho_max)
-
-        raw_bin_ints = strip_intensity_units(bin_ints)
-        im[:, col]   .= raw_bin_ints
-        vars[:, col] .= bin_vars
+        predicted = normalize_predicted_variances(varpred(
+            intensities_for_model(mzints, models[col]),
+            models[col];
+            extrapolation=extrapolation,
+        ))
+        variances[:, col] .= predicted
     end
 
-    # Convert bin centers back to raw numeric retentions + unit metadata.
-    raw_retentions, retentionunit = (isunitful(first(bin_centers)) ? 
-        (Unitful.ustrip.(bin_centers), Unitful.unit(first(bin_centers))) : (bin_centers, 
-        nothing))
-
-    # Build the output matrix, cloning metadata to avoid side effects.
-    msm_out = MassScanMatrix(
-        raw_retentions,
-        retentionunit,
-        deepcopy(rawmzvalues(msm)),
-        mzunit(msm),
-        im,
-        intensityunit(msm),
-        level=deepcopy(level(msm)),
-        instrument=deepcopy(instrument(msm)),
-        acquisition=deepcopy(acquisition(msm)),
-        user=deepcopy(user(msm)),
-        sample=deepcopy(sample(msm)),
-        extras=deepcopy(extras(msm))
-    )
-
-    # Return both the binned matrix and the per-bin variance estimates.
-    msm_out, vars
+    variances
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
