@@ -221,7 +221,38 @@ function _alkane_variance_result_with_abundance_window(result, window)
     )
 end
 
+struct _AlkaneVarianceTestApex <: JuChrom.AbstractAlkaneLadderApex
+    ladderstep::Int
+    fit
+    success::Bool
+    apexscanindex::Float64
+    apexretention::Float64
+    mass_spectrum_cosine::Float64
+    required_cosine::Float64
+    good_for_calibration::Bool
+end
+
+function _AlkaneVarianceTestApex(
+    ladderstep::Integer,
+    fit;
+    success::Bool=true,
+    good_for_calibration::Bool=true,
+)
+    _AlkaneVarianceTestApex(
+        Int(ladderstep),
+        fit,
+        success,
+        21.0,
+        21.0,
+        1.0,
+        0.0,
+        good_for_calibration,
+    )
+end
+
 @testset "fitalkanevariancemodel entry point" begin
+    @test vif(1, 2) == vif(1.0, 2)
+
     oldmodel = JuChrom.LinearObservedIntensityVarianceModel(10.0, 2.0, 0.0, 100.0, 0.0)
     @test oldmodel.intensity_offset == 0.0
     @test varpred(5.0, oldmodel) == 20.0
@@ -246,11 +277,13 @@ end
         extrapolation=:warn,
     )
     @test_throws ArgumentError varpred(101.0, offsetmodel; extrapolation=:throw)
+    @test_throws ArgumentError varpred([-1.0, 101.0], offsetmodel; extrapolation=:throw)
     @test_throws ArgumentError varpred(
         8.0,
         offsetmodel;
         extrapolation=:unknown,
     )
+    @test isempty(JuChrom.alkane_variance_calibration_range_values([8.0u"pA"], offsetmodel))
 
     unitmodel = JuChrom.LinearObservedIntensityVarianceModel(
         10.0u"pA^2",
@@ -261,7 +294,35 @@ end
         0.0,
     )
     @test varpred(8.0u"pA", unitmodel) == 16.0u"pA^2"
+    @test varpred(8.0u"pA", unitmodel; varfloor=12.0u"pA^2") == 16.0u"pA^2"
+    @test_throws Unitful.DimensionError varpred(
+        8.0u"pA",
+        unitmodel;
+        varfloor=1.0u"s",
+    )
     @test_throws ArgumentError varpred(101.0u"pA", unitmodel; extrapolation=:throw)
+    unitmsm = MassScanMatrix(
+        [1.0, 2.0]u"s",
+        [100.0],
+        reshape([8.0, 9.0], 2, 1)u"pA",
+    )
+    @test rawvariances(varpred(unitmsm, unitmodel)) == [16.0; 18.0;;]
+    @test_throws Unitful.DimensionError JuChrom.LinearObservedIntensityVarianceModel(
+        1.0,
+        1.0u"pA",
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+    )
+    @test_throws Unitful.DimensionError JuChrom.LinearObservedIntensityVarianceModel(
+        1.0,
+        1.0,
+        0.0u"pA",
+        0.0,
+        1.0,
+        0.0,
+    )
 
     raw, signal, result = _alkane_variance_mass_spectrum_inputs(; baseline=true)
 
@@ -283,6 +344,7 @@ end
     @test occursin("diagnostics:", fitdisplay)
     @test occursin("lag1 rho", fitdisplay)
     @test !occursin("residualrecords", fitdisplay)
+    @test occursin("AlkaneVarianceFit(", sprint(show, fit))
     @test fit.model.intercept ≥ 0
     @test fit.model.slope ≥ 0
     @test isfinite(fit.model.intensity_offset)
@@ -513,10 +575,296 @@ end
     @test noflatfit.qc.accept === false
     @test :variance_model_fit_failed in noflatfit.qc.reasons
     @test_throws ArgumentError varpred(8.0, noflatfit)
+    @test occursin("model=nothing", sprint(show, noflatfit))
     noflatdisplay = sprint(io -> show(io, MIME"text/plain"(), noflatfit))
     @test occursin("success: false", noflatdisplay)
     @test occursin("status: failed", noflatdisplay)
     @test occursin("reasons:", noflatdisplay)
+
+    excludedrows = [
+        (
+            exclude=true,
+            ladderstep=step,
+            reason=:high_fit_rmse,
+            replacement_count=0,
+        )
+        for step in 1:12
+    ]
+    displayfit = AlkaneVarianceFit(
+        true,
+        :ok,
+        fit.model,
+        (
+            keptpeakcount=2,
+            excludedpeakcount=12,
+            peakrecordcount=0,
+            flatrecordcount=0,
+            flatwindowcount=0,
+            flationcount=0,
+            lag1=NaN,
+            lag1paircount=0,
+            robustslope_cv=NaN,
+            excludedfraction=12 / 14,
+            reasons=(),
+            error=nothing,
+        ),
+        nothing,
+        nothing,
+        nothing,
+        Int[],
+        Int[],
+        NamedTuple(),
+        Dict{Int, AbstractMassSpectrum}(),
+        Dict{Int, String}(),
+        Dict{Int, NamedTuple}(),
+        Dict{Int, String}(),
+        Dict{Int, NamedTuple}(),
+        Dict{Int, String}(),
+        (
+            includedladdersteps=[13, 14],
+            excludedladdersteps=collect(1:12),
+            rows=excludedrows,
+            status=:ok,
+        ),
+        NamedTuple[],
+        NamedTuple[],
+        (windowcount=0, ioncount=0),
+        nothing,
+    )
+    displaytext = sprint(io -> show(io, MIME"text/plain"(), displayfit))
+    @test occursin("exclusions: C1, C2", displaytext)
+    @test occursin("...", displaytext)
+    @test occursin("C1:high_fit_rmse", displaytext)
+
+    @test JuChrom.alkane_variance_summary_significant(:notnumeric) == "notnumeric"
+    @test JuChrom.alkane_variance_summary_model_parameter(:notnumeric) == "notnumeric"
+    @test JuChrom.alkane_variance_summary_steps(Int[]) == "none"
+    @test JuChrom.alkane_variance_ladder_step_vector(nothing, "steps") == Int[]
+    @test JuChrom.alkane_variance_ladder_step_vector(8, "steps") == [8]
+
+    msm, emptyresult = _alkane_variance_entrypoint_inputs()
+    @test !any(JuChrom.alkane_variance_flat_nonpeak_exclusion_mask(emptyresult, 2))
+    teststep = JuChrom.AlkaneLadderStep(
+        8,
+        21.0,
+        21.0,
+        :test,
+        1.0,
+        0.0,
+        true,
+        _AlkaneVarianceTestApex(8, nothing),
+    )
+    @test JuChrom.alkane_variance_peak_mzretention_kwargs(result, teststep) ===
+        result.apexinfo.settings.mzretentionkwargs
+    @test_throws ArgumentError JuChrom.alkane_variance_peak_mzretention_kwargs(
+        emptyresult,
+        teststep,
+    )
+    sourceapex = result.apexinfo.apexes[1]
+    qualityapex = typeof(sourceapex)((
+        field === :good_for_calibration ? false : getfield(sourceapex, field)
+        for field in fieldnames(typeof(sourceapex))
+    )...)
+    qualityapexinfo = JuChrom.AlkaneLadderApexInfo(
+        :success,
+        :success,
+        [qualityapex],
+        Dict(8 => qualityapex),
+        result.apexinfo.settings,
+        JuChrom.alkane_ladder_no_scan_order_info(:test),
+        [true],
+        [false],
+        [NaN],
+        [NaN],
+    )
+    qualityresult = AlkaneSeriesResult(
+        result.standard,
+        result.variances,
+        result.varianceinfo,
+        result.baselineinfo,
+        result.channelinfo,
+        result.abundanceinfo,
+        result.molecularioninfo,
+        result.pathinfo,
+        qualityapexinfo,
+        result.additioninfo,
+        result.datainfo,
+        result.retentionunit,
+    )
+    qualityrun = JuChrom.alkane_variance_extract_mass_spectra(
+        (
+            result=qualityresult,
+            signal=fit.signal,
+            includedladdersteps=[8],
+        ),
+        1,
+    )
+    @test qualityrun.failures[8] ==
+        "ladder step did not pass apex fit quality gate"
+
+    rawfallback = JuChrom.alkane_variance_intensity_scale(
+        [0.0 NaN],
+        [0.0 5.0],
+    )
+    @test rawfallback == 5.0
+
+    run_without_abundance = merge(
+        (
+            result=AlkaneSeriesResult(
+                result.standard,
+                result.variances,
+                result.varianceinfo,
+                result.baselineinfo,
+                result.channelinfo,
+                nothing,
+                result.molecularioninfo,
+                result.pathinfo,
+                result.apexinfo,
+                result.additioninfo,
+                result.datainfo,
+                result.retentionunit,
+            ),
+            signal=fit.signal,
+            settings=(fitioncount=3,),
+            spectra=fit.spectra,
+            includedladdersteps=[8],
+        ),
+    )
+    _, peakinputfailures = JuChrom.alkane_variance_peak_inputs(run_without_abundance)
+    @test haskey(peakinputfailures, 8)
+
+    badfitinput = merge(peakinput, (fitionmask=falses(length(peakinput.fitionmask)),))
+    _, peakfitfailures = JuChrom.alkane_variance_peak_envelope_fits(Dict(8 => badfitinput))
+    @test haskey(peakfitfailures, 8)
+
+    qcinputs = Dict(
+        step => (
+            scanindices=1:3,
+            mzindices=1:2,
+            fitionmask=[true, true],
+        )
+        for step in 1:5
+    )
+    qcfits = Dict(
+        step => (
+            rmse=1.0,
+            normalizedrmse=0.001,
+            fitrmse=1.0,
+            normalizedfitrmse=step == 5 ? 100.0 : 1.0,
+            fitionpositions_initial=[1, 2],
+            fitionpositions=[1, 2],
+            replacementfitionpositions=step == 4 ? [3, 4] : Int[],
+        )
+        for step in 1:5
+    )
+    syntheticqc = JuChrom.alkane_variance_peak_qc(1, qcinputs, qcfits)
+    @test :high_fit_rmse in syntheticqc.rows[end].reasons
+    @test :many_fit_ion_replacements in syntheticqc.rows[4].reasons
+    @test all(isnan, JuChrom.alkane_variance_robust_center_scale([NaN]))
+    _, robustscale = JuChrom.alkane_variance_robust_center_scale([1.0, 2.0, 3.0, 100.0])
+    @test robustscale > 0
+
+    fallbackrecords = [
+        (mzvalue=100.0, fittedsignal=10.0),
+        (mzvalue=101.0, fittedsignal=20.0),
+    ]
+    fallbackindices, fallbackmzs = JuChrom.alkane_variance_flat_nonpeak_mzindices(
+        raw,
+        fallbackrecords;
+        topn=2,
+        minrecords=10,
+    )
+    @test fallbackindices == [2, 1]
+    @test fallbackmzs == [101.0, 100.0]
+
+    fewlag = JuChrom.alkane_variance_lag1_autocorrelation(NamedTuple[], offsetmodel)
+    @test fewlag.status === :too_few_pairs
+    lagrecords = [
+        (
+            runindex=1,
+            ladderstep=0,
+            mzindex=1,
+            scanindex=index,
+            residual=Float64(index),
+            fittedintensity=1.0,
+        )
+        for index in 1:5
+    ]
+    trimmedlag = JuChrom.alkane_variance_lag1_autocorrelation(
+        lagrecords,
+        JuChrom.LinearObservedIntensityVarianceModel(1.0, 0.0, 0.0, 10.0, 0.0);
+        trim_fraction=0.49,
+    )
+    @test trimmedlag.status === :too_few_pairs_after_trimming
+
+    @test isnan(JuChrom.alkane_variance_peak_fitted_signal_slope(
+        merge(peakinput, (retentionscale=NaN,)),
+        peakfit,
+        1,
+        0.0,
+    ))
+    @test_throws ArgumentError JuChrom.alkane_variance_fit_peak_envelope_with_rows(
+        peakinput,
+        Int[],
+    )
+    removalfit = (normalizedresiduals=[
+        0.1 0.1 0.1
+        0.1 0.1 0.1
+        0.1 0.1 0.1
+        9.0 9.0 9.0
+    ],)
+    removalinput = (spectrumweights=[1.0, 0.9, 0.8, 0.7],)
+    removalrows, removalexcluded, removalreplacements =
+        JuChrom.alkane_variance_peak_replacement_fitrows(
+            removalinput,
+            removalfit,
+            [1, 2, 3, 4],
+        )
+    @test removalrows == [1, 2, 3]
+    @test removalexcluded == [4]
+    @test isempty(removalreplacements)
+    catchinput = (normalizedobserved=zeros(3, 3), spectrumweights=ones(3),)
+    catchfit = (normalizedresiduals=[
+        0.1 0.1 0.1
+        0.2 0.2 0.2
+        0.3 0.3 0.3
+    ],)
+    @test JuChrom.alkane_variance_peak_candidate_outlier_rows(
+        catchinput,
+        catchfit,
+        [1, 2, 3],
+    ) == Int[]
+
+    activefallback = JuChrom.alkane_variance_peak_partly_nonnegative_penalized_solve(
+        ones(1, 1),
+        [-1.0],
+        zeros(0, 1),
+        0.0,
+        1,
+    )
+    @test activefallback == [0.0]
+    @test JuChrom.alkane_variance_linear_baseline_coefficients([NaN], [NaN]) == (0.0, 0.0)
+    @test JuChrom.alkane_variance_peak_local_quadratic_bandwidth(
+        [0.0, 1.0, Inf],
+        [1, 2, 3],
+    ) ≈ 0.6
+    @test JuChrom.alkane_variance_peak_local_quadratic_bandwidth(
+        [1.0, 1.0, 1.0],
+        [1, 2, 3],
+    ) ≈ sqrt(eps(Float64))
+    @test JuChrom.alkane_variance_peak_local_quadratic_value(
+        0.0,
+        [0.0, 0.0, 0.0],
+        [1.0, 2.0, 3.0],
+        1.0,
+    ) ≈ 2.0
+    predictedwithnan = JuChrom.alkane_variance_peak_envelope_predict(
+        merge(peakinput, (normalizedobserved=zeros(1, 1), spectrumweights=[NaN])),
+        [0.0;;],
+        [0.0, 1.0],
+        [1.0, 2.0],
+    )
+    @test isnan(only(predictedwithnan))
 
     narrow_bandwidth = JuChrom.alkane_variance_peak_local_quadratic_bandwidth(
         [0.0, 1.0, 2.0],
@@ -563,7 +911,6 @@ end
     )
     @test_throws ArgumentError fitalkanevariancemodel(badmsm, result)
 
-    msm, emptyresult = _alkane_variance_entrypoint_inputs()
     @test_throws ArgumentError fitalkanevariancemodel(msm, emptyresult)
     @test_throws MethodError fitalkanevariancemodel([(raw, raw)])
     @test_throws MethodError fitalkanevariancemodel(

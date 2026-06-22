@@ -1,30 +1,3 @@
-"""
-    fitalkanevariancemodel(msm, result; excludeladdersteps=(), fitioncount=5)
-
-Entry point for fitting an alkane-ladder-based variance model.
-
-`result` must be the [`AlkaneSeriesResult`](@ref) produced from `msm`. The function
-validates that the mass-scan matrix and alkane-ladder result belong together before
-fitting proceeds.
-
-Ladder detection is never run implicitly.
-
-The implementation fits one curvature-adaptive smooth nonnegative peak envelope per
-ladder step using the selected fit ions and flags poor peak fits by within-run robust QC.
-Peaks are fit on raw intensities with one ion-specific linear baseline over the peak
-window. The baseline stored in `result` is used only as the source of a soft baseline
-anchor, not as the final fitted baseline.
-
-The returned [`AlkaneVarianceFit`](@ref) stores whether calibration succeeded in
-`success`, the status in `status`, the fitted [`LinearObservedIntensityVarianceModel`](@ref)
-in `model` when available, final quality control in `qc`, and peak-level diagnostics
-directly as fields. The model is calibrated as
-
-    variance(I) = a_flat + b * max(I - I_flat, 0)
-
-where `a_flat` and `I_flat` are estimated from flat non-peak regions and `b` is estimated
-robustly from accepted alkane peak residuals.
-"""
 # Conservative held-out-ion LOO choice for the apex-free peak envelope fit.
 const ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR = 0.0007
 
@@ -190,6 +163,33 @@ function Base.show(io::IO, ::MIME"text/plain", fit::AlkaneVarianceFit)
     isnothing(error) || println(io, "  error: ", error)
 end
 
+"""
+    fitalkanevariancemodel(msm, result; excludeladdersteps=(), fitioncount=5)
+
+Entry point for fitting an alkane-ladder-based variance model.
+
+`result` must be the [`AlkaneSeriesResult`](@ref) produced from `msm`. The function
+validates that the mass-scan matrix and alkane-ladder result belong together before
+fitting proceeds.
+
+Ladder detection is never run implicitly.
+
+The implementation fits one curvature-adaptive smooth nonnegative peak envelope per
+ladder step using the selected fit ions and flags poor peak fits by within-run robust QC.
+Peaks are fit on raw intensities with one ion-specific linear baseline over the peak
+window. The baseline stored in `result` is used only as the source of a soft baseline
+anchor, not as the final fitted baseline.
+
+The returned [`AlkaneVarianceFit`](@ref) stores whether calibration succeeded in
+`success`, the status in `status`, the fitted [`LinearObservedIntensityVarianceModel`](@ref)
+in `model` when available, final quality control in `qc`, and peak-level diagnostics
+directly as fields. The model is calibrated as
+
+    variance(I) = a_flat + b * max(I - I_flat, 0)
+
+where `a_flat` and `I_flat` are estimated from flat non-peak regions and `b` is estimated
+robustly from accepted alkane peak residuals.
+"""
 function fitalkanevariancemodel(
     msm::MassScanMatrix,
     result::AlkaneSeriesResult;

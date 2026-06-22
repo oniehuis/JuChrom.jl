@@ -14,6 +14,7 @@ countvariances
 
 ```@docs
 LinearObservedIntensityVarianceModel
+AlkaneVarianceFit
 fitalkanevariancemodel
 varpred
 vif
