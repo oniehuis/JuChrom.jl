@@ -1987,7 +1987,7 @@ function alkane_variance_peak_raw_linear_baseline_design(
         y[rowindex] = Float64(observation.intensity)
     end
 
-    priorweight = alkane_variance_peak_linear_baseline_prior_weight()
+    priorweight = 1.0
     prior_scale = sqrt(priorweight)
     rowindex = data_row_count
     for (position, ionindex) in pairs(Int.(fitrows))
@@ -2142,7 +2142,7 @@ function alkane_variance_peak_fit_linear_baselines(peakinput, normalizedfitted)
             peakinput.normalizedretentions[ionindex, :],
             target;
             prior=prior,
-            priorweight=alkane_variance_peak_linear_baseline_prior_weight(),
+            priorweight=1.0,
         )
         for scanindex in axes(normalizedfitted, 2)
             x = Float64(peakinput.normalizedretentions[ionindex, scanindex])
@@ -2159,8 +2159,6 @@ function alkane_variance_peak_arpls_linear_baseline(peakinput, ionindex::Integer
         peakinput.normalizedbaseline[ionindex, :],
     )
 end
-
-alkane_variance_peak_linear_baseline_prior_weight() = 1.0
 
 function alkane_variance_linear_baseline_coefficients(
     xvalues,

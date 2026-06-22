@@ -855,7 +855,6 @@ end
         1,
     )
     @test activefallback == [0.0]
-    @test JuChrom.alkane_variance_peak_linear_baseline_prior_weight() == 1.0
     @test JuChrom.alkane_variance_linear_baseline_coefficients([NaN], [NaN]) == (0.0, 0.0)
     @test_throws DimensionMismatch JuChrom.alkane_variance_peak_local_quadratic_envelope(
         [0.0],
