@@ -109,6 +109,57 @@ end
 
 Base.broadcastable(model::LinearObservedIntensityVarianceModel) = Base.RefValue(model)
 
+"""
+    AlkaneVarianceFit
+
+Result returned by [`fitalkanevariancemodel`](@ref). The fields expose the fitted model,
+quality control, and peak-level calibration details directly; display is compact for REPL
+use.
+"""
+struct AlkaneVarianceFit{
+    TModel,
+    TQC,
+    TMSM,
+    TResult,
+    TSignal,
+    TExcluded,
+    TIncluded,
+    TSettings,
+    TSpectra,
+    TFailures,
+    TPeakInputs,
+    TPeakInputFailures,
+    TPeakFits,
+    TPeakFitFailures,
+    TPeakQC,
+    TResidualRecords,
+    TFlatRecords,
+    TFlatQC,
+    TVarianceFit,
+}
+    success::Bool
+    status::Symbol
+    model::TModel
+    qc::TQC
+    msm::TMSM
+    result::TResult
+    signal::TSignal
+    excludeladdersteps::TExcluded
+    includedladdersteps::TIncluded
+    settings::TSettings
+    spectra::TSpectra
+    failures::TFailures
+    peakinputs::TPeakInputs
+    peakinputfailures::TPeakInputFailures
+    peakfits::TPeakFits
+    peakfitfailures::TPeakFitFailures
+    peakqc::TPeakQC
+    residualrecords::TResidualRecords
+    flatrecords::TFlatRecords
+    flatqc::TFlatQC
+    variancefit::TVarianceFit
+end
+
 function validate_linear_observed_intensity_variance_units(intercept, slope, intensity_offset)
     intercept_has_units = isunitful(intercept)
     slope_has_units = isunitful(slope)
@@ -144,4 +195,26 @@ function Base.show(io::IO, model::LinearObservedIntensityVarianceModel)
     print(io, "), rho_lag1=")
     print(io, model.rho_lag1)
     print(io, ")")
+end
+
+function Base.show(
+    io::IO,
+    ::MIME"text/plain",
+    model::LinearObservedIntensityVarianceModel,
+)
+    println(io, "LinearObservedIntensityVarianceModel")
+    print(io, "  variance(I) = ")
+    print(io, model.intercept)
+    print(io, " + ")
+    print(io, model.slope)
+    print(io, " * max(I - ")
+    print(io, model.intensity_offset)
+    println(io, ", 0)")
+    print(io, "  intensity range: [")
+    print(io, model.intensity_min)
+    print(io, ", ")
+    print(io, model.intensity_max)
+    println(io, "]")
+    print(io, "  lag-1 residual autocorrelation: ")
+    print(io, model.rho_lag1)
 end

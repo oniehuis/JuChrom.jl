@@ -37,6 +37,22 @@ reaction to finite values outside the calibrated range:
     )
 end
 
+@inline function varpred(
+    intensity,
+    fit::AlkaneVarianceFit;
+    varfloor::Number=0,
+    extrapolation::Symbol=:allow,
+)
+    isnothing(fit.model) && throw(ArgumentError(
+        "cannot predict variances from an alkane variance fit without a fitted model"))
+    varpred(
+        intensity,
+        fit.model;
+        varfloor=varfloor,
+        extrapolation=extrapolation,
+    )
+end
+
 function alkane_variance_check_extrapolation(
     intensity,
     model::LinearObservedIntensityVarianceModel,

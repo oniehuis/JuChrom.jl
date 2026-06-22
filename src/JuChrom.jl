@@ -94,6 +94,7 @@ export AlkaneMolecularIonInfo
 export AlkaneReferenceChannels
 export AlkaneSeriesResult
 export AlkaneStandard
+export AlkaneVarianceFit
 export ChromScan
 export ChromScanSeries
 export CountVarianceEstimate

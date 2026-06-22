@@ -1,6 +1,5 @@
 """
     fitalkanevariancemodel(msm, result; excludeladdersteps=(), fitioncount=5)
-    fitalkanevariancemodel(runs; excludeladdersteps=(), fitioncount=5)
 
 Entry point for fitting an alkane-ladder-based variance model.
 
@@ -8,26 +7,189 @@ Entry point for fitting an alkane-ladder-based variance model.
 validates that the mass-scan matrix and alkane-ladder result belong together before
 fitting proceeds.
 
-The one-argument form accepts any iterable whose elements are `(msm, result)` tuples or
-`msm => result` pairs. Run-specific exclusions can be supplied as
-`(msm, result, (; excludeladdersteps=[23]))`. Global `excludeladdersteps` are combined
-with run-specific exclusions. Ladder detection is never run implicitly.
+Ladder detection is never run implicitly.
 
 The implementation fits one curvature-adaptive smooth nonnegative peak envelope per
-ladder step using the selected fit ions, allows a small internal apex readjustment, and
-flags poor peak fits by within-run robust QC. Peaks are fit on raw intensities with one
-ion-specific linear baseline over the peak window. The baseline stored in `result` is used
-only as the source of a soft baseline anchor, not as the final fitted baseline.
+ladder step using the selected fit ions and flags poor peak fits by within-run robust QC.
+Peaks are fit on raw intensities with one ion-specific linear baseline over the peak
+window. The baseline stored in `result` is used only as the source of a soft baseline
+anchor, not as the final fitted baseline.
 
-The returned object contains a fitted [`LinearObservedIntensityVarianceModel`](@ref) in
-`model`, per-run details in `runs`, and minimal run-level quality control in `qc`. The
-model is calibrated as
+The returned [`AlkaneVarianceFit`](@ref) stores whether calibration succeeded in
+`success`, the status in `status`, the fitted [`LinearObservedIntensityVarianceModel`](@ref)
+in `model` when available, final quality control in `qc`, and peak-level diagnostics
+directly as fields. The model is calibrated as
 
     variance(I) = a_flat + b * max(I - I_flat, 0)
 
 where `a_flat` and `I_flat` are estimated from flat non-peak regions and `b` is estimated
 robustly from accepted alkane peak residuals.
 """
+# Conservative held-out-ion LOO choice for the apex-free peak envelope fit.
+const ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR = 0.0007
+
+function alkane_variance_summary_value(value, name::Symbol, default=nothing)
+    hasproperty(value, name) ? getproperty(value, name) : default
+end
+
+function alkane_variance_summary_percent(value)
+    isfinite(value) ? @sprintf("%.1f%%", 100 * Float64(value)) : "NaN"
+end
+
+function alkane_variance_summary_significant(value; sigdigits::Integer=4)
+    if value isa Real && isfinite(value)
+        x = Float64(value)
+        iszero(x) && return "0"
+        return string(round(x; sigdigits=sigdigits))
+    end
+
+    string(value)
+end
+
+function alkane_variance_summary_model_parameter(value)
+    if value isa Real && isfinite(value)
+        return @sprintf("%.1f", Float64(value))
+    end
+
+    string(value)
+end
+
+function alkane_variance_summary_correlation(value)
+    if value isa Real && isfinite(value)
+        return @sprintf("%.3f", Float64(value))
+    end
+
+    string(value)
+end
+
+function alkane_variance_summary_steps(steps; limit::Integer=16)
+    values = Int.(collect(steps))
+    isempty(values) && return "none"
+    shown = ["C$(step)" for step in values[1:min(length(values), limit)]]
+    suffix = length(values) > limit ? ", ..." : ""
+
+    join(shown, ", ") * suffix
+end
+
+function alkane_variance_summary_excluded_peak_reasons(rows; limit::Integer=10)
+    excluded = [row for row in rows if row.exclude]
+    isempty(excluded) && return "none"
+    shown = String[]
+    for row in excluded[1:min(length(excluded), limit)]
+        push!(shown, "C$(row.ladderstep):$(row.reason)")
+    end
+    suffix = length(excluded) > limit ? ", ..." : ""
+
+    join(shown, ", ") * suffix
+end
+
+function AlkaneVarianceFit(run)
+    success = !isnothing(run.model) && run.varianceqc.accept
+    status = success ? :ok : alkane_variance_summary_value(run.varianceqc, :status, :failed)
+    AlkaneVarianceFit(
+        success,
+        status,
+        run.model,
+        run.varianceqc,
+        run.msm,
+        run.result,
+        run.signal,
+        run.excludeladdersteps,
+        run.includedladdersteps,
+        run.settings,
+        run.spectra,
+        run.failures,
+        run.peakinputs,
+        run.peakinputfailures,
+        run.peakfits,
+        run.peakfitfailures,
+        run.peakqc,
+        run.residualrecords,
+        run.flatrecords,
+        run.flatqc,
+        run.variancefit,
+    )
+end
+
+function Base.show(io::IO, fit::AlkaneVarianceFit)
+    qc = fit.qc
+    kept = alkane_variance_summary_value(qc, :keptpeakcount, length(fit.peakqc.includedladdersteps))
+    excluded = alkane_variance_summary_value(qc, :excludedpeakcount, length(fit.peakqc.excludedladdersteps))
+    print(io, "AlkaneVarianceFit(")
+    print(io, "success=", fit.success)
+    print(io, ", status=", fit.status)
+    print(io, ", peaks=", kept, "/", kept + excluded)
+    print(io, ", peakrecords=", alkane_variance_summary_value(qc, :peakrecordcount, length(fit.residualrecords)))
+    print(io, ", flatrecords=", alkane_variance_summary_value(qc, :flatrecordcount, length(fit.flatrecords)))
+    if !isnothing(fit.model)
+        print(io, ", model=")
+        show(io, fit.model)
+    else
+        print(io, ", model=nothing")
+    end
+    print(io, ")")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", fit::AlkaneVarianceFit)
+    qc = fit.qc
+    peakqc = fit.peakqc
+    kept = alkane_variance_summary_value(qc, :keptpeakcount, length(peakqc.includedladdersteps))
+    excluded = alkane_variance_summary_value(qc, :excludedpeakcount, length(peakqc.excludedladdersteps))
+    total = kept + excluded
+    peakrecords = alkane_variance_summary_value(qc, :peakrecordcount, length(fit.residualrecords))
+    flatrecords = alkane_variance_summary_value(qc, :flatrecordcount, length(fit.flatrecords))
+    flatwindows = alkane_variance_summary_value(qc, :flatwindowcount,
+        alkane_variance_summary_value(fit.flatqc, :windowcount, 0))
+    flations = alkane_variance_summary_value(qc, :flationcount,
+        alkane_variance_summary_value(fit.flatqc, :ioncount, 0))
+    replacements = sum(row.replacement_count for row in peakqc.rows)
+    reasons = alkane_variance_summary_value(qc, :reasons, ())
+    error = alkane_variance_summary_value(qc, :error, nothing)
+    excludedreasons = alkane_variance_summary_excluded_peak_reasons(peakqc.rows)
+
+    println(io, "AlkaneVarianceFit")
+    println(io, "  success: ", fit.success)
+    fit.success || println(io, "  status: ", fit.status)
+
+    if !isnothing(fit.model)
+        print(io, "  model: variance(I) = ")
+        print(io, alkane_variance_summary_model_parameter(fit.model.intercept))
+        print(io, " + ")
+        print(io, alkane_variance_summary_model_parameter(fit.model.slope))
+        print(io, " * max(I - ")
+        print(io, alkane_variance_summary_model_parameter(fit.model.intensity_offset))
+        println(io, ", 0)")
+        print(io, "  range: [")
+        print(io, alkane_variance_summary_significant(fit.model.intensity_min))
+        print(io, ", ")
+        print(io, alkane_variance_summary_significant(fit.model.intensity_max))
+        println(io, "]")
+    else
+        println(io, "  model: none")
+    end
+
+    println(io, "  data: peaks ", kept, "/", total,
+        ", records peak/flat ", peakrecords, "/", flatrecords,
+        ", flat windows/ions ", flatwindows, "/", flations)
+    println(io, "  diagnostics: lag1 rho ",
+        alkane_variance_summary_correlation(alkane_variance_summary_value(qc, :lag1, NaN)),
+        " (", alkane_variance_summary_value(qc, :lag1paircount, 0), " pairs)",
+        ", robust slope CV ",
+        alkane_variance_summary_percent(alkane_variance_summary_value(qc, :robustslope_cv, NaN)),
+        ", replacements ", replacements)
+
+    if excluded > 0 || excludedreasons != "none"
+        println(io, "  exclusions: ",
+            alkane_variance_summary_steps(peakqc.excludedladdersteps),
+            " (", alkane_variance_summary_percent(
+                alkane_variance_summary_value(qc, :excludedfraction, NaN)), "); ",
+            excludedreasons)
+    end
+    peakqc.status === :ok || println(io, "  peak QC: ", peakqc.status)
+    isempty(reasons) || println(io, "  reasons: ", join(string.(reasons), ", "))
+    isnothing(error) || println(io, "  error: ", error)
+end
+
 function fitalkanevariancemodel(
     msm::MassScanMatrix,
     result::AlkaneSeriesResult;
@@ -44,29 +206,14 @@ function fitalkanevariancemodel(
     settings = (
         fitioncount=Int(fitioncount),
     )
-    validated = [alkane_variance_validated_run(msm, result, global_exclusions, Int[])]
-    validated = [merge(run, (settings=settings,)) for run in validated]
-    alkane_variance_fit_validated_runs(validated)
-end
+    validated = merge(
+        alkane_variance_validated_run(msm, result, global_exclusions),
+        (settings=settings,),
+    )
+    prepared = alkane_variance_prepare_peak_inputs(validated, 1)
+    fitted = alkane_variance_fit_run_variance_model(prepared)
 
-function fitalkanevariancemodel(
-    runs;
-    excludeladdersteps=(),
-    fitioncount::Integer=5,
-    kwargs...
-)
-    alkane_variance_reject_unimplemented_keywords(kwargs)
-    alkane_variance_validate_fitioncount(fitioncount)
-    global_exclusions = alkane_variance_ladder_step_vector(
-        excludeladdersteps,
-        "excludeladdersteps",
-    )
-    validated = alkane_variance_validated_runs(runs, global_exclusions)
-    settings = (
-        fitioncount=Int(fitioncount),
-    )
-    validated = [merge(run, (settings=settings,)) for run in validated]
-    alkane_variance_fit_validated_runs(validated)
+    AlkaneVarianceFit(fitted)
 end
 
 function alkane_variance_reject_unimplemented_keywords(kwargs)
@@ -98,75 +245,13 @@ function alkane_variance_ladder_step_vector(value, name::AbstractString)
     steps
 end
 
-function alkane_variance_validated_runs(runs, global_exclusions::AbstractVector{<:Integer})
-    validated = NamedTuple[]
-    for run in runs
-        msm, result, run_exclusions = alkane_variance_run_pair(run)
-        push!(validated, alkane_variance_validated_run(
-            msm,
-            result,
-            global_exclusions,
-            run_exclusions,
-        ))
-    end
-    !isempty(validated) || throw(ArgumentError(
-        "at least one (msm, result) run pair is required"))
-
-    validated
-end
-
-function alkane_variance_run_pair(run)
-    if run isa Pair
-        msm = first(run)
-        result = last(run)
-        run_exclusions = Int[]
-    elseif run isa Tuple && length(run) == 2
-        msm = run[1]
-        result = run[2]
-        run_exclusions = Int[]
-    elseif run isa Tuple && length(run) == 3
-        msm = run[1]
-        result = run[2]
-        run_exclusions = alkane_variance_run_exclusions(run[3])
-    else
-        throw(ArgumentError(
-            "runs must yield (msm, result) tuples, msm => result pairs, or " *
-            "(msm, result, (; excludeladdersteps=[...])) tuples"))
-    end
-
-    msm isa MassScanMatrix || throw(ArgumentError(
-        "each variance calibration run must contain a MassScanMatrix"))
-    result isa AlkaneSeriesResult || throw(ArgumentError(
-        "each variance calibration run must contain an AlkaneSeriesResult"))
-
-    msm, result, run_exclusions
-end
-
-function alkane_variance_run_exclusions(value)
-    if value isa NamedTuple
-        unknown = setdiff(collect(keys(value)), [:excludeladdersteps])
-        isempty(unknown) || throw(ArgumentError(
-            "unknown run metadata field(s): " * join(string.(unknown), ", ")))
-        return alkane_variance_ladder_step_vector(
-            get(value, :excludeladdersteps, ()),
-            "run-specific excludeladdersteps",
-        )
-    end
-
-    alkane_variance_ladder_step_vector(value, "run-specific excludeladdersteps")
-end
-
 function alkane_variance_validated_run(
     msm::MassScanMatrix,
     result::AlkaneSeriesResult,
     global_exclusions::AbstractVector{<:Integer},
-    run_exclusions::AbstractVector{<:Integer},
 )
     signal = alkane_ladder_extraction_signal(msm, result, true)
-    excluded = alkane_variance_merge_ladder_step_exclusions(
-        global_exclusions,
-        run_exclusions,
-    )
+    excluded = Int.(global_exclusions)
     available = alkane_variance_available_laddersteps(result)
     included = alkane_variance_included_laddersteps(available, excluded)
 
@@ -177,15 +262,6 @@ function alkane_variance_validated_run(
         excludeladdersteps=excluded,
         includedladdersteps=included,
     )
-end
-
-function alkane_variance_merge_ladder_step_exclusions(global_exclusions, run_exclusions)
-    excluded = Int[]
-    append!(excluded, Int.(global_exclusions))
-    append!(excluded, Int.(run_exclusions))
-    unique!(excluded)
-    sort!(excluded)
-    excluded
 end
 
 function alkane_variance_available_laddersteps(result::AlkaneSeriesResult)
@@ -210,36 +286,6 @@ function alkane_variance_included_laddersteps(available, excluded)
     end
 
     included
-end
-
-function alkane_variance_fit_validated_runs(validated_runs)
-    prepared_runs = [
-        alkane_variance_prepare_peak_inputs(run, runindex)
-        for (runindex, run) in pairs(validated_runs)
-    ]
-    runs = alkane_variance_fit_run_variance_models(prepared_runs)
-    accepted = [
-        run for run in runs
-        if !isnothing(run.model) && run.varianceqc.accept
-    ]
-    if isempty(accepted)
-        reasons = [
-            "run $(run.runindex): " *
-            join(string.(run.varianceqc.reasons), ", ")
-            for run in runs
-        ]
-        throw(ArgumentError(
-            "no variance calibration run passed QC" *
-            (isempty(reasons) ? "" : ": " * join(reasons, "; "))))
-    end
-    model = alkane_variance_aggregate_models(accepted)
-
-    (
-        status=length(accepted) == length(runs) ? :ok : :partial,
-        model=model,
-        runs=runs,
-        qc=alkane_variance_fit_qc(runs),
-    )
 end
 
 function alkane_variance_prepare_peak_inputs(run, runindex::Integer)
@@ -339,7 +385,7 @@ function alkane_variance_peak_input(run, step::AlkaneLadderStep, spectrum)
         mzindices,
     )
     normalizedretentions, retentioncenter, retentionscale =
-        alkane_variance_normalized_retentions(observationretentions, step.apexretention)
+        alkane_variance_normalized_retentions(observationretentions)
 
     observed = permutedims(Float64.(rawintensities(run.signal)[scanindices, mzindices]))
     observedraw = permutedims(Float64.(rawintensities(run.msm)[scanindices, mzindices]))
@@ -350,8 +396,6 @@ function alkane_variance_peak_input(run, step::AlkaneLadderStep, spectrum)
         ladderstep=step.ladderstep,
         scanindices=scanindices,
         abundancewindow=abundancewindow,
-        apexscanindex=step.apexscanindex,
-        apexretention=step.apexretention,
         mzindices=mzindices,
         mzvalues=mzvalues,
         spectrumintensities=spectrumintensities,
@@ -479,9 +523,13 @@ end
 
 function alkane_variance_normalized_retentions(
     retentions::AbstractMatrix{<:Real},
-    center::Real,
 )
-    scale = maximum(abs.(retentions .- center))
+    finite = Float64[value for value in vec(retentions) if isfinite(value)]
+    isempty(finite) && throw(ArgumentError(
+        "retention normalization requires at least one finite retention"))
+    left, right = extrema(finite)
+    center = (left + right) / 2
+    scale = maximum(abs.(finite .- center))
     isfinite(scale) && scale > 0 || throw(ArgumentError(
         "retention normalization scale must be finite and positive"))
 
@@ -545,7 +593,6 @@ function alkane_variance_peak_qc(runindex::Integer, peakinputs, peakfits)
             normalizedrmse=Float64(peakfit.normalizedrmse),
             fitrmse=Float64(peakfit.fitrmse),
             normalizedfitrmse=Float64(peakfit.normalizedfitrmse),
-            apexscanshift=Float64(peakfit.apexscanshift),
         ))
     end
 
@@ -694,10 +741,6 @@ function alkane_variance_peak_residual_records(runindex::Integer, peakinput, pea
                 scanindex=Int(peakinput.scanindices[scanposition]),
                 retention=retention,
                 normalizedretention=normalizedretention,
-                adjustednormalizedretention=
-                    normalizedretention - Float64(peakfit.normalizedapexshift),
-                apexretention=Float64(peakinput.apexretention),
-                fittedapexretention=Float64(peakfit.fittedapexretention),
                 spectrumweight=spectrumweight,
                 isfition=Int(ionposition) in fitionpositions,
                 isinitialfition=Int(ionposition) in initialfitionpositions,
@@ -717,13 +760,6 @@ function alkane_variance_peak_residual_records(runindex::Integer, peakinput, pea
     end
 
     records
-end
-
-function alkane_variance_fit_run_variance_models(runs)
-    [
-        alkane_variance_fit_run_variance_model(run)
-        for run in runs
-    ]
 end
 
 function alkane_variance_fit_run_variance_model(run)
@@ -883,9 +919,6 @@ function alkane_variance_flat_nonpeak_residual_records(
                     scanindex=Int(scanindex),
                     retention=local_x[localposition],
                     normalizedretention=NaN,
-                    adjustednormalizedretention=NaN,
-                    apexretention=NaN,
-                    fittedapexretention=NaN,
                     spectrumweight=NaN,
                     isfition=true,
                     isinitialfition=true,
@@ -1382,45 +1415,6 @@ function alkane_variance_excluded_peak_fraction(peakqc)
     total == 0 ? 1.0 : length(peakqc.excludedladdersteps) / total
 end
 
-function alkane_variance_aggregate_models(runs)
-    models = [run.model for run in runs if !isnothing(run.model)]
-    !isempty(models) || throw(ArgumentError(
-        "at least one fitted run model is required for aggregation"))
-    LinearObservedIntensityVarianceModel(
-        median([model.intercept for model in models]),
-        median([model.slope for model in models]),
-        median([model.intensity_offset for model in models]),
-        minimum([model.intensity_min for model in models]),
-        maximum([model.intensity_max for model in models]),
-        median([model.rho_lag1 for model in models]),
-    )
-end
-
-function alkane_variance_fit_qc(runs)
-    accepted = Int[
-        run.runindex for run in runs
-        if !isnothing(run.model) && run.varianceqc.accept
-    ]
-    rejected = Int[
-        run.runindex for run in runs
-        if isnothing(run.model) || !run.varianceqc.accept
-    ]
-    (
-        status=isempty(rejected) ? :ok : :partial,
-        acceptedrunindices=accepted,
-        rejectedrunindices=rejected,
-        runcount=length(runs),
-        acceptedruncount=length(accepted),
-        rejectedruncount=length(rejected),
-        rows=[
-            merge((
-                runindex=run.runindex,
-            ), run.varianceqc)
-            for run in runs
-        ],
-    )
-end
-
 function alkane_variance_trimmed_mean(values; trim_fraction::Real=0.2)
     xs = sort(Float64[value for value in values if isfinite(value)])
     isempty(xs) && return NaN
@@ -1515,39 +1509,15 @@ function alkane_variance_fit_peak_envelope(peakinput)
 end
 
 function alkane_variance_fit_peak_envelope_with_rows(peakinput, fitrows)
-    normalizedapexshift = alkane_variance_peak_apex_shift_estimate(peakinput, fitrows)
-    failures = String[]
-    fit = try
-        alkane_variance_fit_peak_envelope_at_shift(
+    try
+        alkane_variance_fit_peak_envelope_for_rows(
             peakinput,
             fitrows,
-            normalizedapexshift,
         )
     catch err
-        push!(failures, sprint(showerror, err))
-        fallbackshift = 0.0
-        if !isapprox(normalizedapexshift, fallbackshift; atol=sqrt(eps(Float64)))
-            try
-                alkane_variance_fit_peak_envelope_at_shift(
-                    peakinput,
-                    fitrows,
-                    fallbackshift,
-                )
-            catch fallbackerr
-                push!(failures, sprint(showerror, fallbackerr))
-                nothing
-            end
-        else
-            nothing
-        end
+        throw(ArgumentError(
+            "peak envelope optimization failed: " * sprint(showerror, err)))
     end
-
-    if isnothing(fit)
-        message = isempty(failures) ? "" : ": " * join(unique(failures), "; ")
-        throw(ArgumentError("peak envelope optimization failed" * message))
-    end
-
-    fit
 end
 
 function alkane_variance_annotate_peak_fit(
@@ -1601,13 +1571,11 @@ end
 function alkane_variance_peak_candidate_outlier_rows(peakinput, fit, fitrows)
     outliers = Int[]
     if hasproperty(peakinput, :normalizedobserved) &&
-            hasproperty(peakinput, :spectrumweights) &&
-            hasproperty(fit, :normalizedapexshift)
+            hasproperty(peakinput, :spectrumweights)
         try
             append!(outliers, alkane_variance_peak_leave_one_ion_outlier_rows(
                 peakinput,
                 fitrows,
-                fit.normalizedapexshift,
             ))
         catch
         end
@@ -1623,17 +1591,15 @@ end
 function alkane_variance_peak_leave_one_ion_outlier_rows(
     peakinput,
     fitrows,
-    normalizedapexshift::Real,
 )
     length(fitrows) ≥ 3 || return Int[]
     rowrmses = Dict{Int, Float64}()
     for heldout in fitrows
         trainrows = Int[row for row in fitrows if row != heldout]
         length(trainrows) ≥ 2 || continue
-        fit = alkane_variance_fit_peak_envelope_at_shift(
+        fit = alkane_variance_fit_peak_envelope_for_rows(
             peakinput,
             trainrows,
-            normalizedapexshift,
         )
         spectrumweight = Float64(peakinput.spectrumweights[heldout])
         isfinite(spectrumweight) && spectrumweight > 0 || continue
@@ -1683,69 +1649,12 @@ function alkane_variance_peak_fit_row_rmses(residuals, fitrows)
     rmses
 end
 
-function alkane_variance_peak_apex_shift_estimate(peakinput, fitrows)
-    scanstep = alkane_variance_peak_scan_interval(peakinput)
-    if !(isfinite(scanstep) && scanstep > 0 && peakinput.retentionscale > 0)
-        return 0.0
-    end
-
-    maxshift = 0.5 * scanstep / peakinput.retentionscale
-    scanretentions = Float64[]
-    scanprofile = Float64[]
-    for scanindex in axes(peakinput.normalizedobserved, 2)
-        values = Float64[]
-        retentions = Float64[]
-        for ionindex in fitrows
-            spectrumweight = Float64(peakinput.spectrumweights[ionindex])
-            spectrumweight > 0 && isfinite(spectrumweight) || continue
-            intensity = Float64(peakinput.normalizedobserved[ionindex, scanindex])
-            retention = Float64(peakinput.normalizedretentions[ionindex, scanindex])
-            isfinite(intensity) && isfinite(retention) || continue
-            intensity > 0 || continue
-            push!(values, intensity / spectrumweight)
-            push!(retentions, retention)
-        end
-        isempty(values) && continue
-        push!(scanprofile, median(values))
-        push!(scanretentions, mean(retentions))
-    end
-
-    length(scanprofile) ≥ 1 || return 0.0
-    apexindex = argmax(scanprofile)
-    estimate = scanretentions[apexindex]
-    if 1 < apexindex < length(scanprofile)
-        localestimate = alkane_variance_peak_quadratic_apex_estimate(
-            scanretentions[(apexindex - 1):(apexindex + 1)],
-            scanprofile[(apexindex - 1):(apexindex + 1)],
-        )
-        isfinite(localestimate) && (estimate = localestimate)
-    end
-
-    clamp(estimate, -maxshift, maxshift)
-end
-
-function alkane_variance_peak_quadratic_apex_estimate(retentions, profile)
-    maximum(profile) > 0 || return NaN
-    floorvalue = maximum(profile) * 1e-6
-    y = log.(max.(Float64.(profile), floorvalue))
-    X = hcat(Float64.(retentions).^2, Float64.(retentions), ones(3))
-    coefs = X \ y
-    a, b = coefs[1], coefs[2]
-    a < 0 && isfinite(a) && isfinite(b) || return NaN
-    estimate = -b / (2 * a)
-    lo, hi = extrema(Float64.(retentions))
-    lo ≤ estimate ≤ hi || return NaN
-
-    estimate
-end
-
-function alkane_variance_fit_peak_envelope_at_shift(
+function alkane_variance_fit_peak_envelope_for_rows(
     peakinput,
     fitrows,
-    normalizedapexshift::Real,
-    smoothnessfactor::Real=0.004,
+    smoothnessfactor::Real=ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR,
 )
-    adjustedretentions = peakinput.normalizedretentions .- normalizedapexshift
+    adjustedretentions = peakinput.normalizedretentions
     fitobservations = alkane_variance_peak_fit_observations(
         peakinput,
         fitrows,
@@ -1777,23 +1686,15 @@ function alkane_variance_fit_peak_envelope_at_shift(
     residuals = peakinput.observedraw .- fittedraw
     fitrowmask = falses(size(residuals))
     fitrowmask[fitrows, :] .= true
-    apexretentionshift = Float64(normalizedapexshift) * peakinput.retentionscale
 
     (
         ladderstep=peakinput.ladderstep,
-        envelopegrid=grid .+ Float64(normalizedapexshift),
+        envelopegrid=grid,
         envelopevalues=envelopevalues,
-        envelopeknots=envelopeknots .+ Float64(normalizedapexshift),
+        envelopeknots=envelopeknots,
         envelopecoefficients=envelopecoefficients,
         envelopemethod=:curvature_adaptive_penalized_kernel,
         smoothnessfactor=Float64(smoothnessfactor),
-        normalizedapexshift=Float64(normalizedapexshift),
-        apexretentionshift=apexretentionshift,
-        fittedapexretention=peakinput.apexretention + apexretentionshift,
-        apexscanshift=alkane_variance_peak_apex_scan_shift(
-            peakinput,
-            apexretentionshift,
-        ),
         baselinemodel=:linear,
         normalizedbaseline=normalizedbaseline,
         baseline=baseline,
@@ -1819,7 +1720,7 @@ function alkane_variance_peak_direct_envelope_with_linear_baseline(
     fitrows,
     adjustedretentions::AbstractMatrix{<:Real},
     fitobservations,
-    smoothnessfactor::Real=0.004,
+    smoothnessfactor::Real=ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR,
 )
     signalobservations = alkane_variance_peak_fit_observations_from_response(
         peakinput,
@@ -1829,8 +1730,8 @@ function alkane_variance_peak_direct_envelope_with_linear_baseline(
     )
     profile_retention, profile_intensity, profile_scanindices =
         alkane_variance_peak_observation_profile(signalobservations)
-    left = min(minimum(profile_retention), 0.0)
-    right = max(maximum(profile_retention), 0.0)
+    left = minimum(profile_retention)
+    right = maximum(profile_retention)
     left < right || throw(ArgumentError(
         "peak envelope retention range must be nonzero"))
 
@@ -1884,7 +1785,7 @@ function alkane_variance_peak_adaptive_envelope_grid(
     gridcount = alkane_variance_peak_adaptive_grid_count(scan_count)
     grid = alkane_variance_peak_density_quantile_grid(pilotgrid, density, gridcount)
 
-    alkane_variance_peak_unique_grid(vcat(Float64(left), grid, 0.0, Float64(right)))
+    alkane_variance_peak_unique_grid(vcat(Float64(left), grid, Float64(right)))
 end
 
 function alkane_variance_peak_pilot_envelope(
@@ -2002,7 +1903,7 @@ function alkane_variance_peak_adaptive_penalized_coefficients_with_linear_baseli
     fitrows,
     fitobservations,
     centers::AbstractVector{<:Real},
-    smoothnessfactor::Real=0.004,
+    smoothnessfactor::Real=ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR,
 )
     length(centers) ≥ 3 || throw(ArgumentError(
         "peak envelope fitting requires at least three envelope centers"))
@@ -2172,7 +2073,7 @@ end
 function alkane_variance_peak_scaled_smoothness_weight(
     design,
     roughness,
-    smoothnessfactor::Real=0.004,
+    smoothnessfactor::Real=ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR,
 )
     isempty(roughness) && return 0.0
     isfinite(smoothnessfactor) && smoothnessfactor ≥ 0 || throw(ArgumentError(
@@ -2432,64 +2333,8 @@ function alkane_variance_peak_local_quadratic_value(
     coefs[1]
 end
 
-function alkane_variance_peak_scan_interval(peakinput)
-    intervals = Float64[]
-    for row in axes(peakinput.observationretentions, 1)
-        values = Float64[
-            value for value in peakinput.observationretentions[row, :]
-            if isfinite(value)
-        ]
-        length(values) ≥ 2 || continue
-        append!(intervals, diff(values))
-    end
-    intervals = [abs(value) for value in intervals if isfinite(value) && value != 0]
-    isempty(intervals) && return NaN
-
-    median(intervals)
-end
-
-function alkane_variance_peak_apex_scan_shift(peakinput, apexretentionshift::Real)
-    scanstep = alkane_variance_peak_scan_interval(peakinput)
-    if !(isfinite(scanstep) && scanstep > 0)
-        return NaN
-    end
-
-    Float64(apexretentionshift) / scanstep
-end
-
 function alkane_variance_peak_envelope_dense_grid(left::Real, right::Real, scan_count::Integer)
-    gridcount = max(121, 8 * scan_count)
-    leftwidth = abs(left)
-    rightwidth = abs(right)
-    totalwidth = leftwidth + rightwidth
-    leftcount = max(2, round(Int, gridcount * leftwidth / totalwidth) + 1)
-    rightcount = max(2, gridcount - leftcount + 2)
-
-    uniform = collect(range(Float64(left), Float64(right); length=gridcount))
-    leftgrid = if left < 0
-        -reverse(alkane_variance_peak_apex_spaced_values(leftwidth, leftcount))
-    else
-        Float64[0.0]
-    end
-    rightgrid = if right > 0
-        alkane_variance_peak_apex_spaced_values(rightwidth, rightcount)
-    else
-        Float64[0.0]
-    end
-    if left < 0
-        pop!(leftgrid)
-    end
-    if right > 0
-        popfirst!(rightgrid)
-    end
-
-    sort!(unique!(vcat(uniform, leftgrid, 0.0, rightgrid)))
-end
-
-function alkane_variance_peak_apex_spaced_values(width::Real, count::Integer)
-    scale = Float64(width)
-    scale > 0 || return zeros(Float64, count)
-    collect(range(0.0, 1.0; length=count)).^1.5 .* scale
+    collect(range(Float64(left), Float64(right); length=max(241, 16 * scan_count)))
 end
 
 function alkane_variance_peak_fit_observations(

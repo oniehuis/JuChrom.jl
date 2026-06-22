@@ -27,8 +27,8 @@ end
 function _alkane_variance_mass_spectrum_inputs(; baseline=false)
     retentions = collect(1.0:41.0)
     mzs = [100.0, 101.0, 102.0, 103.0]
-    apexretention = 21.25
-    profile = exp.(-0.5 .* abs2.((retentions .- apexretention) ./ 1.0))
+    truepeakretention = 21.25
+    profile = exp.(-0.5 .* abs2.((retentions .- truepeakretention) ./ 1.0))
     heights = [100.0, 60.0, 30.0, -20.0]
     signal_intensities = profile * heights'
     signal = MassScanMatrix(retentions, u"s", mzs, nothing, signal_intensities, nothing)
@@ -196,6 +196,31 @@ function _alkane_variance_mass_spectrum_inputs(; baseline=false)
     raw, signal, result
 end
 
+function _alkane_variance_result_with_abundance_window(result, window)
+    abundanceinfo = result.abundanceinfo
+    replacement = AlkaneAbundanceInfo(
+        copy(abundanceinfo.abundances),
+        copy(abundanceinfo.abundancevariances),
+        Dict(Int(window.ladderstep) => [window]),
+        abundanceinfo.settings,
+    )
+
+    AlkaneSeriesResult(
+        result.standard,
+        result.variances,
+        result.varianceinfo,
+        result.baselineinfo,
+        result.channelinfo,
+        replacement,
+        result.molecularioninfo,
+        result.pathinfo,
+        result.apexinfo,
+        result.additioninfo,
+        result.datainfo,
+        result.retentionunit,
+    )
+end
+
 @testset "fitalkanevariancemodel entry point" begin
     oldmodel = JuChrom.LinearObservedIntensityVarianceModel(10.0, 2.0, 0.0, 100.0, 0.0)
     @test oldmodel.intensity_offset == 0.0
@@ -241,8 +266,23 @@ end
     raw, signal, result = _alkane_variance_mass_spectrum_inputs(; baseline=true)
 
     fit = fitalkanevariancemodel(raw, result)
+    @test fit isa AlkaneVarianceFit
+    @test fit.success
     @test fit.status === :ok
     @test fit.model isa JuChrom.LinearObservedIntensityVarianceModel
+    modeldisplay = sprint(io -> show(io, MIME"text/plain"(), fit.model))
+    @test occursin("LinearObservedIntensityVarianceModel", modeldisplay)
+    @test occursin("variance(I)", modeldisplay)
+    fitdisplay = sprint(io -> show(io, MIME"text/plain"(), fit))
+    @test occursin("AlkaneVarianceFit", fitdisplay)
+    @test occursin("success: true", fitdisplay)
+    @test !occursin("status: ok", fitdisplay)
+    @test occursin("model:", fitdisplay)
+    @test occursin("range:", fitdisplay)
+    @test occursin("data:", fitdisplay)
+    @test occursin("diagnostics:", fitdisplay)
+    @test occursin("lag1 rho", fitdisplay)
+    @test !occursin("residualrecords", fitdisplay)
     @test fit.model.intercept ≥ 0
     @test fit.model.slope ≥ 0
     @test isfinite(fit.model.intensity_offset)
@@ -253,37 +293,56 @@ end
     @test predicted_variances isa VarianceMassScanMatrix
     @test parent(predicted_variances) === raw
     @test rawvariances(predicted_variances) ≈ varpred(rawintensities(raw), fit.model)
+    @test rawvariances(varpred(raw, fit)) ≈ rawvariances(predicted_variances)
+    @test varpred(8.0, fit) == varpred(8.0, fit.model)
     @test size(rawvariances(predicted_variances)) == size(rawintensities(raw))
     @test fit.qc.status === :ok
-    @test fit.qc.acceptedrunindices == [1]
-    @test fit.qc.rejectedrunindices == Int[]
-    @test length(fit.runs) == 1
-    run = only(fit.runs)
-    @test run.model == fit.model
-    @test run.varianceqc.accept
-    @test run.varianceqc.flatrecordcount == length(run.flatrecords)
-    @test run.varianceqc.peakrecordcount == length(run.residualrecords)
-    @test run.variancefit.model == fit.model
-    @test run.variancefit.flatvarianceanchor ≈ fit.model.intercept
-    @test run.variancefit.intensity_offset ≈ fit.model.intensity_offset
-    @test run.variancefit.robustslope.slope ≈ fit.model.slope
-    @test run.variancefit.lag1.rho ≈ fit.model.rho_lag1
-    @test run.variancefit.lag1.source === :flat_nonpeak
-    @test run.variancefit.lag1.paircount == run.varianceqc.lag1paircount
-    @test run.variancefit.lag1.paircount ≤ length(run.flatrecords) - 1
-    @test !isempty(run.flatrecords)
-    @test all(record -> record.ladderstep == 0, run.flatrecords)
-    @test all(record -> !(13 ≤ record.scanindex ≤ 29), run.flatrecords)
-    @test run.excludeladdersteps == Int[]
-    @test run.includedladdersteps == [8]
-    @test rawintensities(run.signal) ≈ rawintensities(signal)
-    @test Set(keys(run.spectra)) == Set([8])
-    @test isempty(run.failures)
-    @test attrs(run.spectra[8]).ladderstep == 8
-    @test Set(keys(run.peakinputs)) == Set([8])
-    @test isempty(run.peakinputfailures)
-    peakinput = run.peakinputs[8]
+    @test fit.qc.accept
+    @test fit.qc.flatrecordcount == length(fit.flatrecords)
+    @test fit.qc.peakrecordcount == length(fit.residualrecords)
+    @test fit.variancefit.model == fit.model
+    @test fit.variancefit.flatvarianceanchor ≈ fit.model.intercept
+    @test fit.variancefit.intensity_offset ≈ fit.model.intensity_offset
+    @test fit.variancefit.robustslope.slope ≈ fit.model.slope
+    @test fit.variancefit.lag1.rho ≈ fit.model.rho_lag1
+    @test fit.variancefit.lag1.source === :flat_nonpeak
+    @test fit.variancefit.lag1.paircount == fit.qc.lag1paircount
+    @test fit.variancefit.lag1.paircount ≤ length(fit.flatrecords) - 1
+    @test !isempty(fit.flatrecords)
+    @test all(record -> record.ladderstep == 0, fit.flatrecords)
+    @test all(record -> !(13 ≤ record.scanindex ≤ 29), fit.flatrecords)
+    @test fit.excludeladdersteps == Int[]
+    @test fit.includedladdersteps == [8]
+    @test rawintensities(fit.signal) ≈ rawintensities(signal)
+    @test Set(keys(fit.spectra)) == Set([8])
+    @test isempty(fit.failures)
+    @test attrs(fit.spectra[8]).ladderstep == 8
+    @test Set(keys(fit.peakinputs)) == Set([8])
+    @test isempty(fit.peakinputfailures)
+    peakinput = fit.peakinputs[8]
     @test peakinput.ladderstep == 8
+    @test Set(propertynames(peakinput)) == Set([
+        :ladderstep,
+        :scanindices,
+        :abundancewindow,
+        :mzindices,
+        :mzvalues,
+        :spectrumintensities,
+        :spectrumweights,
+        :fitionmask,
+        :fitionpositions,
+        :observationretentions,
+        :normalizedretentions,
+        :retentioncenter,
+        :retentionscale,
+        :observed,
+        :observedraw,
+        :baseline,
+        :normalizedobserved,
+        :normalizedobservedraw,
+        :normalizedbaseline,
+        :intensityscale,
+    ])
     @test peakinput.scanindices == collect(18:24)
     @test peakinput.abundancewindow === result.abundanceinfo.windows[8][1]
     @test peakinput.fitionpositions == [1, 2, 3]
@@ -291,12 +350,49 @@ end
     @test peakinput.spectrumweights ≈ [1.0, 0.6, 0.3]
     @test peakinput.observedraw ≈ peakinput.observed .+ peakinput.baseline
     @test maximum(abs, peakinput.normalizedobserved) ≤ 1.0 + eps(Float64)
+    finite_retentions = Float64[
+        value for value in vec(peakinput.observationretentions)
+        if isfinite(value)
+    ]
+    retention_left, retention_right = extrema(finite_retentions)
+    @test peakinput.retentioncenter ≈ (retention_left + retention_right) / 2
+    @test peakinput.retentionscale ≈
+        maximum(abs.(finite_retentions .- peakinput.retentioncenter))
     @test maximum(abs, peakinput.normalizedretentions) ≤ 1.0 + eps(Float64)
     @test !hasproperty(peakinput, :knots)
-    @test Set(keys(run.peakfits)) == Set([8])
-    @test isempty(run.peakfitfailures)
-    peakfit = run.peakfits[8]
+    @test Set(keys(fit.peakfits)) == Set([8])
+    @test isempty(fit.peakfitfailures)
+    peakfit = fit.peakfits[8]
     @test peakfit.ladderstep == 8
+    @test Set(propertynames(peakfit)) == Set([
+        :ladderstep,
+        :envelopegrid,
+        :envelopevalues,
+        :envelopeknots,
+        :envelopecoefficients,
+        :envelopemethod,
+        :smoothnessfactor,
+        :baselinemodel,
+        :normalizedbaseline,
+        :baseline,
+        :normalizedfitted,
+        :normalizedfittedraw,
+        :normalizedresiduals,
+        :fitted,
+        :fittedraw,
+        :residuals,
+        :rmse,
+        :normalizedrmse,
+        :fitrmse,
+        :normalizedfitrmse,
+        :normalizedfitrss,
+        :observationcount,
+        :fitobservationcount,
+        :fitionpositions,
+        :fitionpositions_initial,
+        :excludedfitionpositions,
+        :replacementfitionpositions,
+    ])
     @test peakfit.baselinemodel === :linear
     @test size(peakfit.fitted) == size(peakinput.observed)
     @test size(peakfit.residuals) == size(peakinput.observed)
@@ -313,17 +409,10 @@ end
     @test maximum(abs, peakfit.baseline .- 10.0) < 3.0
     @test peakfit.fitobservationcount == count(peakinput.fitionmask) * length(peakinput.scanindices)
     @test peakfit.observationcount == length(peakinput.observed)
-    @test abs(peakfit.normalizedapexshift) ≤ 0.5 + eps(Float64)
-    @test peakfit.fittedapexretention ≈ peakinput.apexretention + peakfit.apexretentionshift
-    @test peakfit.apexretentionshift ≈
-        peakfit.normalizedapexshift * peakinput.retentionscale
-    @test isfinite(peakfit.apexscanshift)
-    @test abs(peakfit.apexscanshift) ≤ 0.5 + sqrt(eps(Float64))
-    apexgridindex = findfirst(==(peakfit.normalizedapexshift), peakfit.envelopegrid)
-    @test !isnothing(apexgridindex)
     @test all(isfinite, peakfit.envelopevalues)
     @test all(≥(0), peakfit.envelopevalues)
     @test peakfit.envelopemethod === :curvature_adaptive_penalized_kernel
+    @test peakfit.smoothnessfactor == JuChrom.ALKANE_VARIANCE_PEAK_SMOOTHNESS_FACTOR
     @test first(peakfit.envelopeknots) ≈ first(peakfit.envelopegrid)
     @test last(peakfit.envelopeknots) ≈ last(peakfit.envelopegrid)
     @test length(peakfit.envelopegrid) > length(peakfit.envelopeknots)
@@ -335,30 +424,100 @@ end
     @test peakfit.fitionpositions == [1, 2, 3]
     @test peakfit.excludedfitionpositions == Int[]
     @test peakfit.replacementfitionpositions == Int[]
-    @test run.peakqc.status === :too_few_peaks_for_robust_qc
-    @test run.peakqc.includedladdersteps == [8]
-    @test run.peakqc.excludedladdersteps == Int[]
-    @test isfinite(run.peakqc.robustcenter)
-    @test isfinite(run.peakqc.robustscale)
-    peakqcrow = only(run.peakqc.rows)
+    @test fit.peakqc.status === :too_few_peaks_for_robust_qc
+    @test fit.peakqc.includedladdersteps == [8]
+    @test fit.peakqc.excludedladdersteps == Int[]
+    @test all(row -> Set(propertynames(row)) == Set([
+        :runindex,
+        :ladderstep,
+        :scan_count,
+        :ion_count,
+        :initial_fition_count,
+        :final_fition_count,
+        :replacement_count,
+        :replacement_fraction,
+        :rmse,
+        :normalizedrmse,
+        :fitrmse,
+        :normalizedfitrmse,
+        :robustz,
+        :exclude,
+        :reason,
+        :reasons,
+    ]), fit.peakqc.rows)
+    @test isfinite(fit.peakqc.robustcenter)
+    @test isfinite(fit.peakqc.robustscale)
+    peakqcrow = only(fit.peakqc.rows)
     @test peakqcrow.ladderstep == 8
     @test !peakqcrow.exclude
     @test peakqcrow.reason === :none
     @test peakqcrow.initial_fition_count == 3
     @test peakqcrow.final_fition_count == 3
     @test peakqcrow.replacement_fraction == 0.0
-    @test length(run.residualrecords) == length(peakinput.observed)
-    @test all(record -> record.ladderstep == 8, run.residualrecords)
-    @test all(record -> record.isfition, run.residualrecords)
-    @test all(record -> record.isinitialfition, run.residualrecords)
+    @test length(fit.residualrecords) == length(peakinput.observed)
+    @test all(record -> Set(propertynames(record)) == Set([
+        :runindex,
+        :ladderstep,
+        :ionposition,
+        :mzindex,
+        :mzvalue,
+        :scanposition,
+        :scanindex,
+        :retention,
+        :normalizedretention,
+        :spectrumweight,
+        :isfition,
+        :isinitialfition,
+        :fittedsignal,
+        :observedsignal,
+        :baseline,
+        :fittedintensity,
+        :observedintensity,
+        :residual,
+        :residual2,
+        :normalizedfitted,
+        :normalizedresidual,
+        :fittedsignalslope,
+        :fittedsignalslope2,
+    ]), fit.residualrecords)
+    @test all(record -> record.ladderstep == 8, fit.residualrecords)
+    @test all(record -> record.isfition, fit.residualrecords)
+    @test all(record -> record.isinitialfition, fit.residualrecords)
     @test all(record -> record.fittedintensity ≈
-        record.fittedsignal + record.baseline, run.residualrecords)
+        record.fittedsignal + record.baseline, fit.residualrecords)
     @test all(record -> record.observedintensity ≈
-        record.observedsignal + record.baseline, run.residualrecords)
+        record.observedsignal + record.baseline, fit.residualrecords)
     @test all(record -> record.residual ≈
-        record.observedintensity - record.fittedintensity, run.residualrecords)
-    @test all(record -> record.residual2 ≈ abs2(record.residual), run.residualrecords)
-    @test all(record -> isfinite(record.fittedsignalslope), run.residualrecords)
+        record.observedintensity - record.fittedintensity, fit.residualrecords)
+    @test all(record -> record.residual2 ≈ abs2(record.residual), fit.residualrecords)
+    @test all(record -> isfinite(record.fittedsignalslope), fit.residualrecords)
+
+    full_window = AlkaneAbundanceWindow(
+        8,
+        firstindex(rawretentions(raw)),
+        result.abundanceinfo.windows[8][1].apexindex,
+        lastindex(rawretentions(raw)),
+        0.0,
+        maximum(result.abundanceinfo.abundances[8]),
+        0.0,
+        0.0,
+        :test,
+        :test,
+    )
+    noflatresult = _alkane_variance_result_with_abundance_window(result, full_window)
+    noflatfit = fitalkanevariancemodel(raw, noflatresult)
+    @test noflatfit isa AlkaneVarianceFit
+    @test !noflatfit.success
+    @test noflatfit.status === :failed
+    @test isnothing(noflatfit.model)
+    @test noflatfit.qc.accept === false
+    @test :variance_model_fit_failed in noflatfit.qc.reasons
+    @test_throws ArgumentError varpred(8.0, noflatfit)
+    noflatdisplay = sprint(io -> show(io, MIME"text/plain"(), noflatfit))
+    @test occursin("success: false", noflatdisplay)
+    @test occursin("status: failed", noflatdisplay)
+    @test occursin("reasons:", noflatdisplay)
+
     narrow_bandwidth = JuChrom.alkane_variance_peak_local_quadratic_bandwidth(
         [0.0, 1.0, 2.0],
         [1, 2, 3],
@@ -370,11 +529,12 @@ end
     @test broad_bandwidth > narrow_bandwidth
 
     twoionfit = fitalkanevariancemodel(raw, result; fitioncount=2)
-    twoioninput = only(twoionfit.runs).peakinputs[8]
+    @test twoionfit.success
+    twoioninput = twoionfit.peakinputs[8]
     @test twoioninput.fitionpositions == [1, 2]
     @test twoioninput.fitionmask == [true, true, false]
-    @test only(twoionfit.runs).peakfits[8].fitionpositions == [1, 2]
-    @test only(twoionfit.runs).peakfits[8].fitionpositions_initial == [1, 2]
+    @test twoionfit.peakfits[8].fitionpositions == [1, 2]
+    @test twoionfit.peakfits[8].fitionpositions_initial == [1, 2]
 
     fakefit = (normalizedresiduals=[
         0.1 0.1 0.1
@@ -393,15 +553,6 @@ end
     @test excludedrows == [3]
     @test replacementrows == [4]
 
-    multifit = fitalkanevariancemodel([(raw, result), raw => result])
-    @test length(multifit.runs) == 2
-
-    tuplefit = fitalkanevariancemodel(
-        [(raw, result, (; excludeladdersteps=[]))];
-        excludeladdersteps=[],
-    )
-    @test only(tuplefit.runs).includedladdersteps == [8]
-
     badmsm = MassScanMatrix(
         rawretentions(raw),
         retentionunit(raw),
@@ -414,8 +565,8 @@ end
 
     msm, emptyresult = _alkane_variance_entrypoint_inputs()
     @test_throws ArgumentError fitalkanevariancemodel(msm, emptyresult)
-    @test_throws ArgumentError fitalkanevariancemodel([(raw, raw)])
-    @test_throws ArgumentError fitalkanevariancemodel(
+    @test_throws MethodError fitalkanevariancemodel([(raw, raw)])
+    @test_throws MethodError fitalkanevariancemodel(
         Tuple{MassScanMatrix, AlkaneSeriesResult}[],
     )
     @test_throws ArgumentError fitalkanevariancemodel(raw, result; laddersteps=[8])
@@ -428,7 +579,7 @@ end
         result;
         peakbaselinemodel=:linear,
     )
-    @test_throws ArgumentError fitalkanevariancemodel([
+    @test_throws MethodError fitalkanevariancemodel([
         (raw, result, (; laddersteps=[8])),
     ])
     badpeakinput = merge(peakinput, (fitionmask=falses(length(peakinput.fitionmask)),))
