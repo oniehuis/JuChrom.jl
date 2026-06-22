@@ -270,6 +270,7 @@ end
     @test varpred(5.0, offsetmodel) == 10.0
     @test varpred(8.0, offsetmodel) == 16.0
     @test varpred([-1.0, 5.0, 8.0], offsetmodel) == [10.0, 10.0, 16.0]
+    @test varpred.([4.0, 8.0], offsetmodel) == [10.0, 16.0]
     @test varpred(101.0, offsetmodel; extrapolation=:allow) == 202.0
     @test_logs (:warn, r"outside the calibrated range") varpred(
         101.0,
@@ -796,6 +797,17 @@ end
         trim_fraction=0.49,
     )
     @test trimmedlag.status === :too_few_pairs_after_trimming
+    oklag = JuChrom.alkane_variance_lag1_autocorrelation(
+        lagrecords,
+        JuChrom.LinearObservedIntensityVarianceModel(1.0, 0.0, 0.0, 10.0, 0.0);
+        trim_fraction=0.0,
+    )
+    @test oklag.status === :ok
+    @test oklag.source === :flat_nonpeak
+    @test oklag.paircount == 4
+    @test oklag.tracecount == 1
+    @test oklag.trim_fraction == 0.0
+    @test oklag.rho ≈ 40 / sqrt(30 * 54)
 
     @test isnan(JuChrom.alkane_variance_peak_fitted_signal_slope(
         merge(peakinput, (retentionscale=NaN,)),
@@ -843,7 +855,30 @@ end
         1,
     )
     @test activefallback == [0.0]
+    @test JuChrom.alkane_variance_peak_linear_baseline_prior_weight() == 1.0
     @test JuChrom.alkane_variance_linear_baseline_coefficients([NaN], [NaN]) == (0.0, 0.0)
+    @test_throws DimensionMismatch JuChrom.alkane_variance_peak_local_quadratic_envelope(
+        [0.0],
+        [0.0, 1.0, 2.0],
+        [1.0, 2.0],
+        [1, 2, 3],
+    )
+    @test_throws ArgumentError JuChrom.alkane_variance_peak_local_quadratic_envelope(
+        [0.0],
+        [0.0, 1.0],
+        [1.0, 2.0],
+        [1, 2],
+    )
+    envelope = JuChrom.alkane_variance_peak_local_quadratic_envelope(
+        [0.0, 1.0, 2.0],
+        [0.0, 1.0, 2.0],
+        [0.0, 1.0, 0.0],
+        [1, 2, 3],
+    )
+    @test length(envelope) == 3
+    @test all(≥(0), envelope)
+    @test envelope[2] > envelope[1]
+    @test envelope[2] > envelope[3]
     @test JuChrom.alkane_variance_peak_local_quadratic_bandwidth(
         [0.0, 1.0, Inf],
         [1, 2, 3],
