@@ -1,57 +1,6 @@
 # ── binretentions ─────────────────────────────────────────────────────────────────────────
 
-"""
-    binretentions(
-        retentions::AbstractVector{<:Number},
-        intensities::AbstractVector{<:Number}, 
-        bin_edges::AbstractVector{<:Number}, 
-        variances::AbstractVector{<:Number};
-        zero_threshold::Number=1e-8, 
-        rho_lag1::Real=0.0, 
-        rho_max::Real=0.8
-    ) -> (retention_centers::Vector, bin_intensities::Vector, bin_vars::Vector)
-
-Return bin centers, binned intensities, and propagated variances by aggregating
-`retentions` and their `corresponding` intensity pairs into the bins defined by 
-`bin_edges` using inverse-variance weighted means.
-
-Each observation contributes to the bin covering its retention value. Variances are
-clamped to `zero_threshold` before weighting, the bin mean is computed as
-`Σ wᵢ yᵢ / Σ wᵢ` with `wᵢ = 1 / Varᵢ`, and reported variances are inflated by a lag-1
-correlation term controlled by `rho_lag1` and `rho_max`. Retentions and `bin_edges`
-must both be unitless or share the same physical dimension. Bin edges must be a
-monotonic vector defining left-closed, right-open intervals `[eᵢ, eᵢ₊₁)`; the final edge
-is exclusive. Unitful intensities require variances with squared intensity units, and 
-negative intensities are preserved so baseline-corrected signals can contribute. The 
-function returns `(centers, bin_means, bin_vars)` and throws `ArgumentError` for empty 
-inputs, mismatched lengths, negative variances, or invalid bin edges, and 
-`Unitful.DimensionError` for incompatible units.
-
-See also
-[`vif`](@ref JuChrom.vif).
-
-# Examples
-```jldoctest
-julia> rets = collect(0.0:0.5:4.5);
-       ints = [10, 12, 9, 4, 6, 7, 3, 2, 1, 0];
-       edges = 0.0:1.0:5.0;
-       vars = fill(0.25, length(ints));
-
-julia> centers, means, varŝ = binretentions(rets, ints, edges, vars);
-
-julia> centers
-5-element Vector{Float64}:
- 0.5
- 1.5
- 2.5
- 3.5
- 4.5
-
-julia> means[1] ≈ (10 + 12) / 2
-true
-```
-"""
-function binretentions(
+function _binretention_trace(
     retentions::AbstractVector{<:Number},
     intensities::AbstractVector{<:Number},
     bin_edges::AbstractVector{<:Number},
@@ -206,178 +155,48 @@ function binretentions(
     bin_centers, avg_intensities, bin_variances
 end
 
-"""
-    binretentions(
-        msm::MassScanMatrix, 
-        bin_edges::AbstractVector{<:Number}, 
-        variance_model::Union{
-            AbstractVector{<:LinearObservedIntensityVarianceModel},
-            LinearObservedIntensityVarianceModel
-        };
-        jacobian_scale=nothing::Union{Nothing, AbstractVector{<:Real}, Function}, 
-        zero_threshold::Number=1e-8, 
-        rho_max::Real=0.8,
-        extrapolation::Symbol=:allow
-    ) -> (msm_binned::MassScanMatrix, var_matrix::Matrix)
+function _validate_retention_grid(msm::AbstractMassScanMatrix, rgrid::RetentionGrid)
+    data_unit = retentionunit(msm)
+    grid_unit = retentionunit(rgrid)
 
-Return a binned `MassScanMatrix` and per-bin variances by applying
-[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}))
-to each m/z trace in `msm`.
+    if isnothing(data_unit)
+        isnothing(grid_unit) || throw(ArgumentError(
+            "RetentionGrid has a unit but input matrix retentions are unitless"))
+    elseif isnothing(grid_unit)
+        throw(ArgumentError(
+            "RetentionGrid is unitless but input matrix retentions have a unit"))
+    else
+        data_quantity = one(Float64) * data_unit
+        grid_quantity = one(Float64) * grid_unit
+        Unitful.dimension(data_quantity) == Unitful.dimension(grid_quantity) ||
+            throw(Unitful.DimensionError(data_quantity, grid_quantity))
+    end
 
-This method differs from the scalar `binretentions` in that it predicts per-scan variances 
-via `LinearObservedIntensityVarianceModel`, uses each model's `rho_lag1` for serial
-variance inflation, optionally applies a Jacobian scale `(f'(t))⁻²`, and processes all
-m/z columns in a matrix. If the matrix stores unitful intensities, per-scan and binned
-variances retain squared intensity units, while `msm_binned` stores stripped numeric
-intensities and carries the original metadata. A scalar `variance_model` is broadcast
-across m/z columns, and `zero_threshold` is promoted to squared intensity units when
-needed.
-
-See also
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`LinearObservedIntensityVarianceModel`](@ref JuChrom.LinearObservedIntensityVarianceModel),
-[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
-[`varpred`](@ref JuChrom.varpred),
-[`vif`](@ref JuChrom.vif).
-
-# Example
-```jldoctest
-julia> msm = MassScanMatrix(collect(0.0:0.5:2.0), nothing, [100.0, 101.0], nothing,
-                            [10 12; 9 11; 8 10; 7 9; 6 8], nothing);
-       model = LinearObservedIntensityVarianceModel(0.1, 0.01, 0.0, 12.0, 0.2);
-       edges = 0:1:3.0;
-
-julia> msm_binned, vars = binretentions(msm, edges, model);
-
-julia> size(msm_binned.intensities)
-(3, 2)
-```
-"""
-function binretentions(
-    msm::MassScanMatrix,
-    bin_edges::AbstractVector{<:Number},
-    variance_model::Union{
-        AbstractVector{<:LinearObservedIntensityVarianceModel},
-        LinearObservedIntensityVarianceModel
-    };
-    jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
-    zero_threshold::Number=1e-8,
-    rho_max::Real=0.8,
-    extrapolation::Symbol=:allow)
-
-    ints = rawintensities(msm)
-    _, n_mz = size(ints)
-
-    models = variance_model isa AbstractVector ? variance_model :
-        fill(variance_model, n_mz)
-    length(models) == n_mz || throw(ArgumentError(
-        "variance_model length $(length(models)) ≠ n_mz $n_mz"))
-
-    variances = linear_observed_intensity_variances(msm, models; extrapolation=extrapolation)
-    rhos = [model.rho_lag1 for model in models]
-
-    _binretentions_with_variances(
-        msm,
-        bin_edges,
-        variances,
-        rhos;
-        jacobian_scale=jacobian_scale,
-        zero_threshold=zero_threshold,
-        rho_max=rho_max,
-    )
+    nothing
 end
 
-function linear_observed_intensity_variances(
-    msm::MassScanMatrix,
-    models::AbstractVector{<:LinearObservedIntensityVarianceModel};
-    extrapolation::Symbol=:allow,
-)
-    ints = rawintensities(msm)
-    n_scans, n_mz = size(ints)
-
-    intensity_unit = intensityunit(msm)
-    has_intensity_unit = intensity_unit ≢ nothing
-    intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
-    variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
-    variance_unit = has_intensity_unit ? Unitful.unit(variance_quantity) : nothing
-    variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
-
-    function model_has_units(model)
-        isunitful(model.intercept) ||
-            isunitful(model.slope) ||
-            isunitful(model.intensity_offset)
-    end
-
-    function intensities_for_model(col, model)
-        if model_has_units(model)
-            has_intensity_unit || throw(ArgumentError(
-                "variance model carries units but msm intensities are unitless"))
-            return col .* intensity_quantity
-        end
-
-        col
-    end
-
-    function normalize_predicted_variances(predicted)
-        first_predicted = first(predicted)
-        if has_intensity_unit
-            if isunitful(first_predicted)
-                Unitful.dimension(first_predicted) == variance_dimension || throw(
-                    Unitful.DimensionError(first_predicted, variance_quantity))
-                return Unitful.ustrip.(Base.RefValue(variance_unit), predicted)
-            end
-
-            return predicted
-        end
-
-        isunitful(first_predicted) && throw(ArgumentError(
-            "msm intensities are unitless but predicted variances have units"))
-        predicted
-    end
-
-    first_col = @view ints[:, 1]
-    first_predicted = normalize_predicted_variances(varpred(
-        intensities_for_model(first_col, models[1]),
-        models[1];
-        extrapolation=extrapolation,
-    ))
-    variances = Matrix{eltype(first_predicted)}(undef, n_scans, n_mz)
-    variances[:, 1] .= first_predicted
-
-    @inbounds for col in 2:n_mz
-        mzints = @view ints[:, col]
-        predicted = normalize_predicted_variances(varpred(
-            intensities_for_model(mzints, models[col]),
-            models[col];
-            extrapolation=extrapolation,
-        ))
-        variances[:, col] .= predicted
-    end
-
-    variances
-end
-
-# ─────────────────────────────────────────────────────────────────────────────
-
-function _binretentions_with_variances(
-    msm::MassScanMatrix,
-    bin_edges::AbstractVector{<:Number},
-    variances::AbstractMatrix{<:Number},
+function _binretentions_with_grid(
+    vmsm::AbstractVarianceMassScanMatrix,
+    rgrid::RetentionGrid,
     rho_lag1::Union{AbstractVector{<:Real}, Real};
-    jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
     zero_threshold::Number=1e-8,
     rho_max::Real=0.8)
 
-    # Extract shared views to avoid recomputing getters in loops.
-    rets = retentions(msm)  # RT values (unitful or unitless)
+    msm = parent(vmsm)
+    _validate_retention_grid(msm, rgrid)
+
+    grid_unit = retentionunit(rgrid)
+    rets = isnothing(grid_unit) ? rawretentions(msm) : rawretentions(msm; unit=grid_unit)
+    bin_edges = rawbinedges(rgrid)
     ints = rawintensities(msm)
+    vars_in = variances(vmsm)
     n_scans, n_mz = size(ints)
 
-    size(variances) == (n_scans, n_mz) || throw(ArgumentError(
-        "variances size $(size(variances)) ≠ ($(n_scans), $(n_mz))"))
+    size(vars_in) == (n_scans, n_mz) || throw(ArgumentError(
+        "variances size $(size(vars_in)) ≠ ($(n_scans), $(n_mz))"))
 
     intensity_unit = intensityunit(msm)
-    has_intensity_unit = intensity_unit ≢ nothing
+    has_intensity_unit = intensity_unit !== nothing
     intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
     variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
     variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
@@ -396,76 +215,35 @@ function _binretentions_with_variances(
         end
     else
         isunitful(zero_threshold) && throw(ArgumentError(
-            "zero_threshold has units but msm intensities are unitless"))
+            "zero_threshold has units but input matrix intensities are unitless"))
     end
 
-    # Broadcast scalar lag-1 correlations across columns if needed.
     rhos = rho_lag1 isa AbstractVector ? rho_lag1 : fill(rho_lag1, n_mz)
     length(rhos) == n_mz || throw(ArgumentError(
         "rho_lag1 length $(length(rhos)) ≠ n_mz $n_mz"))
 
-    # Build the Jacobian scaling factor J^{-2} once (vector or callable input).
-    Jinv² = nothing
-    if jacobian_scale ≡ nothing
-        Jinv² = nothing
-    elseif jacobian_scale isa AbstractVector
-        length(jacobian_scale) == n_scans || throw(ArgumentError(
-            "jacobian_scale vector must match number of scans"))
-        Tj = typeof(inv(jacobian_scale[1])^2)
-        Jinv² = Vector{Tj}(undef, n_scans)
-        @inbounds for k in 1:n_scans
-            J = jacobian_scale[k]
-            abs(J) > 0 || throw(ArgumentError("jacobian_scale contains zero at scan $k"))
-            Jinv²[k] = inv(J)^2
-        end
-    else
-        J₁ = jacobian_scale(rets[1])
-        abs(J₁) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan 1"))
-        Tj = typeof(inv(J₁)^2)
-        Jinv² = Vector{Tj}(undef, n_scans)
-        Jinv²[1] = inv(J₁)^2
-        @inbounds for k in 2:n_scans
-            J = jacobian_scale(rets[k])
-            abs(J) > 0 || throw(ArgumentError("jacobian_scale(t) returned zero at scan $k"))
-            Jinv²[k] = inv(J)^2
-        end
-    end
-
     function prepare_variance_column(col_view)
         first_val = col_view[1]
-        col = if has_intensity_unit
+        if has_intensity_unit
             if isunitful(first_val)
                 Unitful.dimension(first_val) == variance_dimension || throw(
                     Unitful.DimensionError(first_val, variance_quantity))
-                col_view
-            else
-                col_view .* variance_quantity
+                return col_view
             end
-        else
-            isunitful(first_val) && throw(ArgumentError(
-                "msm intensities are unitless but variances have units"))
-            col_view
+
+            return col_view .* variance_quantity
         end
 
-        if Jinv² ≡ nothing
-            return col
-        end
-
-        T = typeof(col[1] * Jinv²[1])
-        out = Vector{T}(undef, n_scans)
-        @inbounds for k in 1:n_scans
-            out[k] = col[k] * Jinv²[k]
-        end
-        out
+        isunitful(first_val) && throw(ArgumentError(
+            "input matrix intensities are unitless but variances have units"))
+        col_view
     end
 
-    # First column: bin with provided variances.
     first_ints_view = @view ints[:, 1]
-    first_vars_view = @view variances[:, 1]
-    first_vars = prepare_variance_column(first_vars_view)
-    first_ints_for_scalar = attach_intensity_units(first_ints_view)
-    bin_centers, first_bin_ints, first_bin_vars = binretentions(
-        rets, first_ints_for_scalar, bin_edges, first_vars;
+    first_vars = prepare_variance_column(@view vars_in[:, 1])
+    first_ints_for_trace = attach_intensity_units(first_ints_view)
+    bin_centers, first_bin_ints, first_bin_vars = _binretention_trace(
+        rets, first_ints_for_trace, bin_edges, first_vars;
         zero_threshold=zero_threshold_eff, rho_lag1=rhos[1], rho_max=rho_max)
 
     n_bins = length(bin_centers)
@@ -473,33 +251,25 @@ function _binretentions_with_variances(
     im = Matrix{eltype(raw_first_bin_ints)}(undef, n_bins, n_mz)
     vars = similar(first_bin_vars, n_bins, n_mz)
     @inbounds begin
-        im[:, 1] .= raw_first_bin_ints  # seed matrices with first m/z results
+        im[:, 1] .= raw_first_bin_ints
         vars[:, 1] .= first_bin_vars
     end
 
-    # Remaining m/z columns
     @inbounds for col in 2:n_mz
         mzints = @view ints[:, col]
-        mzvars = prepare_variance_column(@view variances[:, col])
-        mzints_for_scalar = attach_intensity_units(mzints)
-        _, bin_ints, bin_vars = binretentions(
-            rets, mzints_for_scalar, bin_edges, mzvars;
+        mzvars = prepare_variance_column(@view vars_in[:, col])
+        mzints_for_trace = attach_intensity_units(mzints)
+        _, bin_ints, bin_vars = _binretention_trace(
+            rets, mzints_for_trace, bin_edges, mzvars;
             zero_threshold=zero_threshold_eff, rho_lag1=rhos[col], rho_max=rho_max)
 
-        raw_bin_ints = strip_intensity_units(bin_ints)
-        im[:, col]   .= raw_bin_ints
+        im[:, col] .= strip_intensity_units(bin_ints)
         vars[:, col] .= bin_vars
     end
 
-    # Convert bin centers back to raw numeric retentions + unit metadata.
-    raw_retentions, retentionunit = (isunitful(first(bin_centers)) ? 
-        (Unitful.ustrip.(bin_centers), Unitful.unit(first(bin_centers))) : (bin_centers, 
-        nothing))
-
-    # Build the output matrix, cloning metadata to avoid side effects.
     msm_out = MassScanMatrix(
-        raw_retentions,
-        retentionunit,
+        bin_centers,
+        grid_unit,
         deepcopy(rawmzvalues(msm)),
         mzunit(msm),
         im,
@@ -518,18 +288,23 @@ end
 """
     binretentions(
         vmsm::AbstractVarianceMassScanMatrix,
-        bin_edges::AbstractVector{<:Number},
+        rgrid::RetentionGrid,
         rho_lag1::Union{AbstractVector{<:Real}, Real};
         zero_threshold::Number=1e-8,
         rho_max::Real=0.8
     ) -> VarianceMassScanMatrix
 
-    binretentions(vmsm::AbstractVarianceMassScanMatrix, bin_edges::AbstractVector{<:Number}; kwargs...)
+    binretentions(vmsm::AbstractVarianceMassScanMatrix, rgrid::RetentionGrid; kwargs...)
 
-Return a binned `VarianceMassScanMatrix` by applying retention binning to the parent
-mass-scan matrix and propagating the stored per-cell variances.
+Return a binned `VarianceMassScanMatrix` by applying `rgrid` to the parent mass-scan
+matrix and propagating the stored per-cell variances.
 
-This method uses `variances(vmsm)` directly, so variance units and scales are preserved.
+Retentions are converted to the grid's retention unit before bin assignment. The returned
+matrix stores bin centers in the grid's raw retention scale and uses the grid's
+`retentionunit`. Intensities are inverse-variance weighted within each bin. The stored
+variances are propagated as variances of the weighted means and inflated with
+[`vif`](@ref JuChrom.vif) using `rho_lag1`.
+
 Scalar `rho_lag1` inputs are broadcast across m/z columns; vector inputs must have one
 lag-1 correlation per m/z channel. No Jacobian scaling is applied. If the data were
 retention-mapped before binning, apply the mapping to the `VarianceMassScanMatrix` first
@@ -537,20 +312,20 @@ so the stored intensities and variances are already on the mapped scale.
 
 See also
 [`VarianceMassScanMatrix`](@ref JuChrom.VarianceMassScanMatrix),
-[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
+[`RetentionGrid`](@ref JuChrom.RetentionGrid),
+[`densestgrid`](@ref JuChrom.densestgrid),
 [`vif`](@ref JuChrom.vif).
 """
 function binretentions(
     vmsm::AbstractVarianceMassScanMatrix,
-    bin_edges::AbstractVector{<:Number},
+    rgrid::RetentionGrid,
     rho_lag1::Union{AbstractVector{<:Real}, Real};
     zero_threshold::Number=1e-8,
     rho_max::Real=0.8)
 
-    binned_msm, binned_variances = _binretentions_with_variances(
-        parent(vmsm),
-        bin_edges,
-        variances(vmsm),
+    binned_msm, binned_variances = _binretentions_with_grid(
+        vmsm,
+        rgrid,
         rho_lag1;
         zero_threshold=zero_threshold,
         rho_max=rho_max)
@@ -560,13 +335,13 @@ end
 
 function binretentions(
     vmsm::AbstractVarianceMassScanMatrix,
-    bin_edges::AbstractVector{<:Number};
+    rgrid::RetentionGrid;
     zero_threshold::Number=1e-8,
     rho_max::Real=0.8)
 
     binretentions(
         vmsm,
-        bin_edges,
+        rgrid,
         0.0;
         zero_threshold=zero_threshold,
         rho_max=rho_max)

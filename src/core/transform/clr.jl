@@ -1,95 +1,61 @@
 # ── clr ───────────────────────────────────────────────────────────────────────────────────
 
 """
-    clr(x::AbstractArray{<:Real}) -> Array{Float64}
-    clr(x::AbstractArray{<:Real},
-        variances::AbstractArray{<:Real}) -> Tuple{Array{Float64}, Array{Float64}}
+    clr(vmsm::AbstractVarianceMassScanMatrix) -> VarianceMassScanMatrix
 
-Apply the centered log-ratio (CLR) transformation to compositional data, with optional 
-variance propagation.
+Apply the centered log-ratio (CLR) transformation to the intensity matrix of a variance
+mass scan matrix and propagate the associated per-cell variances.
 
-The CLR transformation converts strictly positive data to log-ratio coordinates
-by subtracting the geometric mean (in log space) from each log-transformed value:
-`clr(x) = log(x) - mean(log(x))`.
+The input intensities must be strictly positive. `clr` does not replace zeros or negative
+values; use [`replacecensored`](@ref JuChrom.replacecensored) before `clr` when censored
+or baseline-corrected data contain non-positive cells.
 
-# Single Array Usage
-When called with one array, returns only the CLR-transformed data.
+The returned `VarianceMassScanMatrix` keeps the retention axis, m/z axis, level, metadata,
+and extras of the input. CLR values are log-ratio coordinates, so both `intensityunit` and
+`varianceunit` of the returned object are `nothing`.
 
-# Variance Propagation Usage  
-When called with two arrays, the second array contains variances of the original data.
-Returns both the CLR-transformed data and the propagated variances using exact 
-finite-sample correction.
-
-# Arguments
-- `x::AbstractArray{<:Real}`: Input array with strictly positive values
-- `variances::AbstractArray{<:Real}`: Element-wise variances of original data (same shape 
-  as `x`)
-
-# Returns
-- Single array: `Array{Float64}` - CLR-transformed data with same shape as input
-- Two arrays: `Tuple{Array{Float64}, Array{Float64}}` - (CLR-transformed data, propagated 
-  variances)
+Variance propagation uses the delta-method variance of `log(x)` followed by the finite
+CLR centering correction:
+`sigma2_clr[i] = sigma2_log[i] * (1 - 2/N) + sum(sigma2_log) / N^2`, where
+`sigma2_log[i] = variance[i] / intensity[i]^2` and `N` is the number of cells.
 
 # Throws
-- `DomainError`: if any element of `x` is ≤ 0
-- `DimensionMismatch`: if `x` and `variances` have different shapes
-
-# Examples
-```jldoctest
-julia> x = [0.1, 0.7, 0.2]; σ² = [1, 9, 3];
-
-julia> clr(x) ≈ [-0.8796857765384194, 1.0662243725168936, -0.18653859597847422]
-true
-
-julia> x_clr, σ²_clr = clr(x, σ²);
-
-julia> x_clr == clr(x)
-true
-
-julia> σ²_clr ≈ [54.81859410430839, 27.60770975056689, 46.485260770975046]
-true
-```
+- `DomainError`: if any intensity is zero or negative.
+- `DimensionMismatch`: if the variance matrix shape does not match the intensity matrix.
 """
-function clr(x::AbstractArray{<:Real})
-    # Ensure all components are strictly positive (required for log transformation)
-    all(>(0), x) || throw(DomainError(x, "components must be > 0"))
+function clr(vmsm::AbstractVarianceMassScanMatrix)
+    x = rawintensities(vmsm)
+    variances = rawvariances(vmsm; unit=default_varianceunit(vmsm))
 
-    # Apply log transformation to convert multiplicative to additive scale
-    logx = log.(x)
-
-    # Calculate geometric mean in log space (arithmetic mean of log values)
-    μ̄ = mean(logx)
-
-    # Center by subtracting geometric mean to create zero-sum constraint
-    logx .- μ̄
-end
-
-function clr(x::AbstractArray{<:Real}, variances::AbstractArray{<:Real})
-    # Ensure arrays have matching dimensions for element-wise variance propagation
     size(x) == size(variances) || throw(
-        DimensionMismatch("x and variances must have the same shape"))
+        DimensionMismatch("intensities and variances must have identical sizes"))
+    all(>(0), x) || throw(DomainError(
+        x,
+        "all intensities must be > 0; call replacecensored first if zeros or negative values are present",
+    ))
 
-    # Validate all components are strictly positive for log transformation
-    all(>(0), x) || throw(DomainError(x, "components must be > 0"))
-    
-    # Apply CLR transformation to the data
-    clr_x = clr(x)
-    
-    # Convert variances to standard deviations after log transformation using Delta method
-    σ_log = sqrt.(variances) ./ x
+    logx = log.(x)
+    clr_intensities = logx .- mean(logx)
 
-    # Store array length for finite-sample correction calculations
+    sigma2_log = variances ./ abs2.(x)
     N = length(x)
+    total_sigma2_log = sum(sigma2_log)
+    clr_variances = @. sigma2_log * (1 - 2 / N) + total_sigma2_log / N^2
 
-    # Convert standard deviations back to variances in log space
-    σ2_log = σ_log .^ 2
+    msm_out = MassScanMatrix(
+        copy(rawretentions(vmsm)),
+        retentionunit(vmsm),
+        copy(rawmzvalues(vmsm)),
+        mzunit(vmsm),
+        clr_intensities,
+        nothing;
+        level=level(vmsm),
+        instrument=deepcopy(instrument(vmsm)),
+        acquisition=deepcopy(acquisition(vmsm)),
+        user=deepcopy(user(vmsm)),
+        sample=deepcopy(sample(vmsm)),
+        extras=deepcopy(extras(vmsm)),
+    )
 
-    # Sum of all log-space variances (needed for CLR correction term)
-    Σσ2 = sum(σ2_log)
-
-    # Apply exact finite-sample correction for CLR variance propagation
-    σ2_clr = @. σ2_log * (1 - 2/N) + Σσ2/N^2
-    
-    # Return both transformed data and propagated variances
-    clr_x, σ2_clr
+    VarianceMassScanMatrix(msm_out, clr_variances, nothing)
 end

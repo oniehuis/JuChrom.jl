@@ -55,6 +55,7 @@ include("core/variances/alkaneladder/containers.jl")
 include("core/variances/alkaneladder/apply.jl")
 include("core/scan_timing/mz_retention.jl")
 include("core/transform/binning.jl")
+include("core/transform/censoring.jl")
 include("core/transform/clr.jl")
 include("core/transform/gridding.jl")
 include("core/transform/intensity_units.jl")
@@ -99,6 +100,7 @@ export AlkaneStandard
 export AlkaneVarianceFit
 export ChromScan
 export ChromScanSeries
+export CensoredReplacementInfo
 export CountVarianceEstimate
 export MassScan
 export MassScanMatrix
@@ -199,6 +201,7 @@ export rawretentions
 export rawretentions_A
 export rawretentions_B
 export rawtolerance
+export replacecensored
 export retention
 export retentions
 export retentions_A

@@ -2,101 +2,94 @@ module TestClr
 
 using Statistics: mean
 using Test
+using Unitful
 using JuChrom
 
-# ─────────────────────────────────────────────────────────────────────────────
-# clr
-# ─────────────────────────────────────────────────────────────────────────────
+@testset "clr(vmsm::AbstractVarianceMassScanMatrix)" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]u"Th"
+    x = [1.0 2.0;
+         4.0 8.0]
+    v = [0.01 0.04;
+         0.16 0.64]
+    msm = MassScanMatrix(
+        rets,
+        mzs,
+        x .* u"pA";
+        level=2,
+        instrument=(name="test instrument",),
+        acquisition=(mode="scan",),
+        user=(analyst="tester",),
+        sample=(id="sample-a",),
+        extras=Dict("run" => "A"),
+    )
+    vmsm = VarianceMassScanMatrix(msm, v .* u"pA"^2)
 
-@testset "clr(x::AbstractArray{<:Real})" begin
-    @testset "basic correctness & zero-sum" begin
-        x = [1.0, 2.0, 3.0]
-        y = JuChrom.clr(x)
-        # manual expectation: log.(x) .- mean(log.(x))
-        exp = log.(x) .- mean(log.(x))
-        @test y ≈ exp
-        @test isapprox(sum(y), 0.0; atol=1e-12)
-        @test size(y) == size(x)
-    end
+    transformed = clr(vmsm)
 
-    @testset "scale invariance" begin
-        x = [0.5, 1.5, 3.0, 6.0]
-        y1 = JuChrom.clr(x)
-        y2 = JuChrom.clr(5.0 .* x)  # scaling should not change clr
-        @test y1 ≈ y2
-    end
+    expected_x = log.(x) .- mean(log.(x))
+    sigma2_log = v ./ abs2.(x)
+    N = length(x)
+    total_sigma2_log = sum(sigma2_log)
+    expected_v = @. sigma2_log * (1 - 2 / N) + total_sigma2_log / N^2
 
-    @testset "matrix input preserves shape and zero-sum over all elements" begin
-        X = [1.0  2.0
-             3.0  6.0]
-        Y = JuChrom.clr(X)
-        @test size(Y) == size(X)
-        @test isapprox(sum(Y), 0.0; atol=1e-12)
-        @test Y ≈ (log.(X) .- mean(log.(X)))
-    end
+    @test transformed isa VarianceMassScanMatrix
+    @test parent(transformed) isa MassScanMatrix
+    @test retentionunit(transformed) == u"s"
+    @test mzunit(transformed) == u"Th"
+    @test intensityunit(transformed) === nothing
+    @test varianceunit(transformed) === nothing
+    @test level(transformed) == 2
+    @test instrument(transformed) == instrument(vmsm)
+    @test acquisition(transformed) == acquisition(vmsm)
+    @test user(transformed) == user(vmsm)
+    @test sample(transformed) == sample(vmsm)
+    @test extras(transformed) == extras(vmsm)
+    @test rawretentions(transformed) == rawretentions(vmsm)
+    @test rawmzvalues(transformed) == rawmzvalues(vmsm)
+    @test rawintensities(transformed) ≈ expected_x
+    @test rawvariances(transformed) ≈ expected_v
+    @test isapprox(sum(rawintensities(transformed)), 0.0; atol=1e-12)
+    @test all(≥(0), rawvariances(transformed))
 
-    @testset "errors on non-positive components" begin
-        @test_throws DomainError JuChrom.clr([0.0, 1.0, 2.0])
-        @test_throws DomainError JuChrom.clr([-1.0, 1.0, 2.0])
-    end
+    @test rawintensities(vmsm) == x
+    @test rawvariances(vmsm) ≈ v
 end
 
-@testset "clr(x, variances)" begin
-    @testset "dimension checks" begin
-        x = [1.0, 2.0, 3.0]
-        v_bad = [0.1, 0.2]  # wrong length
-        @test_throws DimensionMismatch JuChrom.clr(x, v_bad)
-    end
+@testset "clr converts variance units to the intensity scale" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]
+    x = [1000.0 2000.0;
+         4000.0 8000.0]
+    v_pA2 = [1.0 4.0;
+             16.0 64.0]
+    msm = MassScanMatrix(rets, mzs, x .* u"pA")
+    vmsm = VarianceMassScanMatrix(msm, uconvert.(u"nA"^2, v_pA2 .* u"pA"^2))
 
-    @testset "domain checks" begin
-        x_bad = [0.0, 1.0, 2.0]
-        v = [0.01, 0.01, 0.04]
-        @test_throws DomainError JuChrom.clr(x_bad, v)
-    end
+    transformed = clr(vmsm)
 
-    @testset "correctness of transform and variance propagation (vector)" begin
-        x = [1.0, 2.0, 4.0]
-        v = [0.01, 0.04, 0.09]  # variances (std = [0.1, 0.2, 0.3])
-        y, v_clr = JuChrom.clr(x, v)
+    sigma2_log = v_pA2 ./ abs2.(x)
+    N = length(x)
+    total_sigma2_log = sum(sigma2_log)
+    expected_v = @. sigma2_log * (1 - 2 / N) + total_sigma2_log / N^2
 
-        # Expected CLR
-        y_exp = log.(x) .- mean(log.(x))
-        @test y ≈ y_exp
-        @test isapprox(sum(y), 0.0; atol=1e-12)
-
-        # Expected variance propagation (exact finite-sample correction)
-        N = length(x)
-        σ_log = sqrt.(v) ./ x
-        σ2_log = σ_log .^ 2
-        Σσ2 = sum(σ2_log)
-        v_exp = @. σ2_log * (1 - 2/N) + Σσ2 / N^2
-
-        @test v_clr ≈ v_exp
-        @test all(≥(0), v_clr)  # non-negative
-        @test size(v_clr) == size(x)
-    end
-
-    @testset "matrix input (shape preserved)" begin
-        X = [1.0 2.0; 3.0 4.0]
-        V = [0.01 0.04; 0.09 0.16]
-        Y, Vc = JuChrom.clr(X, V)
-
-        # transform
-        @test size(Y) == size(X)
-        @test Y ≈ (log.(X) .- mean(log.(X)))
-        @test isapprox(sum(Y), 0.0; atol=1e-12)
-
-        # variances
-        N = length(X)
-        σ_log = sqrt.(V) ./ X
-        σ2_log = σ_log .^ 2
-        Σσ2 = sum(σ2_log)
-        Vexp = @. σ2_log * (1 - 2/N) + Σσ2 / N^2
-
-        @test size(Vc) == size(X)
-        @test Vc ≈ Vexp
-        @test all(≥(0), Vc)
-    end
+    @test rawvariances(transformed) ≈ expected_v
 end
 
-end  # module TestClr
+@testset "clr requires strictly positive intensities" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]
+    x = [1.0 0.0;
+         2.0 3.0]
+    msm = MassScanMatrix(rets, mzs, x .* u"pA")
+    vmsm = VarianceMassScanMatrix(msm, ones(size(x)) .* u"pA"^2)
+
+    @test_throws DomainError clr(vmsm)
+end
+
+@testset "array clr methods are not public API" begin
+    @test_throws MethodError clr([1.0, 2.0, 3.0])
+    @test_throws MethodError clr([1.0, 2.0, 3.0], [0.1, 0.1, 0.1])
+end
+
+end # module TestClr

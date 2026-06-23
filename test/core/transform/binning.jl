@@ -1,6 +1,5 @@
 module TestBinning
 
-using Statistics: mean
 using Test
 using Unitful
 using JuChrom
@@ -11,226 +10,69 @@ _make_ms(mz::AbstractVector, ints::AbstractVector; rt=1.0u"s", lvl::Int=1) =
 
 _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
 
-# ─────────────────────────────────────────────────────────────────────────────
-# binretentions(retentions, intensities, bin_edges, variances)
-# ─────────────────────────────────────────────────────────────────────────────
-
-@testset "binretentions(retentions, intensities, bin_edges, variances)" begin
-    @testset "returns correct centers, means, and baseline variances" begin
-        rets = collect(0.0:0.5:2.5)
-        ints = [10.0, 12.0, 8.0, 4.0, 6.0, 0.0]
-        edges = collect(0.0:1.0:3.0)
-        vars = fill(0.25, length(ints))
-
-        centers, means, varŝ = binretentions(rets, ints, edges, vars)
-        @test centers == [0.5, 1.5, 2.5]
-        @test means ≈ [11.0, 6.0, 3.0]
-        @test varŝ ≈ fill(0.125, 3)
-    end
-
-    @testset "inverse-variance weighting and zero-threshold clamping" begin
-        rets = [0.0, 0.4, 0.8]
-        ints = [1.0, 9.0, 5.0]
-        edges = [0.0, 0.5, 1.0]
-        vars = [0.01, 1.0, 0.25]
-
-        centers, means, varŝ = binretentions(rets, ints, edges, vars; zero_threshold=0.02)
-        w1 = 1 / 0.02
-        w2 = 1 / 1.0
-        expected_bin1 = (w1 * ints[1] + w2 * ints[2]) / (w1 + w2)
-
-        @test centers == [0.25, 0.75]
-        @test means[1] ≈ expected_bin1
-        @test means[2] == ints[3]
-        @test varŝ[1] ≈ 1 / (w1 + w2)
-        @test varŝ[2] ≈ 0.25
-    end
-
-    @testset "rho inflation and negative intensities" begin
-        rets = [0.0, 0.1, 0.2]
-        ints = [2.0, -1.0, 3.0]
-        edges = [0.0, 0.5, 1.0]
-        vars = fill(0.5, length(ints))
-
-        centers, means, varŝ = binretentions(
-            rets, ints, edges, vars;
-            rho_lag1=0.5, rho_max=0.8)
-
-        wsum = sum(fill(1 / 0.5, 3))
-        vif = JuChrom.vif(0.5, 3; ρmax=0.8, nonnegative=true, nmin=1)
-
-        @test centers == [0.25, 0.75]
-        @test means[1] ≈ mean(ints)
-        @test varŝ[1] ≈ (1 / wsum) * vif
-        @test isinf(varŝ[2])
-    end
-
-    @testset "unit compatibility" begin
-        rets = [0.0, 0.5, 1.0] .* u"s"
-        edges = (0.0:1.0:2.0) .* u"s"
-        ints = [5.0, 7.0, 9.0]
-        vars = fill(0.25, length(ints))
-
-        centers, means, _ = binretentions(rets, ints, edges, vars)
-        @test all(JuChrom.isunitful, centers)
-        @test means[1] ≈ 6.0
-        @test_throws ArgumentError binretentions(rets, ints, collect(0.0:1.0:2.0), vars)
-    end
-
-    @testset "unitful variances and empty bins" begin
-        rets = [0.10, 0.20, 0.35] .* u"s"
-        edges = [0.0, 0.3, 0.5, 0.8] .* u"s"
-        ints = [10.0, 20.0, 5.0] .* u"pA"
-        vars = [0.04, 0.16, 0.25] .* (u"pA"^2)
-
-        centers, means, varŝ = binretentions(
-            rets, ints, edges, vars; zero_threshold=1e-9)
-
-        w1 = inv(vars[1])
-        w2 = inv(vars[2])
-        expected_mean = (w1 * ints[1] + w2 * ints[2]) / (w1 + w2)
-        expected_var = inv(w1 + w2)
-
-        @test all(JuChrom.isunitful, means)
-        @test all(JuChrom.isunitful, varŝ)
-        @test means[1] ≈ expected_mean
-        @test varŝ[1] ≈ expected_var
-        @test means[2] == ints[3]
-        @test varŝ[2] == vars[3]
-        @test isinf(varŝ[3])
-        @test Unitful.unit(varŝ[3]) == Unitful.unit(vars[1])
-    end
-
-    @testset "input validation" begin
-        rets = [0.0, 1.0]
-        ints = [1.0, 2.0]
-        vars = [0.1, 0.1]
-
-        @test_throws ArgumentError binretentions(Float64[], ints, [0.0, 1.0], vars)
-        @test_throws ArgumentError binretentions(rets, [1.0], [0.0, 1.0], [0.1])
-        @test_throws ArgumentError binretentions(rets, ints, [0.0], vars)
-        @test_throws ArgumentError binretentions(rets, ints, [0.0, 1.0], [-0.1, 0.2])
-
-        ints_u = [1.0, 2.0] .* u"pA"
-        vars_bad_dim = fill(0.1, 2) .* u"pA"
-        @test_throws Unitful.DimensionError binretentions(rets .* u"s", ints_u, 
-            [0.0, 1.0, 2.0] .* u"s", vars_bad_dim)
-
-        vars_unitful = fill(0.1, 2) .* (u"pA"^2)
-        @test_throws ArgumentError binretentions(rets, ints, [0.0, 1.0, 2.0], vars_unitful)
-
-        rets_u = rets .* u"s"
-        ints_u2 = ints .* u"pA"
-        vars_unitless = [0.1, 0.2]
-        @test_throws ArgumentError binretentions(rets_u, ints_u2, [0.0, 1.0, 2.0] .* u"s", vars_unitless)
-    end
-end
-
-@testset "binretentions(msm::MassScanMatrix, bin_edges, variance_model)" begin
-    rets = [0.0, 0.5, 1.0] .* u"s"
-    mzs = [100.0, 101.0]
-    ints = [2 4; 6 8; 10 12] .* u"pA"
-    msm = MassScanMatrix(rets, mzs, ints)
-    edges = [0.0, 1.0, 2.0] .* u"s"
-    models = fill(LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 12.0, 0.0),
-        length(mzs))
-
-    msm_binned, vars = binretentions(msm, edges, models)
-    @test intensityunit(msm_binned) == u"pA"
-    @test JuChrom.rawintensities(msm_binned) ≈ [4 6; 10 12]
-    @test all(JuChrom.isunitful, vars[:, 1])
-    @test Unitful.unit(vars[1, 1]) == u"pA"^2
-    @test vars[1, 1] ≈ 0.05u"pA"^2
-    @test vars[2, 2] ≈ 0.1u"pA"^2
-
-    models_unitful = fill(LinearObservedIntensityVarianceModel(
-        0.2u"pA^2",
-        0.0u"pA",
-        0.0u"pA",
-        0.0,
-        12.0,
-        0.0,
-    ), length(mzs))
-    msm_binned_u, vars_u = binretentions(msm, edges, models_unitful)
-    @test JuChrom.rawintensities(msm_binned_u) ≈ JuChrom.rawintensities(msm_binned)
-    @test all(Unitful.unit.(vars_u[:, 1]) .== u"pA"^2)
-    @test vars_u[1, 1] ≈ 0.1u"pA"^2
-
-    msm_unitless = MassScanMatrix([0.0, 0.5], [100.0], reshape([1.0, 2.0], 2, 1))
-    @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], 
-        LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 2.0, 0.0);
-        zero_threshold=1e-6u"pA"^2)
-    msm_unitless_ok = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
-        reshape([1.0, 2.0, 3.0], 3, 1))
-    msm_binned_unitless, vars_unitless = binretentions(
-        msm_unitless_ok,
-        [0.0, 0.5, 1.0],
-        LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 3.0, 0.0);
-        jacobian_scale=_ -> 2.0,
-    )
-    @test intensityunit(msm_binned_unitless) ≡ nothing
-    @test all(!JuChrom.isunitful, vars_unitless[:, 1])
-
-    @test_throws ArgumentError binretentions(msm, edges, models;
-        jacobian_scale=[1.0, 2.0])
-    @test_throws ArgumentError binretentions(msm, edges, models;
-        jacobian_scale=[1.0, 0.0, 2.0])
-    @test_throws ArgumentError binretentions(msm, edges, models;
-        jacobian_scale=t -> (t == 0.5u"s" ? 0.0 : 1.0))
-
-    @test_throws Unitful.DimensionError LinearObservedIntensityVarianceModel(
-        0.1u"pA^2",
-        0.0,
-        0.0,
-        0.0,
-        12.0,
-        0.0,
-    )
-
-    @test_throws Unitful.DimensionError binretentions(msm, edges, models;
-        zero_threshold=1e-6u"s")
-
-    @test_throws ArgumentError binretentions(msm, edges, models[1:1])
-
-    msm_binned_ok, vars_ok = binretentions(msm, edges, models;
-        zero_threshold=1e-6u"pA"^2)
-    @test intensityunit(msm_binned_ok) == u"pA"
-    @test all(Unitful.unit.(vars_ok[:, 1]) .== u"pA"^2)
-end
-
-@testset "binretentions(vmsm::AbstractVarianceMassScanMatrix, bin_edges, rho_lag1)" begin
+@testset "binretentions(vmsm::AbstractVarianceMassScanMatrix, rgrid, rho_lag1)" begin
     rets = [0.0, 0.5, 1.0] .* u"s"
     mzs = [100.0, 101.0]
     ints = [2 4; 6 8; 10 12] .* u"pA"
     msm = MassScanMatrix(rets, mzs, ints; extras=Dict("kind" => "signal"))
-    edges = [0.0, 1.0, 2.0] .* u"s"
+    rgrid = RetentionGrid([0.0, 1.0, 2.0], 1.0, u"s", 1e-8, 0.0, 2.0)
     vars = fill(0.2, size(ints))
     rho = fill(0.0, length(mzs))
     vmsm = VarianceMassScanMatrix(msm, vars)
 
-    binned = binretentions(vmsm, edges, rho)
+    binned = binretentions(vmsm, rgrid, rho)
     @test binned isa VarianceMassScanMatrix
     @test parent(binned) isa MassScanMatrix
+    @test retentionunit(binned) == u"s"
+    @test rawretentions(binned) ≈ [0.5, 1.5]
     @test intensityunit(binned) == u"pA"
     @test varianceunit(binned) == u"pA"^2
     @test JuChrom.rawintensities(binned) ≈ [4 6; 10 12]
     @test rawvariances(binned) ≈ [0.1 0.1; 0.2 0.2]
     @test extras(binned)["kind"] == "signal"
 
-    binned_default = binretentions(vmsm, edges)
+    binned_default = binretentions(vmsm, rgrid)
     @test JuChrom.rawintensities(binned_default) ≈ JuChrom.rawintensities(binned)
     @test rawvariances(binned_default) ≈ rawvariances(binned)
 
+    rgrid_ms = RetentionGrid([0.0, 1000.0, 2000.0], 1000.0, u"ms", 1e-5, 0.0, 2000.0)
+    binned_ms = binretentions(vmsm, rgrid_ms, rho)
+    @test retentionunit(binned_ms) == u"ms"
+    @test rawretentions(binned_ms) ≈ [500.0, 1500.0]
+    @test JuChrom.rawintensities(binned_ms) ≈ JuChrom.rawintensities(binned)
+    @test rawvariances(binned_ms) ≈ rawvariances(binned)
+
     vmsm_unitful = VarianceMassScanMatrix(msm, vars .* u"pA"^2)
-    binned_zth = binretentions(vmsm_unitful, edges, rho;
+    binned_zth = binretentions(vmsm_unitful, rgrid, rho;
         zero_threshold=1e-6u"pA"^2)
     @test JuChrom.rawintensities(binned_zth) ≈ JuChrom.rawintensities(binned)
     @test rawvariances(binned_zth) ≈ rawvariances(binned)
 
-    @test_throws ArgumentError binretentions(vmsm, edges, [0.0])
-    @test_throws MethodError binretentions(vmsm, edges, rho;
+    msm_unitless = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
+        reshape([2.0, 6.0, 10.0], 3, 1))
+    vmsm_unitless = VarianceMassScanMatrix(msm_unitless, fill(0.2, 3, 1))
+    rgrid_unitless = RetentionGrid([0.0, 1.0, 2.0], 1.0, nothing, 1e-8, 0.0, 2.0)
+    binned_unitless = binretentions(vmsm_unitless, rgrid_unitless)
+    @test retentionunit(binned_unitless) === nothing
+    @test rawretentions(binned_unitless) ≈ [0.5, 1.5]
+    @test rawintensities(binned_unitless) ≈ reshape([4.0, 10.0], 2, 1)
+    @test rawvariances(binned_unitless) ≈ reshape([0.1, 0.2], 2, 1)
+
+    bad_grid = RetentionGrid([0.0, 1.0, 2.0], 1.0, u"Th", 1e-8, 0.0, 2.0)
+    @test_throws ArgumentError binretentions(vmsm, rgrid, [0.0])
+    @test_throws ArgumentError binretentions(vmsm_unitless, rgrid)
+    @test_throws ArgumentError binretentions(vmsm, rgrid_unitless)
+    @test_throws Unitful.DimensionError binretentions(vmsm, bad_grid)
+    @test_throws MethodError binretentions(vmsm, rawbinedges(rgrid), rho)
+    @test_throws MethodError binretentions(vmsm, rgrid, rho;
         jacobian_scale=fill(2.0, length(rets)))
-    @test_throws MethodError binretentions(msm, edges, vars, rho)
+    @test_throws MethodError binretentions(msm, rgrid, rho)
+    @test_throws MethodError binretentions([0.0, 0.5], [1.0, 2.0], [0.0, 1.0], [0.1, 0.1])
+    @test_throws MethodError binretentions(
+        msm,
+        rgrid,
+        LinearObservedIntensityVarianceModel(0.1, 0.0, 0.0, 12.0, 0.0),
+    )
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

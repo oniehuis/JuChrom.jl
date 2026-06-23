@@ -93,6 +93,9 @@ end
 @safetestset "core/transform/binning.jl" begin
     include("./core/transform/binning.jl")
 end
+@safetestset "core/transform/censoring.jl" begin
+    include("./core/transform/censoring.jl")
+end
 @safetestset "core/transform/clr.jl" begin
     include("./core/transform/clr.jl")
 end

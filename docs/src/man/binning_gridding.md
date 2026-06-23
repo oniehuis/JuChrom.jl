@@ -14,8 +14,7 @@ rawoverlapmin
 rawoverlapmax
 overlapmin
 overlapmax
-binretentions(::MassScanMatrix, ::AbstractVector{<:Number}, ::Union{AbstractVector{<:LinearObservedIntensityVarianceModel},LinearObservedIntensityVarianceModel})
-binretentions(::AbstractVarianceMassScanMatrix, ::AbstractVector{<:Number}, ::Union{Real, AbstractVector{<:Real}})
+binretentions(::AbstractVarianceMassScanMatrix, ::RetentionGrid, ::Union{AbstractVector{<:Real}, Real})
 densestgrid(::AbstractVector{<:AbstractMassScanMatrix})
 densestgrid(::AbstractDict{<:Any,<:AbstractMassScanMatrix})
 ```

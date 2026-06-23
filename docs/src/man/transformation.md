@@ -9,16 +9,24 @@ uncertainty do not dominate distances, correlations, or model fits. Apply these 
 downstream analyses assume or benefit from Euclidean geometry or homoscedasticity (for 
 example PCA, PLS, or CPPLS-DA).
 
+Use [`replacecensored`](@ref) before CLR when a variance-carrying mass-scan matrix contains
+non-positive or below-limit intensities. It replaces censored values by positive
+below-limit estimates and updates their variances on the same final analysis grid.
+
 ## Example
 
 ```@example 1
 using JuChrom
 
-x = [0.1, 0.7, 0.2]
-σ² = [1, 9, 3]
+msm = MassScanMatrix(
+    [1.0, 2.0]u"s",
+    [100.0, 101.0],
+    [1.0 2.0; 4.0 8.0]u"pA",
+)
+vmsm = VarianceMassScanMatrix(msm, [0.01 0.04; 0.16 0.64] .* u"pA"^2)
 
-x_clr, σ²_clr = clr(x, σ²)
-x_whitened = whiten(x_clr, σ²_clr, 0.01)
+vmsm_clr = clr(vmsm)
+vmsm_whitened = whiten(vmsm_clr, 0.01)
 ```
 
 ## Intensity units and dwell normalization
@@ -71,8 +79,10 @@ to infer the full shortest scan interval as the dwell time for every m/z value.
 ## Transformation tools
 
 ```@docs
+CensoredReplacementInfo
 clr
 dwellnormalize
+replacecensored
 withintensityunit
 whiten
 ```

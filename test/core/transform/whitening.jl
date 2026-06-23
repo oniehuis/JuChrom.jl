@@ -1,71 +1,92 @@
 module TestWhitening
 
 using Test
+using Unitful
 using JuChrom
 
-# ─────────────────────────────────────────────────────────────────────────────
-# whiten
-# ─────────────────────────────────────────────────────────────────────────────
+@testset "whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor)" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]u"Th"
+    x = [1.0 2.0;
+         3.0 4.0]
+    v = [1.0 0.25;
+         1e-12 9.0]
+    msm = MassScanMatrix(
+        rets,
+        mzs,
+        x;
+        level=2,
+        instrument=(name="test instrument",),
+        acquisition=(mode="scan",),
+        user=(analyst="tester",),
+        sample=(id="sample-a",),
+        extras=Dict("run" => "A"),
+    )
+    vmsm = VarianceMassScanMatrix(msm, v)
 
-@testset "whiten(x::AbstractArray{<:Real}, σ²::AbstractArray{<:Real}, σ²_floor::Real)" begin
-    # --- basic correctness (vector) ---
-    @testset "vector correctness & flooring" begin
-        x   = [1.0, 2.0, 3.0, 4.0]
-        σ²  = [1.0, 0.25, 1e-12, 9.0]  # includes very small variance to trigger floor
-        f   = 1e-6                      # positive floor
-        y   = JuChrom.whiten(x, σ², f)
+    sigmafloor = 1e-3
+    transformed = whiten(vmsm, sigmafloor)
 
-        σ²safe = max.(σ², f)
-        @test y ≈ x ./ sqrt.(σ²safe)
+    denominator_variances = max.(v, sigmafloor^2)
+    expected_x = x ./ sqrt.(denominator_variances)
+    expected_v = v ./ denominator_variances
 
-        # inputs are not mutated
-        @test x == [1.0, 2.0, 3.0, 4.0]
-        @test σ² == [1.0, 0.25, 1e-12, 9.0]
-        # element with near-zero variance uses floor
-        @test y[3] ≈ x[3] / sqrt(f)
-    end
+    @test transformed isa VarianceMassScanMatrix
+    @test parent(transformed) isa MassScanMatrix
+    @test retentionunit(transformed) == u"s"
+    @test mzunit(transformed) == u"Th"
+    @test intensityunit(transformed) === nothing
+    @test varianceunit(transformed) === nothing
+    @test level(transformed) == 2
+    @test instrument(transformed) == instrument(vmsm)
+    @test acquisition(transformed) == acquisition(vmsm)
+    @test user(transformed) == user(vmsm)
+    @test sample(transformed) == sample(vmsm)
+    @test extras(transformed) == extras(vmsm)
+    @test rawretentions(transformed) == rawretentions(vmsm)
+    @test rawmzvalues(transformed) == rawmzvalues(vmsm)
+    @test rawintensities(transformed) ≈ expected_x
+    @test rawvariances(transformed) ≈ expected_v
+    @test rawvariances(transformed)[1, 1] == 1.0
+    @test rawvariances(transformed)[2, 1] ≈ 1e-6
 
-    # --- matrix correctness ---
-    @testset "matrix correctness" begin
-        X  = [1 2 3;
-              4 5 6] .+ 0.0           # make it Float64 explicitly
-        V  = [1 4 9;
-              1 1 1e-10]
-        f  = 1e-6
-        Y  = JuChrom.whiten(X, V, f)
-        @test Y ≈ X ./ sqrt.(max.(V, f))
-        @test size(Y) == size(X)
-    end
-
-    # --- dimension mismatch ---
-    @testset "dimension checks" begin
-        x  = [1.0, 2.0, 3.0]
-        v1 = [1.0, 1.0]             # wrong length
-        @test_throws DimensionMismatch JuChrom.whiten(x, v1, 1e-6)
-
-        X  = ones(2, 3)
-        V  = ones(3, 2)             # wrong shape
-        @test_throws DimensionMismatch JuChrom.whiten(X, V, 1e-6)
-    end
-
-    # --- floor validation ---
-    @testset "σ²_floor must be positive" begin
-        x = [1.0, 2.0]
-        v = [1.0, 1.0]
-        @test_throws ArgumentError JuChrom.whiten(x, v, 0.0)
-        @test_throws ArgumentError JuChrom.whiten(x, v, -1.0)
-    end
-
-    # --- integer inputs promote to float ---
-    @testset "integer inputs promote" begin
-        x  = [1, 2, 3]                      # Int
-        v  = [1, 4, 9]                      # Int
-        f  = 1                              # Int floor (positive)
-        y  = JuChrom.whiten(x, v, f)
-        @test eltype(y) <: AbstractFloat
-        @test y ≈ x ./ sqrt.(max.(v, f))
-    end
+    @test rawintensities(vmsm) == x
+    @test rawvariances(vmsm) == v
 end
 
+@testset "whiten accepts dimensionless variance units" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]
+    x = [1.0 2.0;
+         3.0 4.0]
+    v = [1.0 4.0;
+         9.0 16.0]
+    msm = MassScanMatrix(rets, mzs, x .* u"rad")
+    vmsm = VarianceMassScanMatrix(msm, v .* u"rad"^2)
 
-end  # module TestWhitening
+    transformed = whiten(vmsm, 0.1)
+
+    @test intensityunit(transformed) === nothing
+    @test varianceunit(transformed) === nothing
+    @test rawintensities(transformed) ≈ x ./ sqrt.(v)
+    @test rawvariances(transformed) ≈ ones(size(v))
+end
+
+@testset "whiten rejects invalid inputs" begin
+    rets = [1.0, 2.0]u"s"
+    mzs = [100.0, 101.0]
+    x = [1.0 2.0;
+         3.0 4.0]
+    vmsm = VarianceMassScanMatrix(MassScanMatrix(rets, mzs, x), ones(size(x)))
+
+    @test_throws ArgumentError whiten(vmsm, 0.0)
+    @test_throws ArgumentError whiten(vmsm, -1.0)
+
+    physical_msm = MassScanMatrix(rets, mzs, x .* u"pA")
+    physical_vmsm = VarianceMassScanMatrix(physical_msm, ones(size(x)) .* u"pA"^2)
+    @test_throws ArgumentError whiten(physical_vmsm, 0.1)
+
+    @test_throws MethodError whiten(x, ones(size(x)), 0.1)
+end
+
+end # module TestWhitening
