@@ -281,6 +281,60 @@ function test_ladder_step_result(; standard=defaultalkanestandard(), retentionun
     )
 end
 
+@testset "alkane_series_mapper_status summarizes mapper readiness" begin
+    result = test_ladder_step_result()
+
+    @test JuChrom.alkane_series_mapper_status(
+        nothing,
+        result.apexinfo,
+        result.additioninfo,
+        result.retentionunit
+    ) == (false, :missing_standard)
+    @test JuChrom.alkane_series_mapper_status(
+        result.standard,
+        nothing,
+        result.additioninfo,
+        result.retentionunit
+    ) == (false, :too_few_mapper_steps)
+    @test JuChrom.alkane_series_mapper_status(
+        result.standard,
+        result.apexinfo,
+        nothing,
+        result.retentionunit
+    ) == (false, :too_few_mapper_steps)
+
+    too_few_apexinfo = test_ladder_apex_info([
+        test_ladder_apex(8, 10; source=:molecularion, good=true),
+        test_ladder_apex(9, 20; source=:molecularion, good=true)
+    ])
+    empty_additioninfo = JuChrom.AlkaneLadderAdditionInfo(
+        :empty,
+        JuChrom.AlkaneLadderAddition[],
+        JuChrom.AlkaneLadderAddition[],
+        JuChrom.AlkaneLadderAddition[],
+        JuChrom.AlkaneLadderAddition[],
+        JuChrom.AlkaneLadderAdditionDiagnostics(
+            JuChrom.AlkaneLadderAdditionDiagnostic[],
+            JuChrom.AlkaneLadderAdditionDiagnostic[],
+            JuChrom.AlkaneLadderAdditionDiagnostic[]
+        ),
+        test_ladder_addition_settings()
+    )
+
+    @test JuChrom.alkane_series_mapper_status(
+        result.standard,
+        too_few_apexinfo,
+        empty_additioninfo,
+        result.retentionunit
+    ) == (false, :too_few_mapper_steps)
+    @test JuChrom.alkane_series_mapper_status(
+        result.standard,
+        result.apexinfo,
+        result.additioninfo,
+        result.retentionunit
+    ) == (true, :ok)
+end
+
 @testset "alkaneladdersteps returns merged refined ladder step view" begin
     result = test_ladder_step_result()
     compact = AlkaneSeriesResult(
