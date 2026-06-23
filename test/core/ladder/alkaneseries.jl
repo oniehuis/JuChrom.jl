@@ -258,8 +258,14 @@ function test_ladder_step_result(; standard=defaultalkanestandard(), retentionun
             required=0.9
         ))
     ]
+    apexinfo = test_ladder_apex_info(molecular_apexes)
+    additioninfo = test_ladder_addition_info(gapfilled, [], rightextended)
+    success = !isnothing(standard)
+    status = success ? :ok : :missing_standard
 
     AlkaneSeriesResult(
+        success,
+        status,
         standard,
         ones(1, 1),
         nothing,
@@ -268,8 +274,8 @@ function test_ladder_step_result(; standard=defaultalkanestandard(), retentionun
         nothing,
         nothing,
         nothing,
-        test_ladder_apex_info(molecular_apexes),
-        test_ladder_addition_info(gapfilled, [], rightextended),
+        apexinfo,
+        additioninfo,
         nothing,
         retentionunit
     )
@@ -278,6 +284,8 @@ end
 @testset "alkaneladdersteps returns merged refined ladder step view" begin
     result = test_ladder_step_result()
     compact = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,
@@ -294,6 +302,8 @@ end
 
     @test compact.datainfo === nothing
     @test retentionunit(compact) === nothing
+    @test result.success
+    @test result.status === :ok
     @test steps isa Vector{AlkaneLadderStep}
     @test [step.ladderstep for step in steps] == [8, 9, 10, 11]
     @test [step.source for step in steps] ==
@@ -410,6 +420,8 @@ end
     @test result.baselineinfo isa JuChrom.AlkaneBaselineInfo
     @test result.baselineinfo.estimator ≡ :arpls
     @test result.pathinfo.status ≡ :success
+    @test !result.success
+    @test result.status === :too_few_mapper_steps
 
     vmsm = VarianceMassScanMatrix(msm, ones(size(rawintensities(msm))))
     direct = findalkaneseries(
@@ -425,4 +437,6 @@ end
 
     @test direct.varianceinfo === vmsm
     @test direct.pathinfo.status ≡ :success
+    @test !direct.success
+    @test direct.status === :too_few_mapper_steps
 end

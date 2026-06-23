@@ -501,6 +501,8 @@ end
     @test hasproperty(result, :pathinfo)
     @test result.pathinfo.status ≡ :success
     @test result.pathinfo.laddersteps == [8]
+    @test !result.success
+    @test result.status === :too_few_mapper_steps
     @test hasproperty(result, :apexinfo)
     @test result.apexinfo.status ≡ :success
     @test only(result.apexinfo.apexes).ladderstep == 8

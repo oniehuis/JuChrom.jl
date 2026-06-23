@@ -3,12 +3,18 @@
 Use `findalkaneseries` to identify an n-alkane series in GC-MS data for retention-index
 calibration. The production API is under active development.
 
-The result can be used directly to fit a retention mapper:
+The result reports whether the default alkane calibration points are mapper-ready:
 
 ```julia
 asr = findalkanes(msm)
-mapper = fitmap(asr)
+if asr.success
+    mapper = fitmap(asr)
+end
 ```
+
+`asr.success` is `true` and `asr.status === :ok` only when the default calibration-point
+selection yields at least three mapper anchors. A detected partial ladder can therefore
+still return `asr.status === :too_few_mapper_steps`.
 
 The alkane-ladder wrapper uses its own default smoothing strength (`λ=3e-9`), based on
 leave-one-out prediction across ladder runs. Pass `λ=...` explicitly to override it.

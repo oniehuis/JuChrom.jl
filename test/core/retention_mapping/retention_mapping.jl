@@ -171,6 +171,63 @@ end
     @test intensityunit(out) ≡ intensityunit(msm)
 end
 
+# ── applymap(::RetentionMapper, ::AbstractVarianceMassScanMatrix) ───────────
+
+@testset "applymap(rmap, ::AbstractVarianceMassScanMatrix)" begin
+    rA = [0.0, 0.5, 1.0]
+    rB = [10.0, 20.0, 30.0]
+    rA_min, rA_max = 0.0, 1.0
+    rB_min, rB_max = 10.0, 30.0
+    rA_norm_min, rA_norm_max = 0.0, 1.0
+    rB_pred_min, rB_pred_max = rB_min, rB_max
+    rB_pred_norm_min, rB_pred_norm_max = 0.0, 1.0
+
+    order = BSplineOrder(4)
+    knots = collect(LinRange(0.0, 1.0, 10))
+    B = BSplineBasis(order, knots)
+    coefs = collect(range(0.0, 1.0, length(B)))
+    spline = Spline(B, coefs)
+
+    rmap = JuChrom.RetentionMapper(
+        rA, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, nothing,
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        TEST_LAMBDA,
+        Dict{String, Any}()
+    )
+
+    ret = [0.25, 0.50, 0.75]
+    mz = [50.0, 51.0, 52.0, 53.0]
+    X = [100.0 110.0 120.0 130.0;
+         200.0 210.0 220.0 230.0;
+         300.0 310.0 320.0 330.0]
+    σ² = [10.0 11.0 12.0 13.0;
+          20.0 21.0 22.0 23.0;
+          30.0 31.0 32.0 33.0]
+    msm = MassScanMatrix(ret, nothing, mz, nothing, X, nothing)
+    vmsm = VarianceMassScanMatrix(msm, σ²)
+
+    out = applymap(rmap, vmsm)
+    mapped_msm = parent(out)
+    J = rawderivmap.(rmap, ret; rB_unit=nothing)
+
+    @test out isa VarianceMassScanMatrix
+    @test retentions(mapped_msm) ≈ applymap.(rmap, ret)
+    @test rawintensities(mapped_msm)[1, :] ≈ X[1, :] ./ J[1]
+    @test rawintensities(mapped_msm)[2, :] ≈ X[2, :] ./ J[2]
+    @test rawintensities(mapped_msm)[3, :] ≈ X[3, :] ./ J[3]
+    @test rawvariances(out)[1, :] ≈ σ²[1, :] ./ abs2(J[1])
+    @test rawvariances(out)[2, :] ≈ σ²[2, :] ./ abs2(J[2])
+    @test rawvariances(out)[3, :] ≈ σ²[3, :] ./ abs2(J[3])
+    @test varianceunit(out) ≡ varianceunit(vmsm)
+    @test rawmzvalues(mapped_msm) == rawmzvalues(msm)
+end
+
 # ── applymap(::RetentionMapper, ::MassScanSeries) ────────────────────────────
 
 @testset "applymap(rmap, ::MassScanSeries)" begin

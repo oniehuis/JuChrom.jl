@@ -15,6 +15,7 @@
     ) -> Vector{Float64}
 
     arpls(msm::MassScanMatrix; keywords...) -> MassScanMatrix
+    arpls(vmsm::AbstractVarianceMassScanMatrix; keywords...) -> MassScanMatrix
 
 Estimate an arPLS baseline using asymmetrically reweighted penalized least-squares
 smoothing, following the approach in Baek et al. (2015).
@@ -75,6 +76,7 @@ are treated as real observations and are not downweighted.
 ```julia
 estimated_baseline = arpls(intensities; λ=1e5)
 baseline_matrix = arpls(msm; variances=variance_matrix)
+baseline_from_vmsm = arpls(vmsm)
 ```
 
 # References
@@ -162,6 +164,13 @@ function arpls(
        sample=deepcopy(sample(msm)),
        extras=deepcopy(extras(msm))
     )
+end
+
+function arpls(vmsm::AbstractVarianceMassScanMatrix; kwargs...)
+    haskey((; kwargs...), :variances) && throw(ArgumentError(
+        "do not pass variances when calling arpls on an AbstractVarianceMassScanMatrix"))
+
+    arpls(parent(vmsm); variances=rawvariances(vmsm), kwargs...)
 end
 
 function arplspenalty(n::Integer)

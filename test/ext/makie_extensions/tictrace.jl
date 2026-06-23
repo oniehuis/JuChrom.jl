@@ -98,6 +98,8 @@ end
         nothing
     )
     unitful_result = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,
@@ -195,6 +197,8 @@ end
         fill(0.1, size(rawintensities(msm)))
     )
     patched_result = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,

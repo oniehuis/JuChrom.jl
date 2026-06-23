@@ -235,4 +235,32 @@ end
     @test_throws ArgumentError arpls(msm; variances=ones(n_scans))
 end
 
+@testset "arpls(::AbstractVarianceMassScanMatrix; ...)" begin
+    Random.seed!(123)
+    n_scans = 50
+    ret = collect(range(0.0, 5.0; length=n_scans))
+    mzs = [100.0, 150.0]
+    base = @. 0.2 + 0.04 * ret
+    trace1 = @. base + exp(-((ret - 1.5)^2) / (2 * 0.08^2))
+    trace2 = @. base + 1.5 * exp(-((ret - 3.0)^2) / (2 * 0.12^2))
+    ints = hcat(trace1, trace2)
+    ints .+= 0.001 .* randn(size(ints))
+    vars1 = @. 0.2 + 0.05 * ret
+    vars2 = @. 0.4 + 0.03 * ret
+    variances = hcat(vars1, vars2)
+    msm = MassScanMatrix(ret, mzs, ints; sample=(name="arpls-vmsm",))
+    vmsm = VarianceMassScanMatrix(msm, variances)
+
+    baseline = arpls(vmsm; λ=5e4, ratio=1e-6, maxiter=500)
+    expected = arpls(msm; λ=5e4, ratio=1e-6, maxiter=500,
+        variances=rawvariances(vmsm))
+
+    @test baseline isa MassScanMatrix
+    @test rawintensities(baseline) ≈ rawintensities(expected)
+    @test rawretentions(baseline) == rawretentions(msm)
+    @test rawmzvalues(baseline) == rawmzvalues(msm)
+    @test baseline.sample == msm.sample
+    @test_throws ArgumentError arpls(vmsm; variances=ones(size(ints)))
+end
+
 end # module

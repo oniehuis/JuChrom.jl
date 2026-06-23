@@ -145,6 +145,8 @@ function test_ladder_mass_spectrum_inputs(; baseline=false)
     )
 
     result = AlkaneSeriesResult(
+        false,
+        :missing_standard,
         nothing,
         variances,
         nothing,
@@ -245,6 +247,8 @@ end
         result.apexinfo.apexfitqualityzscores
     )
     badresult = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,
@@ -324,6 +328,8 @@ end
         [apex.apex_fit_quality_zscore, secondapex.apex_fit_quality_zscore]
     )
     multiresult = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,

@@ -74,6 +74,10 @@ The ladder apices in `apexinfo` and `additioninfo` use raw numeric retention val
 corresponding unit of those values is stored in `retentionunit`, matching the analyzed
 `MassScanMatrix`. Reference-spectrum RI values remain part of the `standard` via
 `attrs(spectrum).ri`.
+
+`success` and `status` summarize whether the result is ready for default RT -> RI mapper
+construction. `success` is `true` and `status === :ok` only when the default calibration
+point selection yields at least three mapper anchors.
 """
 struct AlkaneSeriesResult{
     T1<:Union{Nothing, AlkaneStandard},
@@ -89,6 +93,8 @@ struct AlkaneSeriesResult{
     T11<:Union{Nothing, AbstractAlkaneSeriesDataInfo},
     T12<:Union{Nothing, Unitful.Units}
 }
+    success::Bool
+    status::Symbol
     standard::T1
     variances::T2
     varianceinfo::T3
@@ -105,7 +111,11 @@ end
 
 retentionunit(result::AlkaneSeriesResult) = result.retentionunit
 
+const MIN_ALKANE_MAPPER_CALIBRATION_POINTS = 3
+
 function AlkaneSeriesResult(
+    success::Bool,
+    status::Symbol,
     standard::Union{Nothing, AlkaneStandard},
     variances::AbstractMatrix{<:Real},
     varianceinfo::Union{
@@ -123,6 +133,8 @@ function AlkaneSeriesResult(
     additioninfo::Union{Nothing, AbstractAlkaneLadderAdditionInfo}
 )
     AlkaneSeriesResult(
+        success,
+        status,
         standard,
         variances,
         varianceinfo,
@@ -193,28 +205,44 @@ function alkaneladdersteps(
     gapfilled::Bool=true,
     edgeextended::Bool=true
 )
+    alkane_ladder_steps(
+        result.apexinfo,
+        result.additioninfo;
+        molecularion=molecularion,
+        gapfilled=gapfilled,
+        edgeextended=edgeextended
+    )
+end
+
+function alkane_ladder_steps(
+    apexinfo::AbstractAlkaneLadderApexInfo,
+    additioninfo::AbstractAlkaneLadderAdditionInfo;
+    molecularion::Bool=true,
+    gapfilled::Bool=true,
+    edgeextended::Bool=true
+)
     steps = AlkaneLadderStep[]
     if molecularion
         append!(steps, alkane_ladder_steps_from_apexes(
-            result.apexinfo.apexes,
+            apexinfo.apexes,
             :molecularion
         ))
     end
 
     if gapfilled
         append!(steps, alkane_ladder_steps_from_additions(
-            result.additioninfo.gapfilled,
+            additioninfo.gapfilled,
             :gapfilled
         ))
     end
 
     if edgeextended
         append!(steps, alkane_ladder_steps_from_additions(
-            result.additioninfo.leftextended,
+            additioninfo.leftextended,
             :leftextended
         ))
         append!(steps, alkane_ladder_steps_from_additions(
-            result.additioninfo.rightextended,
+            additioninfo.rightextended,
             :rightextended
         ))
     end
@@ -294,12 +322,41 @@ function alkaneladdercalibrationpoints(
     include::AbstractVector{<:Integer}=Int[],
     extra::AbstractVector{<:AlkaneLadderCalibrationPoint}=AlkaneLadderCalibrationPoint[]
 )
-    retentionindices = alkane_ladder_retention_indices(result.standard)
+    alkane_ladder_calibration_points(
+        result.standard,
+        result.apexinfo,
+        result.additioninfo,
+        result.retentionunit;
+        molecularion=molecularion,
+        gapfilled=gapfilled,
+        edgeextended=edgeextended,
+        goodforcalibration=goodforcalibration,
+        exclude=exclude,
+        include=include,
+        extra=extra
+    )
+end
+
+function alkane_ladder_calibration_points(
+    standard::Union{Nothing, AlkaneStandard},
+    apexinfo::AbstractAlkaneLadderApexInfo,
+    additioninfo::AbstractAlkaneLadderAdditionInfo,
+    retentionunit::Union{Nothing, Unitful.Units};
+    molecularion::Bool=true,
+    gapfilled::Bool=true,
+    edgeextended::Bool=true,
+    goodforcalibration::Bool=true,
+    exclude::AbstractVector{<:Integer}=Int[],
+    include::AbstractVector{<:Integer}=Int[],
+    extra::AbstractVector{<:AlkaneLadderCalibrationPoint}=AlkaneLadderCalibrationPoint[]
+)
+    retentionindices = alkane_ladder_retention_indices(standard)
     excludedsteps = Set(exclude)
     includedsteps = Set(include)
     points = AlkaneLadderCalibrationPoint[]
-    for step in alkaneladdersteps(
-            result;
+    for step in alkane_ladder_steps(
+            apexinfo,
+            additioninfo;
             molecularion=molecularion,
             gapfilled=gapfilled,
             edgeextended=edgeextended
@@ -315,7 +372,7 @@ function alkaneladdercalibrationpoints(
         push!(points, AlkaneLadderCalibrationPoint(
             step.ladderstep,
             step.apexretention,
-            result.retentionunit,
+            retentionunit,
             retentionindices[step.ladderstep],
             step.source,
             step.goodforcalibration
@@ -327,6 +384,22 @@ function alkaneladdercalibrationpoints(
     validate_alkane_ladder_calibration_points(points)
 
     points
+end
+
+function alkane_series_mapper_status(
+    standard::Union{Nothing, AlkaneStandard},
+    apexinfo::Union{Nothing, AbstractAlkaneLadderApexInfo},
+    additioninfo::Union{Nothing, AbstractAlkaneLadderAdditionInfo},
+    retentionunit::Union{Nothing, Unitful.Units}
+)
+    isnothing(standard) && return false, :missing_standard
+    (isnothing(apexinfo) || isnothing(additioninfo)) && return false, :too_few_mapper_steps
+
+    points = alkane_ladder_calibration_points(standard, apexinfo, additioninfo, retentionunit)
+    length(points) >= MIN_ALKANE_MAPPER_CALIBRATION_POINTS ||
+        return false, :too_few_mapper_steps
+
+    true, :ok
 end
 
 function alkane_ladder_retention_indices(standard::AlkaneStandard)
@@ -542,8 +615,9 @@ abundance tracks and windows in `abundanceinfo`, molecular-ion evidence in
 `molecularioninfo`, the selected path in `pathinfo`, refined apices in `apexinfo`,
 gap/edge additions in `additioninfo`, and preprocessing provenance in `varianceinfo`,
 `baselineinfo`, and `datainfo`. The raw retention unit of the analyzed matrix is stored in
-`retentionunit`; use it together with `attrs(spectrum).ri` from the standard when building
-an RT -> RI calibration mapper.
+`retentionunit`. The top-level `success`/`status` fields summarize mapper readiness:
+`success` is `true` and `status === :ok` only when the default calibration-point selection
+yields at least three RT -> RI mapper anchors.
 """
 function findalkaneseries(
     msm::MassScanMatrix,
@@ -752,8 +826,16 @@ function findalkaneseries(
     result_datainfo = isnothing(datainfo) ?
         alkane_series_datainfo(msm, msm, variances) :
         datainfo
+    result_success, result_status = alkane_series_mapper_status(
+        standard,
+        apexinfo,
+        additioninfo,
+        retentionunit(msm)
+    )
 
     AlkaneSeriesResult(
+        result_success,
+        result_status,
         standard,
         variances,
         result_varianceinfo,
@@ -886,7 +968,9 @@ filling, and edge extension.
 
 The returned `AlkaneSeriesResult` stores estimated variances in `result.varianceinfo`,
 baseline provenance in `result.baselineinfo`, and SHA-256 checksums for the raw matrix,
-analyzed signal, and variance matrix in `result.datainfo`.
+analyzed signal, and variance matrix in `result.datainfo`. Use `result.success` as the
+simple pipeline gate before calling `fitmap(result)`; it is `true` only when the default
+calibration-point selection yields at least three RT -> RI mapper anchors.
 """
 function findalkanes(
     msm::MassScanMatrix;

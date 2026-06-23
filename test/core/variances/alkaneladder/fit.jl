@@ -7,6 +7,8 @@ function _alkane_variance_entrypoint_inputs()
     msm = MassScanMatrix([1.0, 2.0], [57.0], intensities)
     variances = ones(2, 1)
     result = AlkaneSeriesResult(
+        false,
+        :missing_standard,
         nothing,
         variances,
         nothing,
@@ -179,6 +181,8 @@ function _alkane_variance_mass_spectrum_inputs(; baseline=false)
     )
 
     result = AlkaneSeriesResult(
+        false,
+        :missing_standard,
         nothing,
         variances,
         nothing,
@@ -206,6 +210,8 @@ function _alkane_variance_result_with_abundance_window(result, window)
     )
 
     AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,
@@ -679,6 +685,8 @@ end
         [NaN],
     )
     qualityresult = AlkaneSeriesResult(
+        result.success,
+        result.status,
         result.standard,
         result.variances,
         result.varianceinfo,
@@ -712,6 +720,8 @@ end
     run_without_abundance = merge(
         (
             result=AlkaneSeriesResult(
+                result.success,
+                result.status,
                 result.standard,
                 result.variances,
                 result.varianceinfo,

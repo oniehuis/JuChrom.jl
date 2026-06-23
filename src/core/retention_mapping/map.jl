@@ -277,16 +277,12 @@ function applymap(
     new_retention_unitfree = ustrip.(new_rets)
 
     # Compute Jacobians for each retention coordinate
-    jacobians = rawderivmap.(rmap, ret;
-                             domain_boundary_threshold = domain_boundary_threshold,
-                             rB_unit = unit,
-                             warn = false)
-
-    # Validate Jacobians
-    for j in jacobians
-        (isfinite(j) && j > 0) || throw(
-            ArgumentError("Jacobian values must be finite and positive."))
-    end
+    jacobians = retention_mapping_jacobians(
+        rmap,
+        ret;
+        domain_boundary_threshold=domain_boundary_threshold,
+        unit=unit
+    )
 
     # Extract raw intensities and allocate output arrays
     rawints = rawintensities(msm)
@@ -312,6 +308,81 @@ function applymap(
         sample=deepcopy(sample(msm)),
         extras=deepcopy(extras(msm))
     )
+end
+
+"""
+    applymap(
+        rmap::RetentionMapper,
+        vmsm::AbstractVarianceMassScanMatrix;
+        domain_boundary_threshold::Real=1e-8,
+        unit::Union{<:Nothing, Unitful.Units}=retentionunit_B(rmap),
+        warn::Bool=false
+    ) -> VarianceMassScanMatrix
+
+Apply retention mapper `rmap` to a variance-aware mass-scan matrix.
+
+Retention coordinates and intensities are transformed as for `applymap(rmap, parent(vmsm))`.
+The associated per-cell variances are scaled by the squared Jacobian, matching the
+intensity transformation `I_new = I_old / J`:
+
+    variance_new = variance_old / J^2
+
+The returned `VarianceMassScanMatrix` wraps the mapped parent matrix and preserves the
+variance unit.
+"""
+function applymap(
+    rmap::RetentionMapper,
+    vmsm::AbstractVarianceMassScanMatrix;
+    domain_boundary_threshold::T1=1e-8,
+    unit::T2=retentionunit_B(rmap),
+    warn::Bool=false
+    ) where {T1<:Real, T2<:Union{<:Nothing, Unitful.Units}}
+
+    ret = retentions(vmsm)
+    jacobians = retention_mapping_jacobians(
+        rmap,
+        ret;
+        domain_boundary_threshold=domain_boundary_threshold,
+        unit=unit
+    )
+    mapped_parent = applymap(
+        rmap,
+        parent(vmsm);
+        domain_boundary_threshold=domain_boundary_threshold,
+        unit=unit,
+        warn=warn
+    )
+
+    vars = rawvariances(vmsm)
+    mapped_vars = similar(vars, Float64)
+    jacobian_variances = abs2.(jacobians)
+    @inbounds @simd for c in axes(vars, 2)
+        mapped_vars[:, c] = vars[:, c] ./ jacobian_variances
+    end
+
+    VarianceMassScanMatrix(mapped_parent, mapped_vars, varianceunit(vmsm))
+end
+
+function retention_mapping_jacobians(
+    rmap::RetentionMapper,
+    retentions::AbstractVector;
+    domain_boundary_threshold::Real,
+    unit::Union{Nothing, Unitful.Units}
+)
+    jacobians = rawderivmap.(
+        rmap,
+        retentions;
+        domain_boundary_threshold=domain_boundary_threshold,
+        rB_unit=unit,
+        warn=false
+    )
+
+    for jacobian in jacobians
+        (isfinite(jacobian) && jacobian > 0) ||
+            throw(ArgumentError("Jacobian values must be finite and positive."))
+    end
+
+    jacobians
 end
 
 # ── derivinvmap ───────────────────────────────────────────────────────────────────────────
