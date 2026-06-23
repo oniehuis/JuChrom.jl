@@ -25,6 +25,15 @@ and the fitted baseline is returned. For a `MassScanMatrix`, one independent bas
 fitted for each m/z channel; retention coordinates, axes, units, and metadata are copied 
 to the returned matrix, but the retention coordinates are not used in the estimate.
 
+The returned `MassScanMatrix` is a derived baseline estimate, not acquired signal data:
+its intensity matrix contains fitted baseline values on the same retention-by-m/z grid as
+the input, and the copied axes, units, MS level, and metadata are retained for source
+compatibility and provenance. It does not copy `extras` and does not store measurement
+variances, arPLS settings, source checksums, convergence status, or baseline-estimation
+uncertainty. For
+`AbstractVarianceMassScanMatrix` inputs, stored variances are used as fitting weights
+only and are not attached to the returned baseline matrix.
+
 Compared with the original implementation described by Baek et al. (2015), this
 implementation:
 
@@ -162,7 +171,7 @@ function arpls(
        acquisition=deepcopy(acquisition(msm)),
        user=deepcopy(user(msm)),
        sample=deepcopy(sample(msm)),
-       extras=deepcopy(extras(msm))
+       extras=Dict{String, Any}()
     )
 end
 

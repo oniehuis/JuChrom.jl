@@ -224,7 +224,7 @@ end
     @test JuChrom.rawintensities(bmsm_var) ≈ expected_var
     @test JuChrom.rawintensities(bmsm_tuned) ≈ expected_tuned
     @test bmsm.sample == msm.sample
-    @test bmsm.extras == msm.extras
+    @test isempty(bmsm.extras)
     @test JuChrom.rawretentions(bmsm) ≢ JuChrom.rawretentions(msm)
     @test JuChrom.rawmzvalues(bmsm) ≢ JuChrom.rawmzvalues(msm)
 
@@ -260,6 +260,7 @@ end
     @test rawretentions(baseline) == rawretentions(msm)
     @test rawmzvalues(baseline) == rawmzvalues(msm)
     @test baseline.sample == msm.sample
+    @test isempty(extras(baseline))
     @test_throws ArgumentError arpls(vmsm; variances=ones(size(ints)))
 end
 

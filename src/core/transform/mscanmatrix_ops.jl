@@ -1,41 +1,72 @@
+# ── subtractbaseline ─────────────────────────────────────────────────────────────────────
 
-# ── subtract ──────────────────────────────────────────────────────────────────────────────
+"""
+    subtractbaseline(msm::MassScanMatrix, baseline::MassScanMatrix) -> MassScanMatrix
+    subtractbaseline(
+        vmsm::AbstractVarianceMassScanMatrix,
+        baseline::MassScanMatrix
+    ) -> VarianceMassScanMatrix
 
-function subtract(msmatrix_A::MassScanMatrix{<:Any, <:Nothing}, msmatrix_B::MassScanMatrix{<:Any, <:Nothing}, floor::Real)
-    retentions(msmatrix_A) == retentions(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have identical retentions."))
-    mzvalues(msmatrix_A) == mzvalues(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have identical m/z values."))
-    size(rawintensities(msmatrix_A)) == size(rawintensities(msmatrix_B)) ||
-        throw(DimensionMismatch("MassScanMatrices must have matching intensities dimensions."))
-    level(msmatrix_A) == level(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching MS levels."))
-    instrument(msmatrix_A) == instrument(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching instrument data."))
-    acquisition(msmatrix_A) == acquisition(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching acquisition data."))
-    user(msmatrix_A) == user(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching user data."))
-    sample(msmatrix_A) == sample(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching sample data."))
-    extras(msmatrix_A) == extras(msmatrix_B) ||
-        throw(ArgumentError("MassScanMatrices must have matching extras."))
+Subtract a same-grid baseline estimate from a mass-scan matrix.
 
-    resulting_intensities = intensities(msmatrix_A) .- intensities(msmatrix_B)
-    resulting_intensities[resulting_intensities .< floor] .= floor
+The baseline must match the input retention coordinates, m/z values, retention unit, m/z
+unit, intensity unit, intensity matrix shape, and MS level. Structured annotations and
+`extras` are not compared. The returned `MassScanMatrix` preserves the input metadata and
+`extras`, while the baseline object's metadata are used only for the compatibility checks
+listed above.
+
+For `AbstractVarianceMassScanMatrix` inputs, the baseline is subtracted from the parent
+mass-scan matrix and the original variance matrix and variance unit are preserved.
+Baseline-estimation uncertainty is not propagated.
+"""
+function subtractbaseline(msm::MassScanMatrix, baseline::MassScanMatrix)
+    _subtractbaseline(msm, baseline)
+end
+
+function subtractbaseline(vmsm::AbstractVarianceMassScanMatrix, baseline::MassScanMatrix)
+    corrected = _subtractbaseline(parent(vmsm), baseline)
+    VarianceMassScanMatrix(
+        corrected,
+        copy(rawvariances(vmsm)),
+        deepcopy(varianceunit(vmsm))
+    )
+end
+
+function _subtractbaseline(msm::MassScanMatrix, baseline::MassScanMatrix)
+    validate_baseline_compatible(msm, baseline)
+    corrected_intensities = rawintensities(msm) .- rawintensities(baseline)
 
     MassScanMatrix(
-            copy(rawretentions(msmatrix_A)),
-            retentionunit(msmatrix_A),
-            copy(rawmzvalues(msmatrix_A)),
-            mzunit(msmatrix_A),
-            resulting_intensities,
-            intensityunit(msmatrix_A),
-            level=level(msmatrix_A),
-            instrument=deepcopy(instrument(msmatrix_A)),
-            acquisition=deepcopy(acquisition(msmatrix_A)),
-            user=deepcopy(user(msmatrix_A)),
-            sample=deepcopy(sample(msmatrix_A)),
-            extras=deepcopy(extras(msmatrix_A))
-        )
+        copy(rawretentions(msm)),
+        retentionunit(msm),
+        copy(rawmzvalues(msm)),
+        mzunit(msm),
+        corrected_intensities,
+        intensityunit(msm);
+        level=level(msm),
+        instrument=deepcopy(instrument(msm)),
+        acquisition=deepcopy(acquisition(msm)),
+        user=deepcopy(user(msm)),
+        sample=deepcopy(sample(msm)),
+        extras=deepcopy(extras(msm))
+    )
+end
+
+function validate_baseline_compatible(msm::MassScanMatrix, baseline::MassScanMatrix)
+    retentionunit(msm) == retentionunit(baseline) || throw(DimensionMismatch(
+        "baseline retention unit does not match input."))
+    mzunit(msm) == mzunit(baseline) || throw(DimensionMismatch(
+        "baseline m/z unit does not match input."))
+    intensityunit(msm) == intensityunit(baseline) || throw(DimensionMismatch(
+        "baseline intensity unit does not match input."))
+    rawretentions(msm) == rawretentions(baseline) || throw(DimensionMismatch(
+        "baseline retention coordinates do not match input."))
+    rawmzvalues(msm) == rawmzvalues(baseline) || throw(DimensionMismatch(
+        "baseline m/z values do not match input."))
+    size(rawintensities(msm)) == size(rawintensities(baseline)) ||
+        throw(DimensionMismatch("baseline intensity matrix shape does not match input."))
+    level(msm) == level(baseline) || throw(DimensionMismatch(
+        "baseline MS level does not match input."))
+
+    nothing
 end

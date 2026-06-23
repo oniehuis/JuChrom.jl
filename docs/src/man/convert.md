@@ -8,7 +8,8 @@ preprocessing (for example, m/z binning to a fixed grid) because they make the d
 explicit and unlock workflows that benefit from a matrix representation. Conversion itself 
 does not bin or resample; [`mzchrom`](@ref) can sum intensities across selected m/z values 
 or tolerances, but it does not merge nearby m/z into new bins. Binning and resampling are 
-handled by the [binning tools](@ref).
+handled by [m/z binning](@ref "m/z binning") and
+[retention binning and gridding](@ref "Retention binning and gridding").
 
 ## Example
 

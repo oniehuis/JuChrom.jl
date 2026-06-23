@@ -276,7 +276,7 @@ function binretentions(
     variances = linear_observed_intensity_variances(msm, models; extrapolation=extrapolation)
     rhos = [model.rho_lag1 for model in models]
 
-    binretentions(
+    _binretentions_with_variances(
         msm,
         bin_edges,
         variances,
@@ -359,33 +359,7 @@ end
 
 # ─────────────────────────────────────────────────────────────────────────────
 
-"""
-    binretentions(
-        msm::MassScanMatrix, 
-        bin_edges::AbstractVector{<:Number}, 
-        variances::AbstractMatrix{<:Number}, 
-        rho_lag1::Union{AbstractVector{<:Real}, Real};          
-        jacobian_scale=nothing::Union{Nothing, AbstractVector{<:Real}, Function}, 
-        zero_threshold::Number=1e-8, 
-        rho_max::Real=0.8
-    ) -> (msm_binned::MassScanMatrix, var_matrix::Matrix)
-
-Return a binned `MassScanMatrix` and per-bin variances by applying
-[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}))
-to each m/z trace in `msm`, using the provided per-scan variance matrix.
-
-The `variances` matrix must have the same shape as `rawintensities(msm)` and, when
-intensities are unitful, carries squared intensity units (unitless inputs are
-promoted accordingly). Scalar `rho_lag1` inputs are broadcast across m/z columns,
-`jacobian_scale` applies an optional `(f'(t))⁻²` factor per scan, and
-`zero_threshold` is promoted to squared intensity units when needed.
-
-See also
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
-[`vif`](@ref JuChrom.vif).
-"""
-function binretentions(
+function _binretentions_with_variances(
     msm::MassScanMatrix,
     bin_edges::AbstractVector{<:Number},
     variances::AbstractMatrix{<:Number},
@@ -407,22 +381,6 @@ function binretentions(
     intensity_quantity = has_intensity_unit ? (one(Float64) * intensity_unit) : nothing
     variance_quantity = has_intensity_unit ? intensity_quantity^2 : nothing
     variance_dimension = has_intensity_unit ? Unitful.dimension(variance_quantity) : nothing
-
-    function attach_variance_units(val)
-        if has_intensity_unit
-            if isunitful(val)
-                Unitful.dimension(val) == variance_dimension || throw(
-                    Unitful.DimensionError(val, variance_quantity))
-                val
-            else
-                val * variance_quantity
-            end
-        else
-            isunitful(val) && throw(ArgumentError(
-                "msm intensities are unitless but variances have units"))
-            val
-        end
-    end
 
     attach_intensity_units(vec) = has_intensity_unit ? (vec .* intensity_quantity) : vec
     strip_intensity_units(vec) = has_intensity_unit ?
@@ -557,21 +515,59 @@ function binretentions(
     msm_out, vars
 end
 
+"""
+    binretentions(
+        vmsm::AbstractVarianceMassScanMatrix,
+        bin_edges::AbstractVector{<:Number},
+        rho_lag1::Union{AbstractVector{<:Real}, Real};
+        zero_threshold::Number=1e-8,
+        rho_max::Real=0.8
+    ) -> VarianceMassScanMatrix
+
+    binretentions(vmsm::AbstractVarianceMassScanMatrix, bin_edges::AbstractVector{<:Number}; kwargs...)
+
+Return a binned `VarianceMassScanMatrix` by applying retention binning to the parent
+mass-scan matrix and propagating the stored per-cell variances.
+
+This method uses `variances(vmsm)` directly, so variance units and scales are preserved.
+Scalar `rho_lag1` inputs are broadcast across m/z columns; vector inputs must have one
+lag-1 correlation per m/z channel. No Jacobian scaling is applied. If the data were
+retention-mapped before binning, apply the mapping to the `VarianceMassScanMatrix` first
+so the stored intensities and variances are already on the mapped scale.
+
+See also
+[`VarianceMassScanMatrix`](@ref JuChrom.VarianceMassScanMatrix),
+[`binretentions`](@ref JuChrom.binretentions(::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number}, ::AbstractVector{<:Number})),
+[`vif`](@ref JuChrom.vif).
+"""
 function binretentions(
-    msm::MassScanMatrix,
+    vmsm::AbstractVarianceMassScanMatrix,
     bin_edges::AbstractVector{<:Number},
-    variances::AbstractMatrix{<:Number};
-    rho_lag1::Union{AbstractVector{<:Real}, Real}=0.0,
-    jacobian_scale::Union{Nothing, AbstractVector{<:Real}, Function}=nothing,
+    rho_lag1::Union{AbstractVector{<:Real}, Real};
+    zero_threshold::Number=1e-8,
+    rho_max::Real=0.8)
+
+    binned_msm, binned_variances = _binretentions_with_variances(
+        parent(vmsm),
+        bin_edges,
+        variances(vmsm),
+        rho_lag1;
+        zero_threshold=zero_threshold,
+        rho_max=rho_max)
+
+    VarianceMassScanMatrix(binned_msm, binned_variances)
+end
+
+function binretentions(
+    vmsm::AbstractVarianceMassScanMatrix,
+    bin_edges::AbstractVector{<:Number};
     zero_threshold::Number=1e-8,
     rho_max::Real=0.8)
 
     binretentions(
-        msm,
+        vmsm,
         bin_edges,
-        variances,
-        rho_lag1;
-        jacobian_scale=jacobian_scale,
+        0.0;
         zero_threshold=zero_threshold,
         rho_max=rho_max)
 end

@@ -360,61 +360,6 @@ function MassScanMatrix(
         converted_extras)
 end
 
-"""
-    Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
-
-Return a `MassScanMatrix` whose intensities are the elementwise difference
-`intensities(msm₁) .- intensities(msm₂)`, after verifying that retention coordinates, m/z
-values, MS level, and metadata match.
-
-Throws `DimensionMismatch` if any of `retentions`, `mzvalues`, `level`, or metadata
-(`instrument`, `acquisition`, `user`, `sample`, `extras`) differ between the inputs.
-
-See also
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
-[`acquisition`](@ref JuChrom.acquisition(::AbstractMassScanMatrix)), 
-[`extras`](@ref JuChrom.extras(::AbstractMassScanMatrix)), 
-[`instrument`](@ref JuChrom.instrument(::AbstractMassScanMatrix)), 
-[`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
-[`level`](@ref JuChrom.level(::AbstractMassScanMatrix)), 
-[`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScanMatrix{<:Any, Nothing})), 
-[`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})), 
-[`sample`](@ref JuChrom.sample(::AbstractMassScanMatrix)), 
-[`user`](@ref JuChrom.user(::AbstractMassScanMatrix)).
-"""
-function Base.:(-)(msm₁::MassScanMatrix, msm₂::MassScanMatrix)
-    retentions(msm₁) == retentions(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in their retention coordinates."))
-    mzvalues(msm₁) == mzvalues(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in their m/z values."))
-    level(msm₁) == level(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in their MS levels."))
-    instrument(msm₁) == instrument(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in the instrument data"))
-    acquisition(msm₁) == acquisition(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in the acquisition data"))
-    user(msm₁) == user(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in the user data"))
-    sample(msm₁) == sample(msm₂) || throw(DimensionMismatch(
-        "MassScanMatrix differ in the sample data"))
-    isequal(extras(msm₁), extras(msm₂)) || throw(DimensionMismatch(
-        "MassScanMatrix differ in their extras"))
-
-    new_intensities = intensities(msm₁) .- intensities(msm₂)
-
-    MassScanMatrix(
-      deepcopy(retentions(msm₁)),
-      deepcopy(mzvalues(msm₁)),
-      new_intensities;
-      level       = deepcopy(level(msm₁)),
-      instrument  = deepcopy(instrument(msm₁)),
-      acquisition = deepcopy(acquisition(msm₁)),
-      user        = deepcopy(user(msm₁)),
-      sample      = deepcopy(sample(msm₁)),
-      extras      = deepcopy(extras(msm₁))
-    )
-end
-
 # ── Display ───────────────────────────────────────────────────────────────────────────────
 
 function Base.show(io::IO, msm::MassScanMatrix)

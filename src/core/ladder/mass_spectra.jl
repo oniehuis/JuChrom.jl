@@ -140,7 +140,8 @@ Extract peak-model mass spectra for refined alkane ladder steps.
 
 The supplied `msm` must be the original matrix used for `findalkanes`. When baseline
 subtraction was used, the analyzed signal is reconstructed as
-`msm - result.baselineinfo.baselines` and verified against the stored SHA-256 checksum.
+`subtractbaseline(msm, result.baselineinfo.baselines)` and verified against the stored
+SHA-256 checksum.
 """
 function alkaneladdermassspectra(
     msm::MassScanMatrix,
@@ -344,7 +345,7 @@ function alkane_ladder_extraction_signal(
         msm
     else
         validate_alkane_series_baselines(msm, result.baselineinfo.baselines)
-        msm - result.baselineinfo.baselines
+        _subtractbaseline(msm, result.baselineinfo.baselines)
     end
 
     validate_alkane_series_variances(signal, result.variances)

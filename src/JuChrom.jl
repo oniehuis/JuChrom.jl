@@ -32,11 +32,13 @@ const shimadzu = artifact"Shimadzu"
 
 include("core/core_containers/matrices.jl")
 include("core/core_containers/variance_matrices.jl")
+include("core/core_containers/retention_grid.jl")
 include("core/core_containers/scans.jl")
 include("core/core_containers/series.jl")
 include("core/core_getters/utils.jl")
 include("core/core_getters/matrices.jl")
 include("core/core_getters/variance_matrices.jl")
+include("core/core_getters/retention_grid.jl")
 include("core/core_getters/scans.jl")
 include("core/core_getters/series.jl")
 include("core/retention_mapping/container.jl")
@@ -105,12 +107,15 @@ export MassSpectrum
 export OptimizationError
 export Parafac2Fit
 export RetentionMapper
+export RetentionGrid
 export VarianceMassScanMatrix
 
 export attrs
 export acquisition
 export arpls
 export applymap
+export binedges
+export binwidth
 export binmzvalues
 export binretentions
 export clr
@@ -166,11 +171,14 @@ export mzindex
 export mzretention
 export mzunit
 export mzvalues
+export overlapmax
+export overlapmin
 export sample
 export scan
 export scancount
 export scans
 export SPARSE
+export subtractbaseline
 export rawapplymap
 export rawderivinvmap
 export rawderivmap
@@ -181,11 +189,16 @@ export rawinvmapmax
 export rawinvmapmin
 export rawmapmax
 export rawmapmin
+export rawbinedges
+export rawbinwidth
 export rawmzvalues
+export rawoverlapmax
+export rawoverlapmin
 export rawretention
 export rawretentions
 export rawretentions_A
 export rawretentions_B
+export rawtolerance
 export retention
 export retentions
 export retentions_A
@@ -195,6 +208,7 @@ export retentiontrim!
 export retentionunit
 export retentionunit_A
 export retentionunit_B
+export tolerance
 export typify
 export unimodalfit
 export unimodalfit_apexsearch

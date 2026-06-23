@@ -1,8 +1,11 @@
 # ── densestgrid ───────────────────────────────────────────────────────────────────────────
 
+const _RETENTIONUNIT_UNSPECIFIED = Val(:retentionunit_unspecified)
+
 """
     densestgrid(
-        datavectors::AbstractVector{<:AbstractVector{<:Real}}; 
+        datavectors::AbstractVector{<:AbstractVector{<:Real}};
+        retentionunit::Union{Nothing, Unitful.Units},
         minwidth::Union{Nothing,Real}=nothing, 
         maxwidth::Union{Nothing,Real}=nothing,
         tolerance::Real=1e-8,
@@ -11,12 +14,19 @@
         secondary_refine_iters::Int=20,
         max_anchors_basic::Int=256,
         max_anchors_enriched::Int=1024
-    )
+    ) -> RetentionGrid
 
-Return `(edges, w)` where `edges` is a regular grid and `w` is the near‑minimal bin width 
+Return a [`RetentionGrid`](@ref JuChrom.RetentionGrid) whose edges define a regular grid
+and whose `binwidth` is the near‑minimal bin width
 that ensures every bin in `[global_min, global_max]` contains at least one observation from 
 each input dataset in `datavectors`. The grid uses left‑closed, right‑open bins 
 `[eᵢ, eᵢ₊₁)`, with the final bin including the right edge within `tolerance`.
+
+For raw numeric vectors, `retentionunit` must be specified explicitly. Use
+`retentionunit=nothing` for an explicitly unitless retention axis, or a `Unitful.Units`
+value such as `u"s"` when the raw numbers are expressed in that unit. Unitful
+`minwidth`, `maxwidth`, and `tolerance` values are accepted only when `retentionunit` is
+unitful and are converted to the grid unit before the numeric search.
 
 The method begins from a rigorous lower bound on `w` and expands the candidate width by
 `coarse_inflation` until a basic anchor phase yields full occupancy, then performs two 
@@ -34,6 +44,57 @@ at the cost of additional runtime.
 """
 function densestgrid(
     datavectors::AbstractVector{<:AbstractVector{<:Real}};
+    retentionunit=_RETENTIONUNIT_UNSPECIFIED,
+    minwidth::Union{Nothing,Real,Unitful.AbstractQuantity}=nothing,
+    maxwidth::Union{Nothing,Real,Unitful.AbstractQuantity}=nothing,
+    tolerance::Union{Nothing,Real,Unitful.AbstractQuantity}=1e-8,
+    coarse_inflation::Real=1.001,
+    primary_refine_iters::Int=35,
+    secondary_refine_iters::Int=20,
+    max_anchors_basic::Int=256,
+    max_anchors_enriched::Int=1024
+)
+    retentionunit === _RETENTIONUNIT_UNSPECIFIED && throw(ArgumentError(
+        "retentionunit must be specified for raw numeric retention vectors; " *
+        "use retentionunit=nothing for explicitly unitless data"))
+    retentionunit isa Union{Nothing,Unitful.Units} || throw(ArgumentError(
+        "retentionunit must be nothing or a Unitful.Units value"))
+
+    function raw_width(q, name)
+        q === nothing && return nothing
+        if retentionunit === nothing
+            (q isa Real && !(q isa Unitful.AbstractQuantity)) || throw(ArgumentError(
+                "$name must be Real or nothing when retentionunit is nothing"))
+            return q
+        end
+        if q isa Unitful.AbstractQuantity
+            return Unitful.ustrip(uconvert(retentionunit, q))
+        end
+        (q isa Real && !(q isa Unitful.AbstractQuantity)) || throw(ArgumentError(
+            "$name must be Real, Unitful.AbstractQuantity, or nothing"))
+        q
+    end
+
+    tolerance === nothing && throw(ArgumentError("tolerance cannot be nothing"))
+    tol_num = raw_width(tolerance, "tolerance")
+
+    _densestgrid_numeric(
+        datavectors;
+        retentionunit=retentionunit,
+        minwidth=raw_width(minwidth, "minwidth"),
+        maxwidth=raw_width(maxwidth, "maxwidth"),
+        tolerance=tol_num,
+        coarse_inflation=coarse_inflation,
+        primary_refine_iters=primary_refine_iters,
+        secondary_refine_iters=secondary_refine_iters,
+        max_anchors_basic=max_anchors_basic,
+        max_anchors_enriched=max_anchors_enriched,
+    )
+end
+
+function _densestgrid_numeric(
+    datavectors::AbstractVector{<:AbstractVector{<:Real}};
+    retentionunit::Union{Nothing,Unitful.Units},
     minwidth::Union{Nothing,Real}=nothing,
     maxwidth::Union{Nothing,Real}=nothing,
     tolerance::Real=1e-8,
@@ -265,13 +326,14 @@ function densestgrid(
         edges_found = edges_final
     end
 
-    edges_found, w_high
+    RetentionGrid(edges_found, w_high, retentionunit, tolerance, global_min, global_max)
 end
 
 
 """
     densestgrid(
         datavectors::AbstractVector{<:AbstractVector{<:Unitful.AbstractQuantity}};
+        retentionunit::Unitful.Units,
         minwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
         maxwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
         tolerance::Union{Nothing,Unitful.AbstractQuantity}=nothing,
@@ -292,6 +354,8 @@ anchors).
 Requirements:
 * All elements of all inner vectors must be `Unitful.AbstractQuantity` with the **same
   physical dimension** (units themselves may differ).
+* If `retentionunit` is omitted, the unit of the first retention value is used. If
+  provided, it must be compatible with all input retention values.
 * `minwidth`, `maxwidth`, `tolerance` when provided must be quantities of that
   dimension (`nothing` allowed).
 * If `tolerance ≡ nothing`, it defaults to `1e-8 * ref_unit`.
@@ -300,10 +364,12 @@ Keyword arguments (forwarded to numeric core):
 `coarse_inflation`, `primary_refine_iters`, `secondary_refine_iters`,
 `max_anchors_basic`, `max_anchors_enriched`.
 
-Returns `(edges, w)` with the original unit attached.
+Returns a [`RetentionGrid`](@ref JuChrom.RetentionGrid) in the reference unit inferred
+from the first retention value.
 """
 function densestgrid(
     datavectors::AbstractVector{<:AbstractVector{<:Unitful.AbstractQuantity}};
+    retentionunit=_RETENTIONUNIT_UNSPECIFIED,
     minwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
     maxwidth::Union{Nothing,Unitful.AbstractQuantity}=nothing,
     tolerance::Union{Nothing,Unitful.AbstractQuantity}=nothing,
@@ -317,8 +383,10 @@ function densestgrid(
     firstvec = datavectors[1]
     isempty(firstvec) && throw(ArgumentError("datavectors[1] cannot be empty"))
 
-    # Use the first datapoint as a reference to enforce consistent physical dimension.
-    ref_unit = unit(firstvec[1])
+    inferred_unit = unit(firstvec[1])
+    ref_unit = retentionunit === _RETENTIONUNIT_UNSPECIFIED ? inferred_unit : retentionunit
+    ref_unit isa Unitful.Units || throw(ArgumentError(
+        "retentionunit must be omitted or set to a Unitful.Units value for unitful data"))
     ref_dim  = Unitful.dimension(ref_unit)
 
     @inbounds for (i, vec) in enumerate(datavectors)
@@ -345,8 +413,9 @@ function densestgrid(
     tol_num = tolerance ≡ nothing ? 1e-8 :
               Unitful.ustrip(uconvert(ref_unit, tolerance))
 
-    edges_num, width_num = densestgrid(
+    grid_num = _densestgrid_numeric(
         numeric_datasets;
+        retentionunit=ref_unit,
         minwidth=min_num,
         maxwidth=max_num,
         tolerance=tol_num,
@@ -357,8 +426,14 @@ function densestgrid(
         max_anchors_enriched=max_anchors_enriched
     )
 
-    # Re-attach the reference unit to the edges/width before returning.
-    edges_num .* ref_unit, width_num * ref_unit
+    RetentionGrid(
+        rawbinedges(grid_num),
+        rawbinwidth(grid_num),
+        ref_unit,
+        rawtolerance(grid_num),
+        rawoverlapmin(grid_num),
+        rawoverlapmax(grid_num),
+    )
 end
 
 """
@@ -378,7 +453,8 @@ the values are treated as the dataset list, and all keyword arguments and behavi
 match the vector method.
 
 Use this when your matrices are already keyed by sample or run identifiers. The
-returned `(edges, w)` and error conditions are identical to the vector-based API.
+returned [`RetentionGrid`](@ref JuChrom.RetentionGrid) and error conditions are identical
+to the vector-based API.
 """
 function densestgrid(
     msmatrices::AbstractDict{<:Any, <:AbstractMassScanMatrix};
@@ -452,6 +528,7 @@ function densestgrid(
     # Unitless vectors can go straight into the numeric solver.
     densestgrid(
         retention_vectors;
+        retentionunit=nothing,
         minwidth=minwidth,
         maxwidth=maxwidth,
         tolerance=tol_num,
@@ -487,10 +564,10 @@ either unitless or `Unitful.AbstractQuantity` values sharing the same physical
 dimension. If retentions are unitful, `minwidth`, `maxwidth`, and `tolerance` must be
 `nothing` or dimensionally compatible quantities and the default `tolerance` is
 `1e-8 * unit`; if retentions are unitless, these keywords must be `nothing` or plain
-reals and the default `tolerance` is `1e-8`. The function returns `(edges, w)` (with
-units attached when appropriate) and throws `ArgumentError` if inputs are empty, units
-are inconsistent, the overlap is empty, or no admissible width is found up to
-`maxwidth`. See also [`densestgrid`](@ref JuChrom.densestgrid(::AbstractDict{<:Any,<:AbstractMassScanMatrix})).
+reals and the default `tolerance` is `1e-8`. The function returns a
+[`RetentionGrid`](@ref JuChrom.RetentionGrid) and throws `ArgumentError` if inputs are
+empty, units are inconsistent, the overlap is empty, or no admissible width is found up
+to `maxwidth`. See also [`densestgrid`](@ref JuChrom.densestgrid(::AbstractDict{<:Any,<:AbstractMassScanMatrix})).
 """
 function densestgrid(
     msmatrices::AbstractVector{<:AbstractMassScanMatrix};
@@ -564,6 +641,7 @@ function densestgrid(
     # Unitless retention vectors can be forwarded directly to the numeric solver.
     densestgrid(
         retention_vectors;
+        retentionunit=nothing,
         minwidth=minwidth,
         maxwidth=maxwidth,
         tolerance=tol_num,

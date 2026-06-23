@@ -198,45 +198,39 @@ end
     @test all(Unitful.unit.(vars_ok[:, 1]) .== u"pA"^2)
 end
 
-@testset "binretentions(msm::MassScanMatrix, bin_edges, variances, rho_lag1)" begin
+@testset "binretentions(vmsm::AbstractVarianceMassScanMatrix, bin_edges, rho_lag1)" begin
     rets = [0.0, 0.5, 1.0] .* u"s"
     mzs = [100.0, 101.0]
     ints = [2 4; 6 8; 10 12] .* u"pA"
-    msm = MassScanMatrix(rets, mzs, ints)
+    msm = MassScanMatrix(rets, mzs, ints; extras=Dict("kind" => "signal"))
     edges = [0.0, 1.0, 2.0] .* u"s"
     vars = fill(0.2, size(ints))
     rho = fill(0.0, length(mzs))
+    vmsm = VarianceMassScanMatrix(msm, vars)
 
-    msm_binned, vars_b = binretentions(msm, edges, vars, rho)
-    @test intensityunit(msm_binned) == u"pA"
-    @test JuChrom.rawintensities(msm_binned) ≈ [4 6; 10 12]
-    @test Unitful.unit(vars_b[1, 1]) == u"pA"^2
-    @test vars_b[1, 1] ≈ 0.1u"pA"^2
-    @test vars_b[2, 2] ≈ 0.2u"pA"^2
+    binned = binretentions(vmsm, edges, rho)
+    @test binned isa VarianceMassScanMatrix
+    @test parent(binned) isa MassScanMatrix
+    @test intensityunit(binned) == u"pA"
+    @test varianceunit(binned) == u"pA"^2
+    @test JuChrom.rawintensities(binned) ≈ [4 6; 10 12]
+    @test rawvariances(binned) ≈ [0.1 0.1; 0.2 0.2]
+    @test extras(binned)["kind"] == "signal"
 
-    msm_unitless = MassScanMatrix([0.0, 0.5], [100.0], reshape([1.0, 2.0], 2, 1))
-    vars_unitful = fill(0.2u"pA"^2, 2, 1)
-    @test_throws ArgumentError binretentions(msm_unitless, [0.0, 1.0], vars_unitful, 0.0)
-    @test_throws ArgumentError binretentions(msm, edges, vars[1:2, :], rho)
+    binned_default = binretentions(vmsm, edges)
+    @test JuChrom.rawintensities(binned_default) ≈ JuChrom.rawintensities(binned)
+    @test rawvariances(binned_default) ≈ rawvariances(binned)
 
-    vars_unitful_ok = fill(0.2u"pA"^2, size(ints))
-    msm_binned_base, vars_base = binretentions(msm, edges, vars_unitful_ok, rho)
-    msm_binned_zth, vars_zth = binretentions(msm, edges, vars_unitful_ok, rho;
+    vmsm_unitful = VarianceMassScanMatrix(msm, vars .* u"pA"^2)
+    binned_zth = binretentions(vmsm_unitful, edges, rho;
         zero_threshold=1e-6u"pA"^2)
-    @test JuChrom.rawintensities(msm_binned_zth) ≈ JuChrom.rawintensities(msm_binned_base)
-    @test vars_zth ≈ vars_base
-    msm_binned_vec, vars_vec = binretentions(msm, edges, vars_unitful_ok, rho;
+    @test JuChrom.rawintensities(binned_zth) ≈ JuChrom.rawintensities(binned)
+    @test rawvariances(binned_zth) ≈ rawvariances(binned)
+
+    @test_throws ArgumentError binretentions(vmsm, edges, [0.0])
+    @test_throws MethodError binretentions(vmsm, edges, rho;
         jacobian_scale=fill(2.0, length(rets)))
-    @test JuChrom.rawintensities(msm_binned_vec) ≈ JuChrom.rawintensities(msm_binned_base)
-    @test vars_vec ≈ vars_base ./ 4
-
-    msm_binned_fun, vars_fun = binretentions(msm, edges, vars_unitful_ok, rho;
-        jacobian_scale=_ -> 2.0)
-    @test vars_fun ≈ vars_base ./ 4
-
-    msm_binned_kw, vars_kw = binretentions(msm, edges, vars_unitful_ok;
-        rho_lag1=rho, jacobian_scale=fill(2.0, length(rets)))
-    @test vars_kw ≈ vars_base ./ 4
+    @test_throws MethodError binretentions(msm, edges, vars, rho)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────

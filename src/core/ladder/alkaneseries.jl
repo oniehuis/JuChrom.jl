@@ -1109,7 +1109,7 @@ function findalkanes(
         nothing
     end
 
-    signal = isnothing(baselineinfo) ? msm : msm - baselineinfo.baselines
+    signal = isnothing(baselineinfo) ? msm : _subtractbaseline(msm, baselineinfo.baselines)
 
     datainfo = alkane_series_datainfo(msm, signal, σ²)
 

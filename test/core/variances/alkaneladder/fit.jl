@@ -111,7 +111,7 @@ function _alkane_variance_mass_spectrum_inputs(; baseline=false)
             signal_intensities .+ baseline_intensities,
             nothing,
         )
-        signal = raw - baselines
+        signal = subtractbaseline(raw, baselines)
         baselineinfo = JuChrom.AlkaneBaselineInfo(
             baselines,
             :test,
