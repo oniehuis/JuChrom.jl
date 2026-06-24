@@ -5,6 +5,8 @@ using Unitful
 using JuChrom
 
 @testset "whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor)" begin
+    @test JuChrom.isdimensionlessvarianceunit(nothing)
+
     rets = [1.0, 2.0]u"s"
     mzs = [100.0, 101.0]u"Th"
     x = [1.0 2.0;

@@ -10,6 +10,21 @@ _make_ms(mz::AbstractVector, ints::AbstractVector; rt=1.0u"s", lvl::Int=1) =
 
 _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
 
+struct _UncheckedVarianceMassScanMatrix{
+    R,
+    M,
+    I,
+    T<:AbstractMassScanMatrix{R,M,I},
+    A<:AbstractMatrix{<:Real},
+    V<:Union{Nothing, Unitful.Units},
+} <: AbstractVarianceMassScanMatrix{R,M,I,V}
+    msm::T
+    variances::A
+    varianceunit::V
+end
+
+Base.parent(vmsm::_UncheckedVarianceMassScanMatrix) = vmsm.msm
+
 @testset "binretentions(vmsm::AbstractVarianceMassScanMatrix, rgrid, rho_lag1)" begin
     rets = [0.0, 0.5, 1.0] .* u"s"
     mzs = [100.0, 101.0]
@@ -48,6 +63,23 @@ _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
     @test JuChrom.rawintensities(binned_zth) ≈ JuChrom.rawintensities(binned)
     @test rawvariances(binned_zth) ≈ rawvariances(binned)
 
+    unchecked_vmsm = _UncheckedVarianceMassScanMatrix(msm, vars, nothing)
+    binned_attached_vars = binretentions(unchecked_vmsm, rgrid, rho)
+    @test intensityunit(binned_attached_vars) == u"pA"
+    @test varianceunit(binned_attached_vars) == u"pA"^2
+    @test JuChrom.rawintensities(binned_attached_vars) ≈ JuChrom.rawintensities(binned)
+    @test rawvariances(binned_attached_vars) ≈ rawvariances(binned)
+
+    _, unitful_empty_avg, unitful_empty_vars = JuChrom._binretention_trace(
+        [0.25]u"s",
+        [2.0]u"pA",
+        [0.0, 1.0, 2.0]u"s",
+        [0.5]u"pA"^2;
+        zero_threshold=1e-6,
+    )
+    @test unitful_empty_avg[2] == 0.0u"pA"
+    @test unitful_empty_vars[2] == Inf * u"pA"^2
+
     msm_unitless = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
         reshape([2.0, 6.0, 10.0], 3, 1))
     vmsm_unitless = VarianceMassScanMatrix(msm_unitless, fill(0.2, 3, 1))
@@ -63,6 +95,18 @@ _make_mss(scans::Vector{<:MassScan}; meta...) = MassScanSeries(scans; meta...)
     @test_throws ArgumentError binretentions(vmsm_unitless, rgrid)
     @test_throws ArgumentError binretentions(vmsm, rgrid_unitless)
     @test_throws Unitful.DimensionError binretentions(vmsm, bad_grid)
+    @test_throws Unitful.DimensionError JuChrom._binretention_trace(
+        [0.0, 0.5]u"s",
+        [1.0, 2.0],
+        [0.0, 1.0]u"kg",
+        [0.2, 0.2],
+    )
+    @test_throws ArgumentError JuChrom._binretention_trace(
+        [0.25]u"s",
+        [2.0]u"pA",
+        [0.0, 1.0]u"s",
+        [0.5],
+    )
     @test_throws MethodError binretentions(vmsm, rawbinedges(rgrid), rho)
     @test_throws MethodError binretentions(vmsm, rgrid, rho;
         jacobian_scale=fill(2.0, length(rets)))

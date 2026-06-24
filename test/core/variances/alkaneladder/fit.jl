@@ -275,6 +275,8 @@ end
     @test varpred(4.0, offsetmodel) == 10.0
     @test varpred(5.0, offsetmodel) == 10.0
     @test varpred(8.0, offsetmodel) == 16.0
+    @test JuChrom.linear_variance_intensity_delta(8, offsetmodel.intensity_offset) === 3.0
+    @test JuChrom.linear_variance_intensity_delta(4, offsetmodel.intensity_offset) === 0.0
     @test varpred([-1.0, 5.0, 8.0], offsetmodel) == [10.0, 10.0, 16.0]
     @test varpred.([4.0, 8.0], offsetmodel) == [10.0, 16.0]
     @test varpred(101.0, offsetmodel; extrapolation=:allow) == 202.0
@@ -332,6 +334,25 @@ end
     )
 
     raw, signal, result = _alkane_variance_mass_spectrum_inputs(; baseline=true)
+    prepared = JuChrom.alkane_variance_prepare_peak_inputs(
+        merge(
+            JuChrom.alkane_variance_validated_run(raw, result, Int[]),
+            (settings=(fitioncount=3,),),
+        ),
+        7,
+    )
+    @test prepared.runindex == 7
+    @test Set(keys(prepared.spectra)) == Set([8])
+    @test isempty(prepared.failures)
+    @test Set(keys(prepared.peakinputs)) == Set([8])
+    @test isempty(prepared.peakinputfailures)
+    @test Set(keys(prepared.peakfits)) == Set([8])
+    @test isempty(prepared.peakfitfailures)
+    @test prepared.peakqc.includedladdersteps == [8]
+    @test only(prepared.peakqc.rows).runindex == 7
+    @test !isempty(prepared.residualrecords)
+    @test all(record -> record.runindex == 7, prepared.residualrecords)
+    @test all(record -> record.ladderstep == 8, prepared.residualrecords)
 
     fit = fitalkanevariancemodel(raw, result)
     @test fit isa AlkaneVarianceFit

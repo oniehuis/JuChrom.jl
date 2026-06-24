@@ -28,6 +28,7 @@ using JuChrom
         @test overlapmin(grid) ≈ 0.0
         @test overlapmax(grid) ≈ 1.0
         @test_throws ArgumentError binedges(grid; unit=u"s")
+        @test identity.(grid) === grid
 
         edges, width = grid
         @test isapprox(width, 0.5; atol=1e-10)
