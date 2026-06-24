@@ -2,7 +2,7 @@
 # ── whiten ────────────────────────────────────────────────────────────────────────────────
 
 function isdimensionlessvarianceunit(unit::Nothing)
-    true
+    unit === nothing
 end
 
 function isdimensionlessvarianceunit(unit::Unitful.Units)

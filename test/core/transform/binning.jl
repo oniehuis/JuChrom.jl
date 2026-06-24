@@ -80,6 +80,15 @@ Base.parent(vmsm::_UncheckedVarianceMassScanMatrix) = vmsm.msm
     @test unitful_empty_avg[2] == 0.0u"pA"
     @test unitful_empty_vars[2] == Inf * u"pA"^2
 
+    _, unitless_empty_avg, unitless_empty_vars = JuChrom._binretention_trace(
+        [0.25],
+        [2.0],
+        [0.0, 1.0, 2.0],
+        [0.5],
+    )
+    @test unitless_empty_avg[2] == 0.0
+    @test unitless_empty_vars[2] == Inf
+
     msm_unitless = MassScanMatrix([0.0, 0.5, 1.0], [100.0],
         reshape([2.0, 6.0, 10.0], 3, 1))
     vmsm_unitless = VarianceMassScanMatrix(msm_unitless, fill(0.2, 3, 1))

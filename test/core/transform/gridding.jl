@@ -25,10 +25,14 @@ using JuChrom
         @test rawoverlapmax(grid) ≈ 1.0
         @test binedges(grid) ≈ [0.0, 0.5, 1.0]
         @test binwidth(grid) ≈ 0.5
+        @test tolerance(grid) ≈ 1e-8
         @test overlapmin(grid) ≈ 0.0
         @test overlapmax(grid) ≈ 1.0
+        @test length(grid) == 2
         @test_throws ArgumentError binedges(grid; unit=u"s")
+        @test_throws ArgumentError tolerance(grid; unit=u"s")
         @test identity.(grid) === grid
+        @test iterate(grid, Val(:done)) === nothing
 
         edges, width = grid
         @test isapprox(width, 0.5; atol=1e-10)
@@ -39,6 +43,10 @@ using JuChrom
         @test rawbinedges(grid_s) ≈ [0.0, 0.5, 1.0]
         @test binedges(grid_s) ≈ [0.0, 0.5, 1.0] .* u"s"
         @test binwidth(grid_s; unit=u"ms") ≈ 500.0u"ms"
+        @test tolerance(grid_s) ≈ 1e-8u"s"
+        @test tolerance(grid_s; unit=u"ms") ≈ 1e-5u"ms"
+        @test overlapmin(grid_s) ≈ 0.0u"s"
+        @test overlapmin(grid_s; unit=u"ms") ≈ 0.0u"ms"
         @test occursin("RetentionGrid(2 bins", sprint(show, grid_s))
         @test occursin("width=0.5 s", sprint(show, grid_s))
         @test occursin("unit=s", sprint(show, grid_s))
@@ -60,6 +68,7 @@ using JuChrom
             1.0;
             extras=Dict("source" => "test"),
         )
+        @test extras(grid_extra) == Dict("source" => "test")
         @test occursin("unit=unitless", sprint(show, grid_extra))
         @test occursin("Extras: 1 entry", sprint(show, MIME"text/plain"(), grid_extra))
 

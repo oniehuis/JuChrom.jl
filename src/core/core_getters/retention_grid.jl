@@ -121,7 +121,10 @@ units when the grid has a unit.
     _handle_unitful_convert_scalar(grid.overlap_max, runit, unit)
 end
 
-Base.length(::RetentionGrid) = 2
+function Base.length(::RetentionGrid)
+    Int(2)
+end
+
 Base.iterate(grid::RetentionGrid) = (binedges(grid), Val(:binwidth))
 Base.iterate(grid::RetentionGrid, ::Val{:binwidth}) = (binwidth(grid), Val(:done))
 Base.iterate(::RetentionGrid, ::Val{:done}) = nothing
