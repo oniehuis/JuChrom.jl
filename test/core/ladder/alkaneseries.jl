@@ -2,6 +2,9 @@ using Test
 using JuChrom
 using Unitful
 
+struct BrokenAlkaneLadderApexInfo <: JuChrom.AbstractAlkaneLadderApexInfo end
+struct BrokenAlkaneLadderAdditionInfo <: JuChrom.AbstractAlkaneLadderAdditionInfo end
+
 function test_findalkanes_msm()
     n = 25
     retentions = collect(1.0:n)
@@ -408,8 +411,39 @@ end
 
     @test occursin("success: false", partial_plain)
     @test occursin("status: missing_standard", partial_plain)
+    @test occursin("standard: none", partial_plain)
     @test occursin("ladder steps: unavailable", partial_plain)
     @test occursin("calibration anchors: unavailable", partial_plain)
+
+    partial_compact = sprint(show, partial)
+    @test partial_compact ==
+        "AlkaneSeriesResult(success=false, status=missing_standard, " *
+        "steps=unavailable, calibration=unavailable, standard=none)"
+
+    broken = AlkaneSeriesResult(
+        false,
+        :broken_ladder_summary,
+        defaultalkanestandard(),
+        ones(2, 3),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        BrokenAlkaneLadderApexInfo(),
+        BrokenAlkaneLadderAdditionInfo()
+    )
+    broken_plain = sprint(io -> show(io, MIME"text/plain"(), broken))
+    broken_compact = sprint(show, broken)
+
+    @test occursin("ladder steps: unavailable", broken_plain)
+    @test occursin("calibration anchors: unavailable", broken_plain)
+    @test occursin("steps=unavailable", broken_compact)
+    @test occursin("calibration=unavailable", broken_compact)
+
+    @test JuChrom.alkane_series_result_carbon_ranges([8, 10, 11, 13]) ==
+        "C8, C10-C11, C13"
 end
 
 @testset "alkaneladdersteps filters by evidence source" begin
