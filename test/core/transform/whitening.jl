@@ -5,7 +5,7 @@ using Statistics: quantile
 using Unitful
 using JuChrom
 
-@testset "whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor)" begin
+@testset "whiten(vmsm::AbstractVarianceMassScanMatrix; sigmafloor)" begin
     @test JuChrom.isdimensionlessvarianceunit(nothing)
 
     rets = [1.0, 2.0]u"s"
@@ -28,7 +28,7 @@ using JuChrom
     vmsm = VarianceMassScanMatrix(msm, v)
 
     sigmafloor = 1e-3
-    transformed = whiten(vmsm, sigmafloor)
+    transformed = whiten(vmsm; sigmafloor=sigmafloor)
 
     denominator_variances = max.(v, sigmafloor^2)
     expected_x = x ./ sqrt.(denominator_variances)
@@ -71,12 +71,9 @@ end
     denominator_variances = max.(v, sigmafloor^2)
 
     transformed = whiten(vmsm; floorquantile=floorquantile)
-    positional = whiten(vmsm, :auto; floorquantile=floorquantile)
 
     @test rawintensities(transformed) ≈ x ./ sqrt.(denominator_variances)
     @test rawvariances(transformed) ≈ v ./ denominator_variances
-    @test rawintensities(positional) ≈ rawintensities(transformed)
-    @test rawvariances(positional) ≈ rawvariances(transformed)
     @test intensityunit(transformed) === nothing
     @test varianceunit(transformed) === nothing
 end
@@ -91,7 +88,7 @@ end
     msm = MassScanMatrix(rets, mzs, x .* u"rad")
     vmsm = VarianceMassScanMatrix(msm, v .* u"rad"^2)
 
-    transformed = whiten(vmsm, 0.1)
+    transformed = whiten(vmsm; sigmafloor=0.1)
 
     @test intensityunit(transformed) === nothing
     @test varianceunit(transformed) === nothing
@@ -113,8 +110,8 @@ end
 
     sigmafloor = 0.5
     denominator_variances = max.(v, sigmafloor^2)
-    transformed = whiten(vmsm, sigmafloor * u"pA")
-    converted = whiten(vmsm, 500u"fA")
+    transformed = whiten(vmsm; sigmafloor=sigmafloor * u"pA")
+    converted = whiten(vmsm; sigmafloor=500u"fA")
 
     @test rawintensities(transformed) ≈ x ./ sqrt.(denominator_variances)
     @test rawvariances(transformed) ≈ v ./ denominator_variances
@@ -141,23 +138,26 @@ end
          3.0 4.0]
     vmsm = VarianceMassScanMatrix(MassScanMatrix(rets, mzs, x), ones(size(x)))
 
-    @test_throws ArgumentError whiten(vmsm, 0.0)
-    @test_throws ArgumentError whiten(vmsm, -1.0)
+    @test_throws ArgumentError whiten(vmsm; sigmafloor=0.0)
+    @test_throws ArgumentError whiten(vmsm; sigmafloor=-1.0)
     @test_throws ArgumentError whiten(vmsm; floorquantile=0.0)
     @test_throws ArgumentError whiten(vmsm; floorquantile=1.1)
-    @test_throws ArgumentError whiten(vmsm, :median)
-    @test_throws ArgumentError whiten(vmsm, 0.1u"pA")
+    @test_throws ArgumentError whiten(vmsm; sigmafloor=:median)
+    @test_throws ArgumentError whiten(vmsm; sigmafloor=0.1u"pA")
 
     zero_vmsm = VarianceMassScanMatrix(MassScanMatrix(rets, mzs, x), zeros(size(x)))
     @test_throws ArgumentError whiten(zero_vmsm)
 
     physical_msm = MassScanMatrix(rets, mzs, x .* u"pA")
     physical_vmsm = VarianceMassScanMatrix(physical_msm, ones(size(x)) .* u"pA"^2)
-    @test_throws ArgumentError whiten(physical_vmsm, 0.1)
-    @test_throws ArgumentError whiten(physical_vmsm, 0.0u"pA")
-    @test_throws ArgumentError whiten(physical_vmsm, -1.0u"pA")
-    @test_throws Unitful.DimensionError whiten(physical_vmsm, 0.1u"s")
+    @test_throws ArgumentError whiten(physical_vmsm; sigmafloor=0.1)
+    @test_throws ArgumentError whiten(physical_vmsm; sigmafloor=0.0u"pA")
+    @test_throws ArgumentError whiten(physical_vmsm; sigmafloor=-1.0u"pA")
+    @test_throws Unitful.DimensionError whiten(physical_vmsm; sigmafloor=0.1u"s")
 
+    @test_throws MethodError whiten(vmsm, 0.1)
+    @test_throws MethodError whiten(vmsm, :auto)
+    @test_throws MethodError whiten(vmsm, 0.1u"pA")
     @test_throws MethodError whiten(x, ones(size(x)), 0.1)
 end
 

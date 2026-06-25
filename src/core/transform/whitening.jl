@@ -11,9 +11,6 @@ end
 
 """
     whiten(vmsm::AbstractVarianceMassScanMatrix; sigmafloor=:auto, floorquantile=0.05)
-    whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::Real)
-    whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::Unitful.AbstractQuantity)
-    whiten(vmsm::AbstractVarianceMassScanMatrix, :auto; floorquantile=0.05)
 
 Whiten a variance mass scan matrix by dividing each intensity by its propagated standard
 deviation, with a standard-deviation floor.
@@ -43,21 +40,18 @@ function whiten(
     sigmafloor=:auto,
     floorquantile::Real=0.05)
 
-    sigmafloor === :auto && return whiten(vmsm, :auto; floorquantile=floorquantile)
-    whiten(vmsm, sigmafloor)
+    if sigmafloor === :auto
+        sigmafloor = _inferwhitensigmafloor(vmsm, floorquantile)
+    end
+    _whiten(vmsm, sigmafloor)
 end
 
-function whiten(
-    vmsm::AbstractVarianceMassScanMatrix,
-    sigmafloor::Symbol;
-    floorquantile::Real=0.05)
-
-    sigmafloor === :auto || throw(ArgumentError(
-        "sigmafloor must be positive, a Unitful quantity, or :auto."))
-    whiten(vmsm, inferwhitensigmafloor(vmsm, floorquantile))
+function _whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor)
+    throw(ArgumentError(
+        "sigmafloor must be :auto, a positive real number, or a positive Unitful quantity."))
 end
 
-function whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::Real)
+function _whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::Real)
     sigmafloor > 0 || throw(ArgumentError("sigmafloor must be positive."))
     isdimensionlessvarianceunit(varianceunit(vmsm)) || throw(ArgumentError(
         "whiten with a bare real sigmafloor requires varianceunit(vmsm) to be nothing " *
@@ -65,19 +59,19 @@ function whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::Real)
 
     x = rawintensities(vmsm)
     variances = rawvariances(vmsm)
-    whitenfromvalues(vmsm, x, variances, sigmafloor)
+    _whitenfromvalues(vmsm, x, variances, sigmafloor)
 end
 
-function whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::AbstractQuantity{<:Real})
+function _whiten(vmsm::AbstractVarianceMassScanMatrix, sigmafloor::AbstractQuantity{<:Real})
     sigmafloor > zero(sigmafloor) || throw(ArgumentError("sigmafloor must be positive."))
 
     floorunit = Unitful.unit(sigmafloor)
     x = rawintensities(vmsm; unit=floorunit)
     variances = rawvariances(vmsm; unit=floorunit^2)
-    whitenfromvalues(vmsm, x, variances, Unitful.ustrip(floorunit, sigmafloor))
+    _whitenfromvalues(vmsm, x, variances, Unitful.ustrip(floorunit, sigmafloor))
 end
 
-function inferwhitensigmafloor(
+function _inferwhitensigmafloor(
     vmsm::AbstractVarianceMassScanMatrix,
     floorquantile::Real)
 
@@ -86,16 +80,16 @@ function inferwhitensigmafloor(
         "floorquantile must be finite and in the interval (0, 1]."))
 
     if isdimensionlessvarianceunit(varianceunit(vmsm))
-        return inferwhitensigmafloorvalue(rawvariances(vmsm), q)
+        return _inferwhitensigmafloorvalue(rawvariances(vmsm), q)
     end
 
     intunit = intensityunit(vmsm)
     isnothing(intunit) && throw(ArgumentError(
         "cannot infer a unitful sigmafloor without intensityunit(vmsm)."))
-    inferwhitensigmafloorvalue(rawvariances(vmsm; unit=intunit^2), q) * intunit
+    _inferwhitensigmafloorvalue(rawvariances(vmsm; unit=intunit^2), q) * intunit
 end
 
-function inferwhitensigmafloorvalue(variances::AbstractMatrix{<:Real}, q::Real)
+function _inferwhitensigmafloorvalue(variances::AbstractMatrix{<:Real}, q::Real)
     sigmas = sqrt.(filter(v -> isfinite(v) && v > zero(v), vec(variances)))
     isempty(sigmas) && throw(ArgumentError(
         "cannot infer sigmafloor from variances without positive finite values."))
@@ -106,7 +100,7 @@ function inferwhitensigmafloorvalue(variances::AbstractMatrix{<:Real}, q::Real)
     sigmafloor
 end
 
-function whitenfromvalues(
+function _whitenfromvalues(
     vmsm::AbstractVarianceMassScanMatrix,
     x::AbstractMatrix{<:Real},
     variances::AbstractMatrix{<:Real},

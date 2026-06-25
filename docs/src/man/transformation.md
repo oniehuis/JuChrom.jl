@@ -32,9 +32,10 @@ vmsm_whitened = whiten(vmsm_clr)
 `whiten` returns dimensionless intensities and variances. By default it infers a
 standard-deviation floor from the positive propagated standard deviations
 (`sigmafloor = :auto`, `floorquantile = 0.05`). Pass an explicit bare number for
-dimensionless transformed data, for example `whiten(vmsm_clr, 0.01)`. Pass a unitful
-floor for physical intensity data, for example `whiten(vmsm, 0.1u"pA")`; the intensities
-and variances are converted to that unit before units are stripped.
+dimensionless transformed data, for example `whiten(vmsm_clr; sigmafloor=0.01)`. Pass a
+unitful floor for physical intensity data, for example
+`whiten(vmsm; sigmafloor=0.1u"pA")`; the intensities and variances are converted to that
+unit before units are stripped.
 
 ## Intensity units and dwell normalization
 
