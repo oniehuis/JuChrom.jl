@@ -114,7 +114,9 @@ end
         u"ms"
     )
 
-    fig = tictrace(unitful_msm, unitful_result; unit=u"minute")
+    @test_throws MethodError tictrace(unitful_msm, unitful_result; unit=u"minute")
+
+    fig = tictrace(unitful_msm, unitful_result; retentionunit=u"minute")
     ax = only_axis(fig)
     limits = ax.finallimits[]
 
@@ -128,6 +130,68 @@ end
     @test ext.tictrace_step_retention(step, u"ms", nothing) == step.apexretention
     font = ext.tictrace_measurement_font(:regular)
     @test ext.tictrace_measurement_font(font) === Makie.to_font(font)
+
+    unitful_signal_msm = MassScanMatrix(
+        rawretentions(msm),
+        u"ms",
+        rawmzvalues(msm),
+        nothing,
+        rawintensities(msm),
+        u"pA"
+    )
+    baseline_msm = MassScanMatrix(
+        rawretentions(msm),
+        u"ms",
+        rawmzvalues(msm),
+        nothing,
+        fill(1000.0, size(rawintensities(msm))),
+        u"pA"
+    )
+    unitful_signal_result = AlkaneSeriesResult(
+        result.success,
+        result.status,
+        result.standard,
+        result.variances,
+        result.varianceinfo,
+        JuChrom.AlkaneBaselineInfo(
+            baseline_msm,
+            :test,
+            1.0,
+            true,
+            10.0,
+            0.5,
+            1.0,
+            0.2
+        ),
+        result.channelinfo,
+        result.abundanceinfo,
+        result.molecularioninfo,
+        result.pathinfo,
+        result.apexinfo,
+        result.additioninfo,
+        JuChrom.alkane_series_datainfo(
+            unitful_signal_msm,
+            unitful_signal_msm,
+            result.variances
+        ),
+        u"ms"
+    )
+
+    converted = tictrace(
+        unitful_signal_msm,
+        unitful_signal_result;
+        retentionunit=u"minute",
+        intensityunit=u"nA"
+    )
+    converted_ax = only_axis(converted)
+    converted_plot = only(converted_ax.scene.plots)
+
+    @test converted_ax.xlabel[] == "Retention [minute]"
+    @test converted_ax.ylabel[] == "TIC [nA]"
+    @test converted_plot.retentions[] ≈ rawretentions(unitful_signal_msm; unit=u"minute")
+    @test converted_plot.intensities[] ≈
+        vec(sum(rawintensities(unitful_signal_msm; unit=u"nA"); dims=2))
+    @test converted_plot.baseline_intensities[] ≈ fill(5.0, scancount(unitful_signal_msm))
 end
 
 @testset "lines! plots TIC from JuChrom containers with unit conversion" begin

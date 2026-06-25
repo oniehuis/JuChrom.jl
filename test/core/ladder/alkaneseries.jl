@@ -368,6 +368,50 @@ end
     @test steps[2].apex.ladderstep == 9
 end
 
+@testset "AlkaneSeriesResult display is compact" begin
+    result = test_ladder_step_result(; retentionunit=u"minute")
+
+    compact = sprint(show, result)
+    plain = sprint(io -> show(io, MIME"text/plain"(), result))
+
+    @test compact == "AlkaneSeriesResult(success=true, status=ok, steps=4 C8-C11, calibration=3, standard=\"n-alkane C8-C40 reference spectra\")"
+    @test occursin("AlkaneSeriesResult", plain)
+    @test occursin("success: true", plain)
+    @test occursin("standard: n-alkane C8-C40 reference spectra", plain)
+    @test occursin("ladder steps: 4 C8-C11 (gap-filled C9; edge-extended C11)", plain)
+    @test occursin("calibration anchors: 3 C9-C11 (gap-filled C9; edge-extended C11)", plain)
+    @test !occursin("gap-filled steps:", plain)
+    @test !occursin("edge-extended steps:", plain)
+    @test !occursin("molecular-ion 2", plain)
+    @test !occursin("retention unit", plain)
+    @test !occursin("data:", plain)
+    @test !occursin("preprocessing:", plain)
+    @test !occursin("pipeline:", plain)
+    @test !occursin("apexes =", plain)
+    @test length(split(plain, '\n')) ≤ 5
+
+    partial = AlkaneSeriesResult(
+        false,
+        :missing_standard,
+        nothing,
+        ones(2, 3),
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing
+    )
+    partial_plain = sprint(io -> show(io, MIME"text/plain"(), partial))
+
+    @test occursin("success: false", partial_plain)
+    @test occursin("status: missing_standard", partial_plain)
+    @test occursin("ladder steps: unavailable", partial_plain)
+    @test occursin("calibration anchors: unavailable", partial_plain)
+end
+
 @testset "alkaneladdersteps filters by evidence source" begin
     result = test_ladder_step_result()
 

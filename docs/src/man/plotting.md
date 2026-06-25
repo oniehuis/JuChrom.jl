@@ -78,5 +78,18 @@ lines!(ax, x, y)
 ## Annotated alkane ladders
 
 Use `tictrace(msm, result)` or `tictrace!(ax, msm, result)` for the higher-level TIC view
-with baseline and alkane ladder annotations. The `lines` methods above are the lower-level
-Makie primitive for plotting only the TIC line.
+with baseline and alkane ladder annotations. These methods use the same `retentionunit`
+and `intensityunit` keywords:
+
+```julia
+fig = tictrace(
+    msm,
+    result;
+    retentionunit=u"minute",
+    intensityunit=u"nA",
+)
+```
+
+The TIC line and baseline, when present, are converted to `intensityunit` before plotting.
+The ladder-step retentions are converted to `retentionunit`. The `lines` methods above are
+the lower-level Makie primitive for plotting only the TIC line.

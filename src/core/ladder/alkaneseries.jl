@@ -435,6 +435,181 @@ function validate_alkane_ladder_calibration_points(
     nothing
 end
 
+function Base.show(io::IO, result::AlkaneSeriesResult)
+    step_summary = alkane_series_result_step_summary(result)
+    calibration_summary = alkane_series_result_calibration_summary(result)
+
+    print(io, "AlkaneSeriesResult(")
+    print(io, "success=", result.success)
+    print(io, ", status=", result.status)
+    print(io, ", steps=", alkane_series_result_compact_steps(step_summary))
+    print(io, ", calibration=", alkane_series_result_count_string(calibration_summary))
+    print(io, ", standard=", alkane_series_result_standard_string(result.standard))
+    print(io, ")")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", result::AlkaneSeriesResult)
+    step_summary = alkane_series_result_step_summary(result)
+    calibration_summary = alkane_series_result_calibration_summary(result)
+
+    println(io, "AlkaneSeriesResult")
+    println(io, "  success: ", result.success)
+    result.success || println(io, "  status: ", result.status)
+    println(io, "  standard: ", alkane_series_result_standard_display(result.standard))
+    println(io, "  ladder steps: ", alkane_series_result_step_display(step_summary))
+    print(io, "  calibration anchors: ",
+        alkane_series_result_calibration_display(calibration_summary))
+end
+
+function alkane_series_result_step_summary(result::AlkaneSeriesResult)
+    (isnothing(result.apexinfo) || isnothing(result.additioninfo)) &&
+        return nothing
+
+    steps = try
+        alkaneladdersteps(result)
+    catch
+        return nothing
+    end
+
+    (steps=steps,)
+end
+
+function alkane_series_result_calibration_summary(result::AlkaneSeriesResult)
+    (isnothing(result.standard) || isnothing(result.apexinfo) ||
+        isnothing(result.additioninfo)) && return nothing
+
+    points = try
+        alkaneladdercalibrationpoints(result)
+    catch
+        return nothing
+    end
+
+    points
+end
+
+function alkane_series_result_compact_steps(::Nothing)
+    "unavailable"
+end
+
+function alkane_series_result_compact_steps(summary::NamedTuple)
+    steps = summary.steps
+    isempty(steps) && return "0"
+    string(length(steps), " ", alkane_series_result_step_range(steps))
+end
+
+function alkane_series_result_step_display(::Nothing)
+    "unavailable"
+end
+
+function alkane_series_result_step_display(summary::NamedTuple)
+    steps = summary.steps
+    isempty(steps) && return "0"
+    annotations = alkane_series_result_source_annotations(steps)
+    isempty(annotations) ?
+        string(length(steps), " ", alkane_series_result_step_range(steps)) :
+        string(
+            length(steps),
+            " ",
+            alkane_series_result_step_range(steps),
+            " (",
+            join(annotations, "; "),
+            ")"
+        )
+end
+
+function alkane_series_result_step_range(steps::AbstractVector{<:AlkaneLadderStep})
+    alkane_series_result_carbon_ranges(getproperty.(steps, :ladderstep))
+end
+
+function alkane_series_result_count_string(::Nothing)
+    "unavailable"
+end
+
+function alkane_series_result_count_string(values)
+    string(length(values))
+end
+
+function alkane_series_result_calibration_display(::Nothing)
+    "unavailable"
+end
+
+function alkane_series_result_calibration_display(points)
+    isempty(points) && return "0 none"
+    annotations = alkane_series_result_source_annotations(points)
+    base = string(
+        length(points),
+        " ",
+        alkane_series_result_carbon_ranges(getproperty.(points, :ladderstep))
+    )
+    isempty(annotations) ? base : string(base, " (", join(annotations, "; "), ")")
+end
+
+function alkane_series_result_source_annotations(items)
+    gapfilled = [
+        item.ladderstep for item in items if item.source === :gapfilled
+    ]
+    edgeextended = [
+        item.ladderstep for item in items
+        if item.source in (:leftextended, :rightextended)
+    ]
+
+    annotations = String[]
+    isempty(gapfilled) ||
+        push!(annotations, string(
+            "gap-filled ",
+            alkane_series_result_carbon_ranges(gapfilled)
+        ))
+    isempty(edgeextended) ||
+        push!(annotations, string(
+            "edge-extended ",
+            alkane_series_result_carbon_ranges(edgeextended)
+        ))
+
+    annotations
+end
+
+function alkane_series_result_carbon_ranges(carbons)
+    isempty(carbons) && return "none"
+
+    sorted = sort!(unique!(collect(Int, carbons)))
+    ranges = String[]
+    start = first(sorted)
+    stop = start
+
+    for carbon in Iterators.drop(sorted, 1)
+        if carbon == stop + 1
+            stop = carbon
+        else
+            push!(ranges, alkane_series_result_carbon_range(start, stop))
+            start = carbon
+            stop = carbon
+        end
+    end
+    push!(ranges, alkane_series_result_carbon_range(start, stop))
+
+    join(ranges, ", ")
+end
+
+function alkane_series_result_carbon_range(start::Integer, stop::Integer)
+    start == stop ? "C$start" : "C$start-C$stop"
+end
+
+function alkane_series_result_standard_string(::Nothing)
+    "none"
+end
+
+function alkane_series_result_standard_string(standard::AlkaneStandard)
+    repr(standard.name)
+end
+
+function alkane_series_result_standard_display(::Nothing)
+    "none"
+end
+
+function alkane_series_result_standard_display(standard::AlkaneStandard)
+    string(standard.name, " (", length(standard.spectra), " spectra)")
+end
+
 function alkane_ladder_calibration_vectors(
     points::AbstractVector{<:AlkaneLadderCalibrationPoint}
 )

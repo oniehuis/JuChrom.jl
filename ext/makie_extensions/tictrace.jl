@@ -126,7 +126,8 @@ function tictrace(
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
     size=(900, 450),
-    unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
     color=:black,
     linewidth::Real=1.0,
     baseline::Bool=true,
@@ -148,11 +149,14 @@ function tictrace(
     yheadroom::Real=1.05,
     labelyfraction::Real=0.99
 )
+    displayretentionunit = tictrace_display_retentionunit(msm, retentionunit)
+    displayintensityunit = tictrace_display_intensityunit(msm, intensityunit)
+
     fig = Figure(; size=size)
     ax = Axis(
         fig[1, 1],
-        xlabel="Retention" * tictrace_unit_suffix(unit),
-        ylabel="TIC" * tictrace_unit_suffix(JuChrom.intensityunit(msm); unitless=true),
+        xlabel="Retention" * tictrace_unit_suffix(displayretentionunit),
+        ylabel="TIC" * tictrace_unit_suffix(displayintensityunit; unitless=true),
         xgridvisible=false,
         ygridvisible=false
     )
@@ -160,7 +164,8 @@ function tictrace(
         ax,
         msm,
         result;
-        unit=unit,
+        retentionunit=retentionunit,
+        intensityunit=intensityunit,
         color=color,
         linewidth=linewidth,
         baseline=baseline,
@@ -190,7 +195,8 @@ function tictrace!(
     ax::Axis,
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
-    unit::Union{Nothing, Unitful.Units}=JuChrom.retentionunit(msm),
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
     color=:black,
     linewidth::Real=1.0,
     baseline::Bool=true,
@@ -213,12 +219,16 @@ function tictrace!(
     labelyfraction::Real=0.99
 )
     tictrace_validate_checksum(msm, result)
-    x = JuChrom.rawretentions(msm; unit=unit)
-    y = tictrace_values(msm)
-    baseline_y = tictrace_baseline_values(result, baseline, length(x))
+    x, y = tictrace_xy(msm, retentionunit, intensityunit)
+    baseline_y = tictrace_baseline_values(
+        result,
+        baseline,
+        length(x);
+        intensityunit=intensityunit
+    )
     step_retentions, step_numbers = tictrace_ladder_step_data(
         result,
-        unit,
+        retentionunit,
         molecularion,
         gapfilled,
         edgeextended
@@ -360,10 +370,20 @@ function tictrace_lines!(
     intensityunit::Union{Nothing, Unitful.Units};
     kwargs...
 )
-    x = JuChrom.rawretentions(data; unit=retentionunit)
-    y = tictrace_values(data; intensityunit=intensityunit)
+    x, y = tictrace_xy(data, retentionunit, intensityunit)
 
     Makie.lines!(ax, x, y; kwargs...)
+end
+
+function tictrace_xy(
+    data,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units}
+)
+    (
+        JuChrom.rawretentions(data; unit=retentionunit),
+        tictrace_values(data; intensityunit=intensityunit)
+    )
 end
 
 function tictrace_validate_checksum(
@@ -400,16 +420,33 @@ end
 function tictrace_baseline_values(
     result::JuChrom.AlkaneSeriesResult,
     baseline::Bool,
-    nscans::Integer
+    nscans::Integer;
+    intensityunit::Union{Nothing, Unitful.Units}=nothing
 )
     baseline && !isnothing(result.baselineinfo) ||
         return fill(NaN, nscans)
 
-    tictrace_values(result.baselineinfo.baselines)
+    tictrace_values(result.baselineinfo.baselines; intensityunit=intensityunit)
 end
 
 function tictrace_unit_suffix(unit; unitless::Bool=false)
     isnothing(unit) ? (unitless ? " [unitless]" : "") : " [$unit]"
+end
+
+function tictrace_display_retentionunit(data, retentionunit::Nothing)
+    JuChrom.retentionunit(data)
+end
+
+function tictrace_display_retentionunit(data, retentionunit::Unitful.Units)
+    retentionunit
+end
+
+function tictrace_display_intensityunit(data, intensityunit::Nothing)
+    JuChrom.intensityunit(data)
+end
+
+function tictrace_display_intensityunit(data, intensityunit::Unitful.Units)
+    intensityunit
 end
 
 function tictrace_ymax(yseries)
