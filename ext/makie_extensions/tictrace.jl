@@ -253,6 +253,119 @@ function tictrace!(
     ax
 end
 
+"""
+    lines(data; retentionunit=nothing, intensityunit=nothing, figure=(;), axis=(;), kwargs...)
+    lines(position, data; retentionunit=nothing, intensityunit=nothing, axis=(;), kwargs...)
+    lines!(ax, data; retentionunit=nothing, intensityunit=nothing, kwargs...)
+
+Plot the total ion chromatogram for a JuChrom scan container with Makie.
+
+`data` may be an `AbstractMassScanMatrix`, `AbstractVarianceMassScanMatrix`,
+`AbstractMassScanSeries`, or `AbstractChromScanSeries`. For mass-scan data, the y values
+are the per-scan sums of intensities. For chromatographic scan series, the y values are
+the scan intensities.
+
+`retentionunit` and `intensityunit` are converted before numeric values are stripped. The
+default `nothing` strips the stored unit when present and leaves unitless data unchanged.
+All other keywords are forwarded to Makie's `lines` plot.
+"""
+const TicTraceLineData = Union{
+    JuChrom.AbstractMassScanMatrix,
+    JuChrom.AbstractChromScanSeries,
+    JuChrom.AbstractMassScanSeries
+}
+
+function Makie.lines(
+    data::TicTraceLineData;
+    figure::NamedTuple=NamedTuple(),
+    axis::NamedTuple=NamedTuple(),
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    tictrace_lines(data, figure, axis, retentionunit, intensityunit; kwargs...)
+end
+
+function Makie.lines(
+    position::Union{Makie.GridPosition, Makie.GridSubposition},
+    data::TicTraceLineData;
+    figure::NamedTuple=NamedTuple(),
+    axis::NamedTuple=NamedTuple(),
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    isempty(pairs(figure)) || throw(ArgumentError(
+        "figure keyword is not supported when plotting into a grid position"))
+    tictrace_lines(position, axis, data, retentionunit, intensityunit; kwargs...)
+end
+
+function Makie.lines!(
+    ax::Axis,
+    data::TicTraceLineData;
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    tictrace_lines!(ax, data, retentionunit, intensityunit; kwargs...)
+end
+
+function tictrace_lines(
+    data,
+    figure::NamedTuple,
+    axis::NamedTuple,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units};
+    kwargs...
+)
+    fig = Figure(; figure...)
+    ax = Axis(fig[1, 1]; axis...)
+    plt = Makie.lines!(
+        ax,
+        data;
+        retentionunit=retentionunit,
+        intensityunit=intensityunit,
+        kwargs...
+    )
+
+    Makie.FigureAxisPlot(fig, ax, plt)
+end
+
+function tictrace_lines(
+    position::Union{Makie.GridPosition, Makie.GridSubposition},
+    axis::NamedTuple,
+    data,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units};
+    kwargs...
+)
+    isempty(Makie.contents(position; exact=true)) || error(
+        "non-mutating lines requires an empty grid position; use lines! for existing axes")
+    ax = Axis(position; axis...)
+    plt = Makie.lines!(
+        ax,
+        data;
+        retentionunit=retentionunit,
+        intensityunit=intensityunit,
+        kwargs...
+    )
+
+    Makie.AxisPlot(ax, plt)
+end
+
+function tictrace_lines!(
+    ax::Axis,
+    data,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units};
+    kwargs...
+)
+    x = JuChrom.rawretentions(data; unit=retentionunit)
+    y = tictrace_values(data; intensityunit=intensityunit)
+
+    Makie.lines!(ax, x, y; kwargs...)
+end
+
 function tictrace_validate_checksum(
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult
@@ -260,8 +373,28 @@ function tictrace_validate_checksum(
     JuChrom.alkane_validate_raw_msm_checksum(msm, result)
 end
 
-function tictrace_values(msm::JuChrom.AbstractMassScanMatrix)
-    vec(sum(JuChrom.rawintensities(msm); dims=2))
+function tictrace_values(
+    msm::JuChrom.AbstractMassScanMatrix;
+    intensityunit::Union{Nothing, Unitful.Units}=nothing
+)
+    vec(sum(JuChrom.rawintensities(msm; unit=intensityunit); dims=2))
+end
+
+function tictrace_values(
+    series::JuChrom.AbstractChromScanSeries;
+    intensityunit::Union{Nothing, Unitful.Units}=nothing
+)
+    JuChrom.rawintensities(series; unit=intensityunit)
+end
+
+function tictrace_values(
+    series::JuChrom.AbstractMassScanSeries;
+    intensityunit::Union{Nothing, Unitful.Units}=nothing
+)
+    [
+        sum(JuChrom.rawintensities(series, scanindex; unit=intensityunit))
+        for scanindex in 1:JuChrom.scancount(series)
+    ]
 end
 
 function tictrace_baseline_values(

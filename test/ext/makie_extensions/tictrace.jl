@@ -130,6 +130,111 @@ end
     @test ext.tictrace_measurement_font(font) === Makie.to_font(font)
 end
 
+@testset "lines! plots TIC from JuChrom containers with unit conversion" begin
+    X = [1000.0 2000.0; 3000.0 4000.0]
+    msm = MassScanMatrix(
+        [60.0, 120.0],
+        u"s",
+        [100.0, 101.0],
+        nothing,
+        X,
+        u"pA"
+    )
+
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+    plt = lines!(
+        ax,
+        msm;
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        color=:red,
+        linewidth=2
+    )
+
+    @test plt isa Makie.Lines
+    @test plt.arg1[] ≈ [1.0, 2.0]
+    @test plt.arg2[] ≈ [3.0, 7.0]
+    @test plt.linewidth[] ≈ 2
+
+    vmsm = VarianceMassScanMatrix(msm, ones(size(X)))
+    plt_v = lines!(
+        ax,
+        vmsm;
+        retentionunit=u"minute",
+        intensityunit=u"nA"
+    )
+    @test plt_v isa Makie.Lines
+    @test plt_v.arg1[] ≈ [1.0, 2.0]
+    @test plt_v.arg2[] ≈ [3.0, 7.0]
+
+    mss = MassScanSeries([
+        MassScan(60.0u"s", [100.0, 101.0], [1000.0, 2000.0]u"pA"),
+        MassScan(120.0u"s", [100.0, 101.0], [3000.0, 4000.0]u"pA")
+    ])
+    plt_mss = lines!(
+        ax,
+        mss;
+        retentionunit=u"minute",
+        intensityunit=u"nA"
+    )
+    @test plt_mss isa Makie.Lines
+    @test plt_mss.arg1[] ≈ [1.0, 2.0]
+    @test plt_mss.arg2[] ≈ [3.0, 7.0]
+
+    css = ChromScanSeries([
+        ChromScan(60.0u"s", 1000.0u"pA"),
+        ChromScan(120.0u"s", 2000.0u"pA")
+    ])
+    plt_css = lines!(
+        ax,
+        css;
+        retentionunit=u"minute",
+        intensityunit=u"nA"
+    )
+    @test plt_css isa Makie.Lines
+    @test plt_css.arg1[] ≈ [1.0, 2.0]
+    @test plt_css.arg2[] ≈ [1.0, 2.0]
+
+    fap = lines(
+        msm;
+        figure=(; size=(320, 240)),
+        axis=(; xlabel="Retention [minute]", ylabel="TIC [nA]"),
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        color=:blue,
+        linewidth=3
+    )
+    @test fap isa Makie.FigureAxisPlot
+    @test fap.plot isa Makie.Lines
+    @test fap.figure.scene.viewport[].widths == [320, 240]
+    @test fap.axis.xlabel[] == "Retention [minute]"
+    @test fap.axis.ylabel[] == "TIC [nA]"
+    @test fap.plot.arg1[] ≈ [1.0, 2.0]
+    @test fap.plot.arg2[] ≈ [3.0, 7.0]
+    @test fap.plot.linewidth[] ≈ 3
+
+    layout_fig = Figure()
+    axplot = lines(
+        layout_fig[1, 1],
+        msm;
+        axis=(; xlabel="Retention [minute]"),
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        linewidth=4
+    )
+    @test axplot isa Makie.AxisPlot
+    @test axplot.axis.xlabel[] == "Retention [minute]"
+    @test axplot.plot.arg1[] ≈ [1.0, 2.0]
+    @test axplot.plot.arg2[] ≈ [3.0, 7.0]
+    @test axplot.plot.linewidth[] ≈ 4
+    @test_throws ArgumentError lines(
+        Figure()[1, 1],
+        msm;
+        figure=(; size=(320, 240))
+    )
+end
+
 @testset "tictrace! overlays ladder steps on an existing axis" begin
     msm, result = synthetic_ladder_result()
     fig = Figure()

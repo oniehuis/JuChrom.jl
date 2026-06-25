@@ -53,6 +53,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/massspectra.md",
                 ],
                 "Units and Quantities" => "man/units_quantities.md",
+                "Plotting" => "man/plotting.md",
                 "Loaders" => Any[
                     "Loader API" => "man/loaderapi.md",
                     "man/agilentfid.md",
