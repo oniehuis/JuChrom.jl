@@ -257,7 +257,7 @@ function _AlkaneVarianceTestApex(
 end
 
 @testset "fitalkanevariancemodel entry point" begin
-    @test vif(1, 2) == vif(1.0, 2)
+    @test JuChrom.vif(1, 2) == JuChrom.vif(1.0, 2)
 
     oldmodel = JuChrom.LinearObservedIntensityVarianceModel(10.0, 2.0, 0.0, 100.0, 0.0)
     @test oldmodel.intensity_offset == 0.0

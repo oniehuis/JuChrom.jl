@@ -17,5 +17,4 @@ LinearObservedIntensityVarianceModel
 AlkaneVarianceFit
 fitalkanevariancemodel
 varpred
-vif
 ```

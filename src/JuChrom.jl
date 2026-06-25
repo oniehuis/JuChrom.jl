@@ -220,7 +220,6 @@ export user
 export varpred
 export varianceunit
 export variances
-export vif
 export whiten
 export withintensityunit
 export rawvariances
