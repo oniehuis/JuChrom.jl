@@ -488,7 +488,7 @@ function alkane_series_result_calibration_summary(result::AlkaneSeriesResult)
 end
 
 function alkane_series_result_compact_steps(::Nothing)
-    "unavailable"
+    return "unavailable"
 end
 
 function alkane_series_result_compact_steps(summary::NamedTuple)
@@ -498,7 +498,7 @@ function alkane_series_result_compact_steps(summary::NamedTuple)
 end
 
 function alkane_series_result_step_display(::Nothing)
-    "unavailable"
+    return "unavailable"
 end
 
 function alkane_series_result_step_display(summary::NamedTuple)
@@ -522,7 +522,7 @@ function alkane_series_result_step_range(steps::AbstractVector{<:AlkaneLadderSte
 end
 
 function alkane_series_result_count_string(::Nothing)
-    "unavailable"
+    return "unavailable"
 end
 
 function alkane_series_result_count_string(values)
@@ -530,7 +530,7 @@ function alkane_series_result_count_string(values)
 end
 
 function alkane_series_result_calibration_display(::Nothing)
-    "unavailable"
+    return "unavailable"
 end
 
 function alkane_series_result_calibration_display(points)
@@ -595,7 +595,7 @@ function alkane_series_result_carbon_range(start::Integer, stop::Integer)
 end
 
 function alkane_series_result_standard_string(::Nothing)
-    "none"
+    return "none"
 end
 
 function alkane_series_result_standard_string(standard::AlkaneStandard)
@@ -603,7 +603,7 @@ function alkane_series_result_standard_string(standard::AlkaneStandard)
 end
 
 function alkane_series_result_standard_display(::Nothing)
-    "none"
+    return "none"
 end
 
 function alkane_series_result_standard_display(standard::AlkaneStandard)
