@@ -54,9 +54,10 @@ need to be identical when you pass `retentions` as a vector of vectors.
 ```@docs
 JuChrom.Parafac2Fit
 JuChrom.parafac2
-JuChrom.parafac2abundances
+JuChrom.parafac2areas
 JuChrom.parafac2apexes
 JuChrom.parafac2fitpercent
+JuChrom.parafac2intensities
 JuChrom.parafac2loss
 JuChrom.parafac2profilediagnostics
 JuChrom.parafac2profileminima

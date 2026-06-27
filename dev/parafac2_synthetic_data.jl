@@ -17,13 +17,13 @@ function normalizecolumns(matrix::AbstractMatrix)
     out
 end
 
-function defaultparafac2abundances(nsamples::Integer)
+function defaultparafac2intensities(nsamples::Integer)
     nsamples ≥ 2 || throw(ArgumentError("nsamples must be at least 2."))
     phase = range(0, 2π; length=nsamples)
-    abundances = Matrix{Float64}(undef, nsamples, 2)
-    abundances[:, 1] .= 1.0 .+ 0.45 .* sin.(phase .+ 0.25)
-    abundances[:, 2] .= 1.0 .+ 0.55 .* cos.(phase .* 0.85 .+ 0.9)
-    abundances
+    intensities = Matrix{Float64}(undef, nsamples, 2)
+    intensities[:, 1] .= 1.0 .+ 0.45 .* sin.(phase .+ 0.25)
+    intensities[:, 2] .= 1.0 .+ 0.55 .* cos.(phase .* 0.85 .+ 0.9)
+    intensities
 end
 
 defaultparafac2mzvalues() = collect(50.0:249.0)
@@ -61,7 +61,7 @@ baseline-free peaks.
 
 The returned named tuple contains vector-of-matrices data `X`, per-sample `retentions`,
 shared `mzvalues`, true component `spectra`, true weighted retention `profiles`, sample
-`abundances`, clean component matrices, and sample labels. The data matrix convention is
+`intensities`, clean component matrices, and sample labels. The data matrix convention is
 `retentions × m/z`.
 """
 function simulateparafac2overlap(;
@@ -69,7 +69,7 @@ function simulateparafac2overlap(;
     nretentions::Integer=301,
     mzvalues=defaultparafac2mzvalues(),
     spectra=nothing,
-    abundances=defaultparafac2abundances(nsamples),
+    intensities=defaultparafac2intensities(nsamples),
     retentionrange=(970.0, 1035.0),
     apexes=(1000.0, 1006.0),
     widths=(7.2, 7.8),
@@ -84,8 +84,8 @@ function simulateparafac2overlap(;
     size(spectra, 1) == length(mzvalues) || throw(DimensionMismatch(
         "spectra must have one row per m/z value."
     ))
-    size(abundances) == (nsamples, 2) || throw(DimensionMismatch(
-        "abundances must have size (nsamples, 2)."
+    size(intensities) == (nsamples, 2) || throw(DimensionMismatch(
+        "intensities must have size (nsamples, 2)."
     ))
     nretentions ≥ 3 || throw(ArgumentError("nretentions must be at least 3."))
     first(retentionrange) < last(retentionrange) || throw(ArgumentError(
@@ -122,7 +122,7 @@ function simulateparafac2overlap(;
             if peakmax > 0
                 profile ./= peakmax
             end
-            sampleprofiles[:, component] .= abundances[sampleindex, component] .* profile
+            sampleprofiles[:, component] .= intensities[sampleindex, component] .* profile
             samplecomponents[component] =
                 sampleprofiles[:, component] * transpose(spectra[:, component])
         end
@@ -145,7 +145,7 @@ function simulateparafac2overlap(;
         mzvalues=Float64.(mzvalues),
         spectra=spectra,
         profiles=profiles,
-        abundances=Matrix{Float64}(abundances),
+        intensities=Matrix{Float64}(intensities),
         componentmatrices=componentmatrices,
         sampleshifts=sampleshifts,
         componentshifts=componentshifts,

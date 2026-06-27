@@ -61,7 +61,7 @@ end
     @test fit.nstarts == 1
     @test fit.beststart == 1
     @test fit.compression ≡ :none
-    @test fit.nonnegative == (:spectra, :abundances)
+    @test fit.nonnegative == (:spectra, :intensities)
     @test all(fit.loadings .≥ 0)
     @test all(fit.weights .≥ 0)
     @test fit.bases[1]' * fit.bases[1] ≈ I(2) atol=1e-6
@@ -79,7 +79,7 @@ end
     @test fit.nstarts == 1
     @test fit.beststart == 1
     @test fit.compression ≡ :none
-    @test fit.nonnegative == (:spectra, :abundances)
+    @test fit.nonnegative == (:spectra, :intensities)
 end
 
 @testset "parafac2 unitless metadata" begin
@@ -249,7 +249,7 @@ end
     @test residual / total < 1e-20
 end
 
-@testset "parafac2 nonnegative spectra and abundances" begin
+@testset "parafac2 nonnegative spectra and intensities" begin
     X = [
         [1.0 0.2 0.4 1.3; 0.7 1.1 0.3 0.5; 0.2 0.5 1.3 0.7; 1.4 0.8 0.6 0.3],
         [0.8 1.0 0.2 0.4; 1.3 0.4 0.5 1.1; 0.6 0.9 1.4 0.2; 1.5 0.7 0.8 0.6],
@@ -257,20 +257,20 @@ end
     ]
 
     fit = parafac2(X, 2; maxiters=5, tol=0.0)
-    @test fit.nonnegative == (:spectra, :abundances)
+    @test fit.nonnegative == (:spectra, :intensities)
     @test all(parafac2spectra(fit) .≥ 0)
-    @test all(parafac2abundances(fit) .≥ 0)
+    @test all(parafac2intensities(fit) .≥ 0)
 
     fitbool = parafac2(X, 2; maxiters=0, nonnegative=true)
-    @test fitbool.nonnegative == (:spectra, :abundances)
+    @test fitbool.nonnegative == (:spectra, :intensities)
 
     fitspectra = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:spectra)
     @test fitspectra.nonnegative == (:spectra,)
     @test all(parafac2spectra(fitspectra) .≥ 0)
 
-    fitweights = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:weights)
-    @test fitweights.nonnegative == (:abundances,)
-    @test all(parafac2abundances(fitweights) .≥ 0)
+    fitintensities = parafac2(X, 2; maxiters=2, tol=0.0, nonnegative=:intensities)
+    @test fitintensities.nonnegative == (:intensities,)
+    @test all(parafac2intensities(fitintensities) .≥ 0)
 
     fitunconstrained = parafac2(X, 2; maxiters=0, nonnegative=false)
     @test fitunconstrained.nonnegative == ()
@@ -442,6 +442,67 @@ end
     @test_throws ArgumentError parafac2scores(unfitted)
     @test_throws ArgumentError parafac2reconstruct(unfitted)
     @test_throws ArgumentError parafac2spectra(unfitted)
+    @test_throws ArgumentError parafac2areas(unfitted)
+end
+
+@testset "parafac2 peak areas" begin
+    fit = Parafac2Fit{Float64}(
+        2,
+        [4, 3],
+        2,
+        [[0.0, 1.0, 2.0, 4.0], [10.0, 11.0, 13.0]],
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        Matrix{Float64}(I, 2, 2),
+        Matrix{Float64}(I, 2, 2),
+        [2.0 3.0; 1.0 2.0],
+        [
+            [-1.0  1.0;
+              1.0  0.0;
+              3.0 -1.0;
+             -1.0  1.0],
+            [ 2.0  0.0;
+             -2.0  1.0;
+              2.0 -1.0]
+        ],
+        Float64[],
+        true,
+        :tol,
+        0,
+        1,
+        1,
+        :none,
+        ()
+    )
+
+    @test parafac2areas(fit) ≈ [9.0 3.0; 1.5 2.0]
+
+    scanindexfit = Parafac2Fit{Float64}(
+        1,
+        [3],
+        1,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        nothing,
+        ones(1, 1),
+        ones(1, 1),
+        reshape([4.0], 1, 1),
+        [reshape([-1.0, 1.0, -1.0], :, 1)],
+        Float64[],
+        true,
+        :tol,
+        0,
+        1,
+        1,
+        :none,
+        ()
+    )
+
+    @test parafac2areas(scanindexfit) ≈ reshape([2.0], 1, 1)
 end
 
 @testset "parafac2 component summaries" begin
@@ -461,15 +522,15 @@ end
 
     spectra = parafac2spectra(fit)
     spectrametadata = parafac2spectra(fit; metadata=true)
-    abundances = parafac2abundances(fit)
+    intensities = parafac2intensities(fit)
 
     @test spectra == fit.loadings
     @test spectra ≢ fit.loadings
     @test spectrametadata.values == fit.loadings
     @test spectrametadata.values ≢ fit.loadings
     @test spectrametadata.mzvalues == [50.0, 75.0, 100.0]
-    @test abundances == fit.weights
-    @test abundances ≢ fit.weights
+    @test intensities == fit.weights
+    @test intensities ≢ fit.weights
 
     apexes = parafac2apexes(fit)
     scores = parafac2scores(fit)
@@ -574,6 +635,8 @@ end
     @test_throws ArgumentError parafac2(X, 2; tol=NaN)
     @test_throws ArgumentError parafac2(X, 2; nstarts=0)
     @test_throws ArgumentError parafac2(X, 2; compression=:svd)
+    @test_throws ArgumentError parafac2(X, 2; nonnegative=:abundances)
+    @test_throws ArgumentError parafac2(X, 2; nonnegative=:weights)
     @test_throws ArgumentError parafac2(X, 2; nonnegative=:profiles)
     @test_throws ArgumentError parafac2(X, 2; nonnegative=:scores)
     @test_throws ArgumentError parafac2(X, 2; nonnegative=(:spectra, 1))

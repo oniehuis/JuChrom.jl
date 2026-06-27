@@ -36,7 +36,7 @@ Kovats indices or any other retention coordinate used upstream.
 - `nonnegative::Tuple`: nonnegative constraints used during fitting.
 
 At the current implementation stage, [`parafac2`](@ref) fits the direct PARAFAC2
-alternating least-squares algorithm with optional nonnegative spectra and abundance
+alternating least-squares algorithm with optional nonnegative spectra and intensity
 constraints.
 
 See also [`parafac2`](@ref).
@@ -105,7 +105,7 @@ end
 
 function parafac2nonnegative(nonnegative)
     requested = if nonnegative ≡ true
-        (:spectra, :abundances)
+        (:spectra, :intensities)
     elseif nonnegative ≡ false || isnothing(nonnegative)
         ()
     elseif nonnegative isa Symbol
@@ -121,25 +121,22 @@ function parafac2nonnegative(nonnegative)
     canonical = Symbol[]
     for item in requested
         item isa Symbol || throw(ArgumentError("nonnegative entries must be symbols."))
-        constraint = if item ≡ :weights
-            :abundances
-        else
-            item
-        end
-        constraint in (:spectra, :abundances) || throw(ArgumentError(
-            "nonnegative entries must be :spectra, :abundances, or :weights."
+        constraint = item
+        constraint in (:spectra, :intensities) || throw(ArgumentError(
+            "nonnegative entries must be :spectra or :intensities."
         ))
         constraint in canonical || push!(canonical, constraint)
     end
 
     ordered = Symbol[]
     :spectra in canonical && push!(ordered, :spectra)
-    :abundances in canonical && push!(ordered, :abundances)
+    :intensities in canonical && push!(ordered, :intensities)
     Tuple(ordered)
 end
 
 parafac2constrainspectra(nonnegative::Tuple{Vararg{Symbol}}) = :spectra in nonnegative
-parafac2constrainabundances(nonnegative::Tuple{Vararg{Symbol}}) = :abundances in nonnegative
+parafac2constrainintensities(nonnegative::Tuple{Vararg{Symbol}}) =
+    :intensities in nonnegative
 
 function parafac2compressionmatrices(
     X::AbstractVector{<:AbstractMatrix{T}},
@@ -384,7 +381,7 @@ function parafac2updateweights(
     design = khatrirao(loadings, core)
 
     for sampleindex in 1:nsamples
-        if parafac2constrainabundances(nonnegative)
+        if parafac2constrainintensities(nonnegative)
             weights[sampleindex, :] .= nonnegativeleastsquares(
                 design,
                 vec(transformed[sampleindex])
@@ -568,7 +565,7 @@ metadata.
 Fits use nonnegative spectral loadings by default. If the fit was created with
 `nonnegative=()` or without `:spectra`, these loadings can be signed.
 
-See also [`parafac2abundances`](@ref), [`parafac2apexes`](@ref).
+See also [`parafac2intensities`](@ref), [`parafac2apexes`](@ref).
 """
 function parafac2spectra(
     fit::Parafac2Fit;
@@ -586,19 +583,83 @@ function parafac2spectra(
 end
 
 """
-    parafac2abundances(fit::Parafac2Fit)
+    parafac2intensities(fit::Parafac2Fit)
 
 Return sample/component weights as a `samples × components` matrix.
 
-Fits use nonnegative abundance weights by default. If the fit was created with
-`nonnegative=()` or without `:abundances`, these values can be signed and retain the
+Fits use nonnegative intensity weights by default. If the fit was created with
+`nonnegative=()` or without `:intensities`, these values can be signed and retain the
 scale convention of the selected solution.
 
 See also [`parafac2spectra`](@ref), [`parafac2apexes`](@ref).
 """
-function parafac2abundances(fit::Parafac2Fit)
+function parafac2intensities(fit::Parafac2Fit)
     parafac2requirefitted(fit)
     copy(fit.weights)
+end
+
+function parafac2positivearea(
+    values::AbstractVector{<:Real},
+    axis::Union{Nothing, AbstractVector{<:Real}}
+)
+    if !isnothing(axis)
+        length(axis) == length(values) || throw(DimensionMismatch(
+            "integration axis length must match signal length."
+        ))
+    end
+
+    area = 0.0
+    for index in 1:(length(values) - 1)
+        left = Float64(values[index])
+        right = Float64(values[index + 1])
+        dx = isnothing(axis) ? 1.0 : Float64(axis[index + 1]) - Float64(axis[index])
+
+        if left > 0 && right > 0
+            area += 0.5 * (left + right) * dx
+        elseif left > 0
+            area += 0.5 * left * dx * left / (left - right)
+        elseif right > 0
+            area += 0.5 * right * dx * right / (right - left)
+        end
+    end
+
+    area
+end
+
+"""
+    parafac2areas(fit::Parafac2Fit)
+
+Return positive component peak areas as a `samples × components` matrix.
+
+For sample `k` and component `r`, the integrated signal is
+
+    parafac2intensities(fit)[k, r] .* parafac2scores(fit, k)[:, r]
+
+Areas are trapezoidal integrals over the stored retention/Kovats axis when retention
+metadata are available, and over unit-spaced scan indices otherwise. Only the positive part
+of each linearly interpolated signal is integrated, so sign changes are handled by linear
+zero-crossing interpolation rather than by clipping sampled values.
+
+See also [`parafac2scores`](@ref), [`parafac2intensities`](@ref).
+"""
+function parafac2areas(fit::Parafac2Fit)
+    parafac2requirefitted(fit)
+
+    weights = parafac2intensities(fit)
+    retentionvectors = rawretentions(fit)
+    nsamples = length(fit.retentioncounts)
+    areas = Matrix{Float64}(undef, nsamples, fit.ncomponents)
+
+    for sampleindex in 1:nsamples
+        profiles = parafac2scores(fit, sampleindex)
+        axis = isnothing(retentionvectors) ? nothing : retentionvectors[sampleindex]
+        for component in axes(profiles, 2)
+            signal = weights[sampleindex, component] .* view(profiles, :, component)
+            areas[sampleindex, component] = parafac2positivearea(signal, axis)
+        end
+    end
+
+    areas
 end
 
 """
@@ -614,7 +675,7 @@ fit has no stored retention metadata; otherwise it contains the apex retention c
 converted to `unit` when requested.
 
 The apex is the maximum fitted profile value, not the maximum absolute value. If the fit
-was created without nonnegative abundance weights, profile signs are model-dependent.
+was created without nonnegative intensity weights, profile signs are model-dependent.
 
 See also [`parafac2scores`](@ref), [`parafac2spectra`](@ref).
 """
@@ -799,7 +860,7 @@ function parafac2randomstart(
     end
     core = Random.randn(rng, T, ncomponents, ncomponents)
     weights = Random.randn(rng, T, length(X), ncomponents)
-    if parafac2constrainabundances(nonnegative)
+    if parafac2constrainintensities(nonnegative)
         weights .= abs.(weights)
     end
     parafac2normalize!(core, loadings, weights)
@@ -1215,11 +1276,11 @@ end
     parafac2(X::AbstractVector{<:AbstractMatrix{<:Real}}, ncomponents::Integer;
         retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
         tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
-        nonnegative=(:spectra, :abundances))
+        nonnegative=(:spectra, :intensities))
     parafac2(X::AbstractArray{<:Real, 3}, ncomponents::Integer;
         retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
         tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
-        nonnegative=(:spectra, :abundances))
+        nonnegative=(:spectra, :intensities))
 
 Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref). The implemented
 algorithm is described by Kiers et al. (1999).
@@ -1264,10 +1325,10 @@ computed from the original matrices, so scores, reconstructions, residuals, and 
 the original retention dimensions. The default `compression=:none` uses the original
 matrices throughout fitting.
 
-By default, spectral loadings and sample/component abundance weights are constrained
+By default, spectral loadings and sample/component intensity weights are constrained
 nonnegative. Pass `nonnegative=()` or `nonnegative=false` to run the paper's original
-unconstrained direct ALS update. `nonnegative` may also be `:spectra`, `:abundances`,
-`:weights`, or a tuple/vector containing those symbols.
+unconstrained direct ALS update. `nonnegative` may also be `:spectra`, `:intensities`,
+or a tuple/vector containing those symbols.
 
 `ncomponents` must satisfy `1 ≤ ncomponents ≤ min(size(X[k])...)` across all sample
 matrices. `maxiters` controls the number of ALS cycles and may be zero to return the
@@ -1290,7 +1351,7 @@ function parafac2(
     nstarts::Integer=1,
     rng::Random.AbstractRNG=Random.default_rng(),
     compression::Symbol=:none,
-    nonnegative=(:spectra, :abundances)
+    nonnegative=(:spectra, :intensities)
 )
     retentioncounts, mzcount = parafac2dimensions(X, ncomponents)
     maxiters ≥ 0 || throw(ArgumentError("maxiters must be nonnegative."))
@@ -1352,7 +1413,7 @@ function parafac2(
     nstarts::Integer=1,
     rng::Random.AbstractRNG=Random.default_rng(),
     compression::Symbol=:none,
-    nonnegative=(:spectra, :abundances)
+    nonnegative=(:spectra, :intensities)
 )
     samples = [view(X, k, :, :) for k in axes(X, 1)]
     parafac2(samples, ncomponents;

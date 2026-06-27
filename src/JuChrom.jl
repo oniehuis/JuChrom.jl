@@ -224,9 +224,10 @@ export whiten
 export withintensityunit
 export rawvariances
 export parafac2
-export parafac2abundances
+export parafac2areas
 export parafac2apexes
 export parafac2fitpercent
+export parafac2intensities
 export parafac2loss
 export parafac2profilediagnostics
 export parafac2profileminima

@@ -55,7 +55,7 @@ function matchparafac2components(data, fit)
     estimatedspectra = parafac2spectra(fit)
     ncomponents = size(truespectra, 2)
     scores = parafac2scores(fit)
-    weights = parafac2abundances(fit)
+    weights = parafac2intensities(fit)
     bestpermutation = collect(1:ncomponents)
     bestscore = -Inf
 
@@ -80,7 +80,7 @@ function matchparafac2components(data, fit)
 
     scaledspectra = similar(truespectra)
     spectralcosines = Vector{Float64}(undef, ncomponents)
-    scaledweights = similar(data.abundances)
+    scaledweights = similar(data.intensities)
     weightedprofiles = [
         Matrix{Float64}(undef, size(data.profiles[sampleindex]))
         for sampleindex in eachindex(data.profiles)
@@ -99,7 +99,7 @@ function matchparafac2components(data, fit)
         )
 
         weightestimate = signfactor .* weights[:, estimatedcomponent]
-        weightscale = scaletoreference(weightestimate, data.abundances[:, component])
+        weightscale = scaletoreference(weightestimate, data.intensities[:, component])
         scaledweights[:, component] .= weightscale .* weightestimate
 
         estimatedprofilevectors = Vector{Float64}()
@@ -122,7 +122,7 @@ function matchparafac2components(data, fit)
         permutation=bestpermutation,
         spectralcosines=spectralcosines,
         spectra=scaledspectra,
-        abundances=scaledweights,
+        intensities=scaledweights,
         profiles=weightedprofiles,
     )
 end
@@ -204,26 +204,26 @@ function plotparafac2overlap(data, fit, matched; samples=(1, length(data.X)), fi
         )
     end
 
-    axabundance = Axis(fig[3, 3],
-        title="abundances across samples",
+    axintensity = Axis(fig[3, 3],
+        title="intensities across samples",
         xlabel="sample",
-        ylabel="scaled abundance",
+        ylabel="scaled intensity",
     )
-    sampleindices = collect(1:size(data.abundances, 1))
+    sampleindices = collect(1:size(data.intensities, 1))
     for component in axes(data.spectra, 2)
-        lines!(axabundance, sampleindices, data.abundances[:, component];
+        lines!(axintensity, sampleindices, data.intensities[:, component];
             color=colors[component],
             linewidth=3,
             label="true C$(component)",
         )
-        scatter!(axabundance, sampleindices, matched.abundances[:, component];
+        scatter!(axintensity, sampleindices, matched.intensities[:, component];
             color=colors[component],
             marker=:xcross,
             markersize=14,
             label="PARAFAC2 C$(component)",
         )
     end
-    axislegend(axabundance; position=:rt, framevisible=false)
+    axislegend(axintensity; position=:rt, framevisible=false)
 
     residuals = parafac2residuals(fit, data.X)
     sampleindex = first(samples)
@@ -264,7 +264,7 @@ function parafac2overlapdemo(;
     nretentions::Integer=301,
     mzvalues=defaultparafac2mzvalues(),
     spectra=nothing,
-    abundances=nothing,
+    intensities=nothing,
     retentionrange=(970.0, 1035.0),
     noiselevel::Real=0.01,
     apexes=(1000.0, 1006.0),
@@ -286,7 +286,7 @@ function parafac2overlapdemo(;
         nretentions=nretentions,
         mzvalues=mzvalues,
         spectra=isnothing(spectra) ? defaultparafac2spectra(mzvalues) : spectra,
-        abundances=isnothing(abundances) ? defaultparafac2abundances(nsamples) : abundances,
+        intensities=isnothing(intensities) ? defaultparafac2intensities(nsamples) : intensities,
         retentionrange=retentionrange,
         noiselevel=noiselevel,
         apexes=apexes,
