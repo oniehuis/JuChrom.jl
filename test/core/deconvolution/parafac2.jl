@@ -345,8 +345,12 @@ end
 
 @testset "parafac2 threaded helper paths" begin
     nsamples = JuChrom.PARAFAC2_THREAD_MINITEMS
-    @test JuChrom.parafac2usestransformedloss([ones(2, 2)])
-    @test !JuChrom.parafac2usestransformedloss(AbstractMatrix{Float64}[ones(2, 2)])
+    matrix_vector = Matrix{Float64}[ones(2, 2)]
+    abstract_matrix_vector = AbstractMatrix{Float64}[ones(2, 2)]
+    @test matrix_vector isa AbstractVector{<:Matrix}
+    @test !(abstract_matrix_vector isa AbstractVector{<:Matrix})
+    @test JuChrom.parafac2usestransformedloss(matrix_vector)
+    @test !JuChrom.parafac2usestransformedloss(abstract_matrix_vector)
 
     if !JuChrom.parafac2threaded(nsamples)
         @test_skip JuChrom.parafac2threaded(nsamples)
@@ -1038,6 +1042,16 @@ end
     @test tolfit.core ≡ core
     @test tolfit.weights ≡ weights
 
+    PARAFAC2_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_LOSS_PROBE_VALUES[] = [1.0, 0.99]
+    toleranceblockfit = JuChrom.parafac2fitstart(X, loadings, core, weights, 2, 0.02, ())
+
+    @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
+    @test toleranceblockfit.converged
+    @test toleranceblockfit.stopreason ≡ :tol
+    @test toleranceblockfit.iterations == 1
+    @test toleranceblockfit.losses == [1.0, 0.99]
+
     Xtransformed = Parafac2TransformedLossProbeVector([
         [1.0 0.2; 0.3 0.4],
         [0.5 0.6; 0.7 0.8; 0.9 1.0]
@@ -1082,6 +1096,24 @@ end
     @test transformednonfinitefit.loadings ≡ loadings
     @test transformednonfinitefit.core ≡ core
     @test transformednonfinitefit.weights ≡ weights
+
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_VALUES[] = [1.0, 0.99]
+    transformedtoleranceblockfit = JuChrom.parafac2fitstart(
+        Xtransformed,
+        loadings,
+        core,
+        weights,
+        2,
+        0.02,
+        ()
+    )
+
+    @test PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] == 2
+    @test transformedtoleranceblockfit.converged
+    @test transformedtoleranceblockfit.stopreason ≡ :tol
+    @test transformedtoleranceblockfit.iterations == 1
+    @test transformedtoleranceblockfit.losses == [1.0, 0.99]
 end
 
 @testset "parafac2 display and broadcasting" begin

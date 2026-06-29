@@ -792,8 +792,13 @@ function parafac2loss(
     loss
 end
 
-parafac2usestransformedloss(::AbstractVector{<:Matrix}) = true
-parafac2usestransformedloss(::AbstractVector) = false
+function parafac2usestransformedloss(::AbstractVector{<:Matrix})
+    return true
+end
+
+function parafac2usestransformedloss(::AbstractVector)
+    return false
+end
 
 function parafac2smallresidualloss(
     transformed::AbstractMatrix{T},
