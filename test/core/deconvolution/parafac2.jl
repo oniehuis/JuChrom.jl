@@ -30,6 +30,32 @@ function JuChrom.parafac2loss(
     values[min(PARAFAC2_LOSS_PROBE_CALLS[], length(values))]
 end
 
+struct Parafac2TransformedLossProbeVector <: AbstractVector{Matrix{Float64}}
+    data::Vector{Matrix{Float64}}
+end
+
+Base.size(vector::Parafac2TransformedLossProbeVector) = size(vector.data)
+Base.getindex(vector::Parafac2TransformedLossProbeVector, index::Int) =
+    vector.data[index]
+Base.IndexStyle(::Type{<:Parafac2TransformedLossProbeVector}) = IndexLinear()
+
+const PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS = Ref(0)
+const PARAFAC2_TRANSFORMED_LOSS_PROBE_VALUES = Ref(Float64[1.0, Inf])
+
+function JuChrom.parafac2checkedtransformedloss(
+    X::Parafac2TransformedLossProbeVector,
+    bases::AbstractVector{<:AbstractMatrix{Float64}},
+    transformed::AbstractVector{<:AbstractMatrix{Float64}},
+    datanorms::AbstractVector{Float64},
+    core::AbstractMatrix{Float64},
+    weights::AbstractMatrix{Float64},
+    loadings::AbstractMatrix{Float64}
+)
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] += 1
+    values = PARAFAC2_TRANSFORMED_LOSS_PROBE_VALUES[]
+    values[min(PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[], length(values))]
+end
+
 @testset "parafac2 vector input validation" begin
     X = [
         reshape(collect(1.0:15.0), 5, 3),
@@ -317,6 +343,140 @@ end
     @test transformedworkspace ≈ transformed
 end
 
+@testset "parafac2 threaded helper paths" begin
+    nsamples = JuChrom.PARAFAC2_THREAD_MINITEMS
+    @test JuChrom.parafac2usestransformedloss([ones(2, 2)])
+    @test !JuChrom.parafac2usestransformedloss(AbstractMatrix{Float64}[ones(2, 2)])
+
+    if !JuChrom.parafac2threaded(nsamples)
+        @test_skip JuChrom.parafac2threaded(nsamples)
+    else
+        rng = Random.MersenneTwister(20240629)
+        ncomponents = 2
+        mzcount = 3
+        X = [randn(rng, 4 + mod(sampleindex, 3), mzcount)
+            for sampleindex in 1:nsamples]
+        loadings = Matrix(qr(randn(rng, mzcount, ncomponents)).Q[:, 1:ncomponents])
+        core = randn(rng, ncomponents, ncomponents)
+        weights = rand(rng, nsamples, ncomponents) .+ 0.5
+
+        bases = JuChrom.parafac2updatebases(X, loadings, core, weights)
+        for sampleindex in 1:nsamples
+            coefficient = core *
+                Diagonal(view(weights, sampleindex, :)) *
+                transpose(loadings)
+            @test bases[sampleindex] ≈
+                JuChrom.parafac2basis(X[sampleindex], coefficient) atol=1e-10
+            @test transpose(bases[sampleindex]) * bases[sampleindex] ≈
+                I(ncomponents) atol=1e-10
+        end
+
+        transformed = JuChrom.parafac2transformeddata(X, bases)
+        for sampleindex in 1:nsamples
+            @test transformed[sampleindex] ≈
+                transpose(bases[sampleindex]) * X[sampleindex] atol=1e-10
+        end
+
+        updated_core = JuChrom.parafac2updatecore(transformed, loadings, weights)
+        Ywide = Matrix{Float64}(undef, ncomponents, mzcount * nsamples)
+        Bwide = Matrix{Float64}(undef, ncomponents, mzcount * nsamples)
+        for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * mzcount + 1):(sampleindex * mzcount)
+            Ywide[:, cols] .= transformed[sampleindex]
+            Bwide[:, cols] .=
+                Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+        end
+        expected_core = Matrix{Float64}(transpose(transpose(Bwide) \ transpose(Ywide)))
+        @test updated_core ≈ expected_core atol=1e-10
+
+        updated_loadings = JuChrom.parafac2updateloadings(
+            transformed,
+            core,
+            weights,
+            ()
+        )
+        loadings_Ywide = Matrix{Float64}(undef, mzcount, ncomponents * nsamples)
+        loadings_Bwide = Matrix{Float64}(undef, ncomponents, ncomponents * nsamples)
+        for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * ncomponents + 1):(sampleindex * ncomponents)
+            loadings_Ywide[:, cols] .= transpose(transformed[sampleindex])
+            loadings_Bwide[:, cols] .=
+                Diagonal(view(weights, sampleindex, :)) * transpose(core)
+        end
+        loadings_design = transpose(loadings_Bwide)
+        loadings_response = transpose(loadings_Ywide)
+        expected_loadings =
+            Matrix{Float64}(transpose(loadings_design \ loadings_response))
+        @test updated_loadings ≈ expected_loadings atol=1e-10
+
+        weights_design = JuChrom.khatrirao(loadings, core)
+        unconstrained_weights = JuChrom.parafac2updateweights(
+            transformed,
+            core,
+            loadings,
+            ()
+        )
+        nonnegative_weights = JuChrom.parafac2updateweights(
+            transformed,
+            core,
+            loadings,
+            (:intensities,)
+        )
+        for sampleindex in 1:nsamples
+            response = vec(transformed[sampleindex])
+            @test unconstrained_weights[sampleindex, :] ≈
+                weights_design \ response atol=1e-10
+            @test nonnegative_weights[sampleindex, :] ≈
+                JuChrom.nonnegativeleastsquares(weights_design, response) atol=1e-10
+        end
+
+        loss = JuChrom.parafac2loss(X, bases, core, weights, loadings)
+        expected_loss = zero(Float64)
+        for sampleindex in 1:nsamples
+            fitted = bases[sampleindex] *
+                core *
+                Diagonal(view(weights, sampleindex, :)) *
+                transpose(loadings)
+            expected_loss += sum(abs2, X[sampleindex] .- fitted)
+        end
+        @test loss ≈ expected_loss atol=1e-10
+
+        datanorms = JuChrom.parafac2squarednorms(X)
+        transformed_loss = JuChrom.parafac2loss(
+            transformed,
+            datanorms,
+            core,
+            weights,
+            loadings
+        )
+        expected_transformed_loss = sum(
+            JuChrom.parafac2transformedloss_sample(
+                transformed[sampleindex],
+                datanorms[sampleindex],
+                core,
+                view(weights, sampleindex, :),
+                loadings
+            )
+            for sampleindex in 1:nsamples
+        )
+        @test transformed_loss ≈ expected_transformed_loss atol=1e-10
+
+        batch_design = randn(rng, 5, 3)
+        batch_responses = randn(rng, 5, nsamples)
+        batch_coefficients = JuChrom.nonnegativeleastsquares_batch(
+            batch_design,
+            batch_responses
+        )
+        for rhsindex in 1:nsamples
+            @test batch_coefficients[:, rhsindex] ≈
+                JuChrom.nonnegativeleastsquares(
+                    batch_design,
+                    batch_responses[:, rhsindex]
+                ) atol=1e-10
+        end
+    end
+end
+
 @testset "parafac2 nonnegative spectra and intensities" begin
     X = [
         [1.0 0.2 0.4 1.3; 0.7 1.1 0.3 0.5; 0.2 0.5 1.3 0.7; 1.4 0.8 0.6 0.3],
@@ -357,8 +517,11 @@ end
 
     @test fitnone.compression ≡ :none
     @test fitnone.compressed == [false, false]
+    @test JuChrom.parafac2compressionlabel(fitnone) == "none"
     @test fitchol.compression ≡ :cholesky
     @test fitchol.compressed == [true, true]
+    @test JuChrom.parafac2compressionlabel(fitchol) ==
+        "cholesky (2/2 slices compressed)"
     @test fitchol.retentioncounts == [8, 7]
     @test size(fitchol.bases[1]) == (8, 2)
     @test size(fitchol.bases[2]) == (7, 2)
@@ -433,6 +596,32 @@ end
     solution = JuChrom.nonnegativeleastsquares(design_zero_alpha, response_zero_alpha)
     @test solution ≈ [9.880553004028577e-8, 0.8772628742396302] rtol=1e-10
     @test all(value -> value ≥ 0, solution)
+
+    gram = transpose(design_zero_alpha) * design_zero_alpha
+    cross = transpose(design_zero_alpha) * response_zero_alpha
+    gram_solution = zeros(2)
+    tolerance = sqrt(eps(Float64)) *
+        max(norm(design_zero_alpha), 1.0) *
+        max(norm(response_zero_alpha), 1.0)
+    @test JuChrom.nonnegativeleastsquaresgram!(gram_solution, gram, cross, tolerance)
+    @test gram_solution ≈ solution rtol=1e-10
+
+    fallback_design = Matrix{Float64}(I, 2, 2)
+    fallback_response = reshape([1.0, 2.0], 2, 1)
+    fallback_coefficients = fill(NaN, 2, 1)
+    singular_gram = [1.0 0.0; 0.0 0.0]
+    inconsistent_cross = reshape([2.0, 1.0], 2, 1)
+    @test JuChrom.nonnegativeleastsquares_batch_rhs!(
+        fallback_coefficients,
+        fallback_design,
+        fallback_response,
+        singular_gram,
+        inconsistent_cross,
+        norm(fallback_design),
+        1
+    ) === fallback_coefficients
+    @test fallback_coefficients[:, 1] ≈
+        JuChrom.nonnegativeleastsquares(fallback_design, fallback_response[:, 1])
 
     design = Matrix{Float64}(I, 2, 2)
     response = [-1.0, 2.0]
@@ -848,6 +1037,51 @@ end
     @test tolfit.loadings ≡ loadings
     @test tolfit.core ≡ core
     @test tolfit.weights ≡ weights
+
+    Xtransformed = Parafac2TransformedLossProbeVector([
+        [1.0 0.2; 0.3 0.4],
+        [0.5 0.6; 0.7 0.8; 0.9 1.0]
+    ])
+
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_VALUES[] = [1.0, 2.0]
+    increasedfit = JuChrom.parafac2fitstart(
+        Xtransformed,
+        loadings,
+        core,
+        weights,
+        1,
+        0.0,
+        ()
+    )
+
+    @test PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] == 2
+    @test increasedfit.stopreason ≡ :objective_increase
+    @test increasedfit.iterations == 0
+    @test increasedfit.losses == [1.0]
+    @test increasedfit.loadings ≡ loadings
+    @test increasedfit.core ≡ core
+    @test increasedfit.weights ≡ weights
+
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_TRANSFORMED_LOSS_PROBE_VALUES[] = [1.0, Inf]
+    transformednonfinitefit = JuChrom.parafac2fitstart(
+        Xtransformed,
+        loadings,
+        core,
+        weights,
+        1,
+        0.0,
+        ()
+    )
+
+    @test PARAFAC2_TRANSFORMED_LOSS_PROBE_CALLS[] == 2
+    @test transformednonfinitefit.stopreason ≡ :nonfinite
+    @test transformednonfinitefit.iterations == 0
+    @test transformednonfinitefit.losses == [1.0]
+    @test transformednonfinitefit.loadings ≡ loadings
+    @test transformednonfinitefit.core ≡ core
+    @test transformednonfinitefit.weights ≡ weights
 end
 
 @testset "parafac2 display and broadcasting" begin
