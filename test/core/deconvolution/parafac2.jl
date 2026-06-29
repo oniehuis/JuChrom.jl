@@ -60,7 +60,13 @@ end
     @test fit.iterations == 0
     @test fit.nstarts == 1
     @test fit.beststart == 1
-    @test fit.compression ≡ :none
+    @test length(fit.startdiagnostics) == 1
+    @test fit.startdiagnostics[1].start == 1
+    @test fit.startdiagnostics[1].iterations == fit.iterations
+    @test fit.startdiagnostics[1].stopreason === fit.stopreason
+    @test fit.startdiagnostics[1].loss ≈ last(fit.loss)
+    @test fit.compression ≡ :cholesky
+    @test length(fit.compressed) == 2
     @test fit.nonnegative == (:spectra, :intensities)
     @test all(fit.loadings .≥ 0)
     @test all(fit.weights .≥ 0)
@@ -78,7 +84,9 @@ end
     @test fit.mzcount == 4
     @test fit.nstarts == 1
     @test fit.beststart == 1
-    @test fit.compression ≡ :none
+    @test length(fit.startdiagnostics) == 1
+    @test fit.compression ≡ :cholesky
+    @test length(fit.compressed) == 3
     @test fit.nonnegative == (:spectra, :intensities)
 end
 
@@ -249,6 +257,65 @@ end
     @test residual / total < 1e-20
 end
 
+@testset "parafac2 global scale invariance" begin
+    ncomponents = 1
+    loadings_true = reshape([1.0, 0.5, 0.2, 0.1] ./ norm([1.0, 0.5, 0.2, 0.1]), :, 1)
+    core_true = reshape([1.3], 1, 1)
+    weights_true = reshape([1.0, 2.0, 0.7], 3, 1)
+    bases_true = [
+        reshape([1.0, 0.2, 0.3, 0.4] ./ norm([1.0, 0.2, 0.3, 0.4]), :, 1),
+        reshape([0.1, 1.0, 0.2, 0.3, 0.5] ./ norm([0.1, 1.0, 0.2, 0.3, 0.5]), :, 1),
+        reshape([0.4, 0.1, 0.6, 0.2, 0.3, 0.7] ./ norm([0.4, 0.1, 0.6, 0.2, 0.3, 0.7]), :, 1)
+    ]
+    X = [
+        bases_true[k] *
+        core_true *
+        Diagonal(weights_true[k, :]) *
+        loadings_true'
+        for k in eachindex(bases_true)
+    ]
+    scale = 1.0e10
+    Xscaled = [scale .* Xk for Xk in X]
+
+    fit = parafac2(X, ncomponents; maxiters=20, tol=1e-12)
+    scaledfit = parafac2(Xscaled, ncomponents; maxiters=20, tol=1e-12)
+
+    @test parafac2fitpercent(scaledfit, Xscaled) > 1 - 1e-12
+    @test parafac2fitpercent(scaledfit, Xscaled) ≈ parafac2fitpercent(fit, X) rtol=1e-10
+    @test parafac2intensities(scaledfit) ≈ scale .* parafac2intensities(fit) rtol=1e-10
+    @test scaledfit.loss ≈ scale^2 .* fit.loss rtol=1e-8 atol=1e-8
+    @test getproperty.(scaledfit.startdiagnostics, :loss) ≈
+        scale^2 .* getproperty.(fit.startdiagnostics, :loss) rtol=1e-8 atol=1e-8
+    @test parafac2loss(scaledfit, Xscaled) ≈ last(scaledfit.loss) rtol=1e-8 atol=1e-8
+    for sampleindex in eachindex(X)
+        @test parafac2reconstruct(scaledfit, sampleindex) ≈
+            scale .* parafac2reconstruct(fit, sampleindex) rtol=1e-8 atol=1e-8
+    end
+end
+
+@testset "parafac2 transformed loss equivalence" begin
+    rng = Random.MersenneTwister(321)
+    X = [randn(rng, 5, 4), randn(rng, 6, 4), randn(rng, 7, 4)]
+    loadings = Matrix(qr(randn(rng, 4, 2)).Q[:, 1:2])
+    core = randn(rng, 2, 2)
+    weights = randn(rng, 3, 2)
+
+    bases = JuChrom.parafac2updatebases(X, loadings, core, weights)
+    transformed = JuChrom.parafac2transformeddata(X, bases)
+    datanorms = JuChrom.parafac2squarednorms(X)
+    basisworkspace = JuChrom.parafac2basisworkspace(X, 2)
+    transformedworkspace = JuChrom.parafac2transformedworkspace(X, bases)
+
+    @test JuChrom.parafac2loss(transformed, datanorms, core, weights, loadings) ≈
+        JuChrom.parafac2loss(X, bases, core, weights, loadings) rtol=1e-10 atol=1e-10
+    @test JuChrom.parafac2updatebases!(basisworkspace, X, loadings, core, weights) ===
+        basisworkspace
+    @test basisworkspace ≈ bases
+    @test JuChrom.parafac2transformeddata!(transformedworkspace, X, bases) ===
+        transformedworkspace
+    @test transformedworkspace ≈ transformed
+end
+
 @testset "parafac2 nonnegative spectra and intensities" begin
     X = [
         [1.0 0.2 0.4 1.3; 0.7 1.1 0.3 0.5; 0.2 0.5 1.3 0.7; 1.4 0.8 0.6 0.3],
@@ -288,7 +355,9 @@ end
     fitchol = parafac2(X, 2; maxiters=0, compression=:cholesky)
 
     @test fitnone.compression ≡ :none
+    @test fitnone.compressed == [false, false]
     @test fitchol.compression ≡ :cholesky
+    @test fitchol.compressed == [true, true]
     @test fitchol.retentioncounts == [8, 7]
     @test size(fitchol.bases[1]) == (8, 2)
     @test size(fitchol.bases[2]) == (7, 2)
@@ -301,6 +370,7 @@ end
 
     fititer = parafac2(X, 2; maxiters=5, tol=0.0, compression=:cholesky)
     @test fititer.compression ≡ :cholesky
+    @test fititer.compressed == [true, true]
     @test fititer.bases[1]' * fititer.bases[1] ≈ I(2) atol=1e-6
     @test fititer.bases[2]' * fititer.bases[2] ≈ I(2) atol=1e-6
     @test parafac2loss(fititer, X) ≈ last(fititer.loss) rtol=1e-8 atol=1e-8
@@ -311,6 +381,7 @@ end
     tensor[2, 8, :] .= [1.0, 1.1, 1.2]
     tensorfit = parafac2(tensor, 2; maxiters=1, tol=0.0, compression=:cholesky)
     @test tensorfit.compression ≡ :cholesky
+    @test tensorfit.compressed == [true, true]
     @test tensorfit.retentioncounts == [8, 8]
     @test size(tensorfit.bases[1]) == (8, 2)
     @test size(tensorfit.bases[2]) == (8, 2)
@@ -322,9 +393,21 @@ end
     fitwide = parafac2(Xwide, 2; maxiters=0, compression=:cholesky)
     fitwidenone = parafac2(Xwide, 2; maxiters=0, compression=:none)
     @test fitwide.compression ≡ :cholesky
+    @test fitwide.compressed == [false, false]
     @test fitwide.retentioncounts == [2, 2]
     @test size(fitwide.bases[1]) == (2, 2)
     @test fitwide.loss ≈ fitwidenone.loss
+
+    Xrankdef = [
+        [1.0 2.0 3.0; 2.0 4.0 6.0; 3.0 6.0 9.0; 4.0 8.0 12.0]
+    ]
+    fitrankdef = parafac2(Xrankdef, 1; maxiters=0, compression=:cholesky)
+    fitrankdefnone = parafac2(Xrankdef, 1; maxiters=0, compression=:none)
+    @test fitrankdef.compression ≡ :cholesky
+    @test fitrankdef.compressed == [false]
+    @test fitrankdef.retentioncounts == [4]
+    @test size(fitrankdef.bases[1]) == (4, 1)
+    @test fitrankdef.loss ≈ fitrankdefnone.loss
 end
 
 @testset "parafac2 least-squares helpers" begin
@@ -354,6 +437,41 @@ end
     response = [-1.0, 2.0]
     @test JuChrom.leastsquaressolution(design, response, false) == response
     @test JuChrom.leastsquaressolution(design, response, true) == [0.0, 2.0]
+
+    batch_design = [
+        1.0 0.2
+        0.4 1.2
+        1.0 -0.1
+    ]
+    batch_responses = [
+        1.0 0.0 -1.0
+        0.5 2.0 -0.4
+        1.3 0.2 0.1
+    ]
+    batch_solution = JuChrom.nonnegativeleastsquares_batch(batch_design, batch_responses)
+    for rhsindex in axes(batch_responses, 2)
+        @test batch_solution[:, rhsindex] ≈
+            JuChrom.nonnegativeleastsquares(batch_design, batch_responses[:, rhsindex])
+    end
+
+    rankdef_design = [
+        1.0 2.0
+        2.0 4.0
+        3.0 6.0
+    ]
+    rankdef_responses = [
+        1.0 0.5
+        2.0 1.0
+        3.0 1.5
+    ]
+    rankdef_solution = JuChrom.nonnegativeleastsquares_batch(
+        rankdef_design,
+        rankdef_responses
+    )
+    for rhsindex in axes(rankdef_responses, 2)
+        @test rankdef_solution[:, rhsindex] ≈
+            JuChrom.nonnegativeleastsquares(rankdef_design, rankdef_responses[:, rhsindex])
+    end
 end
 
 @testset "parafac2 multiple starts" begin
@@ -372,8 +490,17 @@ end
 
     @test single.nstarts == 1
     @test single.beststart == 1
+    @test length(single.startdiagnostics) == 1
+    @test single.startdiagnostics[1].iterations == single.iterations
+    @test single.startdiagnostics[1].stopreason === single.stopreason
     @test multi.nstarts == 4
     @test 1 ≤ multi.beststart ≤ 4
+    @test length(multi.startdiagnostics) == 4
+    @test multi.startdiagnostics[multi.beststart].iterations == multi.iterations
+    @test multi.startdiagnostics[multi.beststart].stopreason === multi.stopreason
+    @test multi.startdiagnostics[multi.beststart].loss ≈ last(multi.loss)
+    @test sum(diagnostic.iterations for diagnostic in multi.startdiagnostics) ≥
+        multi.iterations
     @test length(multi.loss) == multi.iterations + 1
     @test last(multi.loss) ≤ last(single.loss) + 1e-8
     @test parafac2loss(multi, X) ≈ last(multi.loss) rtol=1e-10 atol=1e-10
@@ -383,6 +510,7 @@ end
     fit2 = parafac2(X, 2; maxiters=5, tol=0.0, nstarts=3,
         rng=Random.MersenneTwister(456))
     @test fit1.beststart == fit2.beststart
+    @test fit1.startdiagnostics == fit2.startdiagnostics
     @test fit1.loss ≈ fit2.loss
     @test fit1.loadings ≈ fit2.loadings
     @test fit1.core ≈ fit2.core
@@ -393,6 +521,7 @@ end
         rng=Random.MersenneTwister(789))
     @test tensorfit.nstarts == 2
     @test 1 ≤ tensorfit.beststart ≤ 2
+    @test length(tensorfit.startdiagnostics) == 2
 end
 
 @testset "parafac2 public reconstruction helpers" begin
@@ -436,7 +565,9 @@ end
         0,
         1,
         1,
+        [(start=1, iterations=0, converged=false, stopreason=:maxiters, loss=0.0)],
         :none,
+        [false],
         ()
     )
     @test_throws ArgumentError parafac2scores(unfitted)
@@ -473,7 +604,9 @@ end
         0,
         1,
         1,
+        [(start=1, iterations=0, converged=true, stopreason=:tol, loss=0.0)],
         :none,
+        [false, false],
         ()
     )
 
@@ -498,7 +631,9 @@ end
         0,
         1,
         1,
+        [(start=1, iterations=0, converged=true, stopreason=:tol, loss=0.0)],
         :none,
+        [false],
         ()
     )
 
@@ -602,6 +737,7 @@ end
     @test parafac2residuals(fit, tensor)[1] ≈ residuals[1]
     @test 0 ≤ parafac2fitpercent(fit, X) ≤ 1
     @test parafac2fitpercent(fit, tensor) ≈ parafac2fitpercent(fit, X)
+
     profileminima = parafac2profileminima(fit)
     profilediagnostics = parafac2profilediagnostics(fit)
     scores = parafac2scores(fit)
@@ -721,6 +857,9 @@ end
     @test occursin("Parafac2Fit", pretty)
     @test occursin("fitted", pretty)
     @test occursin("sample labels", pretty)
+    @test occursin("total iterations", pretty)
+    @test occursin("start diagnostics", pretty)
+    @test occursin("slices compressed", pretty)
     @test occursin("stop reason", pretty)
     @test identity.(fit) ≡ fit
     @test (fit .≡ fit) ≡ true

@@ -14,7 +14,7 @@ import HiGHS
 using JuMP: Model, MOI, optimize!, set_silent, termination_status, value, @constraint,
     @objective, @variable
 using LinearAlgebra: Diagonal, I, cholesky, dot, eigen, mul!, norm, svd, Symmetric,
-    diagind
+    diagind, issuccess
 using OSQP: OSQP
 using Roots: Bisection, find_zero
 using SHA: SHA256_CTX, bytes2hex, digest!, update!

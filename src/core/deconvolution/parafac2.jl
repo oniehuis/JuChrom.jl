@@ -29,10 +29,12 @@ Kovats indices or any other retention coordinate used upstream.
 - `converged::Bool`: whether fitting met its convergence criterion.
 - `stopreason::Symbol`: why fitting stopped (`:tol`, `:maxiters`,
   `:objective_increase`, or `:nonfinite`).
-- `iterations::Int`: number of fitting iterations performed.
+- `iterations::Int`: number of fitting iterations performed by the selected start.
 - `nstarts::Int`: number of starts attempted during fitting.
 - `beststart::Int`: one-based index of the selected start.
-- `compression::Symbol`: cross-product compression method used during fitting.
+- `startdiagnostics`: per-start iteration, convergence, stop reason, and loss summary.
+- `compression::Symbol`: requested cross-product compression method.
+- `compressed::Vector{Bool}`: whether each sample matrix was actually compressed.
 - `nonnegative::Tuple`: nonnegative constraints used during fitting.
 
 At the current implementation stage, [`parafac2`](@ref) fits the direct PARAFAC2
@@ -41,6 +43,11 @@ constraints.
 
 See also [`parafac2`](@ref).
 """
+const Parafac2StartDiagnostic{T<:Real} = NamedTuple{
+    (:start, :iterations, :converged, :stopreason, :loss),
+    Tuple{Int, Int, Bool, Symbol, T}
+}
+
 struct Parafac2Fit{T<:Real}
     ncomponents::Int
     retentioncounts::Vector{Int}
@@ -60,17 +67,45 @@ struct Parafac2Fit{T<:Real}
     iterations::Int
     nstarts::Int
     beststart::Int
+    startdiagnostics::Vector{Parafac2StartDiagnostic{T}}
     compression::Symbol
+    compressed::Vector{Bool}
     nonnegative::Tuple{Vararg{Symbol}}
 end
 
 Base.Broadcast.broadcastable(fit::Parafac2Fit) = Base.RefValue(fit)
 
+parafac2totaliterations(fit::Parafac2Fit) =
+    isempty(fit.startdiagnostics) ? 0 :
+    sum(diagnostic.iterations for diagnostic in fit.startdiagnostics)
+
+parafac2ncompressed(fit::Parafac2Fit) = count(fit.compressed)
+
+function parafac2compressionlabel(fit::Parafac2Fit)
+    if fit.compression ≡ :cholesky
+        "$(fit.compression) ($(parafac2ncompressed(fit))/$(length(fit.compressed)) slices compressed)"
+    else
+        string(fit.compression)
+    end
+end
+
+function parafac2startdiagnosticslabel(fit::Parafac2Fit)
+    isempty(fit.startdiagnostics) && return "not stored"
+    join(
+        (
+            "$(diagnostic.start):$(diagnostic.iterations)/$(diagnostic.stopreason)"
+            for diagnostic in fit.startdiagnostics
+        ),
+        ", "
+    )
+end
+
 function Base.summary(fit::Parafac2Fit)
     "Parafac2Fit (samples=$(length(fit.retentioncounts)), mz=$(fit.mzcount), " *
     "components=$(fit.ncomponents), iterations=$(fit.iterations), " *
+    "totaliterations=$(parafac2totaliterations(fit)), " *
     "starts=$(fit.nstarts), beststart=$(fit.beststart), " *
-    "compression=$(fit.compression), nonnegative=$(fit.nonnegative), " *
+    "compression=$(parafac2compressionlabel(fit)), nonnegative=$(fit.nonnegative), " *
     "converged=$(fit.converged), stopreason=$(fit.stopreason))"
 end
 
@@ -82,8 +117,10 @@ function Base.show(io::IO, ::MIME"text/plain", fit::Parafac2Fit)
     println(io, "  retentions       : ", isnothing(fit.retentions) ? "not stored" : "stored")
     println(io, "  m/z values       : ", isnothing(fit.mzvalues) ? "not stored" : "stored")
     println(io, "  sample labels    : ", isnothing(fit.samplelabels) ? "not stored" : "stored")
-    println(io, "  starts           : ", fit.nstarts, " (best: ", fit.beststart, ")")
-    println(io, "  compression      : ", fit.compression)
+    println(io, "  starts           : ", fit.nstarts, " (best: ", fit.beststart,
+        ", total iterations: ", parafac2totaliterations(fit), ")")
+    println(io, "  start diagnostics: ", parafac2startdiagnosticslabel(fit))
+    println(io, "  compression      : ", parafac2compressionlabel(fit))
     println(io, "  nonnegative      : ", fit.nonnegative)
     println(io, "  stop reason      : ", fit.stopreason)
     println(io, "  factor state     : ", isnothing(fit.loadings) ? "unfitted" : "fitted")
@@ -95,6 +132,33 @@ function parafac2inputmatrices(
 ) where {T<:AbstractFloat}
     [Matrix{T}(Xk) for Xk in X]
 end
+
+function parafac2inputscale(
+    X::AbstractVector{<:AbstractMatrix{T}}
+) where {T<:AbstractFloat}
+    scale = zero(T)
+    for Xk in X
+        scale = hypot(scale, norm(Xk))
+    end
+
+    isfinite(scale) && scale > zero(T) ? scale : one(T)
+end
+
+function parafac2squarednorms(
+    X::AbstractVector{<:AbstractMatrix{T}}
+) where {T<:AbstractFloat}
+    norms = Vector{T}(undef, length(X))
+    for sampleindex in eachindex(X)
+        norms[sampleindex] = sum(abs2, X[sampleindex])
+    end
+
+    norms
+end
+
+const PARAFAC2_THREAD_MINITEMS = 8
+
+parafac2threaded(nitems::Integer) =
+    Base.Threads.nthreads() > 1 && nitems >= PARAFAC2_THREAD_MINITEMS
 
 function parafac2compression(compression::Symbol)
     compression in (:none, :cholesky) || throw(ArgumentError(
@@ -152,12 +216,16 @@ function parafac2compressionmatrices(
         if size(Xk, 1) > size(Xk, 2)
             crossproduct = transpose(Xk) * Xk
             factorization = cholesky(Symmetric(crossproduct); check=false)
-            Hk = Matrix{T}(factorization.U)
-            all(isfinite, Hk) || throw(ArgumentError(
-                "Cholesky compression produced non-finite values for X[$(sampleindex)]."
-            ))
-            matrices[sampleindex] = Hk
-            compressed[sampleindex] = true
+            if issuccess(factorization)
+                Hk = Matrix{T}(factorization.U)
+                all(isfinite, Hk) || throw(ArgumentError(
+                    "Cholesky compression produced non-finite values for X[$(sampleindex)]."
+                ))
+                matrices[sampleindex] = Hk
+                compressed[sampleindex] = true
+            else
+                matrices[sampleindex] = Xk
+            end
         else
             matrices[sampleindex] = Xk
         end
@@ -193,27 +261,111 @@ function parafac2basis(
     )
 end
 
+function parafac2basis!(
+    basis::AbstractMatrix{T},
+    X::AbstractMatrix{T},
+    coefficient::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    ncomponents = size(coefficient, 1)
+    decomposition = svd(coefficient * transpose(X); full=false)
+    @views mul!(
+        basis,
+        decomposition.V[:, 1:ncomponents],
+        transpose(decomposition.U[:, 1:ncomponents])
+    )
+    basis
+end
+
+function parafac2basisworkspace(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    ncomponents::Integer
+) where {T<:AbstractFloat}
+    [Matrix{T}(undef, size(Xk, 1), ncomponents) for Xk in X]
+end
+
+function parafac2updatebases!(
+    bases::AbstractVector{<:AbstractMatrix{T}},
+    X::AbstractVector{<:AbstractMatrix{T}},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    length(bases) == length(X) || throw(DimensionMismatch(
+        "bases and X must have the same length."
+    ))
+
+    if parafac2threaded(length(X))
+        @threads :static for sampleindex in eachindex(X)
+            coefficient = core * Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+            parafac2basis!(bases[sampleindex], X[sampleindex], coefficient)
+        end
+    else
+        for sampleindex in eachindex(X)
+            coefficient = core * Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+            parafac2basis!(bases[sampleindex], X[sampleindex], coefficient)
+        end
+    end
+
+    bases
+end
+
 function parafac2updatebases(
     X::AbstractVector{<:AbstractMatrix{T}},
     loadings::AbstractMatrix{T},
     core::AbstractMatrix{T},
     weights::AbstractMatrix{T}
 ) where {T<:AbstractFloat}
-    bases = Vector{Matrix{T}}(undef, length(X))
+    parafac2updatebases!(
+        parafac2basisworkspace(X, size(core, 1)),
+        X,
+        loadings,
+        core,
+        weights
+    )
+end
 
-    for sampleindex in eachindex(X)
-        coefficient = core * Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
-        bases[sampleindex] = parafac2basis(X[sampleindex], coefficient)
+function parafac2transformedworkspace(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    bases::AbstractVector{<:AbstractMatrix{T}}
+) where {T<:AbstractFloat}
+    length(bases) == length(X) || throw(DimensionMismatch(
+        "bases and X must have the same length."
+    ))
+    [Matrix{T}(undef, size(bases[sampleindex], 2), size(X[sampleindex], 2))
+        for sampleindex in eachindex(X)]
+end
+
+function parafac2transformeddata!(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    X::AbstractVector{<:AbstractMatrix{T}},
+    bases::AbstractVector{<:AbstractMatrix{T}}
+) where {T<:AbstractFloat}
+    length(transformed) == length(X) == length(bases) || throw(DimensionMismatch(
+        "transformed data, X, and bases must have the same length."
+    ))
+
+    if parafac2threaded(length(X))
+        @threads :static for sampleindex in eachindex(X)
+            mul!(transformed[sampleindex], transpose(bases[sampleindex]), X[sampleindex])
+        end
+    else
+        for sampleindex in eachindex(X)
+            mul!(transformed[sampleindex], transpose(bases[sampleindex]), X[sampleindex])
+        end
     end
 
-    bases
+    transformed
 end
 
 function parafac2transformeddata(
     X::AbstractVector{<:AbstractMatrix{T}},
     bases::AbstractVector{<:AbstractMatrix{T}}
 ) where {T<:AbstractFloat}
-    [transpose(bases[sampleindex]) * X[sampleindex] for sampleindex in eachindex(X)]
+    parafac2transformeddata!(
+        parafac2transformedworkspace(X, bases),
+        X,
+        bases
+    )
 end
 
 function khatrirao(A::AbstractMatrix{T}, B::AbstractMatrix{T}) where {T<:AbstractFloat}
@@ -306,6 +458,150 @@ function nonnegativeleastsquares(
     max.(x, zero(T))
 end
 
+function nonnegativeleastsquaresgram!(
+    x::AbstractVector{T},
+    gram::AbstractMatrix{T},
+    cross::AbstractVector{T},
+    tolerance::T
+) where {T<:AbstractFloat}
+    ncoef = length(x)
+    z = zeros(T, ncoef)
+    passive = falses(ncoef)
+    gradient = Vector{T}(cross)
+    maxiters = max(30, 30 * ncoef * ncoef)
+    iteration = 0
+    fill!(x, zero(T))
+
+    while iteration < maxiters
+        candidate = 0
+        candidategradient = tolerance
+        for index in axes(passive, 1)
+            if !passive[index] && gradient[index] > candidategradient
+                candidate = index
+                candidategradient = gradient[index]
+            end
+        end
+        candidate == 0 && return true
+
+        passive[candidate] = true
+        while true
+            active = findall(passive)
+            z .= zero(T)
+            if !isempty(active)
+                active_solution = try
+                    gram[active, active] \ cross[active]
+                catch err
+                    err isa InterruptException && rethrow()
+                    return false
+                end
+                all(isfinite, active_solution) || return false
+                z[active] .= active_solution
+            end
+
+            all(index -> z[index] > tolerance, active) && break
+
+            alpha = one(T)
+            for index in active
+                if z[index] ≤ tolerance
+                    denominator = x[index] - z[index]
+                    if denominator > eps(T)
+                        alpha = min(alpha, x[index] / denominator)
+                    else
+                        alpha = zero(T)
+                    end
+                end
+            end
+
+            x .+= alpha .* (z .- x)
+            for index in active
+                if x[index] ≤ tolerance
+                    passive[index] = false
+                    x[index] = zero(T)
+                end
+            end
+
+            iteration += 1
+            iteration ≥ maxiters && break
+        end
+
+        x .= max.(z, zero(T))
+        gradient .= cross
+        mul!(gradient, gram, x, -one(T), one(T))
+        iteration += 1
+    end
+
+    true
+end
+
+function nonnegativeleastsquares_batch_rhs!(
+    coefficients::AbstractMatrix{T},
+    design::AbstractMatrix{T},
+    responses::AbstractMatrix{T},
+    gram::AbstractMatrix{T},
+    cross::AbstractMatrix{T},
+    designnorm::T,
+    rhsindex::Integer
+) where {T<:AbstractFloat}
+    response = view(responses, :, rhsindex)
+    tolerance = sqrt(eps(T)) * max(designnorm, one(T)) * max(norm(response), one(T))
+    coefficient = view(coefficients, :, rhsindex)
+    success = nonnegativeleastsquaresgram!(
+        coefficient,
+        gram,
+        view(cross, :, rhsindex),
+        T(tolerance)
+    )
+    if !success
+        coefficient .= nonnegativeleastsquares(design, response)
+    end
+
+    coefficients
+end
+
+function nonnegativeleastsquares_batch(
+    design::AbstractMatrix{T},
+    responses::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    size(design, 1) == size(responses, 1) || throw(DimensionMismatch(
+        "design rows must match response rows."
+    ))
+
+    ncoef = size(design, 2)
+    nrhs = size(responses, 2)
+    coefficients = Matrix{T}(undef, ncoef, nrhs)
+    gram = transpose(design) * design
+    cross = transpose(design) * responses
+    designnorm = norm(design)
+
+    if parafac2threaded(nrhs)
+        @threads :static for rhsindex in axes(responses, 2)
+            nonnegativeleastsquares_batch_rhs!(
+                coefficients,
+                design,
+                responses,
+                gram,
+                cross,
+                designnorm,
+                rhsindex
+            )
+        end
+    else
+        for rhsindex in axes(responses, 2)
+            nonnegativeleastsquares_batch_rhs!(
+                coefficients,
+                design,
+                responses,
+                gram,
+                cross,
+                designnorm,
+                rhsindex
+            )
+        end
+    end
+
+    coefficients
+end
+
 function leastsquaressolution(
     design::AbstractMatrix{T},
     response::AbstractVector{T},
@@ -325,10 +621,18 @@ function parafac2updatecore(
     Ywide = Matrix{T}(undef, ncomponents, mzcount * nsamples)
     Bwide = Matrix{T}(undef, ncomponents, mzcount * nsamples)
 
-    for sampleindex in 1:nsamples
-        cols = ((sampleindex - 1) * mzcount + 1):(sampleindex * mzcount)
-        Ywide[:, cols] .= transformed[sampleindex]
-        Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+    if parafac2threaded(nsamples)
+        @threads :static for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * mzcount + 1):(sampleindex * mzcount)
+            Ywide[:, cols] .= transformed[sampleindex]
+            Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+        end
+    else
+        for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * mzcount + 1):(sampleindex * mzcount)
+            Ywide[:, cols] .= transformed[sampleindex]
+            Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(loadings)
+        end
     end
 
     Matrix{T}(transpose(transpose(Bwide) \ transpose(Ywide)))
@@ -346,24 +650,26 @@ function parafac2updateloadings(
     Ywide = Matrix{T}(undef, mzcount, ncomponents * nsamples)
     Bwide = Matrix{T}(undef, ncomponents, ncomponents * nsamples)
 
-    for sampleindex in 1:nsamples
-        cols = ((sampleindex - 1) * ncomponents + 1):(sampleindex * ncomponents)
-        Ywide[:, cols] .= transpose(transformed[sampleindex])
-        Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(core)
+    if parafac2threaded(nsamples)
+        @threads :static for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * ncomponents + 1):(sampleindex * ncomponents)
+            Ywide[:, cols] .= transpose(transformed[sampleindex])
+            Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(core)
+        end
+    else
+        for sampleindex in 1:nsamples
+            cols = ((sampleindex - 1) * ncomponents + 1):(sampleindex * ncomponents)
+            Ywide[:, cols] .= transpose(transformed[sampleindex])
+            Bwide[:, cols] .= Diagonal(view(weights, sampleindex, :)) * transpose(core)
+        end
     end
 
     design = transpose(Bwide)
     response = transpose(Ywide)
 
     if parafac2constrainspectra(nonnegative)
-        loadings = Matrix{T}(undef, mzcount, ncomponents)
-        for mzindex in axes(loadings, 1)
-            loadings[mzindex, :] .= nonnegativeleastsquares(
-                design,
-                response[:, mzindex]
-            )
-        end
-        return loadings
+        coefficients = nonnegativeleastsquares_batch(design, response)
+        return Matrix{T}(transpose(coefficients))
     end
 
     Matrix{T}(transpose(design \ response))
@@ -380,14 +686,28 @@ function parafac2updateweights(
     weights = Matrix{T}(undef, nsamples, ncomponents)
     design = khatrirao(loadings, core)
 
-    for sampleindex in 1:nsamples
-        if parafac2constrainintensities(nonnegative)
-            weights[sampleindex, :] .= nonnegativeleastsquares(
-                design,
-                vec(transformed[sampleindex])
-            )
+    if parafac2constrainintensities(nonnegative)
+        responses = Matrix{T}(undef, size(design, 1), nsamples)
+        if parafac2threaded(nsamples)
+            @threads :static for sampleindex in 1:nsamples
+                responses[:, sampleindex] .= vec(transformed[sampleindex])
+            end
         else
-            weights[sampleindex, :] .= design \ vec(transformed[sampleindex])
+            for sampleindex in 1:nsamples
+                responses[:, sampleindex] .= vec(transformed[sampleindex])
+            end
+        end
+        coefficients = nonnegativeleastsquares_batch(design, responses)
+        weights .= transpose(coefficients)
+    else
+        if parafac2threaded(nsamples)
+            @threads :static for sampleindex in 1:nsamples
+                weights[sampleindex, :] .= design \ vec(transformed[sampleindex])
+            end
+        else
+            for sampleindex in 1:nsamples
+                weights[sampleindex, :] .= design \ vec(transformed[sampleindex])
+            end
         end
     end
 
@@ -438,6 +758,28 @@ function parafac2loss(
     weights::AbstractMatrix{T},
     loadings::AbstractMatrix{T}
 ) where {T<:AbstractFloat}
+    if parafac2threaded(length(X))
+        sampleindices = collect(eachindex(X))
+        nchunks = min(Base.Threads.nthreads(), length(sampleindices))
+        partials = zeros(T, nchunks)
+        @threads :static for chunkindex in 1:nchunks
+            chunkloss = zero(T)
+            firstposition = div((chunkindex - 1) * length(sampleindices), nchunks) + 1
+            lastposition = div(chunkindex * length(sampleindices), nchunks)
+            for position in firstposition:lastposition
+                sampleindex = sampleindices[position]
+                fitted = bases[sampleindex] *
+                    core *
+                    Diagonal(view(weights, sampleindex, :)) *
+                    transpose(loadings)
+                chunkloss += sum(abs2, X[sampleindex] .- fitted)
+            end
+            partials[chunkindex] = chunkloss
+        end
+
+        return sum(partials)
+    end
+
     loss = zero(T)
     for sampleindex in eachindex(X)
         fitted = bases[sampleindex] *
@@ -445,6 +787,116 @@ function parafac2loss(
             Diagonal(view(weights, sampleindex, :)) *
             transpose(loadings)
         loss += sum(abs2, X[sampleindex] .- fitted)
+    end
+
+    loss
+end
+
+parafac2usestransformedloss(::AbstractVector{<:Matrix}) = true
+parafac2usestransformedloss(::AbstractVector) = false
+
+function parafac2smallresidualloss(
+    transformed::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractVector{T},
+    loadings::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    loss = zero(T)
+    for mzindex in axes(loadings, 1)
+        for component in axes(core, 1)
+            fitted = zero(T)
+            for latent in axes(core, 2)
+                fitted += core[component, latent] *
+                    weights[latent] *
+                    loadings[mzindex, latent]
+            end
+            residual = transformed[component, mzindex] - fitted
+            loss += residual * residual
+        end
+    end
+
+    loss
+end
+
+function parafac2transformedloss_sample(
+    transformed::AbstractMatrix{T},
+    datanorm::T,
+    core::AbstractMatrix{T},
+    weights::AbstractVector{T},
+    loadings::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    datanorm - sum(abs2, transformed) +
+        parafac2smallresidualloss(transformed, core, weights, loadings)
+end
+
+function parafac2loss(
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    datanorms::AbstractVector{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    loadings::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    length(transformed) == length(datanorms) || throw(DimensionMismatch(
+        "transformed data and data norms must have the same length."
+    ))
+
+    if parafac2threaded(length(transformed))
+        nsamples = length(transformed)
+        nchunks = min(Base.Threads.nthreads(), nsamples)
+        partials = zeros(T, nchunks)
+        @threads :static for chunkindex in 1:nchunks
+            chunkloss = zero(T)
+            firstposition = div((chunkindex - 1) * nsamples, nchunks) + 1
+            lastposition = div(chunkindex * nsamples, nchunks)
+            for sampleindex in firstposition:lastposition
+                chunkloss += parafac2transformedloss_sample(
+                    transformed[sampleindex],
+                    datanorms[sampleindex],
+                    core,
+                    view(weights, sampleindex, :),
+                    loadings
+                )
+            end
+            partials[chunkindex] = chunkloss
+        end
+
+        return sum(partials)
+    end
+
+    loss = zero(T)
+    for sampleindex in eachindex(transformed)
+        loss += parafac2transformedloss_sample(
+            transformed[sampleindex],
+            datanorms[sampleindex],
+            core,
+            view(weights, sampleindex, :),
+            loadings
+        )
+    end
+
+    loss
+end
+
+function parafac2transformedlossunstable(
+    loss::T,
+    datanorms::AbstractVector{T}
+) where {T<:AbstractFloat}
+    !isfinite(loss) && return true
+    loss ≤ sqrt(eps(T)) * max(sum(datanorms), one(T))
+end
+
+function parafac2checkedtransformedloss(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    bases::AbstractVector{<:AbstractMatrix{T}},
+    transformed::AbstractVector{<:AbstractMatrix{T}},
+    datanorms::AbstractVector{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    loadings::AbstractMatrix{T}
+) where {T<:AbstractFloat}
+    loss = parafac2loss(transformed, datanorms, core, weights, loadings)
+    if parafac2transformedlossunstable(loss, datanorms)
+        return parafac2loss(X, bases, core, weights, loadings)
     end
 
     loss
@@ -877,6 +1329,61 @@ function parafac2fitstart(
     tol::Real,
     nonnegative::Tuple{Vararg{Symbol}}
 ) where {T<:AbstractFloat}
+    parafac2fitstart(
+        X,
+        parafac2squarednorms(X),
+        loadings,
+        core,
+        weights,
+        maxiters,
+        tol,
+        nonnegative
+    )
+end
+
+function parafac2fitstart(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    datanorms::AbstractVector{T},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    maxiters::Integer,
+    tol::Real,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    if parafac2usestransformedloss(X)
+        return parafac2fitstart_transformedloss(
+            X,
+            datanorms,
+            loadings,
+            core,
+            weights,
+            maxiters,
+            tol,
+            nonnegative
+        )
+    end
+
+    parafac2fitstart_fullloss(
+        X,
+        loadings,
+        core,
+        weights,
+        maxiters,
+        tol,
+        nonnegative
+    )
+end
+
+function parafac2fitstart_fullloss(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    maxiters::Integer,
+    tol::Real,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
     bases = parafac2updatebases(X, loadings, core, weights)
     losses = T[parafac2loss(X, bases, core, weights, loadings)]
     converged = false
@@ -944,6 +1451,116 @@ function parafac2fitstart(
     )
 end
 
+function parafac2fitstart_transformedloss(
+    X::AbstractVector{<:AbstractMatrix{T}},
+    datanorms::AbstractVector{T},
+    loadings::AbstractMatrix{T},
+    core::AbstractMatrix{T},
+    weights::AbstractMatrix{T},
+    maxiters::Integer,
+    tol::Real,
+    nonnegative::Tuple{Vararg{Symbol}}
+) where {T<:AbstractFloat}
+    bases = parafac2updatebases(X, loadings, core, weights)
+    candidatebases = parafac2basisworkspace(X, size(core, 1))
+    transformed = parafac2transformeddata(X, bases)
+    candidatetransformed = parafac2transformedworkspace(X, bases)
+    losses = T[
+        parafac2checkedtransformedloss(
+            X,
+            bases,
+            transformed,
+            datanorms,
+            core,
+            weights,
+            loadings
+        )
+    ]
+    converged = false
+    stopreason = :maxiters
+    iterations = 0
+
+    for iteration in 1:maxiters
+        previousloss = last(losses)
+
+        previousloadings = loadings
+        previouscore = core
+        previousweights = weights
+
+        core, loadings, weights = parafac2cpcycle(
+            transformed,
+            core,
+            loadings,
+            weights,
+            nonnegative
+        )
+        parafac2updatebases!(candidatebases, X, loadings, core, weights)
+        parafac2transformeddata!(candidatetransformed, X, candidatebases)
+        currentloss = parafac2checkedtransformedloss(
+            X,
+            candidatebases,
+            candidatetransformed,
+            datanorms,
+            core,
+            weights,
+            loadings
+        )
+
+        increasetolerance = sqrt(eps(T)) * max(one(T), previousloss)
+        if !isfinite(currentloss) || currentloss > previousloss + increasetolerance
+            loadings = previousloadings
+            core = previouscore
+            weights = previousweights
+            stopreason = isfinite(currentloss) ? :objective_increase : :nonfinite
+            break
+        elseif currentloss > previousloss
+            loadings = previousloadings
+            core = previouscore
+            weights = previousweights
+            converged = true
+            stopreason = :tol
+            break
+        end
+
+        bases, candidatebases = candidatebases, bases
+        transformed, candidatetransformed = candidatetransformed, transformed
+        push!(losses, currentloss)
+        iterations = iteration
+
+        improvement = previousloss - currentloss
+        threshold = T(tol) * max(previousloss, eps(T))
+        if improvement ≤ threshold
+            converged = true
+            stopreason = :tol
+            break
+        end
+    end
+
+    (
+        loadings=loadings,
+        core=core,
+        weights=weights,
+        bases=bases,
+        losses=losses,
+        converged=converged,
+        stopreason=stopreason,
+        iterations=iterations
+    )
+end
+
+function parafac2startdiagnostic(
+    startindex::Integer,
+    fit
+)
+    (
+        start=Int(startindex),
+        iterations=Int(fit.iterations),
+        converged=Bool(fit.converged),
+        stopreason=fit.stopreason,
+        loss=last(fit.losses)
+    )
+end
+
 function parafac2fit(
     X::AbstractVector{<:AbstractMatrix{T}},
     ncomponents::Integer,
@@ -954,10 +1571,12 @@ function parafac2fit(
     nonnegative::Tuple{Vararg{Symbol}}
 ) where {T<:AbstractFloat}
     nstarts ≥ 1 || throw(ArgumentError("nstarts must be at least 1."))
+    datanorms = parafac2squarednorms(X)
 
     loadings, core, weights = parafac2rationalstart(X, ncomponents, nonnegative)
     bestfit = parafac2fitstart(
         X,
+        datanorms,
         loadings,
         core,
         weights,
@@ -967,11 +1586,14 @@ function parafac2fit(
     )
     bestloss = last(bestfit.losses)
     beststart = 1
+    startdiagnostics = Vector{Parafac2StartDiagnostic{T}}(undef, Int(nstarts))
+    startdiagnostics[1] = parafac2startdiagnostic(1, bestfit)
 
     for startindex in 2:nstarts
         loadings, core, weights = parafac2randomstart(X, ncomponents, rng, nonnegative)
         currentfit = parafac2fitstart(
             X,
+            datanorms,
             loadings,
             core,
             weights,
@@ -980,6 +1602,7 @@ function parafac2fit(
             nonnegative
         )
         currentloss = last(currentfit.losses)
+        startdiagnostics[startindex] = parafac2startdiagnostic(startindex, currentfit)
         if currentloss < bestloss
             bestfit = currentfit
             bestloss = currentloss
@@ -996,7 +1619,8 @@ function parafac2fit(
         bestfit.converged,
         bestfit.stopreason,
         bestfit.iterations,
-        beststart
+        beststart,
+        startdiagnostics
     )
 end
 
@@ -1275,11 +1899,11 @@ end
 """
     parafac2(X::AbstractVector{<:AbstractMatrix{<:Real}}, ncomponents::Integer;
         retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
-        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
+        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:cholesky,
         nonnegative=(:spectra, :intensities))
     parafac2(X::AbstractArray{<:Real, 3}, ncomponents::Integer;
         retentions=nothing, mzvalues=nothing, samplelabels=nothing, maxiters=100,
-        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:none,
+        tol=1e-8, nstarts=1, rng=Random.default_rng(), compression=:cholesky,
         nonnegative=(:spectra, :intensities))
 
 Fit a native PARAFAC2 decomposition and return a [`Parafac2Fit`](@ref). The implemented
@@ -1319,11 +1943,18 @@ Start 1 is this deterministic rational initialization. Additional starts use ran
 factors, and the returned fit stores the start with the smallest final objective value.
 
 If `compression=:cholesky`, each sample matrix with more retention rows than m/z columns
+and a positive-definite cross-product
 is replaced during fitting by a smaller matrix `H[k]` satisfying `H[k]' * H[k] == X[k]' * X[k]`,
 following the paper's cross-product sufficiency step. Final sample-specific bases are then
 computed from the original matrices, so scores, reconstructions, residuals, and apexes keep
-the original retention dimensions. The default `compression=:none` uses the original
-matrices throughout fitting.
+the original retention dimensions. The default `compression=:cholesky` therefore applies
+this acceleration only when a sample matrix is tall enough to benefit from it. Use
+`compression=:none` to keep the original matrices throughout fitting.
+
+For numerical conditioning, fitting is performed internally after dividing all sample
+matrices by their shared global Frobenius norm. The returned fit is transformed back to the
+original intensity scale, so weights, reconstructions, losses, areas, and diagnostics use
+the same units as the input data.
 
 By default, spectral loadings and sample/component intensity weights are constrained
 nonnegative. Pass `nonnegative=()` or `nonnegative=false` to run the paper's original
@@ -1350,7 +1981,7 @@ function parafac2(
     tol::Real=1e-8,
     nstarts::Integer=1,
     rng::Random.AbstractRNG=Random.default_rng(),
-    compression::Symbol=:none,
+    compression::Symbol=:cholesky,
     nonnegative=(:spectra, :intensities)
 )
     retentioncounts, mzcount = parafac2dimensions(X, ncomponents)
@@ -1364,18 +1995,55 @@ function parafac2(
     labels = parafac2samplelabelmetadata(samplelabels, length(X))
     T = float(promote_type(map(eltype, X)...))
     Xoriginal = parafac2inputmatrices(X, T)
-    Xfit, compressed = parafac2compressionmatrices(Xoriginal, compression)
-    loadings, core, weights, bases, losses, converged, stopreason, iterations, beststart =
-        parafac2fit(Xfit, ncomponents, maxiters, tol, nstarts, rng, nonnegative)
+    inputscale = parafac2inputscale(Xoriginal)
+    Xscaled = inputscale == one(T) ? Xoriginal : [Xk ./ inputscale for Xk in Xoriginal]
+    Xfit, compressed = parafac2compressionmatrices(Xscaled, compression)
+    loadings, core, weights, bases, losses, converged, stopreason, iterations, beststart,
+    startdiagnostics = parafac2fit(
+            Xfit,
+            ncomponents,
+            maxiters,
+            tol,
+            nstarts,
+            rng,
+            nonnegative
+        )
     if any(compressed)
         bases = parafac2updatebases(
-            Xoriginal,
+            Xscaled,
             loadings,
             core,
             weights
         )
         losses = copy(losses)
-        losses[end] = parafac2loss(Xoriginal, bases, core, weights, loadings)
+        losses[end] = parafac2loss(Xscaled, bases, core, weights, loadings)
+        startdiagnostics = copy(startdiagnostics)
+        bestdiagnostic = startdiagnostics[beststart]
+        startdiagnostics[beststart] = (
+            start=bestdiagnostic.start,
+            iterations=bestdiagnostic.iterations,
+            converged=bestdiagnostic.converged,
+            stopreason=bestdiagnostic.stopreason,
+            loss=last(losses)
+        )
+    end
+
+    if inputscale != one(T)
+        weights = copy(weights)
+        weights .*= inputscale
+        losses = copy(losses)
+        lossscale = inputscale^2
+        losses .*= lossscale
+        startdiagnostics = Parafac2StartDiagnostic{T}[
+            (
+                start=diagnostic.start,
+                iterations=diagnostic.iterations,
+                converged=diagnostic.converged,
+                stopreason=diagnostic.stopreason,
+                loss=diagnostic.loss * lossscale
+            )
+            for diagnostic in startdiagnostics
+        ]
     end
 
     Parafac2Fit{T}(
@@ -1397,7 +2065,9 @@ function parafac2(
         iterations,
         Int(nstarts),
         beststart,
+        startdiagnostics,
         compression,
+        collect(compressed),
         nonnegative
     )
 end
@@ -1412,7 +2082,7 @@ function parafac2(
     tol::Real=1e-8,
     nstarts::Integer=1,
     rng::Random.AbstractRNG=Random.default_rng(),
-    compression::Symbol=:none,
+    compression::Symbol=:cholesky,
     nonnegative=(:spectra, :intensities)
 )
     samples = [view(X, k, :, :) for k in axes(X, 1)]
