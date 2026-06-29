@@ -194,6 +194,105 @@ end
     @test converted_plot.baseline_intensities[] ≈ fill(5.0, scancount(unitful_signal_msm))
 end
 
+@testset "tictrace plots plain TIC from JuChrom containers" begin
+    X = [1000.0 2000.0; 3000.0 4000.0]
+    msm = MassScanMatrix(
+        [60.0, 120.0],
+        u"s",
+        [100.0, 101.0],
+        nothing,
+        X,
+        u"pA"
+    )
+
+    fig = tictrace(
+        msm;
+        figure=(; size=(320, 240)),
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        color=:red,
+        linewidth=2
+    )
+    ax = only_axis(fig)
+    plt = only(ax.scene.plots)
+
+    @test fig isa Makie.Figure
+    @test fig.scene.viewport[].widths == [320, 240]
+    @test ax.xlabel[] == "Retention [minute]"
+    @test ax.ylabel[] == "Intensity [nA]"
+    @test ax.title[] == ""
+    @test plt isa Makie.Lines
+    @test plt.arg1[] ≈ [1.0, 2.0]
+    @test plt.arg2[] ≈ [3.0, 7.0]
+    @test plt.linewidth[] ≈ 2
+
+    titled = tictrace(
+        msm;
+        title="Signal TIC",
+        retentionunit=u"minute",
+        intensityunit=u"nA"
+    )
+    @test only_axis(titled).title[] == "Signal TIC"
+
+    fig_existing = Figure()
+    ax_existing = Axis(fig_existing[1, 1])
+    plt_existing = tictrace!(
+        ax_existing,
+        msm;
+        title="Existing axis TIC",
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        linewidth=3
+    )
+    @test plt_existing isa Makie.Lines
+    @test ax_existing.xlabel[] == "Retention [minute]"
+    @test ax_existing.ylabel[] == "Intensity [nA]"
+    @test ax_existing.title[] == "Existing axis TIC"
+    @test plt_existing.arg1[] ≈ [1.0, 2.0]
+    @test plt_existing.arg2[] ≈ [3.0, 7.0]
+    @test plt_existing.linewidth[] ≈ 3
+
+    vmsm = VarianceMassScanMatrix(msm, ones(size(X)))
+    vfig = tictrace(vmsm; retentionunit=u"minute", intensityunit=u"nA")
+    vplt = only(only_axis(vfig).scene.plots)
+    @test vplt.arg1[] ≈ [1.0, 2.0]
+    @test vplt.arg2[] ≈ [3.0, 7.0]
+
+    mss = MassScanSeries([
+        MassScan(60.0u"s", [100.0, 101.0], [1000.0, 2000.0]u"pA"),
+        MassScan(120.0u"s", [100.0, 101.0], [3000.0, 4000.0]u"pA")
+    ])
+    mfig = tictrace(mss; retentionunit=u"minute", intensityunit=u"nA")
+    mplt = only(only_axis(mfig).scene.plots)
+    @test mplt.arg1[] ≈ [1.0, 2.0]
+    @test mplt.arg2[] ≈ [3.0, 7.0]
+
+    unitless = MassScanMatrix([1.0, 2.0], [100.0], reshape([5.0, 7.0], 2, 1))
+    unitless_ax = only_axis(tictrace(unitless))
+    @test unitless_ax.xlabel[] == "Retention [unitless]"
+    @test unitless_ax.ylabel[] == "Intensity [unitless]"
+
+    layout_fig = Figure()
+    axplot = tictrace(
+        layout_fig[1, 1],
+        msm;
+        retentionunit=u"minute",
+        intensityunit=u"nA",
+        linewidth=4
+    )
+    @test axplot isa Makie.AxisPlot
+    @test axplot.axis.xlabel[] == "Retention [minute]"
+    @test axplot.axis.ylabel[] == "Intensity [nA]"
+    @test axplot.plot.arg1[] ≈ [1.0, 2.0]
+    @test axplot.plot.arg2[] ≈ [3.0, 7.0]
+    @test axplot.plot.linewidth[] ≈ 4
+    @test_throws ArgumentError tictrace(
+        Figure()[1, 1],
+        msm;
+        figure=(; size=(320, 240))
+    )
+end
+
 @testset "lines! plots TIC from JuChrom containers with unit conversion" begin
     X = [1000.0 2000.0; 3000.0 4000.0]
     msm = MassScanMatrix(

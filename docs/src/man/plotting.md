@@ -3,10 +3,10 @@
 JuChrom provides Makie plotting methods through its optional Makie extension. Load a Makie
 backend, for example `CairoMakie` or `GLMakie`, before plotting.
 
-## TIC lines
+## TIC traces
 
-Makie's `lines` and `lines!` accept JuChrom scan containers directly and plot a total ion
-chromatogram (TIC):
+`tictrace` and `tictrace!` plot a total ion chromatogram (TIC) for JuChrom scan
+containers:
 
 - `MassScanMatrix` and `VarianceMassScanMatrix`: y values are the row-wise sums of the
   intensity matrix.
@@ -18,12 +18,9 @@ using CairoMakie
 using JuChrom
 using Unitful
 
-fig = Figure(; size=(900, 350))
-ax = Axis(fig[1, 1], xlabel="Retention [minute]", ylabel="TIC [nA]")
-
-plt = lines!(
-    ax,
+fig = tictrace(
     msm;
+    figure=(; size=(900, 350)),
     retentionunit=u"minute",
     intensityunit=u"nA",
     color=:black,
@@ -31,16 +28,30 @@ plt = lines!(
 )
 ```
 
-The non-mutating form creates a figure and axis and returns Makie's `FigureAxisPlot`:
+The mutating form plots into an existing axis and returns Makie's `Lines` plot:
 
 ```julia
-fap = lines(
+fig = Figure(; size=(900, 350))
+ax = Axis(fig[1, 1])
+plt = tictrace!(
+    ax,
     msm;
-    figure=(; size=(900, 350)),
-    axis=(; xlabel="Retention [minute]", ylabel="TIC [nA]"),
     retentionunit=u"minute",
     intensityunit=u"nA",
     color=:black,
+)
+```
+
+By default, the axis labels are set to `"Retention [$unit]"` and
+`"Intensity [$unit]"` using the displayed retention and intensity units, and the title is
+empty. Use `title` or `axis=(; title=...)` to set one:
+
+```julia
+fig = tictrace(
+    msm;
+    retentionunit=u"minute",
+    intensityunit=u"nA",
+    title="Total ion chromatogram",
 )
 ```
 
@@ -49,10 +60,9 @@ cell and returns `AxisPlot`:
 
 ```julia
 fig = Figure()
-axplot = lines(
+axplot = tictrace(
     fig[1, 1],
     msm;
-    axis=(; xlabel="Retention [minute]", ylabel="TIC [nA]"),
     retentionunit=u"minute",
     intensityunit=u"nA",
 )
@@ -64,8 +74,8 @@ then strips the unit before passing numeric vectors to Makie. The default value 
 means "strip the stored unit if there is one"; unitless data are plotted unchanged. If data
 are unitless and a target unit is requested, JuChrom throws an `ArgumentError`.
 
-All other keywords are forwarded to Makie's `lines` plot, so standard line attributes such
-as `color`, `linewidth`, `linestyle`, `linecap`, and `alpha` are available.
+All other keywords are forwarded to Makie's `lines!` plot, so standard line attributes
+such as `color`, `linewidth`, `linestyle`, `linecap`, and `alpha` are available.
 
 For manual data extraction, the same conversion rule is used by the raw getters:
 
@@ -74,6 +84,10 @@ x = rawretentions(msm; unit=u"minute")
 y = vec(sum(rawintensities(msm; unit=u"nA"); dims=2))
 lines!(ax, x, y)
 ```
+
+Makie's `lines` and `lines!` also accept the same JuChrom scan containers directly. These
+lower-level methods use the same TIC extraction and unit-conversion rules as `tictrace`,
+but they do not set axis labels.
 
 ## Annotated alkane ladders
 
@@ -91,5 +105,4 @@ fig = tictrace(
 ```
 
 The TIC line and baseline, when present, are converted to `intensityunit` before plotting.
-The ladder-step retentions are converted to `retentionunit`. The `lines` methods above are
-the lower-level Makie primitive for plotting only the TIC line.
+The ladder-step retentions are converted to `retentionunit`.

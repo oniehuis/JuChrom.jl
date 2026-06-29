@@ -263,10 +263,19 @@ function tictrace!(
     ax
 end
 
+const TicTraceLineData = Union{
+    JuChrom.AbstractMassScanMatrix,
+    JuChrom.AbstractChromScanSeries,
+    JuChrom.AbstractMassScanSeries
+}
+
 """
-    lines(data; retentionunit=nothing, intensityunit=nothing, figure=(;), axis=(;), kwargs...)
-    lines(position, data; retentionunit=nothing, intensityunit=nothing, axis=(;), kwargs...)
-    lines!(ax, data; retentionunit=nothing, intensityunit=nothing, kwargs...)
+    tictrace(data; retentionunit=nothing, intensityunit=nothing,
+             figure=(;), axis=(;), title=nothing, kwargs...) -> Figure
+    tictrace(position, data; retentionunit=nothing, intensityunit=nothing,
+             axis=(;), title=nothing, kwargs...) -> AxisPlot
+    tictrace!(ax, data; retentionunit=nothing, intensityunit=nothing,
+              axis=(;), title=nothing, kwargs...) -> Lines
 
 Plot the total ion chromatogram for a JuChrom scan container with Makie.
 
@@ -277,13 +286,113 @@ the scan intensities.
 
 `retentionunit` and `intensityunit` are converted before numeric values are stripped. The
 default `nothing` strips the stored unit when present and leaves unitless data unchanged.
-All other keywords are forwarded to Makie's `lines` plot.
+Line keywords are forwarded to Makie's `lines!`. Axis keywords are passed via `axis`, and
+the title is empty unless `title` or `axis=(; title=...)` is supplied.
 """
-const TicTraceLineData = Union{
-    JuChrom.AbstractMassScanMatrix,
-    JuChrom.AbstractChromScanSeries,
-    JuChrom.AbstractMassScanSeries
-}
+function tictrace(
+    data::TicTraceLineData;
+    figure::NamedTuple=NamedTuple(),
+    axis::NamedTuple=NamedTuple(),
+    title::Union{Nothing, AbstractString}=nothing,
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    fig = Figure(; figure...)
+    ax = Axis(
+        fig[1, 1];
+        tictrace_axis_attributes(
+            data,
+            retentionunit,
+            intensityunit,
+            axis;
+            title=title,
+            defaulttitle=true
+        )...
+    )
+    tictrace!(
+        ax,
+        data;
+        axis=axis,
+        title=title,
+        retentionunit=retentionunit,
+        intensityunit=intensityunit,
+        kwargs...
+    )
+
+    fig
+end
+
+function tictrace(
+    position::Union{Makie.GridPosition, Makie.GridSubposition},
+    data::TicTraceLineData;
+    figure::NamedTuple=NamedTuple(),
+    axis::NamedTuple=NamedTuple(),
+    title::Union{Nothing, AbstractString}=nothing,
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    isempty(pairs(figure)) || throw(ArgumentError(
+        "figure keyword is not supported when plotting into a grid position"))
+    isempty(Makie.contents(position; exact=true)) || error(
+        "non-mutating tictrace requires an empty grid position; use tictrace! for existing axes")
+    ax = Axis(
+        position;
+        tictrace_axis_attributes(
+            data,
+            retentionunit,
+            intensityunit,
+            axis;
+            title=title,
+            defaulttitle=true
+        )...
+    )
+    plt = tictrace!(
+        ax,
+        data;
+        axis=axis,
+        title=title,
+        retentionunit=retentionunit,
+        intensityunit=intensityunit,
+        kwargs...
+    )
+
+    Makie.AxisPlot(ax, plt)
+end
+
+function tictrace!(
+    ax::Axis,
+    data::TicTraceLineData;
+    axis::NamedTuple=NamedTuple(),
+    title::Union{Nothing, AbstractString}=nothing,
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    intensityunit::Union{Nothing, Unitful.Units}=nothing,
+    kwargs...
+)
+    tictrace_set_axis_attributes!(
+        ax,
+        tictrace_axis_attributes(
+            data,
+            retentionunit,
+            intensityunit,
+            axis;
+            title=title,
+            defaulttitle=false
+        )
+    )
+    tictrace_lines!(ax, data, retentionunit, intensityunit; kwargs...)
+end
+
+"""
+    lines(data; retentionunit=nothing, intensityunit=nothing, figure=(;), axis=(;), kwargs...)
+    lines(position, data; retentionunit=nothing, intensityunit=nothing, axis=(;), kwargs...)
+    lines!(ax, data; retentionunit=nothing, intensityunit=nothing, kwargs...)
+
+Lower-level Makie line methods for plotting the total ion chromatogram of a JuChrom scan
+container. These methods use the same TIC extraction and unit-conversion rules as
+[`tictrace`](@ref), but do not set axis labels.
+"""
 
 function Makie.lines(
     data::TicTraceLineData;
@@ -431,6 +540,44 @@ end
 
 function tictrace_unit_suffix(unit; unitless::Bool=false)
     isnothing(unit) ? (unitless ? " [unitless]" : "") : " [$unit]"
+end
+
+tictrace_axis_unit_label(::Nothing) = "unitless"
+tictrace_axis_unit_label(unit::Unitful.Units) = string(unit)
+
+function tictrace_axis_label(label::AbstractString, unit)
+    "$label [$(tictrace_axis_unit_label(unit))]"
+end
+
+function tictrace_axis_attributes(
+    data,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units},
+    axis::NamedTuple;
+    title::Union{Nothing, AbstractString}=nothing,
+    defaulttitle::Bool=false
+)
+    defaults = (
+        xlabel=tictrace_axis_label(
+            "Retention",
+            tictrace_display_retentionunit(data, retentionunit)
+        ),
+        ylabel=tictrace_axis_label(
+            "Intensity",
+            tictrace_display_intensityunit(data, intensityunit)
+        )
+    )
+    defaulttitle && (defaults = merge(defaults, (; title="")))
+    attributes = merge(defaults, axis)
+    isnothing(title) ? attributes : merge(attributes, (; title=title))
+end
+
+function tictrace_set_axis_attributes!(ax::Axis, attributes::NamedTuple)
+    for (key, value) in pairs(attributes)
+        setproperty!(ax, key, value)
+    end
+
+    ax
 end
 
 function tictrace_display_retentionunit(data, retentionunit::Nothing)
