@@ -61,6 +61,7 @@ include("core/transform/gridding.jl")
 include("core/transform/intensity_units.jl")
 include("core/transform/mscanmatrix_ops.jl")
 include("core/transform/series_ops.jl")
+include("core/transform/tic_normalization.jl")
 include("core/transform/whitening.jl")
 include("core/utils/collections.jl")
 include("core/utils/math.jl")
@@ -211,6 +212,7 @@ export retentiontrim!
 export retentionunit
 export retentionunit_A
 export retentionunit_B
+export ticnormalize
 export tolerance
 export typify
 export unimodalfit

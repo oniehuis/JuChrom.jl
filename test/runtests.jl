@@ -111,6 +111,9 @@ end
 @safetestset "core/transform/series_ops.jl" begin
     include("./core/transform/series_ops.jl")
 end
+@safetestset "core/transform/tic_normalization.jl" begin
+    include("./core/transform/tic_normalization.jl")
+end
 @safetestset "core/transform/whitening.jl" begin
     include("./core/transform/whitening.jl")
 end

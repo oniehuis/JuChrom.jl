@@ -271,6 +271,8 @@ end
     unitless_ax = only_axis(tictrace(unitless))
     @test unitless_ax.xlabel[] == "Retention [unitless]"
     @test unitless_ax.ylabel[] == "Intensity [unitless]"
+    ext = Base.get_extension(JuChrom, :MakieExtension)
+    @test ext.tictrace_axis_unit_label(nothing) == "unitless"
 
     layout_fig = Figure()
     axplot = tictrace(

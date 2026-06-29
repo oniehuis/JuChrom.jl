@@ -542,7 +542,10 @@ function tictrace_unit_suffix(unit; unitless::Bool=false)
     isnothing(unit) ? (unitless ? " [unitless]" : "") : " [$unit]"
 end
 
-tictrace_axis_unit_label(::Nothing) = "unitless"
+function tictrace_axis_unit_label(::Nothing)
+    return "unitless"
+end
+
 tictrace_axis_unit_label(unit::Unitful.Units) = string(unit)
 
 function tictrace_axis_label(label::AbstractString, unit)

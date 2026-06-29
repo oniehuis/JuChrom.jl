@@ -13,6 +13,25 @@ Use [`replacecensored`](@ref) before CLR when a variance-carrying mass-scan matr
 non-positive or below-limit intensities. It replaces censored values by positive
 below-limit estimates and updates their variances on the same final analysis grid.
 
+[`ticnormalize`](@ref) scales a mass-scan matrix by the sum of positive
+total-ion-chromatogram (TIC) values. For a `VarianceMassScanMatrix`, variances are
+propagated as fixed scaling (`V ./ scale^2`). The normalization denominator is treated as
+the observed scaling factor; uncertainty in that denominator is not propagated because it
+would introduce covariances between all normalized cells, while `VarianceMassScanMatrix`
+stores only per-cell variances.
+
+CLR is invariant to this global TIC scaling. For strictly positive data,
+`clr(ticnormalize(vmsm))` gives the same CLR intensities and propagated CLR variances as
+`clr(vmsm)`. If the matrix contains zeros or negative values and you want CLR output, first
+replace censored values:
+
+```julia
+clr(ticnormalize(replacecensored(vmsm)))
+```
+
+This gives the same CLR result as `clr(replacecensored(vmsm))`, with the TIC-normalized
+intermediate available if you need it for inspection or other analysis.
+
 ## Example
 
 ```@example 1
@@ -91,6 +110,7 @@ CensoredReplacementInfo
 clr
 dwellnormalize
 replacecensored
+ticnormalize
 withintensityunit
 whiten
 ```
