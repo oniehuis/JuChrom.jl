@@ -1,3 +1,8 @@
+const Parafac2StartDiagnostic{T<:Real} = NamedTuple{
+    (:start, :iterations, :converged, :stopreason, :loss),
+    Tuple{Int, Int, Bool, Symbol, T}
+}
+
 """
     Parafac2Fit
 
@@ -43,11 +48,6 @@ constraints.
 
 See also [`parafac2`](@ref).
 """
-const Parafac2StartDiagnostic{T<:Real} = NamedTuple{
-    (:start, :iterations, :converged, :stopreason, :loss),
-    Tuple{Int, Int, Bool, Symbol, T}
-}
-
 struct Parafac2Fit{T<:Real}
     ncomponents::Int
     retentioncounts::Vector{Int}

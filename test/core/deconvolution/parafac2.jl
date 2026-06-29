@@ -283,7 +283,8 @@ end
     @test parafac2fitpercent(scaledfit, Xscaled) > 1 - 1e-12
     @test parafac2fitpercent(scaledfit, Xscaled) ≈ parafac2fitpercent(fit, X) rtol=1e-10
     @test parafac2intensities(scaledfit) ≈ scale .* parafac2intensities(fit) rtol=1e-10
-    @test scaledfit.loss ≈ scale^2 .* fit.loss rtol=1e-8 atol=1e-8
+    @test first(scaledfit.loss) ≈ scale^2 * first(fit.loss) rtol=1e-8 atol=1e-8
+    @test last(scaledfit.loss) ≈ scale^2 * last(fit.loss) rtol=1e-8 atol=1e-8
     @test getproperty.(scaledfit.startdiagnostics, :loss) ≈
         scale^2 .* getproperty.(fit.startdiagnostics, :loss) rtol=1e-8 atol=1e-8
     @test parafac2loss(scaledfit, Xscaled) ≈ last(scaledfit.loss) rtol=1e-8 atol=1e-8
