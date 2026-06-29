@@ -1052,6 +1052,16 @@ end
     @test toleranceblockfit.iterations == 1
     @test toleranceblockfit.losses == [1.0, 0.99]
 
+    PARAFAC2_LOSS_PROBE_CALLS[] = 0
+    PARAFAC2_LOSS_PROBE_VALUES[] = [1.0, 0.5]
+    maxitersfit = JuChrom.parafac2fitstart(X, loadings, core, weights, 1, 0.0, ())
+
+    @test PARAFAC2_LOSS_PROBE_CALLS[] == 2
+    @test !maxitersfit.converged
+    @test maxitersfit.stopreason ≡ :maxiters
+    @test maxitersfit.iterations == 1
+    @test maxitersfit.losses == [1.0, 0.5]
+
     Xtransformed = Parafac2TransformedLossProbeVector([
         [1.0 0.2; 0.3 0.4],
         [0.5 0.6; 0.7 0.8; 0.9 1.0]

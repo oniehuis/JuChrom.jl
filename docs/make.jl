@@ -62,6 +62,7 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "man/shimadzums.md",
                 ],
                 "Data processing" => Any[
+                    "Spectral Similarity" => "man/spectral_similarity.md",
                     "Alignment" => "man/alignment.md",
                     "Baseline" => "man/baseline.md",
                     "Binning and Gridding" => Any[
