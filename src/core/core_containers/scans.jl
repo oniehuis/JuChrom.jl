@@ -263,7 +263,7 @@ See also
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
 [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})),
 [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
 [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
 [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
@@ -296,7 +296,7 @@ See also
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
 [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})),
 [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
 [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).
 """
@@ -493,7 +493,7 @@ See also
 [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), 
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})), 
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})),
 [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})), 
 [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})), 
 [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)).

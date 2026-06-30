@@ -150,7 +150,7 @@ See also
 [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})).
 
 # Examples
 ```jldoctest
@@ -220,7 +220,7 @@ See also
 [`intensities`](@ref JuChrom.intensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})).
 
 # Examples
 ```jldoctest
@@ -249,7 +249,7 @@ See also
 [`AbstractMassScan`](@ref JuChrom.AbstractMassScan), 
 [`MassScan`](@ref JuChrom.MassScan), 
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})).
 
 # Examples
 ```jldoctest
@@ -285,7 +285,7 @@ See also
 [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
 [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)), 
 [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})).
 
 # Examples
 ```jldoctest
@@ -331,7 +331,7 @@ See also
 [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)), 
 [`mzcount`](@ref JuChrom.mzcount(::AbstractMassScan)), 
 [`mzvalues`](@ref JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})), 
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})).
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})).
 
 # Examples
 ```jldoctest
@@ -444,13 +444,13 @@ true
 ```
 """
 @inline function rawmzvalues(
-    scan::AbstractMassScan{<:Any, <:Any, Nothing};
+    scan::AbstractMassScan{<:Any, Nothing, <:Any};
     unit::Union{Nothing, Unitful.Units}=nothing)
     _handle_unitless(scan.mzvalues, unit, "m/z values")
 end
 
 @inline function rawmzvalues(
-    scan::AbstractMassScan{<:Any, <:Any, <:Unitful.Units};
+    scan::AbstractMassScan{<:Any, <:Unitful.Units, <:Any};
     unit::Union{Nothing, Unitful.Units}=nothing)
     _handle_unitful_strip(scan.mzvalues, scan.mzunit, unit)
 end

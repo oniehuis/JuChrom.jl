@@ -16,7 +16,7 @@ function _compute_retention_mapping(
     # Normalize rt to [0,1] scale based on original rt range
     rA_norm = minmax_scale(rA, rm.rA_min, rm.rA_max)
     
-    # Handle extrapolation logic (your existing code)
+    # Handle out-of-domain values by linear extrapolation at the spline boundary.
     if rA_norm ≤ rm.rA_norm_min
         if warn && rA_norm ≤ rm.rA_norm_min - domain_boundary_threshold
             @info ("rA=$rA is below the spline domain boundary (rA_min=$(rm.rA_min)): " * 
@@ -106,7 +106,7 @@ function applymap(
     unit::T2=retentionunit_B(rm)
     ) where {T1<:Real, T2<:Union{Nothing, Unitful.Units}}
 
-    # Validate input unit compatibility (ADD THIS)
+    # Validate input unit compatibility.
     if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))
@@ -138,12 +138,11 @@ values.
 
 Returns a new `MassScanSeries` with mapped retentions and Jacobian-corrected intensities.
 
-`applymap` treats intensities as densities with respect to retention coordinates. Monotonic 
-reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your 
-data are integrated counts per scan with variable dwell times, convert to densities first 
-using dwell time before calling `applymap`. Only numerical values are transformed — units 
-remain unchanged. If intensities are densities with retention units in the denominator, 
-handle unit transformation separately.
+`applymap` treats intensities as densities with respect to retention coordinates. Monotonic
+reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your
+data are integrated counts per scan with variable dwell times, convert to densities first
+using dwell time before calling `applymap`. Unitful intensity units are transformed by the
+same inverse-Jacobian unit; dimensionless results are stored with `intensityunit ≡ nothing`.
 
 # Examples
 """
@@ -165,7 +164,9 @@ function applymap(
     retention_unit_type = typeof(unit)
     mzvalues_type = typeof(rawmzvalues(reference_scan))
     mz_unit_type = typeof(mzunit(reference_scan))
-    intensity_unit_type = typeof(intensityunit(reference_scan))
+    new_intensity_unit, intensity_scale =
+        retention_mapping_mapped_intensityunit(intensityunit(reference_scan), rmap, unit)
+    intensity_unit_type = typeof(new_intensity_unit)
     level_type = typeof(level(reference_scan))
     metadata_type = typeof(attrs(reference_scan))
     
@@ -190,6 +191,9 @@ function applymap(
                                  domain_boundary_threshold=domain_boundary_threshold,
                                  unit=unit,
                                  warn=warn)
+        new_retention_raw = new_retention isa AbstractQuantity ?
+            ustrip(new_retention) :
+            new_retention
         
         
         # Compute Jacobian
@@ -202,16 +206,16 @@ function applymap(
         isfinite(jacobian) && jacobian > 0 || throw(
             ArgumentError("Jacobian must be finite and positive."))
 
-        # Correct intensities
-        new_ints = Float64.(intensities(scan) ./ jacobian)
+        # Correct intensities and apply any scale from dimensionless unit cancellation.
+        new_ints = Float64.(rawintensities(scan) ./ jacobian .* intensity_scale)
         
         # Construct new MassScan with transformed retention and corrected intensities
-        mscan = MassScan(new_retention,
+        mscan = MassScan(new_retention_raw,
             deepcopy(unit),
             deepcopy(rawmzvalues(scan)),
             mzunit(scan),
             new_ints,
-            intensityunit(scan),
+            new_intensity_unit,
             level=deepcopy(level(scan)),
             attrs=deepcopy(attrs(scan))
         )
@@ -248,12 +252,11 @@ single retention values.
 
 Returns a new `MassScanMatrix` with mapped retentions and Jacobian-corrected intensities.
 
-`applymap` treats intensities as densities with respect to retention coordinates. Monotonic 
-reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your 
-data are integrated counts per scan with variable dwell times, convert to densities first 
-using dwell time before calling `applymap`. Only numerical values are transformed — units 
-remain unchanged. If intensities are densities with retention units in the denominator, 
-handle unit transformation separately.
+`applymap` treats intensities as densities with respect to retention coordinates. Monotonic
+reparameterization A→B rescales intensities by 1/(dB/dA) to preserve peak areas. If your
+data are integrated counts per scan with variable dwell times, convert to densities first
+using dwell time before calling `applymap`. Unitful intensity units are transformed by the
+same inverse-Jacobian unit; dimensionless results are stored with `intensityunit ≡ nothing`.
 """
 function applymap(
     rmap::RetentionMapper,
@@ -287,10 +290,12 @@ function applymap(
     # Extract raw intensities and allocate output arrays
     rawints = rawintensities(msm)
     new_rawints = similar(rawints, Float64)
+    new_intensity_unit, intensity_scale =
+        retention_mapping_mapped_intensityunit(intensityunit(msm), rmap, unit)
 
     # Correct intensities for each scan
     @inbounds @simd for c in axes(rawints, 2)
-        new_rawints[:, c] = rawints[:, c] ./ jacobians
+        new_rawints[:, c] = rawints[:, c] ./ jacobians .* intensity_scale
     end
 
     # Return new MassScanMatrix
@@ -300,7 +305,7 @@ function applymap(
         deepcopy(rawmzvalues(msm)),
         mzunit(msm),
         new_rawints,
-        intensityunit(msm),
+        new_intensity_unit,
         level=deepcopy(level(msm)),
         instrument=deepcopy(instrument(msm)),
         acquisition=deepcopy(acquisition(msm)),
@@ -327,8 +332,9 @@ intensity transformation `I_new = I_old / J`:
 
     variance_new = variance_old / J^2
 
-The returned `VarianceMassScanMatrix` wraps the mapped parent matrix and preserves the
-variance unit.
+The returned `VarianceMassScanMatrix` wraps the mapped parent matrix and transforms the
+variance unit by the squared inverse-Jacobian unit. Dimensionless results are stored with
+`varianceunit ≡ nothing`.
 """
 function applymap(
     rmap::RetentionMapper,
@@ -356,11 +362,65 @@ function applymap(
     vars = rawvariances(vmsm)
     mapped_vars = similar(vars, Float64)
     jacobian_variances = abs2.(jacobians)
+    new_variance_unit, variance_scale =
+        retention_mapping_mapped_varianceunit(varianceunit(vmsm), rmap, unit)
     @inbounds @simd for c in axes(vars, 2)
-        mapped_vars[:, c] = vars[:, c] ./ jacobian_variances
+        mapped_vars[:, c] = vars[:, c] ./ jacobian_variances .* variance_scale
     end
 
-    VarianceMassScanMatrix(mapped_parent, mapped_vars, varianceunit(vmsm))
+    VarianceMassScanMatrix(mapped_parent, mapped_vars, new_variance_unit)
+end
+
+function retention_mapping_inverse_jacobian_unit(
+    rmap::RetentionMapper,
+    unit::Union{Nothing, Unitful.Units}
+)
+    rA_unit = retentionunit_A(rmap)
+
+    if isnothing(rA_unit)
+        return isnothing(unit) ? nothing : inverse(unit)
+    else
+        return isnothing(unit) ? rA_unit : rA_unit / unit
+    end
+end
+
+retention_mapping_dimensionless_scale(unit::Nothing) = (nothing, 1.0)
+
+function retention_mapping_dimensionless_scale(unit::Unitful.Units)
+    Unitful.dimension(unit) == Unitful.NoDims ||
+        return (unit, 1.0)
+
+    nothing, Unitful.ustrip(Unitful.NoUnits, 1.0 * unit)
+end
+
+function retention_mapping_mapped_intensityunit(
+    intensity_unit::Union{Nothing, Unitful.Units},
+    rmap::RetentionMapper,
+    unit::Union{Nothing, Unitful.Units}
+)
+    isnothing(intensity_unit) && return (nothing, 1.0)
+
+    inverse_jacobian_unit = retention_mapping_inverse_jacobian_unit(rmap, unit)
+    mapped_unit = isnothing(inverse_jacobian_unit) ?
+        intensity_unit :
+        intensity_unit * inverse_jacobian_unit
+
+    retention_mapping_dimensionless_scale(mapped_unit)
+end
+
+function retention_mapping_mapped_varianceunit(
+    variance_unit::Union{Nothing, Unitful.Units},
+    rmap::RetentionMapper,
+    unit::Union{Nothing, Unitful.Units}
+)
+    isnothing(variance_unit) && return (nothing, 1.0)
+
+    inverse_jacobian_unit = retention_mapping_inverse_jacobian_unit(rmap, unit)
+    mapped_unit = isnothing(inverse_jacobian_unit) ?
+        variance_unit :
+        variance_unit * inverse_jacobian_unit^2
+
+    retention_mapping_dimensionless_scale(mapped_unit)
 end
 
 function retention_mapping_jacobians(
@@ -528,7 +588,7 @@ function derivinvmap(
         T3<:Union{Nothing, Unitful.Units},
         T4<:Real
     }
-    # Validate input unit compatibility (FIXED - was missing this check)
+    # Validate input unit compatibility.
     if rm.rB_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rB_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rB_unit)."))
@@ -537,7 +597,7 @@ function derivinvmap(
                            "Expected unitless input."))
     end
 
-    # Existing parameter validation (FIXED - was incomplete)
+    # Validate requested derivative units.
     if rm.rA_unit isa Unitful.Units && rA_unit isa Nothing
         throw(ArgumentError("rA_unit cannot be Nothing if rm.rA_unit is a Unitful unit."))
     elseif rm.rA_unit isa Nothing && rA_unit isa Unitful.Units
@@ -692,7 +752,7 @@ function derivmap(
     T2<:Union{Nothing, Unitful.Units},
     T3<:Union{Nothing, Unitful.Units},
 }
-    # Validate input unit compatibility (ADD THIS)
+    # Validate input unit compatibility.
     if rm.rA_unit isa Unitful.Units && !(retention isa AbstractQuantity)
         throw(ArgumentError("Input must have units when rm.rA_unit is a Unitful unit. " *
                            "Expected units compatible with $(rm.rA_unit)."))

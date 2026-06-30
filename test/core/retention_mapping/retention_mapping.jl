@@ -22,6 +22,35 @@ const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 const TEST_LAMBDA = 1.0
 
+function rt_to_ri_test_mapper()
+    rA = [0.0, 0.5, 1.0]
+    rB = [10.0, 20.0, 30.0]
+    rA_min, rA_max = 0.0, 1.0
+    rB_min, rB_max = 10.0, 30.0
+    rA_norm_min, rA_norm_max = 0.0, 1.0
+    rB_pred_min, rB_pred_max = rB_min, rB_max
+    rB_pred_norm_min, rB_pred_norm_max = 0.0, 1.0
+
+    order = BSplineOrder(4)
+    knots = collect(LinRange(0.0, 1.0, 10))
+    B = BSplineBasis(order, knots)
+    coefs = collect(range(0.0, 1.0, length(B)))
+    spline = Spline(B, coefs)
+
+    JuChrom.RetentionMapper(
+        rA, u"minute",
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, nothing,
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        TEST_LAMBDA,
+        Dict{String, Any}()
+    )
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Unit tests
 # ─────────────────────────────────────────────────────────────────────────────
@@ -169,6 +198,19 @@ end
     @test rawmzvalues(out) == rawmzvalues(msm)
     @test mzunit(out) ≡ mzunit(msm)
     @test intensityunit(out) ≡ intensityunit(msm)
+
+    rt_to_ri = rt_to_ri_test_mapper()
+    dwell_unit = JuChrom.inverse(u"ms")
+    unitful_msm = MassScanMatrix(ret, u"minute", mz, nothing, X, dwell_unit)
+    unitful_out = applymap(rt_to_ri, unitful_msm)
+    unitful_J = rawderivmap.(rt_to_ri, ret .* u"minute"; rB_unit=nothing)
+    intensity_scale = Unitful.ustrip(Unitful.NoUnits, 1.0 * dwell_unit * u"minute")
+
+    @test retentionunit(unitful_out) ≡ nothing
+    @test intensityunit(unitful_out) ≡ nothing
+    @test rawintensities(unitful_out)[1, :] ≈ X[1, :] ./ unitful_J[1] .* intensity_scale
+    @test rawintensities(unitful_out)[2, :] ≈ X[2, :] ./ unitful_J[2] .* intensity_scale
+    @test rawintensities(unitful_out)[3, :] ≈ X[3, :] ./ unitful_J[3] .* intensity_scale
 end
 
 # ── applymap(::RetentionMapper, ::AbstractVarianceMassScanMatrix) ───────────
@@ -226,6 +268,22 @@ end
     @test rawvariances(out)[3, :] ≈ σ²[3, :] ./ abs2(J[3])
     @test varianceunit(out) ≡ varianceunit(vmsm)
     @test rawmzvalues(mapped_msm) == rawmzvalues(msm)
+
+    rt_to_ri = rt_to_ri_test_mapper()
+    dwell_unit = JuChrom.inverse(u"ms")
+    unitful_msm = MassScanMatrix(ret, u"minute", mz, nothing, X, dwell_unit)
+    unitful_vmsm = VarianceMassScanMatrix(unitful_msm, σ², dwell_unit^2)
+    unitful_out = applymap(rt_to_ri, unitful_vmsm)
+    unitful_J = rawderivmap.(rt_to_ri, ret .* u"minute"; rB_unit=nothing)
+    intensity_scale = Unitful.ustrip(Unitful.NoUnits, 1.0 * dwell_unit * u"minute")
+    variance_scale = Unitful.ustrip(Unitful.NoUnits, 1.0 * dwell_unit^2 * u"minute"^2)
+
+    @test intensityunit(unitful_out) ≡ nothing
+    @test varianceunit(unitful_out) ≡ nothing
+    @test rawintensities(unitful_out)[1, :] ≈ X[1, :] ./ unitful_J[1] .* intensity_scale
+    @test rawvariances(unitful_out)[1, :] ≈ σ²[1, :] ./ abs2(unitful_J[1]) .* variance_scale
+    @test rawvariances(unitful_out)[2, :] ≈ σ²[2, :] ./ abs2(unitful_J[2]) .* variance_scale
+    @test rawvariances(unitful_out)[3, :] ≈ σ²[3, :] ./ abs2(unitful_J[3]) .* variance_scale
 end
 
 # ── applymap(::RetentionMapper, ::MassScanSeries) ────────────────────────────
@@ -291,6 +349,38 @@ end
     # Units of new retentions: still unitless for unitless mapper
     @test retentionunit(out[1]) ≡ nothing
     @test retentionunit(out[2]) ≡ nothing
+
+    rmap_unitful_B = JuChrom.RetentionMapper(
+        rA, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, u"s",
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        TEST_LAMBDA,
+        Dict{String, Any}()
+    )
+    unitful_B_out = applymap(rmap_unitful_B, series)
+    @test retentionunit(unitful_B_out[1]) == u"s"
+    @test rawretention(unitful_B_out[1]) ≈ ustrip(applymap(rmap_unitful_B, 0.25))
+
+    rt_to_ri = rt_to_ri_test_mapper()
+    dwell_unit = JuChrom.inverse(u"ms")
+    unitful_series = MassScanSeries([
+        MassScan(0.25, u"minute", mz, nothing, ints1, dwell_unit),
+        MassScan(0.75, u"minute", mz, nothing, ints2, dwell_unit),
+    ])
+    unitful_out = applymap(rt_to_ri, unitful_series)
+    unitful_j1 = rawderivmap(rt_to_ri, 0.25u"minute"; rB_unit=nothing)
+    unitful_j2 = rawderivmap(rt_to_ri, 0.75u"minute"; rB_unit=nothing)
+    intensity_scale = Unitful.ustrip(Unitful.NoUnits, 1.0 * dwell_unit * u"minute")
+
+    @test retentionunit(unitful_out[1]) ≡ nothing
+    @test intensityunit(unitful_out[1]) ≡ nothing
+    @test rawintensities(unitful_out[1]) ≈ ints1 ./ unitful_j1 .* intensity_scale
+    @test rawintensities(unitful_out[2]) ≈ ints2 ./ unitful_j2 .* intensity_scale
 end
 
 # ── Base.broadcastable(::RetentionMapper) ─────────────────────────────────────

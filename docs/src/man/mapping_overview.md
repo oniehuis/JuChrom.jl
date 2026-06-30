@@ -145,12 +145,14 @@ ris = [1853.2, 3137.3, 3501.0]
 rts = invmap.(mapper, ris)  # dot form broadcasts over the vector
 ```
 
-To transform intensities with the Jacobian, use the derivative of the mapping. If
-`ri = f(t)`, then `d(ri)/dt` is the local stretch factor; to preserve area, you divide the
-intensity by this slope at the same time point. However, even when intensities are
-reported as unitless, they usually represent counts accumulated over a finite scan
-interval, so the implied unit is typically `time^-1`. Here we assume the given intensities
-are counts acquired over a 0.5‑second scan interval, and therefore divide by 0.5 seconds.
+For `MassScanMatrix` and `VarianceMassScanMatrix`, [`applymap`](@ref) applies the
+Jacobian correction and updates intensity and variance units automatically. For a vector
+of intensities, use the derivative of the mapping directly. If `ri = f(t)`, then
+`d(ri)/dt` is the local stretch factor; to preserve area, you divide the intensity by this
+slope at the same time point. However, even when intensities are reported as unitless,
+they usually represent counts accumulated over a finite scan interval, so the implied unit
+is typically `time^-1`. Here we assume the given intensities are counts acquired over a
+0.5‑second scan interval, and therefore divide by 0.5 seconds.
 Because the intensities and `d(ri)/dt` must use the same time unit for the division to
 cancel cleanly, we convert the Jacobian to the unit `s^-1`. This is done by specifying the
 input‑domain unit as `u"s"`.

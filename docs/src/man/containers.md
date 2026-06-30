@@ -8,7 +8,7 @@ container.
 
 Raw getters (e.g., [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})),
 [`rawintensity`](@ref JuChrom.rawintensity(::AbstractChromScan{<:Any, Nothing})),
-[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})))
+[`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})))
 return unitless numeric values. Unit-aware convenience functions (e.g.,
 [`retention`](@ref JuChrom.retention(::AbstractScan{Nothing})),
 [`intensity`](@ref JuChrom.intensity(::AbstractChromScan{<:Any, Nothing})),
@@ -51,7 +51,7 @@ conversions.
 
 | Expected field | Type | Getter |
 | :--- | :--- | :--- |
-| `mzvalues` | `AbstractVector{<:Real}` | [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})) |
+| `mzvalues` | `AbstractVector{<:Real}` | [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})) |
 | `mzunit` | `Union{Unitful.Units, Nothing}` | [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)) |
 | `intensities` | `AbstractVector{<:Real}` | [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})) |
 | `level` | `Integer` | [`level`](@ref JuChrom.level(::AbstractMassScan)) |
@@ -95,7 +95,7 @@ Fields and accessors:
 | :--- | :--- | :--- |
 | `retention` | `Real` | [`rawretention`](@ref JuChrom.rawretention(::AbstractScan{Nothing})) |
 | `retentionunit` | `Union{Unitful.Units, Nothing}` | [`retentionunit`](@ref JuChrom.retentionunit(::AbstractScan)) |
-| `mzvalues` | `AbstractVector{<:Real}` | [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})) |
+| `mzvalues` | `AbstractVector{<:Real}` | [`rawmzvalues`](@ref JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})) |
 | `mzunit` | `Union{Unitful.Units, Nothing}` | [`mzunit`](@ref JuChrom.mzunit(::AbstractMassScan)) |
 | `intensities` | `AbstractVector{<:Real}` | [`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})) |
 | `intensityunit` | `Union{Unitful.Units, Nothing}` | [`intensityunit`](@ref JuChrom.intensityunit(::AbstractScan)) |

@@ -63,7 +63,7 @@ using CairoMakie
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 
-# Plot the raw total ion chromatogram (TIC)
+# Plot the raw total ion chromatogram (TIC); notice unitfree intensity
 fig₁ = tictrace(mss; figure=(; size=(1000, 350)))
 save("rt_tic.svg", fig₁)
 nothing # hide
@@ -81,13 +81,13 @@ btmss = binmzvalues(tmss)
 # Convert scans to a dense retention-by-m/z matrix
 msm = mscanmatrix(btmss)
 
-# Normalize counts by dwell time
+# Normalize intensity by dwell time
 nmsm = dwellnormalize(msm)
 
-# Extract the diagnostic m/z 109 ion trace
-xic = mzchrom(nmsm, 109, warning=false)
+# Extract the m/z 85 ion trace
+xic = mzchrom(nmsm, 85, warning=false)
 
-# Plot m/z 109 as a processing check
+# Plot m/z 85 as a processing check; notice unitful intensity
 fig₂ = tictrace(xic; figure=(; size=(1000, 350)))
 save("xic.svg", fig₂)
 nothing # hide
@@ -102,7 +102,7 @@ asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
 # Overlay detected ladder steps on the TIC
-fig₃ = tictrace(nmsm, asr; figure=(; size=(1000, 350)))
+fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("ladder.svg", fig₃)
 nothing # hide
 ```

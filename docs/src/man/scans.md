@@ -38,7 +38,7 @@ JuChrom.mzcount(::AbstractMassScan)
 JuChrom.mzunit(::AbstractMassScan)
 JuChrom.mzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})
 JuChrom.rawintensities(::AbstractMassScan{<:Any, <:Any, Nothing})
-JuChrom.rawmzvalues(::AbstractMassScan{<:Any, <:Any, Nothing})
+JuChrom.rawmzvalues(::AbstractMassScan{<:Any, Nothing, <:Any})
 ```
 
 ## MassScan
