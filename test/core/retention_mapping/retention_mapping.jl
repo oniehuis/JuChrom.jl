@@ -199,6 +199,28 @@ end
     @test mzunit(out) ≡ mzunit(msm)
     @test intensityunit(out) ≡ intensityunit(msm)
 
+    rmap_unitful_B = JuChrom.RetentionMapper(
+        rA, nothing,
+        rA_min, rA_max,
+        rA_norm_min, rA_norm_max,
+        rB, u"s",
+        rB_min, rB_max,
+        rB_pred_min, rB_pred_max,
+        rB_pred_norm_min, rB_pred_norm_max,
+        knots, coefs, spline,
+        TEST_LAMBDA,
+        Dict{String, Any}()
+    )
+    signal_msm = MassScanMatrix(ret, nothing, mz, nothing, X, u"pA")
+    signal_out = applymap(rmap_unitful_B, signal_msm)
+    signal_J = rawderivmap.(rmap_unitful_B, ret; rB_unit=u"s")
+
+    @test retentionunit(signal_out) == u"s"
+    @test intensityunit(signal_out) == u"pA" * JuChrom.inverse(u"s")
+    @test rawintensities(signal_out)[1, :] ≈ X[1, :] ./ signal_J[1]
+    @test rawintensities(signal_out)[2, :] ≈ X[2, :] ./ signal_J[2]
+    @test rawintensities(signal_out)[3, :] ≈ X[3, :] ./ signal_J[3]
+
     rt_to_ri = rt_to_ri_test_mapper()
     dwell_unit = JuChrom.inverse(u"ms")
     unitful_msm = MassScanMatrix(ret, u"minute", mz, nothing, X, dwell_unit)

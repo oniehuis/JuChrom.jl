@@ -384,8 +384,6 @@ function retention_mapping_inverse_jacobian_unit(
     end
 end
 
-retention_mapping_dimensionless_scale(unit::Nothing) = (nothing, 1.0)
-
 function retention_mapping_dimensionless_scale(unit::Unitful.Units)
     Unitful.dimension(unit) == Unitful.NoDims ||
         return (unit, 1.0)
