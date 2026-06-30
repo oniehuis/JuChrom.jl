@@ -25,10 +25,10 @@ msm = mscanmatrix(btmss)
 # Normalize intensity by dwell time
 nmsm = dwellnormalize(msm)
 
-# Extract the m/z 85 ion trace
-xic = mzchrom(nmsm, 85, warning=false)
+# Extract the trace of some ion of interest (e.g., m/z 104)
+xic = mzchrom(nmsm, 104, warning=false)
 
-# Plot m/z 85 as a processing check; notice unitful intensity
+# Plot m/z 104 trace; notice unitful intensity
 fig₂ = tictrace(xic; retentionunit=u&quot;minute&quot;, figure=(; size=(1000, 350)))
 save(&quot;xic.svg&quot;, fig₂)</code></pre><p><img src="xic.svg" alt/></p><pre><code class="language-julia hljs"># Find the n-alkane ladder for retention-index calibration
 asr = findalkanes(nmsm)
@@ -37,7 +37,17 @@ asr.success || throw(ArgumentError(
 
 # Overlay detected ladder steps on the TIC
 fig₃ = tictrace(nmsm, asr; retentionunit=u&quot;minute&quot;, figure=(; size=(1000, 350)))
-save(&quot;ladder.svg&quot;, fig₃)</code></pre><p><img src="ladder.svg" alt/></p><pre><code class="language-julia hljs"># Fit an intensity-variance model from the ladder peaks
+save(&quot;ladder.svg&quot;, fig₃)</code></pre><p><img src="ladder.svg" alt/></p><pre><code class="language-julia hljs"># Extract spectra for the annotated ladder steps
+mss = alkaneladdermassspectra(nmsm, asr)
+
+# Select eicosane (C20), which must have been extracted
+c_count = 20
+haskey(mss, c_count) || throw(ArgumentError(&quot;No spectrum extracted for C$c_count&quot;))
+ms_c20 = mss[c_count]
+
+# Plot the selected ladder spectrum
+fig₄ = massspectrum(ms_c20)
+save(&quot;ms_c20.svg&quot;, fig₄)</code></pre><p><img src="ms_c20.svg" alt/></p><pre><code class="language-julia hljs"># Fit an intensity-variance model from the ladder peaks
 avf = fitalkanevariancemodel(nmsm, asr)
 avf.success || throw(ArgumentError(
     &quot;Failed to infer a variance model from standard file: $file&quot;))
@@ -52,13 +62,13 @@ mapper = fitmap(asr)
 vmsm_ri = applymap(mapper, vmsm)
 
 # Plot the retention-index TIC
-fig₄ = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
-save(&quot;ri_tic.svg&quot;, fig₄)</code></pre><p><img src="ri_tic.svg" alt/></p><pre><code class="language-julia hljs"># Estimate a smooth baseline on the mapped data
+fig₅ = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
+save(&quot;ri_tic.svg&quot;, fig₅)</code></pre><p><img src="ri_tic.svg" alt/></p><pre><code class="language-julia hljs"># Estimate a smooth baseline on the mapped data
 baseline = arpls(vmsm_ri)
 
 # Subtract the baseline from the mapped data
 signal = subtractbaseline(vmsm_ri, baseline)
 
 # Plot the baseline-corrected TIC
-fig₅ = tictrace(signal; figure=(; size=(1000, 350)))
-save(&quot;signal.svg&quot;, fig₅)</code></pre><p><img src="signal.svg" alt/></p><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/containers/">Design overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 30 June 2026 13:20">Tuesday 30 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+fig₆ = tictrace(signal; figure=(; size=(1000, 350)))
+save(&quot;signal.svg&quot;, fig₆)</code></pre><p><img src="signal.svg" alt/></p><h2 id="Disclaimer"><a class="docs-heading-anchor" href="#Disclaimer">Disclaimer</a><a id="Disclaimer-1"></a><a class="docs-heading-anchor-permalink" href="#Disclaimer" title="Permalink"></a></h2><p>JuChrom is provided &quot;as is,&quot; without warranty of any kind. Users are responsible for independently validating all outputs and interpretations and for determining suitability for their specific applications. The authors and contributors disclaim any liability for errors, omissions, or any consequences arising from use of the software, including use in regulated, clinical, or safety-critical contexts.</p></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="man/containers/">Design overview »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 30 June 2026 15:24">Tuesday 30 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
