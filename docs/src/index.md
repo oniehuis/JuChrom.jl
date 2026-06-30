@@ -102,7 +102,7 @@ asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
 # Overlay detected ladder steps on the TIC
-fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", retentionunit=u"minute", figure=(; size=(1000, 350)))
+fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("ladder.svg", fig₃)
 nothing # hide
 ```
