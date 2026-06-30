@@ -52,121 +52,100 @@ julia> using JuChrom
 ## Quickstart
 
 ```@example 1
-# Load JuChrom and the loader needed for the example Agilent ChemStation file.
+# Load JuChrom and the Agilent ChemStation MS loader
 using JuChrom
 using JuChrom.ChemStationMSLoader
 
-# Load a Makie backend so JuChrom's plotting recipes are available.
+# Load a Makie backend for plotting
 using CairoMakie
 
-# Load an example n-alkane standard run.
+# Load an example n-alkane standard run
 file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 
-# Plot the total ion chromatogram (TIC) to inspect the raw run.
-fig_tic = tictrace(mss; figure=(; size=(1000, 359)))
-save("tic.svg", fig_tic)
+# Plot the raw total ion chromatogram (TIC)
+fig₁ = tictrace(mss; figure=(; size=(1000, 350)))
+save("rt_tic.svg", fig₁)
 nothing # hide
 ```
 
-![](tic.svg)
+![](rt_tic.svg)
 
 ```@example 1
-# Keep the retention window that contains the alkane ladder and discard the rest.
+# Trim to the n-alkane ladder retention window
 tmss = retentiontrim(mss; start=10u"minute", stop=30u"minute")
 
-# Integer-bin m/z values so all scans share a common nominal-mass axis.
+# Bin m/z values to a common nominal-mass axis
 btmss = binmzvalues(tmss)
 
-# Convert the scan series to a dense retention-by-m/z matrix for matrix workflows.
+# Convert scans to a dense retention-by-m/z matrix
 msm = mscanmatrix(btmss)
 
-# Convert accumulated ion counts to dwell-normalized intensity rates.
+# Normalize counts by dwell time
 nmsm = dwellnormalize(msm)
 
-# Extract one diagnostic ion trace from the processed matrix.
+# Extract the diagnostic m/z 109 ion trace
 xic = mzchrom(nmsm, 109, warning=false)
 
-# Plot the m/z 109 chromatogram as a quick processing check.
-fig_xic = tictrace(xic; figure=(; size=(1000, 359)))
-save("xic.svg", fig_xic)
+# Plot m/z 109 as a processing check
+fig₂ = tictrace(xic; figure=(; size=(1000, 350)))
+save("xic.svg", fig₂)
 nothing # hide
 ```
 
 ![](xic.svg)
 
 ```@example 1
-# Find the n-alkane ladder needed for retention-index calibration.
+# Find the n-alkane ladder for retention-index calibration
 asr = findalkanes(nmsm)
 asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
-# Overlay the detected ladder steps on the TIC to check the annotation.
-fig_ladder = tictrace(nmsm, asr)
-save("ladder.svg", fig_ladder)
+# Overlay detected ladder steps on the TIC
+fig₃ = tictrace(nmsm, asr)
+save("ladder.svg", fig₃)
 nothing # hide
 ```
+
 ![](ladder.svg)
 
 ```@example 1
-# Fit an intensity-variance model from the annotated alkane peaks.
+# Fit an intensity-variance model from the ladder peaks
 avf = fitalkanevariancemodel(nmsm, asr)
 avf.success || throw(ArgumentError(
     "Failed to infer a variance model from standard file: $file"))
 
-# Attach predicted variances to the processed intensity matrix.
+# Attach predicted variances to the intensity matrix
 vmsm = varpred(nmsm, avf)
-```
 
-```@example 1
-# Fit a smooth map from retention time to Kováts retention index.
+# Fit a smooth map from retention time to Kováts retention index
 mapper = fitmap(asr)
 
-# Plot the mapper diagnostics to inspect fit quality and residuals.
-fig_mapper = plot(mapper; size=(1200, 600))
-save("mapper.svg", fig_mapper)
-nothing # hide
-```
-
-![](mapper.svg)
-
-```@example 1
-# Convert from retention time to retention index and propagate intensities and variances.
+# Map retention times to indices and propagate intensities and variances
 vmsm_ri = applymap(mapper, vmsm)
 
-# Plot the mapped TIC to check the transformed retention axis.
-fig_ri_tic = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
-save("ri_tic.svg", fig_ri_tic)
+# Plot the retention-index TIC
+fig₄ = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
+save("ri_tic.svg", fig₄)
 nothing # hide
 ```
 
 ![](ri_tic.svg)
 
 ```@example 1
-# Estimate a smooth baseline on the mapped data.
+# Estimate a smooth baseline on the mapped data
 baseline = arpls(vmsm_ri)
 
-# Overlay the mapped TIC and baseline to check the baseline fit.
-fig_baseline = Figure(; size=(1000, 350))
-ax_baseline = Axis(fig_baseline[1, 1])
-lines!(ax_baseline, vmsm_ri)
-lines!(ax_baseline, baseline)
-save("baseline.svg", fig_baseline)
-nothing # hide
-```
-
-![](baseline.svg)
-
-```@example 1
-# Subtract the baseline so flat regions are centered near zero.
+# Subtract the baseline from the mapped data
 signal = subtractbaseline(vmsm_ri, baseline)
-fig_signal = tictrace(signal; figure=(; size=(1000, 350)))
-save("signal.svg", fig_signal)
+
+# Plot the baseline-corrected TIC
+fig₅ = tictrace(signal; figure=(; size=(1000, 350)))
+save("signal.svg", fig₅)
 nothing # hide
 ```
 
 ![](signal.svg)
-
 
 ## Disclaimer
 
