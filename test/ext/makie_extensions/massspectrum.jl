@@ -109,6 +109,60 @@ end
     @test target_ax.ylabel[] == "Intensity [" * string(u"ms^-1") * "]"
 end
 
+@testset "massspectrum Makie plot with unitful mz and intensities" begin
+    mz = [100.0, 150.0]u"Th"
+    intensities = [2.0, 3.0]u"ms^-1"
+
+    plt = massspectrum(mz, intensities; intensity_threshold=2.5u"ms^-1")
+    @test plt isa Makie.FigureAxisPlot
+    @test plt.plot.mzvalues[] == ustrip.(Ref(u"Th"), mz)
+    @test plt.plot.intensities[] == ustrip.(Ref(u"ms^-1"), intensities)
+
+    labels = plt.plot.mz_labels[]
+    @test length(labels) == 1
+    @test parse(Float64, string(only(labels))) ≈ 150.0
+    ax = only([c for c in plt.figure.content if c isa Makie.Axis])
+    @test ax.xlabel[] == "m/z [" * string(u"Th") * "]"
+    @test ax.ylabel[] == "Intensity [" * string(u"ms^-1") * "]"
+
+    fig_both = Figure()
+    ax_both = Axis(fig_both[1, 1])
+    plot_both = massspectrum!(ax_both, mz, intensities)
+    @test plot_both.mzvalues[] == ustrip.(Ref(u"Th"), mz)
+    @test plot_both.intensities[] == ustrip.(Ref(u"ms^-1"), intensities)
+    @test ax_both.xlabel[] == "m/z [" * string(u"Th") * "]"
+    @test ax_both.ylabel[] == "Intensity [" * string(u"ms^-1") * "]"
+
+    fig_mz = Figure()
+    ax_mz = Axis(fig_mz[1, 1])
+    numeric_intensities = [4.0, 5.0]
+    plot_mz = massspectrum!(ax_mz, mz, numeric_intensities)
+    @test plot_mz.mzvalues[] == ustrip.(Ref(u"Th"), mz)
+    @test plot_mz.intensities[] == numeric_intensities
+    @test ax_mz.xlabel[] == "m/z [" * string(u"Th") * "]"
+    @test ax_mz.ylabel[] == "Intensity [unitless]"
+end
+
+@testset "massspectrum numeric plot kwargs and font helpers" begin
+    ext = Base.get_extension(JuChrom, :MakieExtension)
+    kwargs = (; linecolor=:red, linewidth=2.0)
+    @test ext.massspectrum_numeric_plot_kwargs(kwargs, u"ms^-1") == kwargs
+
+    plot_kwargs = ext.massspectrum_numeric_plot_kwargs(
+        (; intensity_threshold=2.0u"s^-1", linecolor=:red),
+        u"ms^-1"
+    )
+    @test plot_kwargs.intensity_threshold ≈ 0.002
+    @test plot_kwargs.linecolor == :red
+    @test_throws ArgumentError ext.massspectrum_numeric_plot_kwargs(
+        (; intensity_threshold=1.0u"s^-1"),
+        nothing
+    )
+
+    @test ext.massspectrum_measurement_font(:regular) ==
+        Makie.to_font(Makie.MAKIE_DEFAULT_THEME.fonts, :regular)
+end
+
 @testset "massspectrum intensity threshold suppresses labels" begin
     mz = [100.0, 200.0]
     intensities = [0.5, 10.0]

@@ -127,4 +127,21 @@ end
     @test !occursin("[0.0, 1.0, 0.0]", plain)
 end
 
+@testset "MassSpectrum display handles unitless single-point spectra" begin
+    ms = MassSpectrum([100.0], [10.0])
+
+    @test JuChrom.mass_spectrum_mz_range_string(ms) == "100"
+    @test JuChrom.mass_spectrum_unit_suffix(nothing) == ""
+    @test JuChrom.mass_spectrum_unit_string(nothing) == "unitless"
+
+    compact = sprint(show, ms)
+    plain = sprint(io -> show(io, MIME"text/plain"(), ms))
+
+    @test occursin("MassSpectrum(points=1", compact)
+    @test occursin("mz=100", compact)
+    @test occursin("intensityunit=unitless", compact)
+    @test occursin("m/z range: 100", plain)
+    @test occursin("intensity unit: unitless", plain)
+end
+
 end  # module TestMassSpectra

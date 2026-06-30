@@ -378,6 +378,10 @@ end
     @test occursin("AlkaneLadderMassSpectrumExtraction", compact)
     @test occursin("spectra=2 C spectra (C8-C9)", compact)
     @test occursin("failures=0 C spectra (none)", compact)
+    @test JuChrom.alkane_ladder_mass_spectrum_carbon_string(Int[]) == "none"
+    @test JuChrom.alkane_ladder_mass_spectrum_carbon_string([8, 9]) == "C8-C9"
+    @test JuChrom.alkane_ladder_mass_spectrum_carbon_string([8, 10, 11, 13]) ==
+        "C8, C10-C11, C13"
     @test occursin("settings=", compact)
     @test occursin("spectra: 2 C spectra (C8-C9)", plain)
     @test occursin("failures: 0 C spectra (none)", plain)
