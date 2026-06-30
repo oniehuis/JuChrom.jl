@@ -64,7 +64,12 @@ file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 
 # Plot the raw total ion chromatogram (TIC); notice unitfree intensity
-fig₁ = tictrace(mss; retentionunit=u"minute", figure=(; size=(1000, 350)))
+fig₁ = tictrace(
+  mss; 
+  retentionunit=u"minute", 
+  figure=(; size=(1000, 350)),
+  axis=(; xticks=0:1:40)
+)
 save("rt_tic.svg", fig₁)
 nothing # hide
 ```
@@ -73,7 +78,7 @@ nothing # hide
 
 ```@example 1
 # Trim to the n-alkane ladder retention window
-tmss = retentiontrim(mss; start=10u"minute", stop=30u"minute")
+tmss = retentiontrim(mss; start=4.1u"minute", stop=29.7u"minute")
 
 # Bin m/z values to a common nominal-mass axis
 btmss = binmzvalues(tmss)
@@ -88,7 +93,12 @@ nmsm = dwellnormalize(msm)
 xic = mzchrom(nmsm, 104, warning=false)
 
 # Plot m/z 104 trace; notice unitful intensity
-fig₂ = tictrace(xic; retentionunit=u"minute", figure=(; size=(1000, 350)))
+fig₂ = tictrace(
+  xic; 
+  retentionunit=u"minute", 
+  figure=(; size=(1000, 350)), 
+  axis=(; xticks=0:1:40)
+)
 save("xic.svg", fig₂)
 nothing # hide
 ```
@@ -102,7 +112,12 @@ asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
 # Overlay detected ladder steps on the TIC
-fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", figure=(; size=(1000, 350)))
+fig₃ = tictrace(
+  nmsm, 
+  asr; 
+  retentionunit=u"minute", 
+  figure=(; size=(1000, 350))
+)
 save("ladder.svg", fig₃)
 nothing # hide
 ```

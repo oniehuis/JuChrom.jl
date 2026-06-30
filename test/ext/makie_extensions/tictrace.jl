@@ -65,6 +65,12 @@ function only_axis(fig)
     only([content for content in fig.content if content isa Makie.Axis])
 end
 
+function test_axis_xlimits(ax, xmin, xmax)
+    limits = ax.finallimits[]
+    @test limits.origin[1] ≈ xmin
+    @test limits.origin[1] + limits.widths[1] ≈ xmax
+end
+
 @testset "tictrace overlays ladder steps from AlkaneSeriesResult" begin
     msm, result = synthetic_ladder_result()
     ext = Base.get_extension(JuChrom, :MakieExtension)
@@ -226,6 +232,7 @@ end
     fig = tictrace(
         msm;
         figure=(; size=(320, 240)),
+        axis=(; xticks=1.0:0.25:2.0),
         retentionunit=u"minute",
         intensityunit=u"nA",
         color=:red,
@@ -239,10 +246,12 @@ end
     @test ax.xlabel[] == "Retention [minute]"
     @test ax.ylabel[] == "Intensity [nA]"
     @test ax.title[] == ""
+    @test ax.xticks[] == 1.0:0.25:2.0
     @test plt isa Makie.Lines
     @test plt.arg1[] ≈ [1.0, 2.0]
     @test plt.arg2[] ≈ [3.0, 7.0]
     @test plt.linewidth[] ≈ 2
+    test_axis_xlimits(ax, 1.0, 2.0)
 
     titled = tictrace(
         msm;
@@ -269,6 +278,7 @@ end
     @test plt_existing.arg1[] ≈ [1.0, 2.0]
     @test plt_existing.arg2[] ≈ [3.0, 7.0]
     @test plt_existing.linewidth[] ≈ 3
+    test_axis_xlimits(ax_existing, 1.0, 2.0)
 
     vmsm = VarianceMassScanMatrix(msm, ones(size(X)))
     vfig = tictrace(vmsm; retentionunit=u"minute", intensityunit=u"nA")
@@ -281,9 +291,11 @@ end
         MassScan(120.0u"s", [100.0, 101.0], [3000.0, 4000.0]u"pA")
     ])
     mfig = tictrace(mss; retentionunit=u"minute", intensityunit=u"nA")
-    mplt = only(only_axis(mfig).scene.plots)
+    m_ax = only_axis(mfig)
+    mplt = only(m_ax.scene.plots)
     @test mplt.arg1[] ≈ [1.0, 2.0]
     @test mplt.arg2[] ≈ [3.0, 7.0]
+    test_axis_xlimits(m_ax, 1.0, 2.0)
 
     unitless = MassScanMatrix([1.0, 2.0], [100.0], reshape([5.0, 7.0], 2, 1))
     unitless_ax = only_axis(tictrace(unitless))
@@ -306,6 +318,7 @@ end
     @test axplot.plot.arg1[] ≈ [1.0, 2.0]
     @test axplot.plot.arg2[] ≈ [3.0, 7.0]
     @test axplot.plot.linewidth[] ≈ 4
+    test_axis_xlimits(axplot.axis, 1.0, 2.0)
     @test_throws ArgumentError tictrace(
         Figure()[1, 1],
         msm;
@@ -416,6 +429,18 @@ end
         msm;
         figure=(; size=(320, 240))
     )
+end
+
+@testset "tictrace x limit helper handles empty and single retention vectors" begin
+    ext = Base.get_extension(JuChrom, :MakieExtension)
+    fig = Figure()
+    ax = Axis(fig[1, 1])
+
+    @test ext.tictrace_set_xlimits!(ax, Float64[]) === ax
+    @test ax.limits[] == (nothing, nothing)
+
+    @test ext.tictrace_set_xlimits!(ax, [5.0]) === ax
+    test_axis_xlimits(ax, 4.5, 5.5)
 end
 
 @testset "tictrace! overlays ladder steps on an existing axis" begin

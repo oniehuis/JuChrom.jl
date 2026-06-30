@@ -377,7 +377,8 @@ the scan intensities.
 `retentionunit` and `intensityunit` are converted before numeric values are stripped. The
 default `nothing` strips the stored unit when present and leaves unitless data unchanged.
 Line keywords are forwarded to Makie's `lines!`. Axis keywords are passed via `axis`, and
-the title is empty unless `title` or `axis=(; title=...)` is supplied.
+the title is empty unless `title` or `axis=(; title=...)` is supplied. Tick intervals can
+be controlled with Makie's `xticks`, for example `axis=(; xticks=0:1:40)`.
 """
 function tictrace(
     data::TicTraceLineData;
@@ -471,7 +472,11 @@ function tictrace!(
             defaulttitle=false
         )
     )
-    tictrace_lines!(ax, data, retentionunit, intensityunit; kwargs...)
+    x, y = tictrace_xy(data, retentionunit, intensityunit)
+    plt = Makie.lines!(ax, x, y; kwargs...)
+    tictrace_set_xlimits!(ax, x)
+
+    plt
 end
 
 """
@@ -756,7 +761,16 @@ function tictrace_set_limits!(
     end
 
     ylims!(ax, 0, ylimit)
-    isempty(x) || xlims!(ax, minimum(x), maximum(x))
+    tictrace_set_xlimits!(ax, x)
+
+    ax
+end
+
+function tictrace_set_xlimits!(ax::Axis, x::AbstractVector)
+    isempty(x) && return ax
+
+    xmin, xmax = extrema(x)
+    xmin == xmax ? xlims!(ax, xmin - 0.5, xmax + 0.5) : xlims!(ax, xmin, xmax)
 
     ax
 end
