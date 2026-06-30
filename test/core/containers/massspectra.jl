@@ -94,4 +94,37 @@ end
     @test_throws ArgumentError MassSpectrum([100.0, 150.0], bad_ints)
 end
 
+@testset "MassSpectrum display is compact" begin
+    ms = MassSpectrum(
+        [100.0, 150.0, 200.0]u"Th",
+        [10.0, 50.0, 5.0]u"pA";
+        attrs=(
+            source=:test,
+            model=:demo,
+            ladderstep=20,
+            peak_model=[0.0, 1.0, 0.0],
+            fit_success=trues(3)
+        )
+    )
+
+    compact = sprint(show, ms)
+    plain = sprint(io -> show(io, MIME"text/plain"(), ms))
+
+    @test occursin("MassSpectrum(points=3", compact)
+    @test occursin("mz=100-200 Th", compact)
+    @test occursin("intensityunit=pA", compact)
+    @test occursin("basepeak=m/z 150 Th, intensity 50 pA", compact)
+    @test occursin("attrs=(source=test, model=demo, ladderstep=20", compact)
+    @test !occursin("Vector{", compact)
+
+    @test occursin("MassSpectrum", plain)
+    @test occursin("points: 3", plain)
+    @test occursin("m/z range: 100-200 Th", plain)
+    @test occursin("intensity unit: pA", plain)
+    @test occursin("base peak: m/z 150 Th, intensity 50 pA", plain)
+    @test occursin("total intensity: 65 pA", plain)
+    @test occursin("peak_model=3-element Vector", plain)
+    @test !occursin("[0.0, 1.0, 0.0]", plain)
+end
+
 end  # module TestMassSpectra

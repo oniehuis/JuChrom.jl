@@ -92,7 +92,7 @@ but they do not set axis labels.
 ## Annotated alkane ladders
 
 Use `tictrace(msm, result)` or `tictrace!(ax, msm, result)` for the higher-level TIC view
-with baseline and alkane ladder annotations. These methods use the same `figure`, `axis`,
+with alkane ladder annotations. These methods use the same `figure`, `axis`,
 `retentionunit`, and `intensityunit` keywords:
 
 ```julia
@@ -105,5 +105,6 @@ fig = tictrace(
 )
 ```
 
-The TIC line and baseline, when present, are converted to `intensityunit` before plotting.
-The ladder-step retentions are converted to `retentionunit`.
+The TIC line is converted to `intensityunit` before plotting, and ladder-step retentions
+are converted to `retentionunit`. The fitted baseline is hidden by default; pass
+`baseline=true` to show it.

@@ -355,6 +355,32 @@ end
     @test isempty(extraction.failures)
     @test !attrs(extraction.spectra[8]).ion_threaded
     @test !attrs(extraction.spectra[9]).ion_threaded
+    @test keys(extraction) == [8, 9]
+    @test haskey(extraction, 8)
+    @test haskey(extraction, 9)
+    @test !haskey(extraction, 10)
+    @test extraction[8] === extraction.spectra[8]
+    @test extraction[[9, 8]] == [extraction.spectra[9], extraction.spectra[8]]
+    @test get(extraction, 9, nothing) === extraction.spectra[9]
+    @test get(extraction, 10, nothing) === nothing
+    @test values(extraction) == [extraction.spectra[8], extraction.spectra[9]]
+    @test collect(extraction) == [extraction.spectra[8], extraction.spectra[9]]
+    @test collect(pairs(extraction)) == [
+        8 => extraction.spectra[8],
+        9 => extraction.spectra[9]
+    ]
+    @test length(extraction) == 2
+    @test !isempty(extraction)
+    @test_throws KeyError extraction[10]
+
+    compact = sprint(show, extraction)
+    plain = sprint(io -> show(io, MIME"text/plain"(), extraction))
+    @test occursin("AlkaneLadderMassSpectrumExtraction", compact)
+    @test occursin("spectra=2 C spectra (C8-C9)", compact)
+    @test occursin("failures=0 C spectra (none)", compact)
+    @test occursin("settings=", compact)
+    @test occursin("spectra: 2 C spectra (C8-C9)", plain)
+    @test occursin("failures: 0 C spectra (none)", plain)
 end
 
 @testset "alkaneladdermassspectra validates checksums and reconstructs baseline signal" begin

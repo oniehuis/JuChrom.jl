@@ -84,10 +84,10 @@ msm = mscanmatrix(btmss)
 # Normalize intensity by dwell time
 nmsm = dwellnormalize(msm)
 
-# Extract the m/z 85 ion trace
-xic = mzchrom(nmsm, 85, warning=false)
+# Extract the trace of some ion of interest (e.g., m/z 104)
+xic = mzchrom(nmsm, 104, warning=false)
 
-# Plot m/z 85 as a processing check; notice unitful intensity
+# Plot m/z 104 trace; notice unitful intensity
 fig₂ = tictrace(xic; retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("xic.svg", fig₂)
 nothing # hide
@@ -110,6 +110,23 @@ nothing # hide
 ![](ladder.svg)
 
 ```@example 1
+# Extract spectra for the annotated ladder steps
+mss = alkaneladdermassspectra(nmsm, asr)
+
+# Select eicosane (C20), which must have been extracted
+c_count = 20
+haskey(mss, c_count) || throw(ArgumentError("No spectrum extracted for C$c_count"))
+ms_c20 = mss[c_count]
+
+# Plot the selected ladder spectrum
+fig₄ = massspectrum(ms_c20)
+save("ms_c20.svg", fig₄)
+nothing # hide
+```
+
+![](ms_c20.svg)
+
+```@example 1
 # Fit an intensity-variance model from the ladder peaks
 avf = fitalkanevariancemodel(nmsm, asr)
 avf.success || throw(ArgumentError(
@@ -125,8 +142,8 @@ mapper = fitmap(asr)
 vmsm_ri = applymap(mapper, vmsm)
 
 # Plot the retention-index TIC
-fig₄ = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
-save("ri_tic.svg", fig₄)
+fig₅ = tictrace(vmsm_ri; figure=(; size=(1000, 350)))
+save("ri_tic.svg", fig₅)
 nothing # hide
 ```
 
@@ -140,8 +157,8 @@ baseline = arpls(vmsm_ri)
 signal = subtractbaseline(vmsm_ri, baseline)
 
 # Plot the baseline-corrected TIC
-fig₅ = tictrace(signal; figure=(; size=(1000, 350)))
-save("signal.svg", fig₅)
+fig₆ = tictrace(signal; figure=(; size=(1000, 350)))
+save("signal.svg", fig₆)
 nothing # hide
 ```
 

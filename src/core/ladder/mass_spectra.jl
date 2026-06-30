@@ -39,6 +39,134 @@ struct AlkaneLadderMassSpectrumStepExtraction
     failure::Union{Nothing, String}
 end
 
+function Base.show(io::IO, extraction::AlkaneLadderMassSpectrumExtraction)
+    print(io, "AlkaneLadderMassSpectrumExtraction(")
+    print(io, "spectra=", alkane_ladder_mass_spectrum_count_string(extraction.spectra))
+    print(io, ", failures=", alkane_ladder_mass_spectrum_count_string(extraction.failures))
+    print(io, ", settings=", alkane_ladder_mass_spectrum_settings_string(extraction.settings))
+    print(io, ")")
+end
+
+function Base.show(
+    io::IO,
+    ::MIME"text/plain",
+    extraction::AlkaneLadderMassSpectrumExtraction
+)
+    println(io, "AlkaneLadderMassSpectrumExtraction")
+    println(io, "  spectra: ", alkane_ladder_mass_spectrum_count_string(extraction.spectra))
+    println(io, "  failures: ", alkane_ladder_mass_spectrum_count_string(extraction.failures))
+    print(io, "  settings: ",
+        alkane_ladder_mass_spectrum_settings_string(extraction.settings))
+end
+
+function Base.getindex(
+    extraction::AlkaneLadderMassSpectrumExtraction,
+    carbon::Integer
+)
+    extraction.spectra[Int(carbon)]
+end
+
+function Base.getindex(
+    extraction::AlkaneLadderMassSpectrumExtraction,
+    carbons::AbstractVector{<:Integer}
+)
+    [extraction[carbon] for carbon in carbons]
+end
+
+function Base.get(
+    extraction::AlkaneLadderMassSpectrumExtraction,
+    carbon::Integer,
+    default
+)
+    get(extraction.spectra, Int(carbon), default)
+end
+
+function Base.haskey(
+    extraction::AlkaneLadderMassSpectrumExtraction,
+    carbon::Integer
+)
+    haskey(extraction.spectra, Int(carbon))
+end
+
+function Base.keys(extraction::AlkaneLadderMassSpectrumExtraction)
+    sort!(collect(keys(extraction.spectra)))
+end
+
+function Base.values(extraction::AlkaneLadderMassSpectrumExtraction)
+    [extraction.spectra[carbon] for carbon in keys(extraction)]
+end
+
+function Base.pairs(extraction::AlkaneLadderMassSpectrumExtraction)
+    [carbon => extraction.spectra[carbon] for carbon in keys(extraction)]
+end
+
+Base.length(extraction::AlkaneLadderMassSpectrumExtraction) = length(extraction.spectra)
+Base.isempty(extraction::AlkaneLadderMassSpectrumExtraction) = isempty(extraction.spectra)
+
+Base.IteratorSize(::Type{<:AlkaneLadderMassSpectrumExtraction}) = Base.HasLength()
+Base.IteratorEltype(::Type{<:AlkaneLadderMassSpectrumExtraction}) = Base.HasEltype()
+Base.eltype(::Type{<:AlkaneLadderMassSpectrumExtraction{T}}) where {T} = valtype(T)
+
+function Base.iterate(extraction::AlkaneLadderMassSpectrumExtraction)
+    carbons = keys(extraction)
+    isempty(carbons) && return nothing
+
+    extraction.spectra[first(carbons)], (carbons, 2)
+end
+
+function Base.iterate(extraction::AlkaneLadderMassSpectrumExtraction, state)
+    carbons, index = state
+    index > length(carbons) && return nothing
+
+    extraction.spectra[carbons[index]], (carbons, index + 1)
+end
+
+function alkane_ladder_mass_spectrum_count_string(items::AbstractDict)
+    carbons = sort!(collect(keys(items)))
+    count = length(carbons)
+    noun = count == 1 ? "C spectrum" : "C spectra"
+
+    "$count $noun ($(alkane_ladder_mass_spectrum_carbon_string(carbons)))"
+end
+
+function alkane_ladder_mass_spectrum_carbon_string(carbons::AbstractVector{<:Integer})
+    isempty(carbons) && return "none"
+
+    ranges = UnitRange{Int}[]
+    range_start = Int(first(carbons))
+    previous = range_start
+    for carbon in Iterators.drop(carbons, 1)
+        carbon = Int(carbon)
+        if carbon == previous + 1
+            previous = carbon
+        else
+            push!(ranges, range_start:previous)
+            range_start = carbon
+            previous = carbon
+        end
+    end
+    push!(ranges, range_start:previous)
+
+    join(alkane_ladder_mass_spectrum_carbon_range_string.(ranges), ", ")
+end
+
+function alkane_ladder_mass_spectrum_carbon_range_string(range::UnitRange{Int})
+    first(range) == last(range) && return "C$(first(range))"
+
+    "C$(first(range))-C$(last(range))"
+end
+
+function alkane_ladder_mass_spectrum_settings_string(
+    settings::AlkaneLadderMassSpectrumSettings
+)
+    string(
+        "nonnegative=", settings.nonnegative,
+        ", variancefloor=", settings.variancefloor,
+        ", acceptedonly=", settings.acceptedonly,
+        ", threaded=", settings.threaded
+    )
+end
+
 function alkane_series_datainfo(
     rawmsm::AbstractMassScanMatrix,
     signalmsm::AbstractMassScanMatrix,

@@ -10,7 +10,7 @@ using Unitful
     step_numbers
 ) do scene
     Theme(
-        linecolor=:black,
+        linecolor=Makie.wong_colors()[1],
         linewidth=1.0,
         baselinecolor=:green,
         baselinealpha=0.8,
@@ -23,9 +23,11 @@ using Unitful
         labelfont=:bold,
         labelfontsize=11,
         labelpadding=1,
+        labeltopgappixels=3,
         labelspacingfactor=1.15,
         yheadroom=1.05,
-        labelyfraction=0.99
+        steplabelgappixels=3,
+        ticstepgappixels=6
     )
 end
 
@@ -43,14 +45,7 @@ function Makie.plot!(trace::TicTrace)
     Makie.add_input!(trace.attributes, :viewport_obs, ax.scene.viewport)
     Makie.add_input!(trace.attributes, :limits_obs, ax.finallimits)
 
-    map!(
-        trace.attributes,
-        [:retentions, :intensities, :baseline_intensities, :yheadroom],
-        :limits_update
-    ) do retentions, intensities, baseline_intensities, yheadroom
-        tictrace_set_limits!(ax, retentions, yheadroom, intensities, baseline_intensities)
-        nothing
-    end
+    tictrace_register_limit_updates!(ax, trace)
 
     map!(
         trace.attributes,
@@ -61,15 +56,17 @@ function Makie.plot!(trace::TicTrace)
             :labelfont,
             :labelfontsize,
             :labelpadding,
+            :labeltopgappixels,
             :labelspacingfactor,
-            :labelyfraction,
+            :steplabelgappixels,
             :viewport_obs,
             :limits_obs
         ],
-        [:label_positions, :label_texts]
+        [:label_positions, :label_texts, :step_ymax]
     ) do step_retentions, step_numbers, labels, labelfont, labelfontsize,
-            labelpadding, labelspacingfactor, labelyfraction, viewport, limits
-        tictrace_visible_label_data(
+            labelpadding, labeltopgappixels, labelspacingfactor, steplabelgappixels,
+            viewport, limits
+        label_positions, label_texts = tictrace_visible_label_data(
             ax,
             step_retentions,
             step_numbers,
@@ -77,11 +74,25 @@ function Makie.plot!(trace::TicTrace)
             labelfont,
             labelfontsize,
             labelpadding,
+            labeltopgappixels,
             labelspacingfactor,
-            labelyfraction,
+            steplabelgappixels,
             viewport,
             limits
         )
+        layout = tictrace_ladder_y_layout(
+            step_numbers,
+            labels,
+            labelfont,
+            labelfontsize,
+            labelpadding,
+            labeltopgappixels,
+            steplabelgappixels,
+            0,
+            viewport
+        )
+        step_ymax = layout.step_ymax
+        label_positions, label_texts, step_ymax
     end
 
     lines!(
@@ -94,6 +105,7 @@ function Makie.plot!(trace::TicTrace)
     vlines!(
         trace,
         trace.step_retentions;
+        ymax=trace.step_ymax,
         color=lift((color, alpha) -> (color, alpha), trace.stepcolor, trace.stepalpha),
         linewidth=trace.steplinewidth
     )
@@ -104,20 +116,58 @@ function Makie.plot!(trace::TicTrace)
         color=trace.linecolor,
         linewidth=trace.linewidth
     )
-    textlabel!(
+    text!(
         trace,
         trace.label_positions;
         text=trace.label_texts,
-        text_rotation=pi / 2,
-        text_align=(:right, :center),
-        text_color=trace.labelcolor,
-        background_color=:white,
-        strokewidth=0,
-        padding=trace.labelpadding,
-        cornerradius=0,
+        rotation=pi / 2,
+        align=(:right, :center),
+        color=trace.labelcolor,
         font=trace.labelfont,
         fontsize=trace.labelfontsize
     )
+
+    trace
+end
+
+function tictrace_register_limit_updates!(ax::Axis, trace::TicTrace)
+    Makie.Observables.onany(
+        trace,
+        trace.retentions,
+        trace.intensities,
+        trace.baseline_intensities,
+        trace.yheadroom,
+        trace.step_numbers,
+        trace.labels,
+        trace.labelfont,
+        trace.labelfontsize,
+        trace.labelpadding,
+        trace.labeltopgappixels,
+        trace.steplabelgappixels,
+        trace.ticstepgappixels,
+        ax.scene.viewport;
+        update=true
+    ) do retentions, intensities, baseline_intensities, yheadroom, step_numbers, labels,
+            labelfont, labelfontsize, labelpadding, labeltopgappixels, steplabelgappixels,
+            ticstepgappixels, viewport
+        tictrace_set_limits!(
+            ax,
+            retentions,
+            yheadroom,
+            intensities,
+            baseline_intensities;
+            step_numbers=step_numbers,
+            labels=labels,
+            labelfont=labelfont,
+            labelfontsize=labelfontsize,
+            labelpadding=labelpadding,
+            labeltopgappixels=labeltopgappixels,
+            steplabelgappixels=steplabelgappixels,
+            ticstepgappixels=ticstepgappixels,
+            viewport=viewport
+        )
+        nothing
+    end
 
     trace
 end
@@ -131,9 +181,9 @@ function tictrace(
     title::Union{Nothing, AbstractString}=nothing,
     retentionunit::Union{Nothing, Unitful.Units}=nothing,
     intensityunit::Union{Nothing, Unitful.Units}=nothing,
-    color=:black,
+    color=Makie.wong_colors()[1],
     linewidth::Real=1.0,
-    baseline::Bool=true,
+    baseline::Bool=false,
     baselinecolor=:green,
     baselinealpha::Real=0.8,
     baselinelinewidth::Real=3.0 * linewidth,
@@ -148,9 +198,11 @@ function tictrace(
     labelfont=:bold,
     labelfontsize::Real=11,
     labelpadding::Real=1,
+    labeltopgappixels::Real=3,
     labelspacingfactor::Real=1.15,
     yheadroom::Real=1.05,
-    labelyfraction::Real=0.99
+    steplabelgappixels::Real=3,
+    ticstepgappixels::Real=6
 )
     fig = Figure(; merge((; size=size), figure)...)
     ax = Axis(
@@ -188,9 +240,11 @@ function tictrace(
         labelfont=labelfont,
         labelfontsize=labelfontsize,
         labelpadding=labelpadding,
+        labeltopgappixels=labeltopgappixels,
         labelspacingfactor=labelspacingfactor,
         yheadroom=yheadroom,
-        labelyfraction=labelyfraction
+        steplabelgappixels=steplabelgappixels,
+        ticstepgappixels=ticstepgappixels
     )
 
     fig
@@ -204,9 +258,9 @@ function tictrace!(
     title::Union{Nothing, AbstractString}=nothing,
     retentionunit::Union{Nothing, Unitful.Units}=nothing,
     intensityunit::Union{Nothing, Unitful.Units}=nothing,
-    color=:black,
+    color=Makie.wong_colors()[1],
     linewidth::Real=1.0,
-    baseline::Bool=true,
+    baseline::Bool=false,
     baselinecolor=:green,
     baselinealpha::Real=0.8,
     baselinelinewidth::Real=3.0 * linewidth,
@@ -221,9 +275,11 @@ function tictrace!(
     labelfont=:bold,
     labelfontsize::Real=11,
     labelpadding::Real=1,
+    labeltopgappixels::Real=3,
     labelspacingfactor::Real=1.15,
     yheadroom::Real=1.05,
-    labelyfraction::Real=0.99
+    steplabelgappixels::Real=3,
+    ticstepgappixels::Real=6
 )
     tictrace_validate_checksum(msm, result)
     tictrace_set_axis_attributes!(
@@ -250,7 +306,22 @@ function tictrace!(
         gapfilled,
         edgeextended
     )
-    tictrace_set_limits!(ax, x, yheadroom, y, baseline_y)
+    tictrace_set_limits!(
+        ax,
+        x,
+        yheadroom,
+        y,
+        baseline_y;
+        step_numbers=step_numbers,
+        labels=labels,
+        labelfont=labelfont,
+        labelfontsize=labelfontsize,
+        labelpadding=labelpadding,
+        labeltopgappixels=labeltopgappixels,
+        steplabelgappixels=steplabelgappixels,
+        ticstepgappixels=ticstepgappixels,
+        viewport=ax.scene.viewport[]
+    )
 
     tictrace!(
         ax,
@@ -272,9 +343,11 @@ function tictrace!(
         labelfont=labelfont,
         labelfontsize=labelfontsize,
         labelpadding=labelpadding,
+        labeltopgappixels=labeltopgappixels,
         labelspacingfactor=labelspacingfactor,
         yheadroom=yheadroom,
-        labelyfraction=labelyfraction
+        steplabelgappixels=steplabelgappixels,
+        ticstepgappixels=ticstepgappixels
     )
 
     ax
@@ -653,10 +726,36 @@ function tictrace_set_limits!(
     ax::Axis,
     x::AbstractVector,
     yheadroom::Real,
-    yseries::AbstractVector...
+    yseries::AbstractVector...;
+    step_numbers::AbstractVector{<:Integer}=Int[],
+    labels::Bool=false,
+    labelfont=:bold,
+    labelfontsize::Real=11,
+    labelpadding::Real=1,
+    labeltopgappixels::Real=3,
+    steplabelgappixels::Real=3,
+    ticstepgappixels::Real=6,
+    viewport=nothing
 )
     ymax = tictrace_ymax(yseries)
-    ylims!(ax, 0, yheadroom * ymax)
+    ylimit = yheadroom * ymax
+    if labels && !isempty(step_numbers) && !isnothing(viewport)
+        layout = tictrace_ladder_y_layout(
+            step_numbers,
+            labels,
+            labelfont,
+            labelfontsize,
+            labelpadding,
+            labeltopgappixels,
+            steplabelgappixels,
+            ticstepgappixels,
+            viewport
+        )
+        layout.labelbandpixels > 0 && layout.data_ymax > 0 &&
+            (ylimit = ymax / layout.data_ymax)
+    end
+
+    ylims!(ax, 0, ylimit)
     isempty(x) || xlims!(ax, minimum(x), maximum(x))
 
     ax
@@ -692,8 +791,9 @@ function tictrace_visible_label_data(
     labelfont,
     labelfontsize::Real,
     labelpadding::Real,
+    labeltopgappixels::Real,
     labelspacingfactor::Real,
-    labelyfraction::Real,
+    steplabelgappixels::Real,
     viewport,
     limits
 )
@@ -701,7 +801,18 @@ function tictrace_visible_label_data(
     isempty(step_retentions) && return Point2f[], String[]
     tictrace_limits_are_usable(limits) || return Point2f[], String[]
 
-    y = limits.origin[2] + labelyfraction * limits.widths[2]
+    layout = tictrace_ladder_y_layout(
+        step_numbers,
+        labels,
+        labelfont,
+        labelfontsize,
+        labelpadding,
+        labeltopgappixels,
+        steplabelgappixels,
+        0,
+        viewport
+    )
+    y = limits.origin[2] + layout.label_yfraction * limits.widths[2]
     positions = Point2f[]
     labeltexts = String[]
     occupied = Tuple{Float64, Float64}[]
@@ -722,6 +833,7 @@ function tictrace_visible_label_data(
             labelpadding,
             labelspacingfactor
         )
+        tictrace_xspan_inside_viewport(x0, x1, viewport) || continue
         any(region -> tictrace_xspans_overlap(x0, x1, region...), occupied) &&
             continue
 
@@ -736,6 +848,83 @@ end
 function tictrace_limits_are_usable(limits)
     all(isfinite, limits.origin) && all(isfinite, limits.widths) &&
         all(>(0), limits.widths)
+end
+
+function tictrace_ladder_y_layout(
+    step_numbers::AbstractVector{<:Integer},
+    labels::Bool,
+    labelfont,
+    labelfontsize::Real,
+    labelpadding::Real,
+    labeltopgappixels::Real,
+    steplabelgappixels::Real,
+    ticstepgappixels::Real,
+    viewport
+)
+    fallback = (
+        label_yfraction=1.0,
+        step_ymax=1.0,
+        data_ymax=1.0,
+        labelbandpixels=0.0,
+        labelreservepixels=0.0
+    )
+    labels || return fallback
+    isempty(step_numbers) && return fallback
+    isnothing(viewport) && return fallback
+    viewportheight = Float64(viewport.widths[2])
+    isfinite(viewportheight) && viewportheight > 0 || return fallback
+
+    labelpadding = max(0.0, Float64(labelpadding))
+    labeltopgappixels = max(0.0, Float64(labeltopgappixels))
+    steplabelgappixels = max(0.0, Float64(steplabelgappixels))
+    ticstepgappixels = max(0.0, Float64(ticstepgappixels))
+    labelbandpixels = tictrace_label_band_pixels(
+        step_numbers,
+        labelfont,
+        labelfontsize,
+        labelpadding
+    )
+    labelreservepixels = max(0.0, labeltopgappixels + labelbandpixels - labelpadding)
+    label_yfraction = clamp(
+        (viewportheight - labeltopgappixels) / viewportheight,
+        0.0,
+        1.0
+    )
+    step_ymax = clamp(
+        (viewportheight - labelreservepixels - steplabelgappixels) / viewportheight,
+        0.0,
+        1.0
+    )
+    data_ymax = clamp(
+        (viewportheight - labelreservepixels - steplabelgappixels - ticstepgappixels) /
+            viewportheight,
+        0.0,
+        1.0
+    )
+
+    (
+        label_yfraction=label_yfraction,
+        step_ymax=step_ymax,
+        data_ymax=data_ymax,
+        labelbandpixels=labelbandpixels,
+        labelreservepixels=labelreservepixels
+    )
+end
+
+function tictrace_label_band_pixels(
+    step_numbers::AbstractVector{<:Integer},
+    labelfont,
+    labelfontsize::Real,
+    labelpadding::Real
+)
+    font = tictrace_measurement_font(labelfont)
+    labelheight = 0.0
+    for step_number in step_numbers
+        box = Makie.text_bb(string(step_number), font, labelfontsize)
+        labelheight = max(labelheight, Float64(box.widths[1]))
+    end
+
+    labelheight + 2 * max(0.0, Float64(labelpadding))
 end
 
 function tictrace_label_pixel_xspan(
@@ -766,6 +955,12 @@ end
 
 function tictrace_xspans_overlap(x0::Real, x1::Real, other0::Real, other1::Real)
     max(x0, other0) ≤ min(x1, other1)
+end
+
+function tictrace_xspan_inside_viewport(x0::Real, x1::Real, viewport)
+    viewportwidth = Float64(viewport.widths[1])
+    isfinite(viewportwidth) && viewportwidth > 0 || return false
+    0 ≤ x0 && x1 ≤ viewportwidth
 end
 
 function tictrace_step_retention(

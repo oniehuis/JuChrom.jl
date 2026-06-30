@@ -94,6 +94,122 @@ struct MassSpectrum{
     end
 end
 
+function Base.show(io::IO, ms::AbstractMassSpectrum)
+    print(io, "MassSpectrum(")
+    print(io, "points=", mzcount(ms))
+    print(io, ", mz=", mass_spectrum_mz_range_string(ms))
+    print(io, ", intensityunit=", mass_spectrum_unit_string(intensityunit(ms)))
+    print(io, ", basepeak=", mass_spectrum_base_peak_string(ms))
+    attr_string = mass_spectrum_attrs_string(attrs(ms); compact=true)
+    isempty(attr_string) || print(io, ", attrs=(", attr_string, ")")
+    print(io, ")")
+end
+
+function Base.show(io::IO, ::MIME"text/plain", ms::AbstractMassSpectrum)
+    println(io, "MassSpectrum")
+    println(io, "  points: ", mzcount(ms))
+    println(io, "  m/z range: ", mass_spectrum_mz_range_string(ms))
+    println(io, "  intensity unit: ", mass_spectrum_unit_string(intensityunit(ms)))
+    println(io, "  base peak: ", mass_spectrum_base_peak_string(ms))
+    println(io, "  total intensity: ", mass_spectrum_total_intensity_string(ms))
+    attr_string = mass_spectrum_attrs_string(attrs(ms); compact=false)
+    isempty(attr_string) || print(io, "  attrs: ", attr_string)
+end
+
+function mass_spectrum_mz_range_string(ms::AbstractMassSpectrum)
+    mzs = ms.mzvalues
+    unit = mzunit(ms)
+    if length(mzs) == 1
+        return mass_spectrum_quantity_string(first(mzs), unit)
+    end
+
+    string(
+        mass_spectrum_number_string(first(mzs)),
+        "-",
+        mass_spectrum_number_string(last(mzs)),
+        mass_spectrum_unit_suffix(unit)
+    )
+end
+
+function mass_spectrum_base_peak_string(ms::AbstractMassSpectrum)
+    index = argmax(ms.intensities)
+    string(
+        "m/z ",
+        mass_spectrum_quantity_string(ms.mzvalues[index], mzunit(ms)),
+        ", intensity ",
+        mass_spectrum_quantity_string(ms.intensities[index], intensityunit(ms))
+    )
+end
+
+function mass_spectrum_total_intensity_string(ms::AbstractMassSpectrum)
+    mass_spectrum_quantity_string(sum(ms.intensities), intensityunit(ms))
+end
+
+function mass_spectrum_attrs_string(attrs::NamedTuple; compact::Bool)
+    isempty(keys(attrs)) && return ""
+
+    preferred = (:source, :model, :ladderstep, :order, :name, :scan_id, :sample)
+    shown = Symbol[]
+    for key in preferred
+        key in keys(attrs) && push!(shown, key)
+    end
+    if !compact
+        for key in keys(attrs)
+            key in shown || push!(shown, key)
+            length(shown) ≥ 8 && break
+        end
+    end
+
+    parts = [
+        string(key, "=", mass_spectrum_attr_value_string(getproperty(attrs, key)))
+        for key in shown
+    ]
+    remaining = length(keys(attrs)) - length(shown)
+    remaining > 0 && push!(parts, "$(remaining) more")
+
+    join(parts, ", ")
+end
+
+function mass_spectrum_attr_value_string(value)
+    value isa AbstractArray && return mass_spectrum_array_summary(value)
+    value isa NamedTuple && return "$(length(keys(value)))-field NamedTuple"
+    value isa AbstractString && return repr(value)
+    value isa Symbol && return string(value)
+    value isa AbstractMassSpectrum && return "MassSpectrum(points=$(mzcount(value)))"
+
+    string(value)
+end
+
+function mass_spectrum_array_summary(value::AbstractArray)
+    container = value isa AbstractVector ? "Vector" : "$(ndims(value))-D Array"
+
+    "$(length(value))-element $container"
+end
+
+function mass_spectrum_quantity_string(value::Real, unit)
+    string(mass_spectrum_number_string(value), mass_spectrum_unit_suffix(unit))
+end
+
+function mass_spectrum_unit_suffix(::Nothing)
+    ""
+end
+
+function mass_spectrum_unit_suffix(unit::Unitful.Units)
+    " " * string(unit)
+end
+
+function mass_spectrum_unit_string(::Nothing)
+    "unitless"
+end
+
+function mass_spectrum_unit_string(unit::Unitful.Units)
+    string(unit)
+end
+
+function mass_spectrum_number_string(value::Real)
+    @sprintf("%.6g", Float64(value))
+end
+
 """
     MassSpectrum(
         mzvalues::AbstractVector{<:Union{Real, AbstractQuantity{<:Real}}},

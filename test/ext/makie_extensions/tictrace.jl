@@ -83,7 +83,12 @@ end
     @test length(ax.scene.plots) == 1
     @test ax.xlabel[] == "Retention"
     @test ax.ylabel[] == "TIC [unitless]"
-    @test only(ax.scene.plots).labels[] == true
+    plot = only(ax.scene.plots)
+    @test plot.labels[] == true
+    @test plot.linecolor[] == Makie.wong_colors()[1]
+    @test plot.steplinewidth[] ≈ 2.0
+    @test plot.labeltopgappixels[] ≈ 3
+    @test all(isnan, plot.baseline_intensities[])
 
     sized = tictrace(
         msm,
@@ -193,7 +198,8 @@ end
         unitful_signal_msm,
         unitful_signal_result;
         retentionunit=u"minute",
-        intensityunit=u"nA"
+        intensityunit=u"nA",
+        baseline=true
     )
     converted_ax = only_axis(converted)
     converted_plot = only(converted_ax.scene.plots)
@@ -463,6 +469,7 @@ end
         :bold,
         11,
         1,
+        3,
         4.0,
         0.99,
         ax.scene.viewport[],
@@ -472,6 +479,134 @@ end
     @test !isempty(positions)
     @test length(positions) == length(labels)
     @test length(labels) < 20
+end
+
+@testset "tictrace ladder reserves measured label band above TIC" begin
+    msm, result = synthetic_ladder_result()
+    fig = tictrace(
+        msm,
+        result;
+        yheadroom=1.05,
+        labelfontsize=80,
+        labelpadding=2,
+        labeltopgappixels=5,
+        steplabelgappixels=4,
+        ticstepgappixels=7
+    )
+    ax = only_axis(fig)
+    plot = only(ax.scene.plots)
+    viewport = ax.scene.viewport[]
+    limits = ax.finallimits[]
+    ylimit = limits.origin[2] + limits.widths[2]
+    pixelgap = (plot.step_ymax[] - maximum(plot.intensities[]) / ylimit) *
+        viewport.widths[2]
+    labelposition = only(plot.label_positions[])
+    labeltopgap = (
+        1 - (labelposition[2] - limits.origin[2]) / limits.widths[2]
+    ) * viewport.widths[2]
+
+    @test plot.step_ymax[] < 1
+    @test pixelgap ≈ 7 atol = 1
+    @test labeltopgap ≈ 5 atol = 1
+end
+
+@testset "tictrace ladder vertical gaps stay fixed in pixels" begin
+    msm, result = synthetic_ladder_result()
+
+    function tic_step_gap_pixels(height)
+        fig = tictrace(
+            msm,
+            result;
+            figure=(; size=(400, height)),
+            steplabelgappixels=4,
+            ticstepgappixels=7
+        )
+        ax = only_axis(fig)
+        plot = only(ax.scene.plots)
+        viewport = ax.scene.viewport[]
+        limits = ax.finallimits[]
+        ylimit = limits.origin[2] + limits.widths[2]
+
+        (plot.step_ymax[] - maximum(plot.intensities[]) / ylimit) * viewport.widths[2]
+    end
+
+    @test tic_step_gap_pixels(260) ≈ 7 atol = 1
+    @test tic_step_gap_pixels(620) ≈ 7 atol = 1
+end
+
+@testset "tictrace ladder updates TIC scaling after resize" begin
+    msm, result = synthetic_ladder_result()
+    fig = tictrace(
+        msm,
+        result;
+        figure=(; size=(400, 260)),
+        labeltopgappixels=5,
+        steplabelgappixels=4,
+        ticstepgappixels=7
+    )
+    ax = only_axis(fig)
+    plot = only(ax.scene.plots)
+
+    function tic_step_gap_pixels()
+        viewport = ax.scene.viewport[]
+        limits = ax.finallimits[]
+        ylimit = limits.origin[2] + limits.widths[2]
+        (plot.step_ymax[] - maximum(plot.intensities[]) / ylimit) * viewport.widths[2]
+    end
+
+    function label_top_gap_pixels()
+        viewport = ax.scene.viewport[]
+        limits = ax.finallimits[]
+        labelposition = only(plot.label_positions[])
+        (1 - (labelposition[2] - limits.origin[2]) / limits.widths[2]) *
+            viewport.widths[2]
+    end
+
+    @test tic_step_gap_pixels() ≈ 7 atol = 1
+    @test label_top_gap_pixels() ≈ 5 atol = 1
+    resize!(fig, 400, 620)
+    @test tic_step_gap_pixels() ≈ 7 atol = 1
+    @test label_top_gap_pixels() ≈ 5 atol = 1
+end
+
+@testset "tictrace ladder labels outside plot edges are hidden" begin
+    ext = Base.get_extension(JuChrom, :MakieExtension)
+    fig = Figure(size=(300, 300))
+    ax = Axis(fig[1, 1])
+    xlims!(ax, 1, 20)
+    ylims!(ax, 0, 1)
+
+    positions, labels = ext.tictrace_visible_label_data(
+        ax,
+        [1.0, 10.0, 20.0],
+        [1, 10, 20],
+        true,
+        :bold,
+        20,
+        1,
+        3,
+        1.0,
+        3,
+        ax.scene.viewport[],
+        ax.finallimits[]
+    )
+
+    @test length(positions) == 1
+    @test labels == ["10"]
+end
+
+@testset "tictrace ladder SVG labels remain vector" begin
+    msm, result = synthetic_ladder_result()
+    fig = tictrace(msm, result)
+
+    mktempdir() do dir
+        path = joinpath(dir, "ladder.svg")
+        save(path, fig)
+        svg = read(path, String)
+
+        @test !occursin("<image", svg)
+        @test !occursin("data:image/png", svg)
+    end
 end
 
 @testset "tictrace accepts integer TIC with floating baseline" begin
