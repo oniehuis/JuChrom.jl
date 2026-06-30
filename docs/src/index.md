@@ -151,7 +151,6 @@ fig_baseline = Figure(; size=(1000, 350))
 ax_baseline = Axis(fig_baseline[1, 1])
 lines!(ax_baseline, vmsm_ri)
 lines!(ax_baseline, baseline)
-display(fig_baseline)
 save("baseline.svg", fig_baseline)
 nothing # hide
 ```

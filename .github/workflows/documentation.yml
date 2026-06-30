@@ -9,6 +9,7 @@ on:
 
 jobs:
   build:
+    timeout-minutes: 60
     permissions:
       actions: write
       contents: write
@@ -22,7 +23,7 @@ jobs:
       - name: Set up Julia
         uses: julia-actions/setup-julia@v3
         with:
-          version: '1'
+          version: '1.12'
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -56,9 +57,8 @@ jobs:
           Pkg.precompile()
         
       - name: Build and deploy
-        run: > 
-          DISPLAY=:0 xvfb-run -s '-screen 0 1024x768x24' 
-          julia --color=yes --project=docs docs/make.jl
+        timeout-minutes: 45
+        run: julia --color=yes --project=docs docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
