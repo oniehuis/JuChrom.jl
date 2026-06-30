@@ -119,7 +119,7 @@ haskey(mss, c_count) || throw(ArgumentError("No spectrum extracted for C$c_count
 ms_c20 = mss[c_count]
 
 # Plot the selected ladder spectrum
-fig₄ = massspectrum(ms_c20)
+fig₄ = massspectrum(ms_c20, figure=(; size=(1000, 350)))
 save("ms_c20.svg", fig₄)
 nothing # hide
 ```
