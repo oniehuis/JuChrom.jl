@@ -64,7 +64,7 @@ file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 
 # Plot the raw total ion chromatogram (TIC); notice unitfree intensity
-fig₁ = tictrace(mss; figure=(; size=(1000, 350)))
+fig₁ = tictrace(mss; retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("rt_tic.svg", fig₁)
 nothing # hide
 ```
@@ -88,7 +88,7 @@ nmsm = dwellnormalize(msm)
 xic = mzchrom(nmsm, 85, warning=false)
 
 # Plot m/z 85 as a processing check; notice unitful intensity
-fig₂ = tictrace(xic; figure=(; size=(1000, 350)))
+fig₂ = tictrace(xic; retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("xic.svg", fig₂)
 nothing # hide
 ```
@@ -102,7 +102,7 @@ asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
 # Overlay detected ladder steps on the TIC
-fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", figure=(; size=(1000, 350)))
+fig₃ = tictrace(nmsm, asr; retentionunit=u"minute", retentionunit=u"minute", figure=(; size=(1000, 350)))
 save("ladder.svg", fig₃)
 nothing # hide
 ```
