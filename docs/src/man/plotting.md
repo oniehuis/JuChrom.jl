@@ -92,13 +92,14 @@ but they do not set axis labels.
 ## Annotated alkane ladders
 
 Use `tictrace(msm, result)` or `tictrace!(ax, msm, result)` for the higher-level TIC view
-with baseline and alkane ladder annotations. These methods use the same `retentionunit`
-and `intensityunit` keywords:
+with baseline and alkane ladder annotations. These methods use the same `figure`, `axis`,
+`retentionunit`, and `intensityunit` keywords:
 
 ```julia
 fig = tictrace(
     msm,
     result;
+    figure=(; size=(900, 350)),
     retentionunit=u"minute",
     intensityunit=u"nA",
 )

@@ -126,6 +126,9 @@ function tictrace(
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
     size=(900, 450),
+    figure::NamedTuple=NamedTuple(),
+    axis::NamedTuple=NamedTuple(),
+    title::Union{Nothing, AbstractString}=nothing,
     retentionunit::Union{Nothing, Unitful.Units}=nothing,
     intensityunit::Union{Nothing, Unitful.Units}=nothing,
     color=:black,
@@ -149,21 +152,23 @@ function tictrace(
     yheadroom::Real=1.05,
     labelyfraction::Real=0.99
 )
-    displayretentionunit = tictrace_display_retentionunit(msm, retentionunit)
-    displayintensityunit = tictrace_display_intensityunit(msm, intensityunit)
-
-    fig = Figure(; size=size)
+    fig = Figure(; merge((; size=size), figure)...)
     ax = Axis(
-        fig[1, 1],
-        xlabel="Retention" * tictrace_unit_suffix(displayretentionunit),
-        ylabel="TIC" * tictrace_unit_suffix(displayintensityunit; unitless=true),
-        xgridvisible=false,
-        ygridvisible=false
+        fig[1, 1];
+        tictrace_ladder_axis_attributes(
+            msm,
+            retentionunit,
+            intensityunit,
+            axis;
+            title=title
+        )...
     )
     tictrace!(
         ax,
         msm,
         result;
+        axis=axis,
+        title=title,
         retentionunit=retentionunit,
         intensityunit=intensityunit,
         color=color,
@@ -195,6 +200,8 @@ function tictrace!(
     ax::Axis,
     msm::JuChrom.AbstractMassScanMatrix,
     result::JuChrom.AlkaneSeriesResult;
+    axis::NamedTuple=NamedTuple(),
+    title::Union{Nothing, AbstractString}=nothing,
     retentionunit::Union{Nothing, Unitful.Units}=nothing,
     intensityunit::Union{Nothing, Unitful.Units}=nothing,
     color=:black,
@@ -219,6 +226,16 @@ function tictrace!(
     labelyfraction::Real=0.99
 )
     tictrace_validate_checksum(msm, result)
+    tictrace_set_axis_attributes!(
+        ax,
+        tictrace_ladder_axis_attributes(
+            msm,
+            retentionunit,
+            intensityunit,
+            axis;
+            title=title
+        )
+    )
     x, y = tictrace_xy(msm, retentionunit, intensityunit)
     baseline_y = tictrace_baseline_values(
         result,
@@ -571,6 +588,28 @@ function tictrace_axis_attributes(
         )
     )
     defaulttitle && (defaults = merge(defaults, (; title="")))
+    attributes = merge(defaults, axis)
+    isnothing(title) ? attributes : merge(attributes, (; title=title))
+end
+
+function tictrace_ladder_axis_attributes(
+    data,
+    retentionunit::Union{Nothing, Unitful.Units},
+    intensityunit::Union{Nothing, Unitful.Units},
+    axis::NamedTuple;
+    title::Union{Nothing, AbstractString}=nothing
+)
+    defaults = (
+        xlabel="Retention" * tictrace_unit_suffix(
+            tictrace_display_retentionunit(data, retentionunit)
+        ),
+        ylabel="TIC" * tictrace_unit_suffix(
+            tictrace_display_intensityunit(data, intensityunit);
+            unitless=true
+        ),
+        xgridvisible=false,
+        ygridvisible=false
+    )
     attributes = merge(defaults, axis)
     isnothing(title) ? attributes : merge(attributes, (; title=title))
 end

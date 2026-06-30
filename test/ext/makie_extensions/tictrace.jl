@@ -84,6 +84,18 @@ end
     @test ax.xlabel[] == "Retention"
     @test ax.ylabel[] == "TIC [unitless]"
     @test only(ax.scene.plots).labels[] == true
+
+    sized = tictrace(
+        msm,
+        result;
+        figure=(; size=(320, 240)),
+        axis=(; title="Annotated ladder", xgridvisible=true)
+    )
+    sized_ax = only_axis(sized)
+
+    @test sized.scene.viewport[].widths == [320, 240]
+    @test sized_ax.title[] == "Annotated ladder"
+    @test sized_ax.xgridvisible[] == true
 end
 
 @testset "tictrace supports retention unit conversion" begin
@@ -405,10 +417,18 @@ end
     fig = Figure()
     ax = Axis(fig[1, 1])
 
-    out = tictrace!(ax, msm, result)
+    out = tictrace!(
+        ax,
+        msm,
+        result;
+        title="Existing annotated ladder",
+        axis=(; xlabel="RT")
+    )
 
     @test out === ax
     @test length(ax.scene.plots) == 1
+    @test ax.title[] == "Existing annotated ladder"
+    @test ax.xlabel[] == "RT"
 end
 
 @testset "tictrace validates AlkaneSeriesResult checksum against plotted matrix" begin
