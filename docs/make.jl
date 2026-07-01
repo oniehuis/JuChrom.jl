@@ -75,11 +75,10 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "Retention Mapping" => Any[
                         "Overview" => "man/mapping_overview.md",
                         "Mapping Tools" => Any[
-                            "Guide" => "man/mapping_tools.md",
                             "Mapper Containers" => "man/mapping_containers.md",
                             "Fitting Maps" => "man/mapping_fitting.md",
                             "Applying Maps" => "man/mapping_application.md",
-                            "Plotting Maps" => "man/mapping_plotting.md",
+                            "Diagnostic Plots" => "man/mapping_plotting.md",
                         ],
                     ],
                     "Scan Timing" => "man/scan_timing.md",
