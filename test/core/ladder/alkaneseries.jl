@@ -492,6 +492,51 @@ end
     )
 end
 
+@testset "AlkaneLadderCalibrationPoint keyword constructor" begin
+    point = AlkaneLadderCalibrationPoint(
+        ladderstep=12,
+        retention=30.5u"minute",
+        retentionindex=1200.0,
+    )
+
+    @test point.ladderstep == 12
+    @test point.retention == 30.5
+    @test point.retentionunit == u"minute"
+    @test point.retentionindex == 1200.0
+    @test point.source === :manual
+    @test point.goodforcalibration
+
+    converted = AlkaneLadderCalibrationPoint(
+        ladderstep=12,
+        retention=1830.0u"s",
+        retentionunit=u"minute",
+        retentionindex=1200.0,
+        source=:reviewed,
+        goodforcalibration=false,
+    )
+
+    @test converted.retention ≈ 30.5
+    @test converted.retentionunit == u"minute"
+    @test converted.source === :reviewed
+    @test !converted.goodforcalibration
+
+    unitless = AlkaneLadderCalibrationPoint(
+        ladderstep=12,
+        retention=30.5,
+        retentionindex=1200,
+    )
+
+    @test unitless.retention == 30.5
+    @test unitless.retentionunit === nothing
+    @test unitless.retentionindex == 1200.0
+
+    @test_throws ArgumentError AlkaneLadderCalibrationPoint(
+        ladderstep=12,
+        retention=NaN,
+        retentionindex=1200.0,
+    )
+end
+
 @testset "fitmap accepts alkane ladder calibration points and results" begin
     result = test_ladder_step_result(; retentionunit=u"minute")
 

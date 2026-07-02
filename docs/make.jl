@@ -74,11 +74,12 @@ withenv("UNITFUL_FANCY_EXPONENTS" => "false") do
                     "Alkane Series Finding" => "man/alkaneseries.md",
                     "Retention Mapping" => Any[
                         "Overview" => "man/mapping_overview.md",
-                        "Mapping Tools" => Any[
-                            "Mapper Containers" => "man/mapping_containers.md",
+                        "Workflow" => "man/mapping_workflow.md",
+                        "Reference" => Any[
                             "Fitting Maps" => "man/mapping_fitting.md",
-                            "Applying Maps" => "man/mapping_application.md",
                             "Diagnostic Plots" => "man/mapping_plotting.md",
+                            "Applying Maps" => "man/mapping_application.md",
+                            "Mapper Containers" => "man/mapping_containers.md",
                         ],
                     ],
                     "Scan Timing" => "man/scan_timing.md",

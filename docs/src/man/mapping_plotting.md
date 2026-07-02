@@ -1,6 +1,8 @@
-# Plotting maps
+# Diagnostic plots
 
 The plotting methods are available after loading a Makie backend such as `CairoMakie`.
+For a complete example with generated diagnostics, see the
+[retention mapping workflow](mapping_workflow.md).
 
 ```julia
 plot(

@@ -1,5 +1,27 @@
 # Mapper containers
 
+## JLD2 support
+
+JuChrom also ships a `JLD2` extension so [`RetentionMapper`](@ref) objects can be stored 
+and restored with [`JLD2`](https://github.com/JuliaIO/JLD2.jl). The extension loads 
+automatically once `JLD2` is available.
+
+Typical usage looks like:
+
+```julia
+using JLD2
+
+save_object("retention_mapper.jld2", mapper)
+mapper_loaded = load_object("retention_mapper.jld2")
+
+jldsave("retention_mappers.jld2"; mapper, mapper_smooth)
+mapper_reloaded = JLD2.load("retention_mappers.jld2", "mapper")
+mapper_smooth_loaded = JLD2.load("retention_mappers.jld2", "mapper_smooth")
+```
+
+For a runnable persistence example, see the
+[retention mapping workflow](mapping_workflow.md).
+
 ## Types
 
 ```@docs

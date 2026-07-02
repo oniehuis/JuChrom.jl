@@ -173,13 +173,26 @@ end
 
 """
     AlkaneLadderCalibrationPoint
+    AlkaneLadderCalibrationPoint(; ladderstep, retention, retentionunit=nothing,
+                                 retentionindex, source=:manual,
+                                 goodforcalibration=true)
 
 Stable RT -> RI calibration point derived from an identified alkane ladder step or added
 manually before fitting a retention mapper.
 
 `retention` is the raw numeric retention value. `retentionunit` is the unit associated
-with that value, or `nothing` for unitless retentions. `retentionindex` is the Kováts
-retention index used as the mapper target.
+with that value, or `nothing` for unitless retentions. In the keyword constructor,
+`retention` may also be a `Unitful.AbstractQuantity`; in that case `retentionunit` is
+inferred unless it is supplied explicitly.
+
+`retentionindex` is the Kováts retention index used as the mapper target. It is
+dimensionless, so `AlkaneLadderCalibrationPoint` has no separate unit field for the target
+domain. Use the generic two-vector [`fitmap`](@ref) interface when domain B should carry a
+physical unit.
+
+`source` is a provenance label such as `:molecularion`, `:gapfilled`, or `:manual`.
+`goodforcalibration` records whether the point is considered suitable as a mapper anchor;
+manual points default to `true`.
 """
 struct AlkaneLadderCalibrationPoint
     ladderstep::Int
@@ -188,6 +201,34 @@ struct AlkaneLadderCalibrationPoint
     retentionindex::Float64
     source::Symbol
     goodforcalibration::Bool
+end
+
+function AlkaneLadderCalibrationPoint(;
+    ladderstep::Integer,
+    retention::Union{Real, AbstractQuantity{<:Real}},
+    retentionunit::Union{Nothing, Unitful.Units}=nothing,
+    retentionindex::Real,
+    source::Symbol=:manual,
+    goodforcalibration::Bool=true
+)
+    retentionvalue, resolvedunit = if retention isa AbstractQuantity
+        runit = isnothing(retentionunit) ? unit(retention) : retentionunit
+        Float64(ustrip(runit, retention)), runit
+    else
+        Float64(retention), retentionunit
+    end
+
+    point = AlkaneLadderCalibrationPoint(
+        Int(ladderstep),
+        retentionvalue,
+        resolvedunit,
+        Float64(retentionindex),
+        source,
+        goodforcalibration
+    )
+    validate_alkane_ladder_calibration_points([point])
+
+    point
 end
 
 """
