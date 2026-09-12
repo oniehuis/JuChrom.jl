@@ -488,7 +488,6 @@ Lower-level Makie line methods for plotting the total ion chromatogram of a JuCh
 container. These methods use the same TIC extraction and unit-conversion rules as
 [`tictrace`](@ref), but do not set axis labels.
 """
-
 function Makie.lines(
     data::TicTraceLineData;
     figure::NamedTuple=NamedTuple(),
