@@ -70,6 +70,43 @@ end
     end
 end
 
+@testset "typify vectors" begin
+    @testset "concrete promotion" begin
+        for vec in ([1, 2, 3], Any[1, 2, 3], 1:3)
+            typed = @test_logs JuChrom.typify(vec)
+            @test typed isa Vector{Int}
+            @test typed == [1, 2, 3]
+        end
+
+        vec = Real[1, 2.5, 3]
+        typed = @test_logs JuChrom.typify(vec)
+        @test typed isa Vector{Float64}
+        @test typed == [1.0, 2.5, 3.0]
+        @test vec[1] === 1
+        @test vec[3] === 3
+
+        typed_view = @test_logs JuChrom.typify(view(vec, 1:2))
+        @test typed_view isa Vector{Float64}
+        @test typed_view == [1.0, 2.5]
+    end
+
+    @testset "non-concrete promotion warns" begin
+        typed = @test_logs (:warn, "Type Any promoted by typify is not concrete.") begin
+            JuChrom.typify(Any[1, "x"])
+        end
+        @test typed isa Vector{Any}
+        @test typed == Any[1, "x"]
+    end
+
+    @testset "empty vector" begin
+        typed = @test_logs (:warn, "Type Union{} promoted by typify is not concrete.") begin
+            JuChrom.typify(Int[])
+        end
+        @test typed isa Vector{Union{}}
+        @test isempty(typed)
+    end
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # findclosest
 # ─────────────────────────────────────────────────────────────────────────────

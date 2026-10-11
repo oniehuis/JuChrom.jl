@@ -84,6 +84,55 @@ end
     @test retentions(css) == [1.0, 1.5, 2.0]u"s"
 end
 
+@testset "retentiontrim!(series; start/stop unitless)" begin
+    css = _make_css([_make_cs(rt, 10rt) for rt in 0.5:0.5:2.5])
+    mss = _make_mss([_make_ms([100.0, 150.0], [10rt, 20rt]; rt)
+                     for rt in 0.5:0.5:2.5])
+
+    @testset "$name" for (name, original) in (("ChromScanSeries", css),
+                                             ("MassScanSeries", mss))
+        cases = (
+            ("inclusive bounds", (start=1, stop=2.0), 2:4),
+            ("default bounds", NamedTuple(), 1:5),
+            ("default stop", (start=1.5,), 3:5),
+            ("default start", (stop=1.5,), 1:3),
+            ("equal bounds", (start=1.5, stop=1.5), 3:3),
+        )
+        @testset "$label" for (label, bounds, indices) in cases
+            series = deepcopy(original)
+            scanvec = scans(series)
+            expected = scanvec[indices]
+
+            @test retentiontrim!(series; bounds...) === series
+            @test scans(series) === scanvec
+            @test scancount(series) == length(expected)
+            @test retentions(series) == retention.(expected)
+            @test all(actual === wanted for (actual, wanted) in zip(scanvec, expected))
+        end
+
+        @testset "reversed bounds leave scans unchanged" begin
+            series = deepcopy(original)
+            scanvec = scans(series)
+            before = copy(scanvec)
+
+            @test_throws ArgumentError("`start` must be less than or equal to `stop`.") retentiontrim!(
+                series; start=2.0, stop=1.0)
+            @test scans(series) === scanvec
+            @test scanvec == before
+        end
+
+        @testset "no scans remain" begin
+            series = deepcopy(original)
+            scanvec = scans(series)
+
+            @test_throws ArgumentError("No scans left after trimming.") retentiontrim!(
+                series; start=10.0, stop=11.0)
+            @test scans(series) === scanvec
+            @test isempty(scanvec)
+        end
+    end
+end
+
 #= @testset "retentiontrim(msmatrix; start/stop with units)" begin
     ret = [0.5, 1.0, 1.5, 2.0, 2.5]u"s"
     mz = [100.0, 200.0]

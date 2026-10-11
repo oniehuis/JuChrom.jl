@@ -281,6 +281,7 @@ end
     css_out = sprint(show, css)
     @test occursin("ChromScanSeries", css_out)
     @test occursin("├─ Scan type:\n", css_out)
+    @test sprint(show, MIME"text/plain"(), css) == css_out
 
     mscans = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]),
               mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=2)]
@@ -289,6 +290,7 @@ end
     @test occursin("MassScanSeries", mss_out)
     @test occursin("├─ Scan type:\n", mss_out)
     @test occursin("Unique values:", mss_out)
+    @test sprint(show, MIME"text/plain"(), mss) == mss_out
 
     mscans_same = [mkms(1.0u"s", [100.0, 150.0], [10.0, 20.0]; level=1),
                    mkms(2.0u"s", [101.0, 151.0], [12.0, 22.0]; level=1)]
