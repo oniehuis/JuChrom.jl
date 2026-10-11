@@ -67,18 +67,18 @@ julia> s = [ChromScan(1.0u"s", 10.0u"V"), ChromScan(2.0u"s", 200.0u"V")];
 
 julia> series = ChromScanSeries(s, extras=Dict("run"=>42, "comment"=>"Baseline drift"));
 
-julia> extras(series)
-Dict{String, Any} with 2 entries:
-  "run"     => 42
-  "comment" => "Baseline drift"
+julia> sort!(collect(extras(series)); by=first)
+2-element Vector{Pair{String, Any}}:
+ "comment" => "Baseline drift"
+     "run" => 42
 
 julia> extras(series)["qc_passed"] = true;
 
-julia> extras(series)
-Dict{String, Any} with 3 entries:
-  "qc_passed" => true
-  "run"       => 42
-  "comment"   => "Baseline drift"
+julia> sort!(collect(extras(series)); by=first)
+3-element Vector{Pair{String, Any}}:
+   "comment" => "Baseline drift"
+ "qc_passed" => true
+       "run" => 42
 ```
 """
 extras(series::AbstractScanSeries) = series.extras

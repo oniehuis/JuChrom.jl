@@ -39,6 +39,9 @@ end
 @safetestset "core/containers/massspectra.jl" begin
     include("./core/containers/massspectra.jl")
 end
+@safetestset "core/containers/spectrum_extraction.jl" begin
+    include("./core/containers/spectrum_extraction.jl")
+end
 @safetestset "core/core_getters/getters.jl" begin
     include("./core/core_getters/getters.jl")
 end

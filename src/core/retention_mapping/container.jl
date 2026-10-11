@@ -296,21 +296,21 @@ julia> retention_times = [1.2, 2.5, 4.1, 6.8, 9.3, 12.1, 15.7]u"minute"
        mapper = fitmap(retention_times, retention_indices, 
                        extras=Dict("cal_file" => "test.cal", "instrument" => "GC-MS"));
 
-julia> extras(mapper)
-Dict{String, Any} with 2 entries:
-  "cal_file"   => "test.cal"
-  "instrument" => "GC-MS"
+julia> sort!(collect(extras(mapper)); by=first)
+2-element Vector{Pair{String, Any}}:
+   "cal_file" => "test.cal"
+ "instrument" => "GC-MS"
 
 julia> extras(mapper)["cal_file"]
 "test.cal"
 
 julia> extras(mapper)["analysis_date"] = "2025-06-28";
 
-julia> extras(mapper)
-Dict{String, Any} with 3 entries:
-  "cal_file"      => "test.cal"
-  "instrument"    => "GC-MS"
-  "analysis_date" => "2025-06-28"
+julia> sort!(collect(extras(mapper)); by=first)
+3-element Vector{Pair{String, Any}}:
+ "analysis_date" => "2025-06-28"
+      "cal_file" => "test.cal"
+    "instrument" => "GC-MS"
 ```
 """
 extras(rm::AbstractRetentionMapper) = rm.extras

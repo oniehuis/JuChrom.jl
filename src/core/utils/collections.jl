@@ -119,15 +119,18 @@ a warning is emitted, as this may lead to type instability.
 
 # Examples
 ```jldoctest
-julia> d = Dict("a" => 1, "b" => 2.5)
-Dict{String, Real} with 2 entries:
-  "b" => 2.5
-  "a" => 1
+julia> d = Dict("a" => 1, "b" => 2.5);
 
-julia> typify(d)
-Dict{String, Float64} with 2 entries:
-  "b" => 2.5
-  "a" => 1.0
+julia> typeof(d)
+Dict{String, Real}
+
+julia> promoted = typify(d);
+
+julia> typeof(promoted)
+Dict{String, Float64}
+
+julia> promoted["a"], promoted["b"]
+(1.0, 2.5)
 
 julia> v = Real[1, 2.5, 3]
 3-element Vector{Real}:

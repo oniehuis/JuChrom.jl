@@ -133,6 +133,27 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 @testset "binmzvalues(series::AbstractMassScanSeries; ionbin=integer)" begin
+    @testset "Preserves non-native MS level integer types" begin
+        # MassHunter supplies Int32 levels on 64-bit hosts. The output scan type
+        # must preserve that parameter instead of assuming the machine's Int type.
+        for Level in (Int32, UInt8)
+            source = MassScanSeries([
+                MassScan(t * u"s", [100.1, 100.2, 101.0], [2.0, 3.0, 4.0];
+                    level=Level(2), attrs=(; scan_id=Int32(i)))
+                for (i, t) in enumerate([1.0, 2.0])
+            ])
+            binned = binmzvalues(source, JuChrom.integer)
+            @test scancount(binned) == 2
+            for i in 1:2
+                @test level(JuChrom.scan(binned, i)) === Level(2)
+                @test rawmzvalues(JuChrom.scan(binned, i)) == [100, 101]
+                @test rawintensities(binned, i) == [5, 4]
+                @test attrs(JuChrom.scan(binned, i)) == attrs(JuChrom.scan(source, i))
+            end
+            @test rawmzvalues(JuChrom.scan(source, 1)) == [100.1, 100.2, 101.0]
+        end
+    end
+
     @testset "basic integer binning" begin
         s = _make_ms([100.1, 100.9, 101.2], [10.0, 5.0, 20.0])
         mss = _make_mss([s])

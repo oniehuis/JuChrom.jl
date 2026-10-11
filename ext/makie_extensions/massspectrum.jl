@@ -11,7 +11,9 @@ using Unitful
         mz_label_color = :black,
         linecolor = :blue,
         linewidth = 1.0,
-        intensity_threshold = 0.0
+        intensity_threshold = 0.0,
+        autoylimits = true,
+        show_mz_labels = true
     )
 end
 
@@ -106,6 +108,7 @@ function Makie.plot!(ms::MassSpectrum)
         :mz_label_padding,
         :mz_label_top_padding_factor,
         :intensity_threshold,
+        :show_mz_labels,
         :viewport_obs,
         :limits_obs
     ]
@@ -113,21 +116,25 @@ function Makie.plot!(ms::MassSpectrum)
 
     map!(ms.attributes, input_nodes, output_nodes) do mzvalues, intensities, _label_font,
             _label_fontsize, _label_offset, _label_padding, _label_top_padding_factor,
-            _intensity_threshold, viewport, limits
+            _intensity_threshold, show_mz_labels, viewport, limits
         mz_values, mz_unit = massspectrum_numeric_values(mzvalues)
         intensity_values, intensity_unit = massspectrum_numeric_values(intensities)
         massspectrum_set_axis_labels!(ax, mz_unit, intensity_unit)
         plotlimits = ax.finallimits[]
 
-        mz_label_positions, mz_labels = calculate_visible_labels(
-            ax,
-            ms,
-            mz_values,
-            intensity_values,
-            intensity_unit,
-            viewport,
-            plotlimits
-        )
+        mz_label_positions, mz_labels = if show_mz_labels
+            calculate_visible_labels(
+                ax,
+                ms,
+                mz_values,
+                intensity_values,
+                intensity_unit,
+                viewport,
+                plotlimits
+            )
+        else
+            (Point2f[], String[])
+        end
 
         linesegments = Point2f[]
         for (mz, intensity) in zip(mz_values, intensity_values)
@@ -161,10 +168,14 @@ function massspectrum_register_limit_updates!(ax::Axis, ms::MassSpectrum)
         ms.mz_label_padding,
         ms.mz_label_top_padding_factor,
         ms.intensity_threshold,
+        ms.autoylimits,
+        ms.show_mz_labels,
         ax.scene.viewport;
         update=true
     ) do mzvalues, intensities, _label_font, _label_fontsize, _label_offset,
-            _label_padding, _label_top_padding_factor, _intensity_threshold, viewport
+            _label_padding, _label_top_padding_factor, _intensity_threshold,
+            autoylimits, _show_mz_labels, viewport
+        autoylimits || return nothing
         mz_values, _mz_unit = massspectrum_numeric_values(mzvalues)
         intensity_values, intensity_unit = massspectrum_numeric_values(intensities)
         massspectrum_set_limits!(
@@ -314,6 +325,7 @@ function massspectrum_data_yfraction(viewport, headroompixels::Real)
 end
 
 function massspectrum_label_headroom_pixels(ms, mzvalues, intensities, intensity_unit)
+    ms.show_mz_labels[] || return 0.0
     isempty(mzvalues) && return 0.0
     isempty(intensities) && return 0.0
 

@@ -3,6 +3,13 @@
 JuChrom provides Makie plotting methods through its optional Makie extension. Load a Makie
 backend, for example `CairoMakie` or `GLMakie`, before plotting.
 
+## Mass spectra
+
+[`massspectrum`](@ref) and [`massspectrum!`](@ref) draw stick spectra with optional
+mass labels. For live updates with manual limits, set `autoylimits=false`; use
+`show_mz_labels=false` to skip label placement. See [Plotting spectra](massspectra.md#Plotting-spectra)
+for an example that replaces both data vectors together while keeping the Y range fixed.
+
 ## TIC traces
 
 `tictrace` and `tictrace!` plot a total ion chromatogram (TIC) for JuChrom scan

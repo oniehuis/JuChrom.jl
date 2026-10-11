@@ -293,4 +293,63 @@ end
     @test isapprox(ymax, 1.0; atol=1e-6)
 end
 
+@testset "massspectrum preserves explicit limits during live updates" begin
+    fig = Figure(size=(600, 400))
+    ax = Axis(fig[1, 1]; limits=(40, 200, 0, 100), ylabel="Relative intensity (%)")
+    plot = massspectrum!(ax, Float64[], Float64[];
+        autoylimits=false, show_mz_labels=false)
+    @test isempty(plot.linesegments[])
+    @test maximum(ax.finallimits[])[2] == 100
+    @test ax.ylabel[] == "Relative intensity (%)"
+
+    Makie.update!(plot; arg1=[50.0, 100.0], arg2=[100.0, 20.0])
+    @test plot.linesegments[] == Point2f[(50, 0), (50, 100), (100, 0), (100, 20)]
+    @test isempty(plot.mz_labels[])
+    @test maximum(ax.finallimits[])[2] == 100
+
+    ylims!(ax, 0, 5)
+    manual = ax.finallimits[]
+    # Replace both arrays atomically as mass grids grow and shrink.
+    Makie.update!(plot; arg1=[60.0, 90.0, 150.0], arg2=[2.0, 100.0, 1.0])
+    @test length(plot.linesegments[]) == 6
+    @test last.(plot.linesegments[][2:2:end]) == [2, 100, 1]
+    @test ax.finallimits[] == manual
+    resize!(fig, 800, 600)
+    @test ax.finallimits[] == manual
+    Makie.update!(plot; arg1=[80.0], arg2=[0.0])
+    @test plot.linesegments[] == Point2f[(80, 0), (80, 0)]
+    @test ax.finallimits[] == manual
+    Makie.update!(plot; arg1=Float64[], arg2=Float64[])
+    @test isempty(plot.linesegments[])
+    @test ax.finallimits[] == manual
+
+    # Labels can be enabled independently, still respecting manually clipped limits.
+    Makie.update!(plot; arg1=[60.0, 90.0], arg2=[1.0, 100.0], show_mz_labels=true)
+    @test !isempty(plot.mz_labels[])
+    @test ax.finallimits[] == manual
+    plot.mz_label_fontsize[] = 18
+    @test ax.finallimits[] == manual
+    plot.show_mz_labels[] = false
+    @test isempty(plot.mz_labels[])
+    @test isempty(plot.mz_label_positions[])
+
+    plot.autoylimits[] = true
+    @test maximum(ax.finallimits[])[2] ≈ 100
+    plot.show_mz_labels[] = true
+    @test maximum(ax.finallimits[])[2] > 100
+    plot.autoylimits[] = false
+    ylims!(ax, 0, 5)
+    Makie.update!(plot; arg1=[45.0], arg2=[250.0])
+    @test maximum(ax.finallimits[])[2] == 5
+end
+
+@testset "massspectrum opt-out works with unitful input and regular figures" begin
+    plt = massspectrum([50.0, 100.0]u"Th", [2.0, 10.0]u"pA";
+        autoylimits=false, show_mz_labels=false, axis=(; limits=(40, 150, 0, 3)))
+    @test maximum(plt.axis.finallimits[])[2] == 3
+    @test isempty(plt.plot.mz_labels[])
+    @test last.(plt.plot.linesegments[][2:2:end]) == [2, 10]
+    @test occursin("pA", plt.axis.ylabel[])
+end
+
 end  # module

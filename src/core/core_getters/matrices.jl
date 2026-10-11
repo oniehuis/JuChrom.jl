@@ -62,18 +62,18 @@ See also
 julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [1.0 2.0; 3.0 4.0]; 
                              extras=Dict("run" => 42, "comment" => "Baseline drift"));
 
-julia> extras(msm)
-Dict{String, Any} with 2 entries:
-  "run"     => 42
-  "comment" => "Baseline drift"
+julia> sort!(collect(extras(msm)); by=first)
+2-element Vector{Pair{String, Any}}:
+ "comment" => "Baseline drift"
+     "run" => 42
 
 julia> extras(msm)["qc_passed"] = true;
 
-julia> extras(msm)
-Dict{String, Any} with 3 entries:
-  "qc_passed" => true
-  "run"       => 42
-  "comment"   => "Baseline drift"
+julia> sort!(collect(extras(msm)); by=first)
+3-element Vector{Pair{String, Any}}:
+   "comment" => "Baseline drift"
+ "qc_passed" => true
+       "run" => 42
 ```
 """
 extras(msm::AbstractMassScanMatrix) = msm.extras

@@ -69,6 +69,7 @@ include("core/utils/units.jl")
 include("core/deconvolution/unimodalfit.jl")
 include("core/deconvolution/parafac2.jl")
 include("core/massspectrum/massspectrum.jl")
+include("core/massspectrum/extraction.jl")
 include("core/ladder/alkane_reference_spectra.jl")
 include("core/ladder/alkaneseries.jl")
 include("core/ladder/abundances.jl")
@@ -130,6 +131,7 @@ export densestgrid
 export derivinvmap
 export derivmap
 export dwellnormalize
+export extractmassspectrum
 export extras
 export findalkanes
 export findalkaneseries
@@ -254,7 +256,39 @@ export massspectrum
 export massspectrum!
 export tictrace
 export tictrace!
+"""
+    massspectrum(mzvalues, intensities; autoylimits=true, show_mz_labels=true, kwargs...)
+    massspectrum(spectrum::AbstractMassSpectrum; kwargs...)
+
+Plot a stick mass spectrum with Makie. Load a Makie backend to enable this function.
+Numeric and unitful vectors, and `AbstractMassSpectrum` containers, are supported.
+
+By default, `autoylimits=true` fits the Y range to the data with room for mass
+labels, including after data updates and resizing. Set `autoylimits=false` to leave
+Y limits under Makie's ordinary axis controls; for a fixed range, supply
+`axis=(; limits=(nothing, (0, 100)))` or use `ylims!` on the returned axis.
+`show_mz_labels=false` skips mass-label placement and its extra headroom, useful for
+rapidly updated spectra. Both options default to `true` and can be changed on an
+existing plot. These options do not normalize or otherwise modify the input data.
+
+Use `figure=(; ...)` and `axis=(; ...)` to configure the figure and axis. Plot styles
+include `linecolor`, `linewidth`, `intensity_threshold` (the label threshold), and
+the `mz_label_*` attributes.
+"""
 function massspectrum end
+
+"""
+    massspectrum!(axis, mzvalues, intensities; kwargs...)
+    massspectrum!(axis, spectrum::AbstractMassSpectrum; kwargs...)
+
+Add a mass spectrum to an existing Makie axis. Supports the plot options of
+[`massspectrum`](@ref), including `autoylimits=false` to preserve manual Y limits.
+
+To replace numeric m/z and intensity vectors together, including with a different
+length, use `Makie.update!(plot; arg1=new_mzvalues, arg2=new_intensities)` on the
+returned plot. Updating both arguments together avoids an intermediate mismatched
+pair of vectors.
+"""
 function massspectrum! end
 function tictrace end
 function tictrace! end

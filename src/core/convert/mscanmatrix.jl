@@ -102,10 +102,10 @@ julia> user(matrix_annotated)
 julia> sample(matrix_annotated)
 (ID = "sample_001", matrix = "plasma", prep = "SPE")
 
-julia> extras(matrix_annotated)
-Dict{String, Any} with 2 entries:
-  "injection_volume" => 5.0
-  "comment"          => "QC run"
+julia> sort!(collect(extras(matrix_annotated)); by=first)
+2-element Vector{Pair{String, Any}}:
+          "comment" => "QC run"
+ "injection_volume" => 5.0
 ```
 """
 function mscanmatrix(series::MassScanSeries, format::DenseMatrix;

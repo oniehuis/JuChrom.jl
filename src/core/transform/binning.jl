@@ -413,6 +413,7 @@ function binmzvalues(
     mz_unit_type          = typeof(reference_scan.mzunit)
     retention_unit_type   = typeof(reference_scan.retentionunit)
     intensity_unit_type   = typeof(reference_scan.intensityunit)
+    level_type            = typeof(reference_scan.level)
     metadata_type         = typeof(reference_scan.attrs)
 
     # Define concrete MassScan type with updated m/z value type
@@ -423,7 +424,7 @@ function binmzvalues(
         mz_unit_type,
         Vector{intensity_type},
         intensity_unit_type,
-        Int,
+        level_type,
         metadata_type
     }
 
