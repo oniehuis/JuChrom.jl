@@ -1,0 +1,73 @@
+name: Downstream compatibility
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: downstream-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+permissions:
+  contents: read
+
+jobs:
+  explorer:
+    name: JuChromExplorer / Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ['1.12', '1.13']
+    env:
+      LIBGL_ALWAYS_SOFTWARE: "true"
+      JULIA_PKG_PRECOMPILE_AUTO: "0"
+    steps:
+      - name: Check out JuChrom revision under test
+        uses: actions/checkout@v7
+        with:
+          path: JuChrom
+          persist-credentials: false
+      - name: Check out JuChromExplorer
+        uses: actions/checkout@v7
+        with:
+          repository: oniehuis/JuChromExplorer.jl
+          ref: main
+          path: JuChromExplorer
+          persist-credentials: false
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+        with:
+          delete-old-caches: 'false'
+      - name: Install Linux graphics dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb xauth libgl1 libgl1-mesa-dri libglx-mesa0 mesa-utils
+      - name: Check software OpenGL
+        run: xvfb-run -a -s '-screen 0 1280x1024x24' glxinfo -B
+      - name: Report tested revisions
+        run: |
+          git -C JuChrom log -1 --format='JuChrom: %H'
+          git -C JuChromExplorer log -1 --format='JuChromExplorer: %H'
+      - name: Run explorer tests against this JuChrom checkout
+        run: >-
+          xvfb-run -a -s '-screen 0 1280x1024x24'
+          julia --startup-file=no --color=yes
+          JuChrom/.github/scripts/test_explorer.jl JuChromExplorer
+
+  compatibility:
+    name: JuChromExplorer compatibility
+    if: ${{ always() }}
+    needs: explorer
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every downstream test to pass
+        env:
+          EXPLORER_RESULT: ${{ needs.explorer.result }}
+        run: test "$EXPLORER_RESULT" = success
