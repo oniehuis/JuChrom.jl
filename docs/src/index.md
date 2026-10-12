@@ -6,18 +6,15 @@ Julia; some vendor-specific loaders are provided via optional extensions.
 
 ## Installation
 
-JuChrom is not yet registered in the General registry. Install it directly from GitHub:
+Julia 1.12 or later is required. Install the development version from GitHub in
+your Julia environment by running this in the Julia REPL:
 
-```
-julia> ]
-pkg> add https://github.com/oniehuis/JuChrom.jl
+```julia
+using Pkg
+Pkg.add(url="https://github.com/oniehuis/JuChrom.jl", rev="main")
 ```
 
-After the installation finishes, you can load it in the Julia REPL with:
-
-```
-julia> using JuChrom
-```
+Then load the package with `using JuChrom`.
 
 ## Current capabilities
 
@@ -50,6 +47,16 @@ julia> using JuChrom
   annotated n-alkane ladders.
 
 ## Quickstart
+
+The example uses an n-alkane standard distributed with JuChrom, so no measurement
+file of your own is needed. Install CairoMakie in the same environment for the plots:
+
+```julia
+using Pkg
+Pkg.add("CairoMakie")
+```
+
+Then run the following in the Julia REPL:
 
 ```@example 1
 # Load JuChrom and the Agilent ChemStation MS loader
