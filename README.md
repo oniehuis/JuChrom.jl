@@ -37,7 +37,7 @@ metadata and physical units.
 ## Installation
 
 Julia 1.12 or later is required. Install the development version from GitHub in
-your Julia environment:
+your Julia environment by running this in the Julia REPL:
 
 ```julia
 using Pkg
