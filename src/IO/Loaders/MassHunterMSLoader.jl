@@ -365,11 +365,16 @@ readle(io, ::Type{Float32}) = reinterpret(Float32, readle(io, UInt32))
 readle(io, ::Type{Float64}) = reinterpret(Float64, readle(io, UInt64))
 readle(io, ::Type{NTuple{N,T}}) where {N,T} = ntuple(_ -> readle(io, T), Val(N))
 
-function read_scan_records(io, ::Type{T}, count) where {T}
+function read_scan_records(io, ::Type{T}, count, file) where {T}
     records = Vector{T}(undef, count)
-    for i in eachindex(records)
-        values = ntuple(j -> readle(io, fieldtype(T, j)), Val(fieldcount(T)))
-        records[i] = T(values)
+    try
+        for i in eachindex(records)
+            values = ntuple(j -> readle(io, fieldtype(T, j)), Val(fieldcount(T)))
+            records[i] = T(values)
+        end
+    catch e
+        e isa EOFError || rethrow()
+        throw(UnexpectedEOFError("Truncated scan record in $file"))
     end
     records
 end
@@ -437,12 +442,7 @@ function msscandata(::MSScanBinV1, file::AbstractString)
             throw(FileCorruptionError("MSScan.bin contains $count schema records but MSTS.xml declares $expectedcount scans"))
         end
         seek(io, startpos)
-        records = try
-            read_scan_records(io, layout.recordtype, count)
-        catch e
-            e isa EOFError || rethrow()
-            throw(UnexpectedEOFError("Truncated scan record in $file"))
-        end
+        records = read_scan_records(io, layout.recordtype, count, file)
         position(io) == endpos || throw(FileCorruptionError("MSScan.bin record boundary mismatch"))
         for (i, s) in enumerate(records)
             isfinite(s.ScanTime) && s.MSLevel >= 1 ||
@@ -518,6 +518,7 @@ function validate_spectrum_bounds(s, endpos, i)
         throw(UnexpectedEOFError("Spectrum block at scan record $i exceeds MSPeak.bin size $endpos"))
     (s.PointCount == 0) == (s.ByteCount == 0) ||
         throw(FileCorruptionError("Inconsistent zero PointCount/ByteCount at scan record $i"))
+    nothing
 end
 
 function spectrum_storage_type(s, i)
@@ -538,6 +539,15 @@ function read_spectrum_values(io, ::Type{T}, count) where {T}
     bits = read!(io, Vector{U}(undef, count))
     map!(ltoh, bits, bits)
     collect(reinterpret(T, bits))
+end
+
+function read_spectrum(io, ::Type{T}, count, i, file) where {T}
+    try
+        (read_spectrum_values(io, T, count), read_spectrum_values(io, T, count))
+    catch e
+        e isa EOFError || rethrow()
+        throw(UnexpectedEOFError("Truncated spectrum at scan record $i in $file"))
+    end
 end
 
 function mspeakdata(
@@ -571,13 +581,7 @@ function mspeakdata(
         for (i, storagetype) in zip(selected, storagetypes)
             s = scandata[i]
             seek(io, s.SpectrumOffset)
-            mzs, ints = try
-                (read_spectrum_values(io, storagetype, s.PointCount),
-                    read_spectrum_values(io, storagetype, s.PointCount))
-            catch e
-                e isa EOFError || rethrow()
-                throw(UnexpectedEOFError("Truncated spectrum at scan record $i in $file"))
-            end
+            mzs, ints = read_spectrum(io, storagetype, s.PointCount, i, file)
             all(isfinite, mzs) && all(>(0), mzs) && all(>(0), diff(mzs)) &&
                 all(isfinite, ints) || throw(FileCorruptionError(
                     "Invalid m/z or intensity values at scan record $i in $file"))

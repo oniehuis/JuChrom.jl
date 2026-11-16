@@ -317,6 +317,58 @@ end
     end
 end
 
+@testset "Binary read failures retain file and scan context" begin
+    mktempdir() do dir
+        acq = synthetic_masshunter(dir)
+        file = joinpath(acq, "MSScan.bin")
+        layout = MH.scanlayout(joinpath(acq, "MSScan.xsd"))
+        bytes = read(file)[161:end]
+        for nbytes in (0, layout.recordsize - 1, layout.recordsize, length(bytes) - 1)
+            err = try
+                MH.read_scan_records(IOBuffer(bytes[1:nbytes]), layout.recordtype, 2, file)
+            catch e
+                e
+            end
+            @test err isa UnexpectedEOFError
+            @test sprint(showerror, err) == "Truncated scan record in $file"
+        end
+        # Closed streams are programming/I/O errors, not truncated acquisitions.
+        io = IOBuffer(bytes)
+        close(io)
+        @test_throws ArgumentError MH.read_scan_records(io, layout.recordtype, 2, file)
+    end
+    for T in (Float32, Float64)
+        io = IOBuffer()
+        for value in T[40, 50, 60, 2, 3, 5]
+            writele(io, value)
+        end
+        bytes = take!(io)
+        file = "MSPeak.bin"
+        # Cut within the m/z array, between arrays, and within the intensity array.
+        for nbytes in (0, 3sizeof(T) - 1, 3sizeof(T), length(bytes) - 1)
+            err = try
+                MH.read_spectrum(IOBuffer(bytes[1:nbytes]), T, 3, 7, file)
+            catch e
+                e
+            end
+            @test err isa UnexpectedEOFError
+            @test sprint(showerror, err) == "Truncated spectrum at scan record 7 in $file"
+        end
+        io = IOBuffer(bytes)
+        close(io)
+        @test_throws ArgumentError MH.read_spectrum(io, T, 3, 7, file)
+    end
+end
+
+@testset "Spectrum blocks at the file boundary" begin
+    block = (SpectrumOffset=Int64(68), ByteCount=Int32(48), PointCount=Int32(3))
+    @test MH.validate_spectrum_bounds(block, 116, 1) === nothing
+    @test_throws UnexpectedEOFError MH.validate_spectrum_bounds(block, 115, 1)
+    emptyblock = (SpectrumOffset=Int64(116), ByteCount=Int32(0), PointCount=Int32(0))
+    # Empty blocks have valid bounds even though they cannot become a MassScan.
+    @test MH.validate_spectrum_bounds(emptyblock, 116, 2) === nothing
+end
+
 @testset "Primitive endianness and required metadata" begin
     # Fixed byte sequences exercise signed values and IEEE floating-point bit patterns.
     for (T, bytes, value) in (
