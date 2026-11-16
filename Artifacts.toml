@@ -1,9 +1,9 @@
 [Agilent]
-git-tree-sha1 = "19bcd4ecdc2ac5fb3604ef71f3fa019a378c3218"
+git-tree-sha1 = "6b39fe7b1c659b25c8aca576453c160192bca6b8"
 
     [[Agilent.download]]
-    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/v0.0.1/Agilent.tar.gz"
-    sha256 = "7be6740d83ae1f6e158921e24d1f6fa2865eaba9f8d27c9f24220cd48e119c9f"
+    url = "https://raw.githubusercontent.com/oniehuis/JuChrom-ExampleData/v0.0.2/Agilent.tar.gz"
+    sha256 = "93adfaa0693e1438060cf7af2015b0a9a904497be6261dc00f8f741b3582a1f0"
 
 [ANDI]
 git-tree-sha1 = "fbb1cfc928d393c7b88470d38380a57185f7973f"
