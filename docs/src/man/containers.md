@@ -257,12 +257,12 @@ Convenience:
   [`retentions`](@ref JuChrom.retentions(::AbstractMassScanMatrix{Nothing})),
   [`scancount`](@ref JuChrom.scancount(::AbstractMassScanMatrix))
 
-Use [`mscanmatrix`](@ref JuChrom.mscanmatrix(::JuChrom.MassScanSeries, ::JuChrom.AbstractMatrixFormat)) 
+Use [`mscanmatrix`](@ref JuChrom.mscanmatrix)
 to convert a [`MassScanSeries`](@ref JuChrom.MassScanSeries) to a 
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix):
 
 ```julia
-msm = mscanmatrix(mss)
+msm = mscanmatrix(mss, mzgrid)  # supply the desired m/z columns explicitly
 ```
 
 ### AbstractVarianceMassScanMatrix interface

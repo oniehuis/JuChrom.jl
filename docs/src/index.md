@@ -91,15 +91,14 @@ tmss = retentiontrim(mss; start=4.1u"minute", stop=29.7u"minute")
 btmss = binmzvalues(tmss)
 
 # Convert scans to a dense retention-by-m/z matrix
-msm = mscanmatrix(btmss)
+msm = mscanmatrix(btmss, 29:563)  # explicit nominal grid for this acquisition
 
-# Normalize intensity by dwell time
-nmsm = dwellnormalize(msm)
+# Use the recorded intensity scale; this example has no established dwell durations.
 
 # Extract the trace of some ion of interest (e.g., m/z 104)
-xic = mzchrom(nmsm, 104, warning=false)
+xic = mzchrom(msm, 104, warning=false)
 
-# Plot m/z 104 trace; notice unitful intensity
+# Plot the m/z 104 trace on the recorded intensity scale
 fig₂ = tictrace(
   xic; 
   retentionunit=u"minute", 
@@ -114,13 +113,13 @@ nothing # hide
 
 ```@example 1
 # Find the n-alkane ladder for retention-index calibration
-asr = findalkanes(nmsm)
+asr = findalkanes(msm)
 asr.success || throw(ArgumentError(
     "Failed to find a suitable ladder in standard file: $file"))
 
 # Overlay detected ladder steps on the TIC
 fig₃ = tictrace(
-  nmsm, 
+  msm,
   asr; 
   retentionunit=u"minute", 
   figure=(; size=(1000, 350))
@@ -133,7 +132,7 @@ nothing # hide
 
 ```@example 1
 # Extract spectra for the annotated ladder steps
-mss = alkaneladdermassspectra(nmsm, asr)
+mss = alkaneladdermassspectra(msm, asr)
 
 # Select eicosane (C20), which must have been extracted
 c_count = 20
@@ -150,12 +149,12 @@ nothing # hide
 
 ```@example 1
 # Fit an intensity-variance model from the ladder peaks
-avf = fitalkanevariancemodel(nmsm, asr)
+avf = fitalkanevariancemodel(msm, asr)
 avf.success || throw(ArgumentError(
     "Failed to infer a variance model from standard file: $file"))
 
 # Attach predicted variances to the intensity matrix
-vmsm = varpred(nmsm, avf)
+vmsm = varpred(msm, avf)
 
 # Fit a smooth map from retention time to Kováts retention index
 mapper = fitmap(asr)

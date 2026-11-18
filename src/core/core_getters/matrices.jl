@@ -200,8 +200,10 @@ no unit was specified at construction, returns `nothing`.
 See also
 [`AbstractMassScanMatrix`](@ref JuChrom.AbstractMassScanMatrix), 
 [`MassScanMatrix`](@ref JuChrom.MassScanMatrix), 
+[`dwellnormalize`](@ref),
 [`intensities`](@ref JuChrom.intensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})), 
-[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})).
+[`rawintensities`](@ref JuChrom.rawintensities(::AbstractMassScanMatrix{<:Any, <:Any, Nothing})),
+[`withintensityunit`](@ref).
 
 # Examples
 ```jldoctest

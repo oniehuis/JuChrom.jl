@@ -53,6 +53,10 @@ end
     varianceunit(vmsm::AbstractVarianceMassScanMatrix) -> Union{Unitful.Units, Nothing}
 
 Return the unit associated with `variances(vmsm)`, or `nothing` for unitless variances.
+
+See also
+[`dwellnormalize`](@ref),
+[`withintensityunit`](@ref).
 """
 varianceunit(vmsm::AbstractVarianceMassScanMatrix) = vmsm.varianceunit
 

@@ -58,10 +58,14 @@ unit before units are stripped.
 
 ## Intensity units and dwell normalization
 
-Mass spectrometry intensities may be stored as signal accumulated over dwell intervals.
-Use [`withintensityunit`](@ref) when the numeric intensity values are known to have a unit
-that is not already recorded in the container. Raw or vendor-scaled intensity matrices are
-normally left unitless until they are dwell-normalized:
+Use [`withintensityunit`](@ref) when the numeric intensity values already have a known
+unit that is absent from the container. It attaches that unit without rescaling values.
+For example, `withintensityunit(msm, u"s^-1")` labels an already normalized rate.
+
+Use [`dwellnormalize`](@ref) when stored intensity is proportional to the duration of
+measurement. Having no intensity unit does not by itself establish this relationship.
+The function requires an explicit unitful duration, or explicit m/z-to-duration pairs;
+acquisition-method interpretation and estimation of dwell are separate operations.
 
 ```@example 2
 using JuChrom
@@ -72,36 +76,55 @@ msm = MassScanMatrix(
     [10.0 20.0 30.0; 40.0 50.0 60.0],
 )
 
-intensityunit(msm)
-```
-
-Use [`dwellnormalize`](@ref) to divide intensities by m/z-specific dwell intervals. The
-function accepts inputs whose intensity unit is absent and returns a rate-like signal with
-the reciprocal dwell unit. For explicit dwell intervals, their sum must not exceed the
-shortest scan interval in the retention axis; this explicit-vector form is therefore a
-sequential-acquisition model.
-
-```@example 2
-normalized = dwellnormalize(msm, [0.2, 0.3, 0.5], u"s")
-intensityunit(normalized)
-```
-
-```@example 2
+# Known dwell duration for each ion; pair order need not follow column order.
+dwell = (300 => 500u"ms", 100 => 0.2u"s", 200 => 300u"ms")
+normalized = dwellnormalize(msm, dwell)
 rawintensities(normalized)
 ```
 
-For simultaneous acquisition with a known effective dwell time, pass a scalar dwell
-interval. The scalar dwell must not exceed the shortest scan interval.
+Tuples and vectors of pairs, and dictionaries, are accepted. Every matrix m/z value
+needs a duration, including columns containing only zeros. Additional ions are allowed,
+so the same acquisition specification can be reused after selecting fewer columns.
+Duplicate m/z keys and missing durations are errors. All entries are validated, including
+ions absent from the matrix. Durations must be finite, positive quantities with time units.
+
+Keys follow the same unit conventions as [`mscanmatrix`](@ref): plain keys use the matrix's
+m/z unit, if any; unitful keys are converted to that unit before exact matching. Mixed
+plain/unitful keys, incompatible units, and unitful keys for a unitless m/z axis are
+rejected. Keys must be finite and positive. Compatible units may differ between keys;
+duplicates are checked after conversion. There is no rounding or approximate matching.
+
+For a known duration shared by all columns, use a scalar. This form makes no assumption
+about whether acquisition was sequential or simultaneous:
 
 ```@example 2
-simultaneous = dwellnormalize(msm, 0.5, u"s")
-rawintensities(simultaneous)
+shared = dwellnormalize(msm, 500u"ms")
+rawintensities(shared)
 ```
 
-When the scan interval is uniformly divided among all m/z values, `dwellnormalize(msm)`
-infers a single dwell interval from the shortest scan interval and the number of m/z
-values. For simultaneous acquisition, use `dwellnormalize(msm; acquisition=:simultaneous)`
-to infer the full shortest scan interval as the dwell time for every m/z value.
+All durations are converted to seconds. Results always have intensity unit `s^-1`,
+independently of input time units, pair order, or additional ions. Input intensities must
+have no attached unit. Both dense and sparse matrices are supported; storage is preserved.
+Axes, MS level, and metadata are copied.
+
+```@example 2
+intensityunit(normalized)
+```
+
+For [`VarianceMassScanMatrix`](@ref), the same API divides variances by the squared dwell
+durations, yielding variance unit `s^-2`:
+
+```@example 2
+vmsm = VarianceMassScanMatrix(msm, [1.0 4.0 9.0; 16.0 25.0 36.0])
+normalized_variances = dwellnormalize(vmsm, Dict(dwell))
+rawvariances(normalized_variances)
+```
+
+There is no argument-free inference, positional duration-vector form, or `acquisition`
+keyword. Neither recorded ions nor adjacent retention spacing determines the normalization.
+Durations are not checked against retention spacing: explicit dwell works for single
+scans, selected scans, and transformed or unitless retention coordinates. Establishing
+whether a duration correctly describes the acquisition is the caller's responsibility.
 
 ## Transformation tools
 

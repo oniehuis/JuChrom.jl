@@ -52,7 +52,8 @@ the accepted bins; any binned values outside the provided vector are discarded. 
 useful when occasional out-of-range measurements would otherwise introduce extra bins. Once 
 the m/z values of a [`MassScanSeries`](@ref JuChrom.MassScanSeries) are on a consistent 
 grid, you can convert the container to a [`MassScanMatrix`](@ref JuChrom.MassScanMatrix)
-with [`mscanmatrix`](@ref). This makes the fixed m/z grid explicit and enables efficient
+with `mscanmatrix(series, mzgrid)`. The explicit grid also adds columns for ions absent
+from every scan; `validmzvalues` alone does not do this. Matrix conversion enables efficient
 matrix-based workflows (dense or sparse storage, linear algebra, and downstream binning or
 mapping that operate on matrices).
 
@@ -79,7 +80,7 @@ mss_mz_binned = binmzvalues(mss)  # Returns new MassScanSeries object
 uniquemzvalues(mss_mz_binned)
 
 # Optional conversion to MassScanMatrix for efficient matrix-based workflows
-msm = mscanmatrix(mss_mz_binned)
+msm = mscanmatrix(mss_mz_binned, 29:563)  # grid from the example acquisition method
 ```
 
 ```@example 1

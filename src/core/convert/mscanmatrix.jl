@@ -1,266 +1,161 @@
 # ── mscanmatrix ───────────────────────────────────────────────────────────────────────────
 
-# Define matrix format types for dispatch
 abstract type AbstractMatrixFormat end
 struct DenseMatrix <: AbstractMatrixFormat end
 struct SparseMatrix <: AbstractMatrixFormat end
 
-# Convenience constants for easy use
 const DENSE = DenseMatrix()
 const SPARSE = SparseMatrix()
 
 """
-    mscanmatrix(
-        series::MassScanSeries,
-        format::AbstractMatrixFormat; 
-        target_level::Integer=1,
-        threshold::Real=0.0
-    ) -> MassScanMatrix
+    mscanmatrix(series::MassScanSeries, mzgrid;
+                format=DENSE, target_level::Integer=1, threshold::Real=0.0,
+                unmatched::Symbol=:error) -> MassScanMatrix
 
-Convert a MassScanSeries to a MassScanMatrix with the specified matrix format.
+Convert scans at `target_level` to a retention × m/z matrix on the explicit `mzgrid`.
 
-`series` supplies the input scans, and `format` selects `DENSE` or `SPARSE` storage (or
-`DenseMatrix()` / `SparseMatrix()`), with `DENSE` as the default. `DENSE` stores the full
-retention × m/z grid as a standard dense matrix, while `SPARSE` stores only the nonzero
-entries in a sparse matrix to reduce memory for sparse spectra. `target_level` filters
-scans by MS level, and `threshold` excludes intensities below the specified minimum.
+`mzgrid` must be a nonempty vector, range, or tuple of finite, positive, strictly
+increasing m/z values. Spacing may be arbitrary. Every requested value gets a column,
+including values absent from every scan. The grid is copied, never inferred from the
+recorded ions, sorted, or deduplicated. Use `format=DENSE` (the default) or
+`format=SPARSE` to choose storage.
 
-See also
-[`MassScanMatrix`](@ref JuChrom.MassScanMatrix),
-[`MassScanSeries`](@ref JuChrom.MassScanSeries).
+Matching is exact, with no rounding, binning, or tolerance. For example, `57.1f0` and
+`57.1` do not match. Apply [`binmzvalues`](@ref) beforehand when needed. With
+`unmatched=:error`, any recorded m/z absent from the grid raises `ArgumentError`.
+Use `unmatched=:drop` to deliberately select a subset. Only scans at `target_level`
+are checked, but all their m/z values are checked **before** intensity filtering.
+Only intensities strictly greater than `threshold` are retained.
+
+Grid entries must be either all plain real numbers or all real-valued Unitful
+quantities. Plain values are interpreted in the series' m/z unit, if any. Unitful
+values are converted to that unit before exact matching; compatible units may differ
+between entries. A unitful grid requires a unitful series. Mixed plain/unitful values
+and incompatible units raise `ArgumentError`. The result preserves the series' m/z,
+retention, and intensity units, numeric intensity type, and metadata.
+
+An absent entry is represented by zero; this does not establish whether the ion was
+acquired or whether its signal was suppressed during acquisition. An entirely zero
+matrix is valid. No scans at the requested MS level raises `ArgumentError`.
 
 # Examples
 ```jldoctest
-julia> scan1 = MassScan(1.0u"s", [101.2, 101.6, 102.1], [10, 20, 30])
-       scan2 = MassScan(2.0u"s", [100.9, 101.2, 102.6], [20, 5, 30])
-       series = MassScanSeries([scan1, scan2]);
+julia> series = MassScanSeries([
+           MassScan(1.0u"s", [57, 71], [10, 20]),
+           MassScan(2.0u"s", [57, 85], [5, 30])]);
 
-julia> matrix_dense = mscanmatrix(series);  # Create dense matrix (default)
+julia> matrix = mscanmatrix(series, 57:14:99);
 
-julia> intensities(matrix_dense) isa Matrix
+julia> rawmzvalues(matrix)
+4-element Vector{Int64}:
+ 57
+ 71
+ 85
+ 99
+
+julia> rawintensities(matrix) == [10 20 0 0; 5 0 30 0]
 true
 
-julia> matrix_sparse = mscanmatrix(series, SPARSE);  # Create sparse matrix
+julia> sparsematrix = mscanmatrix(series, (57, 71, 85, 99); format=SPARSE);
 
-julia> intensities(matrix_sparse) isa SparseArrays.SparseMatrixCSC
+julia> rawintensities(sparsematrix) isa SparseMatrixCSC
 true
 
-julia> intensities(matrix_dense) ≈ [0 10 20 30 0; 20 5 0 0 30]
+julia> rawintensities(sparsematrix) == rawintensities(matrix)
 true
 
-julia> intensities(matrix_dense) ≈ intensities(matrix_sparse)
+julia> selected = mscanmatrix(series, (57, 71); unmatched=:drop, threshold=5);
+
+julia> rawintensities(selected) == [10 20; 0 0]
 true
 
-julia> retentions(matrix_dense) ≈ [1.0, 2.0]u"s"
+julia> unitful = MassScanSeries([MassScan(1u"s", [57, 71]u"Th", [10, 20]u"pA")]);
+
+julia> converted = mscanmatrix(unitful, (57000u"mTh", 71000u"mTh", 85000u"mTh"));
+
+julia> mzvalues(converted) == [57, 71, 85]u"Th"
 true
 
-julia> retentionunit(matrix_dense)
-s
-
-julia> mzvalues(matrix_dense) ≈ [100.9, 101.2, 101.6, 102.1, 102.6]
+julia> intensities(converted) == [10 20 0]u"pA"
 true
-
-julia> mzunit(matrix_dense) ≡ nothing
-true
-
-julia> matrix_filtered = mscanmatrix(series, threshold=7.5);  # Apply intensity threshold
-
-julia> intensities(matrix_filtered) ≈ [0 10 20 30 0; 20 0 0 0 30]
-true
-
-julia> scan1 = MassScan(1.0u"s", [101.2, 101.6, 102.1], [10, 20, 30], level=1)
-       scan2 = MassScan(2.0u"s", [100.9, 101.2, 102.6], [20, 5, 30], level=2)
-       series = MassScanSeries([scan1, scan2]);
-
-julia> matrix_level_2 = mscanmatrix(series, target_level=2);
-
-julia> level(matrix_level_2)
-2
-
-julia> intensities(matrix_level_2) ≈ [20 5 30]
-true
-
-julia> series_annotated = MassScanSeries([scan1, scan2];
-                          instrument=(detector="Orbitrap", manufacturer="Thermo"),
-                          acquisition=(mode="FullScan", method="DDA", polarity="positive"),
-                          user=(operator="Alice", project="QC-2025"),
-                          sample=(ID="sample_001", matrix="plasma", prep="SPE"),
-                          extras=Dict("injection_volume" => 5.0, "comment" => "QC run"));
-
-
-julia> matrix_annotated = mscanmatrix(series_annotated);
-
-julia> instrument(matrix_annotated)
-(detector = "Orbitrap", manufacturer = "Thermo")
-
-julia> acquisition(matrix_annotated)
-(mode = "FullScan", method = "DDA", polarity = "positive")
-
-julia> user(matrix_annotated)
-(operator = "Alice", project = "QC-2025")
-
-julia> sample(matrix_annotated)
-(ID = "sample_001", matrix = "plasma", prep = "SPE")
-
-julia> sort!(collect(extras(matrix_annotated)); by=first)
-2-element Vector{Pair{String, Any}}:
-          "comment" => "QC run"
- "injection_volume" => 5.0
 ```
 """
-function mscanmatrix(series::MassScanSeries, format::DenseMatrix;
+function mscanmatrix(series::MassScanSeries, mzgrid::Union{AbstractVector, Tuple};
+                     format::AbstractMatrixFormat=DENSE,
                      target_level::Integer=1,
-                     threshold::Real=0.0)
-
+                     threshold::Real=0.0,
+                     unmatched::Symbol=:error)
+    unmatched in (:error, :drop) || throw(ArgumentError(
+        "unmatched must be :error or :drop."))
     filtered_series = levelscans(series, target_level)
-    n_scans = scancount(filtered_series)
-    n_scans > 0 || throw(ArgumentError("No scans found at target level $target_level"))
+    grid = mscanmatrix_grid(mzgrid, mzunit(filtered_series))
+    mz_to_index = Dict(mz => i for (i, mz) in enumerate(grid))
 
-    # Use raw values so units remain in metadata (no Unitful values in the grid).
-    uniquemzs = sort(unique(vcat(rawmzvalues.(scans(filtered_series))...)))
-    n_ions = length(uniquemzs)
+    if unmatched === :error
+        for (i, scan) in enumerate(scans(filtered_series)), mz in rawmzvalues(scan)
+            haskey(mz_to_index, mz) || throw(ArgumentError(
+                "Recorded m/z $mz at selected scan $i is absent from mzgrid; " *
+                "use unmatched=:drop to intentionally exclude it."))
+        end
+    end
 
-    mz_to_index = Dict{eltype(uniquemzs), Int}(ion => i for (i, ion) in enumerate(uniquemzs))
-
-    # Build the dense intensity matrix per your existing logic
-    intensity_matrix = create_matrix(format, filtered_series, mz_to_index, n_scans, n_ions, 
-                                     threshold)
-
-    # Preserve original eltypes; units are stored separately in metadata.
-    rt_vals = copy(rawretentions(filtered_series))
-    rt_unit = retentionunit(filtered_series)
-    mz_vals = copy(uniquemzs)
-    mz_unit = mzunit(filtered_series)
-    I_vals = intensity_matrix
-    iu_unit = intensityunit(filtered_series)
-
-    MassScanMatrix(rt_vals, rt_unit, mz_vals, mz_unit, I_vals, iu_unit;
-                   level=target_level,
-                   instrument=instrument(series),
-                   acquisition=acquisition(series),
-                   user=user(series),
-                   sample=sample(series),
-                   extras=extras(series))
+    values = create_matrix(format, filtered_series, mz_to_index,
+        scancount(filtered_series), length(grid), threshold)
+    MassScanMatrix(copy(rawretentions(filtered_series)), retentionunit(filtered_series),
+        grid, mzunit(filtered_series), values, intensityunit(filtered_series);
+        level=target_level, instrument=instrument(series), acquisition=acquisition(series),
+        user=user(series), sample=sample(series), extras=extras(series))
 end
 
-
-function mscanmatrix(series::MassScanSeries, format::SparseMatrix;
-                     target_level::Integer=1,
-                     threshold::Real=0.0)
-
-    filtered_series = levelscans(series, target_level)
-    n_scans = scancount(filtered_series)
-    n_scans > 0 || throw(ArgumentError("No scans found at target level $target_level"))
-
-    # Use raw values so units remain in metadata (no Unitful values in the grid).
-    uniquemzs = sort(unique(vcat(rawmzvalues.(scans(filtered_series))...)))
-    n_ions = length(uniquemzs)
-
-    mz_to_index = Dict{eltype(uniquemzs), Int}(ion => i for (i, ion) in enumerate(uniquemzs))
-
-    # Build the sparse intensity matrix per your existing logic
-    intensity_matrix = create_matrix(format, filtered_series, mz_to_index, n_scans, n_ions, 
-                                     threshold)
-
-    # Preserve original eltypes; units are stored separately in metadata.
-    rt_vals = copy(rawretentions(filtered_series))
-    rt_unit = retentionunit(filtered_series)
-    mz_vals = copy(uniquemzs)
-    mz_unit = mzunit(filtered_series)
-    I_vals = intensity_matrix
-    iu_unit = intensityunit(filtered_series)
-
-    MassScanMatrix(rt_vals, rt_unit, mz_vals, mz_unit, I_vals,  iu_unit;
-                   level=target_level,
-                   instrument=instrument(series),
-                   acquisition=acquisition(series),
-                   user=user(series),
-                   sample=sample(series),
-                   extras=extras(series))
+function mscanmatrix_grid(mzgrid, mz_unit)
+    isempty(mzgrid) && throw(ArgumentError("mzgrid must not be empty."))
+    if all(x -> x isa Real, mzgrid)
+        # Narrow abstract element types without rounding through numeric promotion.
+        values = map(identity, collect(mzgrid))
+    elseif all(x -> x isa AbstractQuantity{<:Real}, mzgrid)
+        isnothing(mz_unit) && throw(ArgumentError(
+            "A unitful mzgrid requires a series with an m/z unit."))
+        all(x -> Unitful.dimension(x) == Unitful.dimension(mz_unit), mzgrid) ||
+            throw(ArgumentError("mzgrid units must be compatible with the series' m/z unit."))
+        values = map(x -> ustrip(mz_unit, x), collect(mzgrid))
+    else
+        throw(ArgumentError(
+            "mzgrid must contain either only real numbers or only real-valued quantities."))
+    end
+    all(isfinite, values) || throw(ArgumentError("mzgrid values must be finite."))
+    all(>(0), values) || throw(ArgumentError("mzgrid values must be positive."))
+    all(i -> values[i - 1] < values[i], 2:length(values)) || throw(ArgumentError(
+        "mzgrid values must be strictly increasing (no duplicates allowed)."))
+    values
 end
 
-
-# Default to dense matrix
-function mscanmatrix(series::MassScanSeries; target_level::Integer=1, threshold::Real=0.0)
-    mscanmatrix(series, DenseMatrix(); target_level=target_level, threshold=threshold)
-end
-
-# Format-specific matrix creation methods
-function create_matrix(::DenseMatrix, filtered_series, mz_to_index, n_scans, n_ions, 
-                       threshold)
-    # Get the intensity type from first scan
-    IntensityType = eltype(intensities(filtered_series[1]))
-    
-    # Pre-allocate matrix with correct type
-    intensity_matrix = zeros(IntensityType, n_scans, n_ions)
-    
-    # Fill matrix
+function create_matrix(::DenseMatrix, series, mz_to_index, n_scans, n_ions, threshold)
+    values = zeros(eltype(rawintensities(first(scans(series)))), n_scans, n_ions)
     Threads.@threads for i in 1:n_scans
-        scan = @inbounds filtered_series[i]
-        mz_vals = rawmzvalues(scan)
-        intensity_vals = rawintensities(scan)
-        
-        @inbounds @simd for idx in eachindex(mz_vals, intensity_vals)
-            mz = mz_vals[idx]
-            intensity = intensity_vals[idx]
-            if intensity > threshold
-                j = mz_to_index[mz]
-                intensity_matrix[i, j] = intensity
+        scan = series[i]
+        for (mz, intensity) in zip(rawmzvalues(scan), rawintensities(scan))
+            j = get(mz_to_index, mz, 0)
+            if j != 0 && intensity > threshold
+                values[i, j] = intensity
             end
         end
     end
-    
-    intensity_matrix
+    values
 end
 
-function create_matrix(::SparseMatrix, filtered_series, mz_to_index, n_scans, n_ions, 
-                       threshold)
-    # Get the intensity type from first scan
-    IntensityType = eltype(intensities(filtered_series[1]))
-    
-    # Collect all non-zero entries
+function create_matrix(::SparseMatrix, series, mz_to_index, n_scans, n_ions, threshold)
     rows = Int[]
     cols = Int[]
-    vals = IntensityType[]
-    
-    # Estimate capacity to reduce allocations
-    estimated_nnz = estimate_nonzeros(filtered_series, threshold)
-    sizehint!(rows, estimated_nnz)
-    sizehint!(cols, estimated_nnz)
-    sizehint!(vals, estimated_nnz)
-    
-    # Sequential collection (avoid threading due to race conditions)
-    @inbounds for i in 1:n_scans
-        scan = filtered_series[i]
-        mz_vals = rawmzvalues(scan)
-        intensity_vals = rawintensities(scan)
-        
-        @simd for idx in eachindex(mz_vals, intensity_vals)
-            mz = mz_vals[idx]
-            intensity = intensity_vals[idx]
-            if intensity > threshold
-                j = mz_to_index[mz]
+    values = eltype(rawintensities(first(scans(series))))[]
+    for (i, scan) in enumerate(scans(series))
+        for (mz, intensity) in zip(rawmzvalues(scan), rawintensities(scan))
+            j = get(mz_to_index, mz, 0)
+            if j != 0 && intensity > threshold
                 push!(rows, i)
                 push!(cols, j)
-                push!(vals, intensity)
+                push!(values, intensity)
             end
         end
     end
-    
-    sparse(rows, cols, vals, n_scans, n_ions)
-end
-
-function estimate_nonzeros(filtered_series, threshold)
-    # Simple heuristic: sample a few scans to estimate sparsity
-    n_scans = scancount(filtered_series)
-    sample_size = min(5, n_scans)
-    
-    total_nonzeros = 0
-    @inbounds for i in 1:sample_size
-        scan = filtered_series[i]
-        total_nonzeros += Base.count(x -> x > threshold, intensities(scan))
-    end
-    
-    # Extrapolate to full dataset
-    div(total_nonzeros * n_scans, sample_size)
+    sparse(rows, cols, values, n_scans, n_ions)
 end
