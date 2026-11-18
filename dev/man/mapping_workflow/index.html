@@ -7,16 +7,15 @@ file = joinpath(JuChrom.agilent, &quot;C7-C40_ChemStationMS.D&quot;, &quot;data.
 mss = load(ChemStationMS(file; mode=:ms))
 tmss = retentiontrim(mss; start=4.1u&quot;minute&quot;, stop=29.7u&quot;minute&quot;)
 btmss = binmzvalues(tmss)
-msm = mscanmatrix(btmss)
-nmsm = dwellnormalize(msm)
+msm = mscanmatrix(btmss, 29:563)
 
-asr = findalkanes(nmsm)
+asr = findalkanes(msm)
 
 asr.success || error(&quot;Failed to find a suitable ladder: $(asr.status)&quot;)
 
 mapper = fitmap(asr)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RetentionMapper with 28 calibration points
 ├─ Domain A (input):
-│  ├─ Range: 252004.395291253633331507 to 1757220.505859049037098885 (ms)
+│  ├─ Range: 252004.395291253633331507 to 1757220.507881633704528213 (ms)
 │  └─ Type: Float64
 ├─ Domain B (output):
 │  ├─ Range: 900.0 to 3600.0 (unitless)
@@ -29,7 +28,7 @@ mapper = fitmap(asr)</code></pre><pre class="documenter-example-output"><code cl
    ├─ Min residual: 0.002 
    ├─ Avg residual: 0.110 
    └─ Max residual: 0.943 
-</code></pre><p>This direct path is the usual workflow. <code>asr.success</code> is <code>true</code> only when the default calibration-point selection yields at least three mapper-ready anchors. If it is <code>false</code>, inspect <code>asr.status</code> and the ladder diagnostics before fitting; common causes are too few accepted ladder steps, failed or ambiguous ladder detection, or anchor points that need manual curation.</p><p>Only extract the calibration list when you want to inspect or curate it, for example to remove a suspect step or add a manually confirmed step while keeping the original <code>AlkaneSeriesResult</code> as the audit trail.</p><pre><code class="language-julia hljs">detected_points = alkaneladdercalibrationpoints(asr)
+</code></pre><p>This example uses the recorded intensity scale. When dwell durations and the signal scaling are known, explicit <a href="../transformation/#Intensity-units-and-dwell-normalization">dwell normalization</a> can be applied before ladder analysis.</p><p>This direct path is the usual workflow. <code>asr.success</code> is <code>true</code> only when the default calibration-point selection yields at least three mapper-ready anchors. If it is <code>false</code>, inspect <code>asr.status</code> and the ladder diagnostics before fitting; common causes are too few accepted ladder steps, failed or ambiguous ladder detection, or anchor points that need manual curation.</p><p>Only extract the calibration list when you want to inspect or curate it, for example to remove a suspect step or add a manually confirmed step while keeping the original <code>AlkaneSeriesResult</code> as the audit trail.</p><pre><code class="language-julia hljs">detected_points = alkaneladdercalibrationpoints(asr)
 detected_C27 = only(filter(point -&gt; point.ladderstep == 27, detected_points))
 
 manual_C27 = AlkaneLadderCalibrationPoint(
@@ -43,7 +42,7 @@ manual_C27 = AlkaneLadderCalibrationPoint(
 points = alkaneladdercalibrationpoints(asr; exclude=[27], extra=[manual_C27])
 mapper = fitmap(points)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">RetentionMapper with 28 calibration points
 ├─ Domain A (input):
-│  ├─ Range: 252004.395291253633331507 to 1757220.505859049037098885 (ms)
+│  ├─ Range: 252004.395291253633331507 to 1757220.507881633704528213 (ms)
 │  └─ Type: Float64
 ├─ Domain B (output):
 │  ├─ Range: 900.0 to 3600.0 (unitless)
@@ -120,4 +119,4 @@ mapper_reloaded = JLD2.load(&quot;retention_mappers.jld2&quot;, &quot;mapper&quo
 mapper_smooth_loaded = JLD2.load(&quot;retention_mappers.jld2&quot;, &quot;mapper_smooth&quot;)
 
 (mapper_loaded isa RetentionMapper, mapper_reloaded isa RetentionMapper,
-    mapper_smooth_loaded isa RetentionMapper)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(true, true, true)</code></pre><p>For API details, see <a href="../mapping_fitting/">Fitting maps</a>, <a href="../mapping_plotting/">Diagnostic plots</a>, <a href="../mapping_application/">Applying maps</a>, and <a href="../mapping_containers/">Mapper containers</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mapping_overview/">« Overview</a><a class="docs-footer-nextpage" href="../mapping_fitting/">Fitting Maps »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.20.0 on <span class="colophon-date" title="Monday 16 November 2026 19:01">Monday 16 November 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+    mapper_smooth_loaded isa RetentionMapper)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(true, true, true)</code></pre><p>For API details, see <a href="../mapping_fitting/">Fitting maps</a>, <a href="../mapping_plotting/">Diagnostic plots</a>, <a href="../mapping_application/">Applying maps</a>, and <a href="../mapping_containers/">Mapper containers</a>.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../mapping_overview/">« Overview</a><a class="docs-footer-nextpage" href="../mapping_fitting/">Fitting Maps »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.20.0 on <span class="colophon-date" title="Wednesday 18 November 2026 12:36">Wednesday 18 November 2026</span>. Using Julia version 1.12.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
