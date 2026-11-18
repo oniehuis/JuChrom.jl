@@ -147,7 +147,7 @@ end
 @testset "mzchrom(msm) — TIC/XIC, by=:mz|:index, tol, dedup, warnings, metadata" begin
     # Build matrices from the same toy series used for the series tests
     seriesA = _toy_series_no_levels()  # unitless m/z
-    msmA = mscanmatrix(seriesA)  # dense; grid: [100.9, 101.2, 101.6, 102.1, 102.6]
+    msmA = mscanmatrix(seriesA, [100.9, 101.2, 101.6, 102.1, 102.6])
     I = intensities(msmA)
     rts = retentions(msmA)
 
@@ -212,7 +212,7 @@ end
 
     # Unitful m/z grid matrix
     seriesU = _toy_series_unitful_mz()  # m/z with u"Th"
-    msmU = mscanmatrix(seriesU)
+    msmU = mscanmatrix(seriesU, [100.9, 101.2, 101.6, 102.1, 102.6]u"Th")
     IU = intensities(msmU)
 
     # Scalar selection as AbstractQuantity

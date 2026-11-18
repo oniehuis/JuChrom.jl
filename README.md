@@ -61,7 +61,7 @@ series = load(ChemStationMS(path; mode=:ms))
 
 # Bin to integer m/z values and build a retention-by-m/z intensity matrix.
 binned = binmzvalues(series, JuChrom.integer)
-matrix = mscanmatrix(binned)
+matrix = mscanmatrix(binned, 29:563)  # nominal grid from the example acquisition method
 
 # Extract the total-ion chromatogram (TIC) and an m/z 57 chromatogram (XIC).
 tic = mzchrom(matrix)

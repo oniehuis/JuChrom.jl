@@ -24,15 +24,18 @@ file = joinpath(JuChrom.agilent, "C7-C40_ChemStationMS.D", "data.ms")
 mss = load(ChemStationMS(file; mode=:ms))
 tmss = retentiontrim(mss; start=4.1u"minute", stop=29.7u"minute")
 btmss = binmzvalues(tmss)
-msm = mscanmatrix(btmss)
-nmsm = dwellnormalize(msm)
+msm = mscanmatrix(btmss, 29:563)
 
-asr = findalkanes(nmsm)
+asr = findalkanes(msm)
 
 asr.success || error("Failed to find a suitable ladder: $(asr.status)")
 
 mapper = fitmap(asr)
 ```
+
+This example uses the recorded intensity scale. When dwell durations and the signal
+scaling are known, explicit [dwell normalization](transformation.md#Intensity-units-and-dwell-normalization)
+can be applied before ladder analysis.
 
 This direct path is the usual workflow. `asr.success` is `true` only when the default
 calibration-point selection yields at least three mapper-ready anchors. If it is `false`,

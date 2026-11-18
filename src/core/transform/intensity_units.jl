@@ -1,392 +1,156 @@
 # ── dwellnormalize ────────────────────────────────────────────────────────────────────────
 
 """
-    dwellnormalize(msm::MassScanMatrix, dwell::AbstractVector{<:Real}, unit::Unitful.Units)
+    dwellnormalize(msm::Union{MassScanMatrix, VarianceMassScanMatrix}, dwell)
 
-Return a copy of `msm` whose intensity values are divided by m/z-specific dwell intervals.
+Return a copy with intensities divided by explicitly supplied dwell durations.
 
-The input matrix is interpreted as containing signal accumulated over m/z dwell intervals.
-The values may be raw, vendor-scaled, or otherwise transformed intensities. The relevant
-assumption is that the stored values scale with the duration of the dwell interval. The
-input intensity unit must be absent. `dwell` provides one dwell interval per m/z value, in
-the unit specified by `unit`, and must therefore have length `mzcount(msm)`. Each intensity
-column is divided by the corresponding dwell value. The sum of the dwell intervals must
-not exceed the shortest scan interval implied by the retention axis, allowing for floating
-point roundoff. The returned matrix uses `inverse(unit)` as its intensity unit. Retention
-coordinates, m/z values, MS level, and metadata are preserved.
+`dwell` is either a single unitful duration shared by every m/z column, or a tuple/vector
+of `mz => duration` pairs or a dictionary associating m/z values with unitful durations.
+Every duration must be real-valued, finite, positive, and have units of time. Durations
+are converted to seconds; output intensities have unit `s^-1`, independently of the
+units or ordering of the specification. A shared duration does not imply simultaneous
+acquisition.
 
-Throws `ArgumentError` if `intensityunit(msm)` is not `nothing`, if the retention axis has
-no unit or fewer than two scans, if any dwell value is non-finite or non-positive, or if
-the total dwell duration exceeds the shortest scan interval. Throws `DimensionMismatch` if
-`dwell` does not have length `mzcount(msm)`.
+For m/z-specific durations, every matrix column, including zero-filled columns, needs an
+entry. Additional ions are allowed. Matching is exact, without rounding or tolerance.
+Keys must be finite and positive, and either all plain real numbers or all real-valued
+quantities. Plain keys use the matrix's m/z unit, if any. Unitful keys are converted to
+that unit before matching and require a unitful matrix m/z axis. Compatible key units
+may differ. Duplicate keys are rejected after unit conversion, including duplicates for
+ions absent from the matrix. All entries, including additional ions, are validated.
 
-# Examples
-```jldoctest
-julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [10.0 20.0; 30.0 40.0]);
+The input intensity unit must be absent, and its values must represent signal proportional
+to dwell duration. If the stored values already represent a rate, use
+[`withintensityunit`](@ref) to attach its known unit without rescaling. This function does
+not infer dwell from recorded ions or retention spacing, and does not check durations
+against scan intervals. Single scans and transformed or unitless retention axes work.
 
-julia> normalized = dwellnormalize(msm, [0.4, 0.6], u"s");
+For `VarianceMassScanMatrix`, variances are divided by squared dwell durations and have
+unit `s^-2`. Dense/sparse storage is preserved. Axes, MS level, and metadata are copied.
 
-julia> rawintensities(normalized)
-2×2 Matrix{Float64}:
- 25.0  33.3333
- 75.0  66.6667
+Throws `ArgumentError` for invalid durations or keys, duplicate or missing keys, malformed
+pair collections, or an input with an intensity unit. Positional duration vectors,
+unitless durations, automatic inference, and the `acquisition` keyword are not supported.
 
-julia> intensityunit(normalized)
-s^-1
-```
-"""
-function dwellnormalize(
-    msm::MassScanMatrix,
-    dwell::AbstractVector{<:Real},
-    unit::Unitful.Units
-)
-    inputunit = intensityunit(msm)
-    isnothing(inputunit) ||
-        throw(ArgumentError("MassScanMatrix intensityunit must be nothing."))
-
-    length(dwell) == mzcount(msm) ||
-        throw(DimensionMismatch("dwell must have length mzcount(msm)."))
-
-    all(isfinite, dwell) ||
-        throw(ArgumentError("all dwell values must be finite."))
-
-    all(t -> t > zero(t), dwell) ||
-        throw(ArgumentError("all dwell values must be positive."))
-
-    validate_dwell_fits_scan_interval(msm, dwell, unit)
-
-    dwell_normalize_unchecked(msm, dwell, unit)
-end
-
-function dwell_normalize_unchecked(
-    msm::MassScanMatrix,
-    dwell::AbstractVector{<:Real},
-    unit::Unitful.Units
-)
-    normalized = rawintensities(msm) * Diagonal(inv.(dwell))
-    normalizedunit = inverse(unit)
-
-    MassScanMatrix(
-        copy(rawretentions(msm)),
-        retentionunit(msm),
-        copy(rawmzvalues(msm)),
-        mzunit(msm),
-        normalized,
-        normalizedunit;
-        level=level(msm),
-        instrument=deepcopy(instrument(msm)),
-        acquisition=deepcopy(acquisition(msm)),
-        user=deepcopy(user(msm)),
-        sample=deepcopy(sample(msm)),
-        extras=deepcopy(extras(msm)),
-    )
-end
-
-function validate_dwell_fits_scan_interval(
-    msm::MassScanMatrix,
-    dwell::AbstractVector{<:Real},
-    unit::Unitful.Units
-)
-    rtunit = retentionunit(msm)
-    !isnothing(rtunit) ||
-        throw(ArgumentError("retentionunit is required to validate dwell intervals."))
-    scancount(msm) > 1 ||
-        throw(ArgumentError("at least two scans are required to validate dwell intervals."))
-
-    scanintervals = diff(rawretentions(msm))
-    all(isfinite, scanintervals) ||
-        throw(ArgumentError("all scan intervals must be finite."))
-    all(interval -> interval > zero(interval), scanintervals) ||
-        throw(ArgumentError("all scan intervals must be positive."))
-
-    totaldwell = try
-        ustrip(rtunit, sum(Float64, dwell) * unit)
-    catch
-        throw(ArgumentError(
-            "dwell unit must be compatible with retentionunit(msm)."))
-    end
-    shortestinterval = Float64(minimum(scanintervals))
-    tolerance = max(
-        length(dwell) * eps(Float64) * max(abs(totaldwell), 
-        abs(shortestinterval)),
-        eps(Float64)
-    )
-    totaldwell ≤ shortestinterval + tolerance ||
-        throw(ArgumentError(
-            "sum(dwell) must not exceed the shortest scan interval."))
-
-    nothing
-end
-
-"""
-    dwellnormalize(msm::MassScanMatrix, dwell::AbstractVector{<:AbstractQuantity})
-
-Return a copy of `msm` whose intensity values are divided by unitful m/z-specific dwell
-intervals.
-
-This method accepts dwell intervals with Unitful units and delegates to
-`dwellnormalize(msm, dwellvalues, dwellunit)` after checking and stripping the units. The
-unitful `dwell` vector must contain one dwell interval per m/z value and use a consistent
-unit. The returned matrix stores intensity values normalized by those dwell intervals and
-uses the reciprocal dwell unit as its intensity unit.
-
-Throws `ArgumentError` if units in `dwell` are inconsistent, if `intensityunit(msm)` is
-not `nothing`, if any dwell value is non-finite or non-positive, or if the total dwell
-duration exceeds the shortest scan interval. Throws `DimensionMismatch` if `dwell` does
-not have length `mzcount(msm)`.
+See also
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)),
+[`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)),
+[`withintensityunit`](@ref).
 
 # Examples
 ```jldoctest
-julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [10.0 20.0; 30.0 40.0]);
+julia> msm = MassScanMatrix([1.0, 2.0]u"s", [57, 71], [10.0 20.0; 30.0 40.0]);
 
-julia> normalized = dwellnormalize(msm, [0.4, 0.6]u"s");
+julia> shared = dwellnormalize(msm, 10u"ms");
 
-julia> rawintensities(normalized)
-2×2 Matrix{Float64}:
- 25.0  33.3333
- 75.0  66.6667
+julia> rawintensities(shared) == [1000 2000; 3000 4000]
+true
 
-julia> intensityunit(normalized)
-s^-1
+julia> normalized = dwellnormalize(msm, (71 => 20u"ms", 57 => 0.01u"s"));
+
+julia> rawintensities(normalized) == [1000 1000; 3000 2000]
+true
+
+julia> intensityunit(normalized) == u"s^-1"
+true
+
+julia> rates = dwellnormalize(msm, Dict(57 => 10u"ms", 71 => 20u"ms", 85 => 5u"ms"));
+
+julia> rawintensities(rates) == rawintensities(normalized)
+true
+
+julia> vmsm = VarianceMassScanMatrix(msm, [1.0 4.0; 9.0 16.0]);
+
+julia> normalizedvar = dwellnormalize(vmsm, [57 => 10u"ms", 71 => 20u"ms"]);
+
+julia> rawvariances(normalizedvar) == [10000 10000; 90000 40000]
+true
+
+julia> varianceunit(normalizedvar) == u"s^-2"
+true
 ```
 """
 function dwellnormalize(
-    msm::MassScanMatrix,
-    dwell::AbstractVector{<:AbstractQuantity{<:Real}},
-)
-    dwellvalues, dwellunit = strip_units_checked(dwell, "dwell")
-    dwellnormalize(msm, dwellvalues, dwellunit)
-end
-
-"""
-    dwellnormalize(msm::MassScanMatrix, dwell::Real, unit::Unitful.Units)
-
-Return a copy of `msm` whose intensity values are divided by a single dwell interval
-shared by all m/z channels.
-
-This scalar form represents simultaneous acquisition with a known effective dwell time.
-The dwell interval must be finite, positive, and no larger than the shortest scan interval
-on the retention axis. The returned matrix uses `inverse(unit)` as its intensity unit.
-"""
-function dwellnormalize(
-    msm::MassScanMatrix,
-    dwell::Real,
-    unit::Unitful.Units
-)
-    inputunit = intensityunit(msm)
-    isnothing(inputunit) ||
-        throw(ArgumentError("MassScanMatrix intensityunit must be nothing."))
-    validate_scalar_dwell(msm, dwell, unit)
-
-    dwell_normalize_unchecked(msm, fill(Float64(dwell), mzcount(msm)), unit)
-end
-
-"""
-    dwellnormalize(msm::MassScanMatrix, dwell::Unitful.Quantity)
-
-Return a copy of `msm` whose intensity values are divided by a single unitful dwell
-interval shared by all m/z channels.
-"""
-function dwellnormalize(
-    msm::MassScanMatrix,
-    dwell::AbstractQuantity{<:Real}
-)
-    dwellnormalize(msm, Unitful.ustrip(dwell), Unitful.unit(dwell))
-end
-
-"""
-    dwellnormalize(msm::MassScanMatrix; acquisition=:sequential)
-
-Return a copy of `msm` whose intensity values are normalized by an inferred uniform dwell
-interval.
-
-This convenience method infers a uniform dwell interval from the shortest adjacent
-retention spacing. For `acquisition=:sequential`, that shortest scan interval is divided
-by `mzcount(msm)`. For `acquisition=:simultaneous`, the full shortest scan interval is
-used for every m/z value. The returned matrix uses the reciprocal retention unit as its
-intensity unit.
-
-Throws `ArgumentError` if `msm` has no retention unit, if it has fewer than two scans, if
-`intensityunit(msm)` is not `nothing`, or if the inferred scan intervals are non-finite or
-non-positive. `acquisition` must be `:sequential` or `:simultaneous`.
-
-# Examples
-```jldoctest
-julia> msm = MassScanMatrix([1.0, 2.0]u"s", [100.0, 200.0], [10.0 20.0; 30.0 40.0]);
-
-julia> normalized = dwellnormalize(msm);
-
-julia> rawintensities(normalized)
-2×2 Matrix{Float64}:
- 20.0  40.0
- 60.0  80.0
-
-julia> intensityunit(normalized)
-s^-1
-```
-"""
-function dwellnormalize(msm::MassScanMatrix; acquisition::Symbol=:sequential)
-    dwell = infer_uniform_dwell_intervals(msm, acquisition)
-    dwell_normalize_unchecked(msm, dwell, retentionunit(msm))
-end
-
-function infer_uniform_dwell_intervals(
     msm::Union{MassScanMatrix, VarianceMassScanMatrix},
-    acquisition::Symbol
+    dwell::Union{AbstractQuantity, AbstractVector, Tuple, AbstractDict}
 )
-    validate_dwell_acquisition(acquisition)
-    !isnothing(retentionunit(msm)) ||
-        throw(ArgumentError("retentionunit is required to infer dwell intervals."))
-    scancount(msm) > 1 ||
-        throw(ArgumentError("at least two scans are required to infer dwell intervals."))
-
-    scanintervals = diff(rawretentions(msm))
-    all(isfinite, scanintervals) ||
-        throw(ArgumentError("all inferred scan intervals must be finite."))
-    all(t -> t > zero(t), scanintervals) ||
-        throw(ArgumentError("all inferred scan intervals must be positive."))
-
-    shortestscaninterval = Float64(minimum(scanintervals))
-    dwell = acquisition ≡ :sequential ?
-        shortestscaninterval / mzcount(msm) :
-        shortestscaninterval
-    fill(dwell, mzcount(msm))
+    isnothing(intensityunit(msm)) || throw(ArgumentError(
+        "dwellnormalize requires intensities without an attached unit."))
+    durations = resolve_dwelltimes(msm, dwell)
+    dwell_normalize_unchecked(msm, durations)
 end
 
-function validate_dwell_acquisition(acquisition::Symbol)
-    acquisition in (:sequential, :simultaneous) || throw(ArgumentError(
-        "acquisition must be :sequential or :simultaneous"))
-
-    nothing
+# Validate a duration and return its numeric value in the internal time unit (seconds).
+function validate_dwelltime(duration)
+    duration isa AbstractQuantity{<:Real} || throw(ArgumentError(
+        "Each dwell duration must be a real-valued unitful time quantity."))
+    Unitful.dimension(duration) == Unitful.dimension(u"s") || throw(ArgumentError(
+        "Dwell durations must have units of time."))
+    seconds = ustrip(u"s", duration)
+    isfinite(seconds) && seconds > zero(seconds) || throw(ArgumentError(
+        "Dwell durations must be finite and positive in seconds."))
+    # Integer/rational inverse durations can overflow when squared for variance scaling.
+    float(seconds)
 end
 
-function validate_scalar_dwell(
-    msm::MassScanMatrix,
-    dwell::Real,
-    unit::Unitful.Units
-)
-    isfinite(dwell) || throw(ArgumentError("dwell must be finite."))
-    dwell > zero(dwell) || throw(ArgumentError("dwell must be positive."))
+function resolve_dwelltimes(msm, dwell::AbstractQuantity)
+    fill(validate_dwelltime(dwell), mzcount(msm))
+end
 
-    rtunit = retentionunit(msm)
-    !isnothing(rtunit) ||
-        throw(ArgumentError("retentionunit is required to validate dwell interval."))
-    scancount(msm) > 1 ||
-        throw(ArgumentError("at least two scans are required to validate dwell interval."))
-
-    scanintervals = diff(rawretentions(msm))
-    all(isfinite, scanintervals) ||
-        throw(ArgumentError("all scan intervals must be finite."))
-    all(interval -> interval > zero(interval), scanintervals) ||
-        throw(ArgumentError("all scan intervals must be positive."))
-
-    dwellretention = try
-        ustrip(rtunit, Float64(dwell) * unit)
-    catch
-        throw(ArgumentError(
-            "dwell unit must be compatible with retentionunit(msm)."))
+function resolve_dwelltimes(msm, dwell::Union{AbstractVector, Tuple, AbstractDict})
+    isempty(dwell) && throw(ArgumentError("The m/z-to-dwell specification must not be empty."))
+    entries = collect(dwell)
+    all(entry -> entry isa Pair, entries) || throw(ArgumentError(
+        "Supply mz => duration pairs, not a positional duration vector."))
+    keys = dwell_mz_keys(entries, mzunit(msm))
+    by_mz = Dict{Real, Real}()
+    for (mz, entry) in zip(keys, entries)
+        haskey(by_mz, mz) && throw(ArgumentError("Duplicate dwell specification for m/z $mz."))
+        by_mz[mz] = validate_dwelltime(last(entry))
     end
-    shortestinterval = Float64(minimum(scanintervals))
-    tolerance = max(
-        eps(Float64) * max(abs(dwellretention), 
-        abs(shortestinterval)),
-        eps(Float64)
-    )
-    dwellretention ≤ shortestinterval + tolerance ||
-        throw(ArgumentError("dwell must not exceed the shortest scan interval."))
-
-    nothing
+    durations = map(rawmzvalues(msm)) do mz
+        haskey(by_mz, mz) || throw(ArgumentError("Missing dwell duration for m/z $mz."))
+        by_mz[mz]
+    end
+    # A concrete common duration type keeps mixed-precision matrix arithmetic numeric.
+    durationtype = mapreduce(typeof, promote_type, durations)
+    convert(Vector{durationtype}, durations)
 end
 
-"""
-    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::AbstractVector{<:Real}, unit::Unitful.Units)
-
-Return a copy of `vmsm` whose intensity values and variances are normalized by
-m/z-specific dwell intervals.
-
-The parent mass-scan matrix is normalized with
-`dwellnormalize(parent(vmsm), dwell, unit)`, which also copies the retention axis, m/z
-axis, units, and metadata. Variances are divided by the squared dwell interval of the
-corresponding m/z column, so they remain compatible with the normalized intensities. The
-returned object is a new `VarianceMassScanMatrix`.
-"""
-function dwellnormalize(
-    vmsm::VarianceMassScanMatrix,
-    dwell::AbstractVector{<:Real},
-    unit::Unitful.Units
-)
-    normalizedmsm = dwellnormalize(parent(vmsm), dwell, unit)
-    dwell_normalize_variances(vmsm, normalizedmsm, dwell)
+function dwell_mz_keys(entries, mz_unit)
+    keys = map(first, entries)
+    if all(x -> x isa Real, keys)
+        values = keys
+    elseif all(x -> x isa AbstractQuantity{<:Real}, keys)
+        isnothing(mz_unit) && throw(ArgumentError(
+            "Unitful dwell m/z keys require a matrix with an m/z unit."))
+        all(x -> Unitful.dimension(x) == Unitful.dimension(mz_unit), keys) ||
+            throw(ArgumentError("Dwell m/z key units must be compatible with the matrix's m/z unit."))
+        values = map(x -> ustrip(mz_unit, x), keys)
+    else
+        throw(ArgumentError(
+            "Dwell m/z keys must be either all real numbers or all real-valued quantities."))
+    end
+    all(x -> isfinite(x) && x > zero(x), values) || throw(ArgumentError(
+        "Dwell m/z keys must be finite and positive."))
+    values
 end
 
-function dwell_normalize_variances(
-    vmsm::VarianceMassScanMatrix,
-    normalizedmsm::MassScanMatrix,
-    dwell::AbstractVector{<:Real}
-)
+function dwell_normalize_unchecked(msm::MassScanMatrix, dwell::AbstractVector{<:Real})
+    normalized = rawintensities(msm) * Diagonal(inv.(dwell))
+    MassScanMatrix(
+        copy(rawretentions(msm)), retentionunit(msm),
+        copy(rawmzvalues(msm)), mzunit(msm), normalized, u"s^-1";
+        level=level(msm), instrument=deepcopy(instrument(msm)),
+        acquisition=deepcopy(acquisition(msm)), user=deepcopy(user(msm)),
+        sample=deepcopy(sample(msm)), extras=deepcopy(extras(msm)))
+end
+
+function dwell_normalize_unchecked(vmsm::VarianceMassScanMatrix, dwell::AbstractVector{<:Real})
+    normalizedmsm = dwell_normalize_unchecked(parent(vmsm), dwell)
     normalizedvariances = rawvariances(vmsm) * Diagonal(abs2.(inv.(dwell)))
     VarianceMassScanMatrix(normalizedmsm, normalizedvariances)
-end
-
-"""
-    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::AbstractVector{<:AbstractQuantity})
-
-Return a copy of `vmsm` whose intensity values and variances are normalized by unitful
-m/z-specific dwell intervals.
-"""
-function dwellnormalize(
-    vmsm::VarianceMassScanMatrix,
-    dwell::AbstractVector{<:AbstractQuantity{<:Real}}
-)
-    dwellvalues, dwellunit = strip_units_checked(dwell, "dwell")
-    dwellnormalize(vmsm, dwellvalues, dwellunit)
-end
-
-"""
-    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::Real, unit::Unitful.Units)
-
-Return a copy of `vmsm` whose intensity values and variances are normalized by a single
-dwell interval shared by all m/z channels.
-"""
-function dwellnormalize(
-    vmsm::VarianceMassScanMatrix,
-    dwell::Real,
-    unit::Unitful.Units
-)
-    normalizedmsm = dwellnormalize(parent(vmsm), dwell, unit)
-    dwell_normalize_variances(
-        vmsm,
-        normalizedmsm,
-        fill(Float64(dwell), mzcount(vmsm))
-    )
-end
-
-"""
-    dwellnormalize(vmsm::VarianceMassScanMatrix, dwell::Unitful.Quantity)
-
-Return a copy of `vmsm` whose intensity values and variances are normalized by a single
-unitful dwell interval shared by all m/z channels.
-"""
-function dwellnormalize(
-    vmsm::VarianceMassScanMatrix,
-    dwell::AbstractQuantity{<:Real}
-)
-    dwellnormalize(vmsm, Unitful.ustrip(dwell), Unitful.unit(dwell))
-end
-
-"""
-    dwellnormalize(vmsm::VarianceMassScanMatrix; acquisition=:sequential)
-
-Return a copy of `vmsm` whose intensity values and variances are normalized by an inferred
-uniform dwell interval.
-"""
-function dwellnormalize(
-    vmsm::VarianceMassScanMatrix;
-    acquisition::Symbol=:sequential
-)
-    dwell = infer_uniform_dwell_intervals(vmsm, acquisition)
-    normalizedmsm = dwell_normalize_unchecked(parent(vmsm), dwell, retentionunit(vmsm))
-    dwell_normalize_variances(vmsm, normalizedmsm, dwell)
 end
 
 # ── withintensityunit ─────────────────────────────────────────────────────────────────────
@@ -403,6 +167,10 @@ changes the intensity unit metadata. Retention coordinates, m/z values, intensit
 MS level, and metadata are preserved.
 
 Throws `ArgumentError` if `msm` already has an intensity unit.
+
+See also
+[`dwellnormalize`](@ref),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)).
 
 # Examples
 ```jldoctest
@@ -447,6 +215,11 @@ The parent mass-scan matrix is annotated with `unit`. The variance matrix is cop
 unchanged and its unit is set to `unit^2`, matching the annotated intensity unit.
 
 Throws `ArgumentError` if `vmsm` already has an intensity unit or variance unit.
+
+See also
+[`dwellnormalize`](@ref),
+[`intensityunit`](@ref JuChrom.intensityunit(::AbstractMassScanMatrix)),
+[`varianceunit`](@ref JuChrom.varianceunit(::AbstractVarianceMassScanMatrix)).
 """
 function withintensityunit(vmsm::VarianceMassScanMatrix, unit::Unitful.Units)
     isnothing(intensityunit(vmsm)) ||

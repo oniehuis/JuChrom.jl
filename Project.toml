@@ -1,6 +1,6 @@
 name = "JuChrom"
 uuid = "202feb93-6b30-4454-a2e9-99db6534a6fb"
-version = "0.0.1"
+version = "0.1.0"
 authors = ["Oliver Niehuis <oliver.niehuis@biologie.uni-freiburg.de> and contributors"]
 
 [deps]

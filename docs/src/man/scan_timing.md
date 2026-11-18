@@ -79,8 +79,8 @@ mss = load(ChemStationMS(file; mode=:ms))
 # Trim scans to the RT interval (20.25–20.40 minutes) containing the n‑nonacosane peak
 retentiontrim!(mss, start=20.25u"minute", stop=20.4u"minute")
 
-# Integer-bin m/z values and convert to a MassScanMatrix
-msm = mscanmatrix(binmzvalues(mss, validmzvalues=29:562))
+# Integer-bin m/z values and select the nominal masses used in this example
+msm = mscanmatrix(binmzvalues(mss), 29:562; unmatched=:drop)
 
 # Plot the chromatograms of m/z 57, 239, and 408 using scan-level retentions
 fig₁ = Figure(; size=(1000, 350))
