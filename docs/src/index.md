@@ -6,15 +6,54 @@ Julia; some vendor-specific loaders are provided via optional extensions.
 
 ## Installation
 
-Julia 1.12 or later is required. Install the development version from GitHub in
-your Julia environment by running this in the Julia REPL:
+Julia 1.12 or later is required. JuChrom is not registered in Julia's General
+registry; install it from GitHub in your active Julia environment.
+
+### Released version (recommended)
+
+Use a tagged release for research analyses. The example below installs `v0.1.0`.
+To install the latest published release, check the
+[latest release page](https://github.com/oniehuis/JuChrom.jl/releases/latest) and
+use its tag as `rev`:
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/oniehuis/JuChrom.jl", rev="v0.1.0")
+```
+
+This selects that release and does not automatically switch to newer releases.
+To switch releases, repeat the command with the desired tag.
+
+### Development version
+
+To try the latest development code, install the current commit on `main`:
 
 ```julia
 using Pkg
 Pkg.add(url="https://github.com/oniehuis/JuChrom.jl", rev="main")
 ```
 
-Then load the package with `using JuChrom`.
+`main` can contain changes made after the latest release. It is a moving branch,
+not an alias for the latest release. To fetch subsequent changes for an installation
+that tracks `main`, run:
+
+```julia
+using Pkg
+Pkg.update("JuChrom")
+```
+
+Check which tag or branch your environment tracks with `Pkg.status(["JuChrom"])`.
+Several development commits can share the same development version number.
+Keep your analysis project's `Project.toml` and `Manifest.toml` to record its
+package versions and exact source revisions.
+
+Use the [stable documentation](https://oniehuis.github.io/JuChrom.jl/stable/) for
+the latest release, the [v0.1.0 documentation](https://oniehuis.github.io/JuChrom.jl/v0.1.0/)
+for that specific release, and the [dev documentation](https://oniehuis.github.io/JuChrom.jl/dev/)
+for `main`. Documentation updates appear after a successful deployment.
+
+Load the package with `using JuChrom`. If it was already loaded before updating
+or switching versions, restart Julia first.
 
 ## Current capabilities
 
